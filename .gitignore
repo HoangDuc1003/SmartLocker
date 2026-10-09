@@ -1,0 +1,8 @@
+@"
+build/
+dist/
+nbproject/private/
+*.class
+*.war
+*.log
+"@ | Set-Content -Path .gitignore -Encoding ascii

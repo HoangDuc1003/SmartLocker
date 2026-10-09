@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#2b3a55">
+    <title>User</title>
+    <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+<div id="nav"></div>
+<div class="wrap" id="content">
+    <h2 id="title">Add user</h2>
+
+    <div class="error" id="error" hidden></div>
+
+    <!-- The browser checks below only save a round trip; UserController repeats every rule on the server. -->
+    <form class="form" id="userForm" novalidate>
+        <label for="username">Username *</label>
+        <input type="text" id="username" name="username" required minlength="3" maxlength="50"
+               pattern="[A-Za-z0-9_.]{3,50}" title="3 to 50 characters: letters without accents, digits, _ and .">
+
+        <label for="fullName">Full name *</label>
+        <input type="text" id="fullName" name="fullName" required minlength="2" maxlength="150">
+
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" required maxlength="150" placeholder="name@smartlocker.edu.vn">
+
+        <label for="phone">Phone</label>
+        <input type="text" id="phone" name="phone" maxlength="10" pattern="0[0-9]{9}"
+               title="10 digits, starting with 0" placeholder="0901234567">
+
+        <label for="role">Role *</label>
+        <select id="role" name="role" required></select>
+
+        <label for="area">Locker area</label>
+        <select id="area" name="area"></select>
+
+        <label class="inline"><input type="checkbox" id="locked" name="locked"> Lock this account</label>
+
+        <p class="hint" id="newHint">A new account gets the default password 123456. The user changes it at the first sign in.</p>
+
+        <div class="actions">
+            <button type="submit">Save</button>
+            <a class="btn ghost" href="users.html">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script src="mock-data.js"></script>
+<script src="demo.js"></script>
+<script src="../js/app.js"></script>
+<script>
+(function () {
+    var editId = parseInt(DEMO.qs('id'), 10) || 0;
+    if (!DEMO.page({ perm: editId ? 'USER_UPDATE' : 'USER_CREATE', nav: 'users' })) { return; }
+
+    var me = DEMO.me();
+    var all = DEMO.users();
+    var item = null;
+    all.forEach(function (u) { if (u.id === editId) { item = u; } });
+    var mine = item && item.id === me.id;
+    if (editId && (!item || (!mine && !DEMO.canManage(item)))) {
+        SmartLocker.toast('You cannot edit this account', 'error');
+        document.getElementById('userForm').hidden = true;
+        return;
+    }
+
+    var form = document.getElementById('userForm');
+    var error = document.getElementById('error');
+    document.getElementById('title').textContent = item ? 'Edit user' : 'Add user';
+    document.title = item ? 'Edit user' : 'Add user';
+    document.getElementById('newHint').hidden = !!item;
+
+    // only roles below the signed-in one, the administrator can choose any
+    var roleHtml = '';
+    DEMO.data.roles.forEach(function (r) {
+        if (me.role === 'ADMIN' || r.rank > DEMO.rank(me.role) || (mine && r.code === item.role)) {
+            roleHtml += '<option value="' + r.code + '">' + r.code + ' - ' + DEMO.esc(r.name) + '</option>';
+        }
+    });
+    form.role.innerHTML = roleHtml;
+
+    var areaHtml = '<option value="">-- No locker area --</option>';
+    DEMO.areas().forEach(function (a) {
+        if (a.active || (item && item.area === a.code)) {
+            areaHtml += '<option value="' + DEMO.esc(a.code) + '">' + DEMO.esc(a.code) + ' - ' + DEMO.esc(a.name) + '</option>';
+        }
+    });
+    form.area.innerHTML = areaHtml;
+
+    if (item) {
+        form.username.value = item.username;
+        form.fullName.value = item.fullName;
+        form.email.value = item.email;
+        form.phone.value = item.phone;
+        form.role.value = item.role;
+        form.area.value = item.area || '';
+        form.locked.checked = item.locked;
+    }
+    if (mine) {                       // nobody changes their own role or locks themselves
+        form.role.disabled = true;
+        form.locked.disabled = true;
+    }
+
+    function validate() {
+        var problems = [];
+        var username = form.username.value.trim();
+        var email = form.email.value.trim();
+        if (!/^[A-Za-z0-9_.]{3,50}$/.test(username)) { problems.push('Username must be 3 to 50 characters: letters without accents, digits, _ and .'); }
+        if (form.fullName.value.trim().length < 2) { problems.push('Full name must have 2 to 150 characters'); }
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { problems.push('Email is required and must look like name@domain'); }
+        if (form.phone.value.trim() && !/^0[0-9]{9}$/.test(form.phone.value.trim())) { problems.push('Phone must be 10 digits and start with 0'); }
+        all.forEach(function (u) {
+            if (item && u.id === item.id) { return; }
+            if (u.username.toLowerCase() === username.toLowerCase()) { problems.push('Username ' + username + ' is already taken'); }
+            if (u.email.toLowerCase() === email.toLowerCase()) { problems.push('Email ' + email + ' is already used'); }
+        });
+        return problems;
+    }
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var problems = validate();
+        if (problems.length) {
+            error.innerHTML = '<b>Please fix the following:</b><ul>' +
+                problems.map(function (p) { return '<li>' + DEMO.esc(p) + '</li>'; }).join('') + '</ul>';
+            error.hidden = false;
+            window.scrollTo(0, 0);
+            return;
+        }
+        var values = {
+            username: form.username.value.trim(), fullName: form.fullName.value.trim(),
+            email: form.email.value.trim(), phone: form.phone.value.trim(),
+            role: form.role.value, area: form.area.value, locked: form.locked.checked
+        };
+        if (item) {
+            if (mine) { values.role = item.role; values.locked = false; }
+            for (var key in values) { item[key] = values[key]; }
+            DEMO.saveUsers(all);
+            DEMO.audit('UPDATE', 'AppUser', item.id, values.username + ' updated');
+            DEMO.flash('User ' + values.username + ' saved');
+        } else {
+            values.id = all.reduce(function (m, u) { return Math.max(m, u.id); }, 0) + 1;
+            all.push(values);
+            DEMO.saveUsers(all);
+            DEMO.audit('CREATE', 'AppUser', values.id, values.username + ' created');
+            DEMO.flash('User ' + values.username + ' created, the password is 123456');
+        }
+        window.location.href = 'users.html';
+    });
+})();
+</script>
+</body>
+</html>

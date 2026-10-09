@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#2b3a55">
+    <title>Logs</title>
+    <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+<div id="nav"></div>
+<div class="wrap" id="content">
+    <h2 id="title">System logs</h2>
+
+    <div class="tabs">
+        <a id="tabLogin" href="logs.html?tab=login">Logins</a>
+        <a id="tabAudit" href="logs.html?tab=audit">Actions</a>
+    </div>
+
+    <form class="filter" id="filter" method="get" action="logs.html">
+        <input type="hidden" name="tab">
+        <input type="text" name="username" placeholder="Username">
+        <select name="result">
+            <option value="">-- All results --</option>
+            <option value="OK">Success</option>
+            <option value="FAIL">Failed</option>
+        </select>
+        <select name="act"></select>
+        <button type="submit">Filter</button>
+        <a class="btn ghost" id="clear" href="logs.html">Clear</a>
+    </form>
+
+    <div class="tablewrap"><table class="grid" id="grid"></table></div>
+    <div id="pager"></div>
+</div>
+
+<script src="mock-data.js"></script>
+<script src="demo.js"></script>
+<script src="../js/app.js"></script>
+<script>
+(function () {
+    if (!DEMO.page({ perm: 'LOG_VIEW', nav: 'logs' })) { return; }
+
+    var PAGE_SIZE = 10;
+    var tab = DEMO.qs('tab') === 'audit' ? 'audit' : 'login';
+    var page = parseInt(DEMO.qs('page'), 10) || 1;
+    var form = document.getElementById('filter');
+    var f = { username: DEMO.qs('username'), result: DEMO.qs('result'), act: DEMO.qs('act') };
+
+    document.getElementById('tabLogin').className = tab === 'login' ? 'on' : '';
+    document.getElementById('tabAudit').className = tab === 'audit' ? 'on' : '';
+    document.getElementById('clear').href = 'logs.html?tab=' + tab;
+    form.tab.value = tab;
+    form.username.value = f.username;
+    form.result.value = f.result;
+
+    var rows;
+    if (tab === 'login') {
+        form.act.hidden = true;
+        rows = DEMO.loginRows().filter(function (l) {
+            if (f.username && l.username.toLowerCase().indexOf(f.username.toLowerCase()) === -1) { return false; }
+            if (f.result === 'OK' && !l.ok) { return false; }
+            if (f.result === 'FAIL' && l.ok) { return false; }
+            return true;
+        });
+    } else {
+        form.username.hidden = true;
+        form.result.hidden = true;
+        var seen = {};
+        var options = '<option value="">-- All actions --</option>';
+        DEMO.auditRows().forEach(function (a) {
+            if (!seen[a.action]) { seen[a.action] = true; options += '<option value="' + a.action + '">' + a.action + '</option>'; }
+        });
+        form.act.innerHTML = options;
+        form.act.value = f.act;
+        rows = DEMO.auditRows().filter(function (a) { return !f.act || a.action === f.act; });
+    }
+    rows.sort(function (a, b) { return b.at - a.at; });
+
+    var pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    if (page > pages) { page = pages; }
+    var shown = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    document.getElementById('title').textContent = 'System logs (' + rows.length + ')';
+
+    var html;
+    if (tab === 'login') {
+        html = '<tr><th>#</th><th>Time</th><th>Username</th><th class="c">Result</th><th>Address</th></tr>';
+        shown.forEach(function (l) {
+            html += '<tr class="' + (l.ok ? '' : 'locked') + '"><td>' + l.id + '</td><td>' + DEMO.fmt(l.at) + '</td>' +
+                    '<td>' + DEMO.esc(l.username) + '</td><td class="c">' + (l.ok ? 'Success' : 'Failed') + '</td>' +
+                    '<td>' + DEMO.esc(l.ip) + '</td></tr>';
+        });
+    } else {
+        html = '<tr><th>#</th><th>Time</th><th>Actor</th><th>Action</th><th>Table</th><th class="c">Row</th><th>Detail</th></tr>';
+        shown.forEach(function (a) {
+            html += '<tr><td>' + a.id + '</td><td>' + DEMO.fmt(a.at) + '</td><td>' + DEMO.esc(a.actor) + '</td>' +
+                    '<td><span class="tag">' + DEMO.esc(a.action) + '</span></td><td>' + DEMO.esc(a.table) + '</td>' +
+                    '<td class="c">' + (a.target === null ? '' : a.target) + '</td><td>' + DEMO.esc(a.detail) + '</td></tr>';
+        });
+    }
+    if (!shown.length) { html += '<tr><td colspan="7" class="c">No row matches the filter</td></tr>'; }
+    document.getElementById('grid').innerHTML = html;
+
+    document.getElementById('pager').innerHTML = DEMO.pager(rows.length, page, PAGE_SIZE, function (p) {
+        return '?tab=' + tab + '&username=' + encodeURIComponent(f.username) + '&result=' + encodeURIComponent(f.result) +
+               '&act=' + encodeURIComponent(f.act) + '&page=' + p;
+    });
+})();
+</script>
+</body>
+</html>

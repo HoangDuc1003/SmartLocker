@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#2b3a55">
+    <title>Login</title>
+    <link rel="stylesheet" href="../css/app.css">
+</head>
+<body class="login-page">
+<div class="login-stack">
+    <form class="login-box" id="loginForm" autocomplete="off">
+        <h1>Smart Locker</h1>
+        <p class="sub">Semester FALL2026. Sign in to continue.</p>
+
+        <div class="error" id="error" hidden></div>
+
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" autofocus required>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Sign in</button>
+    </form>
+
+    <div class="login-box accounts">
+        <h3>Sample accounts</h3>
+        <p class="hint">The password of every account is 123456. Pick one to sign in at once.</p>
+        <ul id="accounts"></ul>
+    </div>
+</div>
+
+<script src="mock-data.js"></script>
+<script src="demo.js"></script>
+<script>
+(function () {
+    var form = document.getElementById('loginForm');
+    var error = document.getElementById('error');
+
+    function showError(text) {
+        error.textContent = text;
+        error.hidden = false;
+    }
+
+    function signIn(username, password) {
+        var result = DEMO.login(username, password);
+        if (result.error) { showError(result.error); return; }
+        window.location.href = DEMO.home(result.user);
+    }
+
+    if (!DEMO.storageWorks()) {
+        showError('This browser blocks local storage, so the demo cannot remember who is signed in.');
+    }
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        signIn(form.username.value.trim(), form.password.value);
+    });
+
+    var list = document.getElementById('accounts');
+    var html = '';
+    ['admin', 'operator1', 'tech1', 'auditor1', 'student1', 'locked1'].forEach(function (name) {
+        DEMO.users().forEach(function (u) {
+            if (u.username !== name) { return; }
+            html += '<li><span><b>' + DEMO.esc(u.username) + '</b> <span class="muted">' +
+                    DEMO.esc(DEMO.roleOf(u.role).name) + (u.locked ? ', locked' : '') + '</span></span>' +
+                    '<button type="button" class="link" data-user="' + DEMO.esc(u.username) + '">Sign in</button></li>';
+        });
+    });
+    list.innerHTML = html;
+    list.addEventListener('click', function (e) {
+        var name = e.target.getAttribute('data-user');
+        if (name) { signIn(name, '123456'); }
+    });
+})();
+</script>
+</body>
+</html>
