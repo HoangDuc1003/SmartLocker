@@ -1,0 +1,51 @@
+<%-- Top bar and menu, shared by every page after sign in.
+     A page includes it with   <%@ include file="common/nav.jspf" %>   and may set activeNav first, for example
+     <c:set var="activeNav" value="slots"/>.
+     "perms" is the set of "RESOURCE:ACTION" strings that SecurityFilter puts in the request, so the menu always
+     shows what the signed-in user may open. Hiding a link is a convenience: the filter is what really blocks. --%>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<c:set var="me" value="${sessionScope.LOGIN_USER}"/>
+<div class="topbar">
+    <div class="brand">Smart Locker <span class="sem">FALL2026</span></div>
+    <div class="who">
+        <c:out value="${me.fullName}"/>
+        <span class="tag"><c:out value="${me.roleName}"/></span>
+        <a class="out" href="${ctx}/LogoutController">Logout</a>
+    </div>
+</div>
+<div class="menu">
+    <c:if test="${perms.contains('MAP:READ')}"><a href="${ctx}/LockerMapController" class="${activeNav == 'map' ? 'on' : ''}">Locker map</a></c:if>
+    <c:if test="${perms.contains('ALERT:READ')}">
+        <a href="${ctx}/DashboardController" class="${activeNav == 'dashboard' ? 'on' : ''}">Dashboard</a>
+        <a href="${ctx}/AlertController" class="${activeNav == 'alerts' ? 'on' : ''}">Alerts</a>
+    </c:if>
+    <c:if test="${perms.contains('BOOKING:READ')}"><a href="${ctx}/BookingController" class="${activeNav == 'bookings' ? 'on' : ''}">My bookings</a></c:if>
+    <c:if test="${perms.contains('MYCARD:READ')}"><a href="${ctx}/MyCardController" class="${activeNav == 'mycards' ? 'on' : ''}">My cards</a></c:if>
+    <c:if test="${perms.contains('USER:READ')}"><a href="${ctx}/UserController" class="${activeNav == 'users' ? 'on' : ''}">Users</a></c:if>
+    <c:if test="${perms.contains('ROLE:READ')}"><a href="${ctx}/RoleController" class="${activeNav == 'roles' ? 'on' : ''}">Roles</a></c:if>
+    <c:if test="${perms.contains('AREA:READ') or perms.contains('LOCKERBANK:READ') or perms.contains('LOCKERSLOT:READ')
+                  or perms.contains('STORAGEPLAN:READ') or perms.contains('USERCARD:READ') or perms.contains('DEPOSIT:READ')
+                  or perms.contains('COMMAND:READ') or perms.contains('CALIBRATION:READ') or perms.contains('MAINTENANCE:READ')}">
+        <details class="menu-more">
+            <summary>Manage</summary>
+            <div class="menu-more__list">
+                <c:if test="${perms.contains('AREA:READ')}"><a href="${ctx}/LockerAreaController">Areas</a></c:if>
+                <c:if test="${perms.contains('LOCKERBANK:READ')}"><a href="${ctx}/LockerBankController">Banks</a></c:if>
+                <c:if test="${perms.contains('LOCKERSLOT:READ')}"><a href="${ctx}/LockerSlotController">Slots</a></c:if>
+                <c:if test="${perms.contains('STORAGEPLAN:READ')}"><a href="${ctx}/StoragePlanController">Storage plans</a></c:if>
+                <c:if test="${perms.contains('USERCARD:READ')}"><a href="${ctx}/UserCardController">Cards</a></c:if>
+                <c:if test="${perms.contains('DEPOSIT:READ')}"><a href="${ctx}/DepositController">Deposits</a></c:if>
+                <c:if test="${perms.contains('COMMAND:READ')}"><a href="${ctx}/RemoteCommandController">Remote commands</a></c:if>
+                <c:if test="${perms.contains('CALIBRATION:READ')}"><a href="${ctx}/CalibrationController">Calibration</a></c:if>
+                <c:if test="${perms.contains('MAINTENANCE:READ')}"><a href="${ctx}/MaintenanceController">Maintenance</a></c:if>
+            </div>
+        </details>
+    </c:if>
+    <c:if test="${perms.contains('AUDIT:READ')}"><a href="${ctx}/AuditController" class="${activeNav == 'audit' ? 'on' : ''}">Audit log</a></c:if>
+</div>
+<%-- one message after a POST: Web.flash(session, text, bad) --%>
+<c:if test="${not empty sessionScope.flash}">
+    <div class="flash ${sessionScope.flashBad ? 'bad' : ''}"><c:out value="${sessionScope.flash}"/></div>
+    <c:remove var="flash" scope="session"/>
+    <c:remove var="flashBad" scope="session"/>
+</c:if>

@@ -764,6 +764,22 @@ body.sheet-open {
   overflow-wrap: anywhere;
 }
 
+.price-list {
+  display: grid;
+  gap: 4px;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 400;
+}
+
+.price-row strong {
+  font-variant-numeric: tabular-nums;
+}
+
 .countdown {
   display: inline-block;
   margin-left: 6px;

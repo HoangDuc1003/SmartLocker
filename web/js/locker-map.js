@@ -494,6 +494,18 @@
     return parts.join('');
   }
 
+  // the storage prices, shown as soon as a slot is selected (no payment step involved)
+  function priceHtml() {
+    var plans = (state.data && state.data.plans) || [];
+    if (!plans.length) {
+      return '';
+    }
+    return plans.map(function (p) {
+      var amount = p.price ? Number(p.price).toLocaleString() + ' VND' : 'Free';
+      return '<span class="price-row"><span>' + esc(p.plan_name) + '</span><strong>' + amount + '</strong></span>';
+    }).join('');
+  }
+
   function panelHtml(found) {
     var slot = found.slot;
     var bank = found.bank;
@@ -504,6 +516,10 @@
       fact('Bank', esc(bank.name) + ' <span class="muted">' + esc(bank.bank_code) + '</span>'),
       fact('Device', bank.live ? esc(bank.device_status || 'UNKNOWN') : 'Illustration')
     ];
+    var prices = priceHtml();
+    if (prices) {
+      facts.splice(1, 0, fact('Price', '<span class="price-list">' + prices + '</span>'));
+    }
     if (slot.status === 'RESERVED' && slot.hold_until) {
       facts.push(fact(slot.mine ? 'Held for you until' : 'Held until', formatTime(slot.hold_until) + countdownHtml(slot.hold_until)));
     }

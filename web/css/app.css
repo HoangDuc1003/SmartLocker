@@ -46,6 +46,17 @@ body { margin: 0; font-family: Segoe UI, Arial, sans-serif; font-size: 14px;
 .menu a:hover { background: #4a5b7a; color: #fff; }
 .menu a.on { background: #4a5b7a; color: #fff; font-weight: 600; }
 
+/* the "Manage" group of the real menu (common/nav.jspf): a details element, no script needed */
+.menu details { display: inline-block; position: relative; }
+.menu summary { display: inline-block; list-style: none; cursor: pointer; color: #dfe6f2;
+                padding: 9px 14px; font-size: 13px; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu summary::after { content: " \25BE"; }
+.menu summary:hover, .menu details[open] summary { background: #4a5b7a; color: #fff; }
+.menu-more__list { position: absolute; z-index: 20; left: 0; top: 100%; min-width: 190px;
+                   background: #3d4f6e; box-shadow: 0 8px 20px rgba(0, 0, 0, .25); }
+.menu-more__list a { display: block; }
+
 .demo-note { padding: 6px 18px; background: #fff7d6; border-bottom: 1px solid #ecdc9a;
              font-size: 12px; color: #6b5a12; }
 .demo-note a { color: #6b5a12; margin-left: 8px; }
@@ -186,7 +197,9 @@ canvas { background: #fff; border: 1px solid #dcdfe4; border-radius: 5px; }
   .topbar { flex-wrap: wrap; gap: 6px; padding: 10px 14px; }
   .menu { padding: 0 8px; overflow-x: auto; white-space: nowrap;
           -webkit-overflow-scrolling: touch; }
-  .menu a { padding: 11px 12px; }
+  .menu a, .menu summary { padding: 11px 12px; }
+  .menu details[open] { display: contents; }          /* the Manage links join the scrolling row */
+  .menu-more__list { display: contents; }
   .wrap { padding: 0 14px; margin: 14px auto; }
   .flash { margin: 12px 14px 0; }
   .form, .form.narrow { max-width: 100%; }
@@ -207,14 +220,16 @@ canvas { background: #fff; border: 1px solid #dcdfe4; border-radius: 5px; }
   table.grid tr.group { background: #eceef2; }
   table.grid td { display: flex; justify-content: space-between; gap: 12px;
                   border: none; border-bottom: 1px solid #f0f1f4;
-                  padding: 8px 12px; text-align: right; }
+                  padding: 8px 12px; text-align: right; overflow-wrap: anywhere; }
   table.grid td:last-child { border-bottom: none; }
   table.grid td.c { text-align: right; }
   table.grid td::before { content: attr(data-th); font-weight: 600; font-size: 12px;
                           color: #667; text-align: left; flex: 0 0 42%; }
   table.grid td[colspan]::before { content: none; }
-  table.grid td.ops { justify-content: flex-start; flex-wrap: wrap; white-space: normal; }
+  table.grid td.ops { justify-content: flex-start; align-items: center; flex-wrap: wrap;
+                      white-space: normal; }
   table.grid td.ops::before { flex: 0 0 100%; }
+  .ops a, .ops button { display: inline-flex; align-items: center; }
 
   /* a finger needs a target of about 44 px */
   button, .btn { padding: 10px 16px; font-size: 14px; min-height: 44px; }

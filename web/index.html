@@ -2,11 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=demo/index.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Smart Locker</title>
+    <link rel="stylesheet" href="css/app.css">
 </head>
-<body>
-    <!-- Demo only: opens the UI demo. Replace this page with a redirect to LoginController when the backend is ready. -->
-    <p><a href="demo/index.html">Open the Smart Locker demo</a></p>
+<body class="login-page">
+    <div class="login-stack">
+        <div class="login-box">
+            <h1>Smart Locker</h1>
+            <p class="sub">Semester FALL2026</p>
+            <p><a class="btn btn--block" href="LoginController">Open the application</a></p>
+            <p><a class="btn ghost btn--block" href="demo/index.html">Open the static demo</a></p>
+            <p class="hint">Before you submit: delete the folder web/demo and this page's second link.</p>
+        </div>
+    </div>
 </body>
 </html>
