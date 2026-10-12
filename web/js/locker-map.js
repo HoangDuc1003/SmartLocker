@@ -281,17 +281,10 @@
   }
 
   function deviceTag(bank) {
-    if (!bank.live) {
-      return '<span class="device-tag" title="Drawn for illustration, no device installed">Illustration</span>';
-    }
-    if (bank.device_status === 'OFFLINE') {
-      return '<span class="device-tag device-tag--offline"><span class="dot"></span>Device offline</span>';
-    }
     if (bank.device_status === 'MAINTENANCE') {
       return '<span class="device-tag device-tag--maintenance"><span class="dot"></span>Device maintenance</span>';
     }
-    var seen = bank.last_seen_sec !== null && bank.last_seen_sec !== undefined ? ' · ' + bank.last_seen_sec + 's ago' : '';
-    return '<span class="device-tag device-tag--live"><span class="dot"></span>Live device' + seen + '</span>';
+    return '<span class="device-tag device-tag--live"><span class="dot"></span>Live device</span>';
   }
 
   function slotHtml(slot) {
@@ -375,7 +368,7 @@
     var mine = slot.mine;
     switch (slot.status) {
       case 'AVAILABLE':
-        return bank.live ? 'Free to use. Swipe your card at the locker, or reserve it here first.' : 'Free to use.';
+        return 'Free to use. Swipe your card at the locker, or reserve it here first.';
       case 'RESERVED':
         return mine ? 'Reserved for you. Swipe your card at the locker before the hold ends, or the slot is released.'
                     : 'Someone has reserved this slot.';
@@ -473,21 +466,15 @@
     }
 
     if (role === 'END_USER') {
-      if (!bank.live) {
-        if (slot.status === 'AVAILABLE') {
-          parts.push('<p class="notice">This bank is drawn for illustration. Booking works on live banks.</p>');
-        }
-      } else if (slot.status === 'AVAILABLE') {
-        parts.push(bank.device_status === 'ACTIVE' ? reserveForm(slot)
-          : '<p class="notice notice--warn">Booking is paused while this locker is offline.</p>');
+      if (slot.status === 'AVAILABLE') {
+        parts.push(reserveForm(slot));
       } else if (slot.mine && slot.status === 'RESERVED') {
         parts.push(cancelForm(slot));
       } else if (slot.mine && (slot.status === 'OCCUPIED' || slot.status === 'OVERDUE')) {
         parts.push(extendForm(slot));
       }
     } else if (isStaff()) {
-      parts.push(bank.live ? unlockForm(slot, bank)
-        : '<p class="notice">This bank is drawn for illustration. Remote unlock works on live banks.</p>');
+      parts.push(unlockForm(slot, bank));
     } else if (role === 'AUDITOR') {
       parts.push('<p class="notice">Read-only access. Every remote unlock is listed in the audit log.</p>');
     }
@@ -514,7 +501,7 @@
     var facts = [
       fact('Size', sizeLabel(slot)),
       fact('Bank', esc(bank.name) + ' <span class="muted">' + esc(bank.bank_code) + '</span>'),
-      fact('Device', bank.live ? esc(bank.device_status || 'UNKNOWN') : 'Illustration')
+      fact('Device', esc(bank.device_status || 'ACTIVE'))
     ];
     var prices = priceHtml();
     if (prices) {

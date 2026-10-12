@@ -30,19 +30,19 @@
   var LAYOUT = [
     { area_code: 'LIB', name: 'Library', location: 'Library, 1st floor', banks: [
       { bank_code: 'LIB-A', name: 'Bank A', live: true, rows: 2, prefix: 'A', columns: repeat(['S', 'S'], 2) },
-      { bank_code: 'LIB-B', name: 'Bank B', rows: 4, prefix: 'B', columns: repeat(['S', 'S', 'S', 'S'], 4) }
+      { bank_code: 'LIB-B', name: 'Bank B', live: true, rows: 4, prefix: 'B', columns: repeat(['S', 'S', 'S', 'S'], 4) }
     ] },
     { area_code: 'DOMA', name: 'Dormitory A', location: 'Dorm A lobby', banks: [
-      { bank_code: 'DOMA-A', name: 'Bank A', rows: 4, prefix: 'A', columns: repeat(['S', 'S', 'S', 'S'], 5) },
-      { bank_code: 'DOMA-B', name: 'Bank B', rows: 4, prefix: 'B',
+      { bank_code: 'DOMA-A', name: 'Bank A', live: true, rows: 4, prefix: 'A', columns: repeat(['S', 'S', 'S', 'S'], 5) },
+      { bank_code: 'DOMA-B', name: 'Bank B', live: true, rows: 4, prefix: 'B',
         columns: [['S', 'S', 'L'], ['S', 'S', 'L'], ['L', 'L'], ['L', 'L']] }
     ] },
     { area_code: 'CANT', name: 'Canteen', location: 'Next to the canteen entrance', banks: [
-      { bank_code: 'CANT-A', name: 'Bank A', rows: 4, prefix: 'A', columns: repeat(['S', 'S', 'L'], 5) }
+      { bank_code: 'CANT-A', name: 'Bank A', live: true, rows: 4, prefix: 'A', columns: repeat(['S', 'S', 'L'], 5) }
     ] },
     { area_code: 'GYM', name: 'Sports Hall', location: 'Sports hall changing room', banks: [
-      { bank_code: 'GYM-A', name: 'Bank A', rows: 4, prefix: 'A', columns: repeat(['S', 'S', 'S', 'S'], 4) },
-      { bank_code: 'GYM-B', name: 'Bank B', rows: 4, prefix: 'B', columns: repeat(['S', 'S', 'L'], 3) }
+      { bank_code: 'GYM-A', name: 'Bank A', live: true, rows: 4, prefix: 'A', columns: repeat(['S', 'S', 'S', 'S'], 4) },
+      { bank_code: 'GYM-B', name: 'Bank B', live: true, rows: 4, prefix: 'B', columns: repeat(['S', 'S', 'L'], 3) }
     ] }
   ];
 

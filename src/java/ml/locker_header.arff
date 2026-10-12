@@ -1,0 +1,10 @@
+@relation locker
+
+@attribute door_open_sec numeric
+@attribute weight_delta_g numeric
+@attribute unlock_count numeric
+@attribute rfid_ok numeric
+@attribute stay_min numeric
+@attribute label {NORMAL,FORCED_OPEN}
+
+@data

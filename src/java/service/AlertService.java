@@ -1,6 +1,5 @@
 package service;
 
-import util.Todo;
 import dao.AlertDao;
 import dao.AuditDao;
 import dao.MaintenanceDao;
@@ -23,6 +22,33 @@ public class AlertService {
 
     /** The session must already be stored: session.getSessionId() is used by the queries and by the alert. */
     public void evaluate(LockerSession session) throws SQLException {
-        throw Todo.of("AlertService.evaluate: context -> rules -> model -> alert -> follow-up (command done, ticket opened)");
+        // context -> rules -> model -> alert -> follow-up (command done, ticket opened)
+        SessionContext ctx = new SessionContextDao().load(session);
+        Verdict verdict = ruleEngine.evaluate(session, ctx);
+
+        Double risk = null;
+        if (verdict.isMlEligible()) {                        // a staff open or a broken sensor is not user behaviour
+            risk = RiskScorer.getInstance().score(session);  // 1 - P(NORMAL)
+            if (!verdict.isAlert() && risk >= ML_THRESHOLD) {
+                verdict = Verdict.alert("ML_ANOMALY", "risk_score", String.format(Locale.ROOT, "%.2f", risk));
+            }
+        }
+
+        if ("STAFF_OPEN".equals(verdict.getLabel())) {       // case 2: the command is used up
+            new RemoteCommandDao().markDone(session.getCommandId(), session.getSessionId());
+            new AuditDao().append(AuditDao.SYSTEM_USER_ID, "COMMAND_DONE", "COMMAND", session.getCommandId(),
+                    "session " + session.getSessionId());
+        }
+
+        if (verdict.isAlert()) {
+            String source = "ML_ANOMALY".equals(verdict.getLabel()) ? "ML" : "RULE";
+            int alertId = new AlertDao().create(session.getDeviceId(), session.getSessionId(), source,
+                    verdict.getLabel(), risk, verdict.getEvidence());
+            new AuditDao().append(AuditDao.SYSTEM_USER_ID, "CREATE", "ALERT", alertId, verdict.getLabel());
+            if ("SENSOR_FAULT".equals(verdict.getLabel())) {  // case 5: a ticket and the slot out of service
+                new MaintenanceDao().openForFault(session.getDeviceId(), alertId, session.getSessionId(),
+                        verdict.getEvidence().get(0)[1]);
+            }
+        }
     }
 }

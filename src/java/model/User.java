@@ -13,6 +13,7 @@ public class User {
     private String phone;
     private Integer areaId;   // null = no area
     private String areaCode;   // joined from LockerArea
+    private long balance;
 
     public int getUserId() { return userId; }
     public void setUserId(int userId) { this.userId = userId; }
@@ -34,6 +35,8 @@ public class User {
     public void setAreaId(Integer areaId) { this.areaId = areaId; }
     public String getAreaCode() { return areaCode; }
     public void setAreaCode(String areaCode) { this.areaCode = areaCode; }
+    public long getBalance() { return balance; }
+    public void setBalance(long balance) { this.balance = balance; }
 
     public boolean isLocked() { return "LOCKED".equals(status); }
 }

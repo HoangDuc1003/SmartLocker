@@ -1,6 +1,5 @@
 package controller;
 
-import util.Todo;
 import java.io.IOException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -14,6 +13,11 @@ public class LogoutController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
-        throw Todo.of("LogoutController.doGet: session.invalidate() then back to the login page");
+        // session.invalidate() then back to the login page
+        HttpSession session = req.getSession(false);
+        if (session != null) {
+            session.invalidate();   // drops the login state
+        }
+        res.sendRedirect(req.getContextPath() + "/LoginController");
     }
 }

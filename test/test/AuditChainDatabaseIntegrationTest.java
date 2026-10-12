@@ -2,17 +2,22 @@ package test;
 
 import static org.testng.Assert.assertEquals;
 
+import dao.DbContext;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 import service.AuditVerifier;
 import service.AuditVerifier.Row;
 
 /**
- * SKELETON. Explained in docs/HUONG_DAN_TUNG_FILE.md, section "test/AuditChainDatabaseIntegrationTest.java".
  * The tamper-evident log: a chain that is intact verifies, a row that was edited is found.
+ * The first two tests need no database. The last two run against PRJ301_LOCKER and are skipped when it is not there.
  */
 public class AuditChainDatabaseIntegrationTest {
 
@@ -45,7 +50,56 @@ public class AuditChainDatabaseIntegrationTest {
         assertEquals(AuditVerifier.findFirstBroken(chainOf(5)), -1L);
     }
 
-    // TODO anEditedRowIsFoundAtTheRowThatWasEdited   (change rows.get(2).action, expect the audit_id 3)
-    // TODO theRealLogIsIntactBeforeAnyTampering      (needs the database: throw new SkipException when there is none)
-    // TODO tamperingWithARealRowIsDetectedAndUndone  (UPDATE AuditLog SET action = ... on the last row, verify, then put it back in finally)
+    @Test
+    public void anEditedRowIsFoundAtTheRowThatWasEdited() throws Exception {
+        List<Row> rows = chainOf(5);
+        rows.get(2).action = "TAMPERED-BY-TESTNG";          // somebody edits row 3 in SSMS
+        assertEquals(AuditVerifier.findFirstBroken(rows), 3L);
+    }
+
+    // ---- against the real database ----
+
+    /** A SkipException marks the test as skipped, not failed, on a machine where the database is not installed. */
+    private static void skipWithoutDatabase() {
+        try (Connection conn = DbContext.getConnection()) {
+            if (conn == null || conn.isClosed()) {
+                throw new SkipException("No database connection");
+            }
+        } catch (SQLException e) {
+            throw new SkipException("PRJ301_LOCKER is not available: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void theRealLogIsIntactBeforeAnyTampering() throws Exception {
+        skipWithoutDatabase();
+        assertEquals(AuditVerifier.findFirstBroken(), -1L);
+    }
+
+    @Test(dependsOnMethods = "theRealLogIsIntactBeforeAnyTampering")
+    public void tamperingWithARealRowIsDetectedAndUndone() throws Exception {
+        skipWithoutDatabase();
+        List<Row> rows = AuditVerifier.loadRows();
+        if (rows.isEmpty()) {
+            throw new SkipException("The log is empty, sign in once first");
+        }
+        long target = rows.get(rows.size() - 1).auditId;
+        String original = rows.get(rows.size() - 1).action;
+        try {
+            update(target, "TAMPERED-BY-TESTNG");
+            assertEquals(AuditVerifier.findFirstBroken(), target);
+        } finally {
+            update(target, original);                       // always put it back
+        }
+        assertEquals(AuditVerifier.findFirstBroken(), -1L);
+    }
+
+    private static void update(long auditId, String action) throws SQLException {
+        try (Connection conn = DbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement("UPDATE AuditLog SET action = ? WHERE audit_id = ?")) {
+            ps.setString(1, action);
+            ps.setLong(2, auditId);
+            ps.executeUpdate();
+        }
+    }
 }

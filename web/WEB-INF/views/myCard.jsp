@@ -1,14 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="activeNav" value="mycards"/>
-<%--
-  My cards. Skeleton: the frame and the menu work, the rest is yours.
-  Controller: MyCardController
-  Attributes it sets: items (UserCard of the signed-in user)
-  Filters: none
-  Report lost is a POST with a confirm box. A card that is already LOST shows no button.
-  Copy the pattern of lockerSlot.jsp: the choose/when for list and form, the filter form, c:forEach, c:url for the pager.
---%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,17 +15,38 @@
 <div class="wrap">
     <h2>My cards</h2>
 
-    <%-- TODO 1: the filter form (class="filter"), method get, keep the values with <c:out> --%>
-
     <div class="tablewrap">
     <table class="grid">
-        <tr><th>Card uid</th><th>Status</th><th>Issued</th><th>Actions</th></tr>
-        <%-- TODO 2: <c:forEach var="x" items="${items}"> one row per item, <c:out> for every text --%>
-        <c:if test="${empty items}"><tr><td colspan="4" class="c">Nothing to show</td></tr></c:if>
+        <tr><th>Card UID</th><th class="c">Status</th><th>Issued</th><th class="c">Actions</th></tr>
+        <c:forEach var="c" items="${items}">
+        <tr class="${c.status == 'LOST' || c.status == 'BLOCKED' ? 'locked' : ''}">
+            <td><code><c:out value="${c.cardUid}"/></code></td>
+            <td class="c">${c.status}</td>
+            <td>${c.issuedAt}</td>
+            <td class="c">
+                <c:choose>
+                    <c:when test="${c.status == 'ACTIVE'}">
+                        <a class="btn btn--sm" href="${ctx}/TopupController?cardId=${c.cardId}" style="margin-right:6px; padding:2px 8px; font-size:12px; background:#2e7d32; color:#fff; text-decoration:none; border-radius:3px;">💳 Nạp thẻ</a>
+                        <form method="post" action="${ctx}/MyCardController" style="display:inline;" onsubmit="return confirm('Report this card as lost? It will be immediately deactivated.');">
+                            <input type="hidden" name="action" value="reportLost">
+                            <input type="hidden" name="cardId" value="${c.cardId}">
+                            <button type="submit" class="link danger">Report lost</button>
+                        </form>
+                    </c:when>
+                    <c:otherwise>
+                        <span class="muted">${c.status}</span>
+                    </c:otherwise>
+                </c:choose>
+            </td>
+        </tr>
+        </c:forEach>
+        <c:if test="${empty items}"><tr><td colspan="4" class="c">You do not have any cards assigned.</td></tr></c:if>
     </table>
     </div>
 
-    <%-- TODO 3: the pager (class="pager") and, where the controller has a form mode, the form (class="form") --%>
+    <div style="margin-top:16px;">
+        <a class="btn btn--primary" href="${ctx}/TopupController">💳 Nạp tiền vào thẻ ngay (Quét VietQR)</a>
+    </div>
 </div>
 <script src="${ctx}/js/app.js"></script>
 </body>

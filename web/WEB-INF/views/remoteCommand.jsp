@@ -1,14 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="activeNav" value="commands"/>
-<%--
-  Remote commands. Skeleton: the frame and the menu work, the rest is yours.
-  Controller: RemoteCommandController
-  Attributes it sets: list: items (maps with command_id, slot_code, reason, requested_by_name, status, created_at, done_at), total, page, pages, status
-  Filters: status
-  Read only. The commands are created from the slot panel of the locker map.
-  Copy the pattern of lockerSlot.jsp: the choose/when for list and form, the filter form, c:forEach, c:url for the pager.
---%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,19 +13,53 @@
 <body>
 <%@ include file="common/nav.jspf" %>
 <div class="wrap">
-    <h2>Remote commands</h2>
+    <h2>Remote commands (${total})</h2>
 
-    <%-- TODO 1: the filter form (class="filter"), method get, keep the values with <c:out> --%>
+    <form class="filter" method="get" action="${ctx}/RemoteCommandController">
+        <select name="status">
+            <option value="">-- All statuses --</option>
+            <c:forEach var="st" items="PENDING,SENT,DONE,EXPIRED">
+                <option value="${st}" ${status == st ? 'selected' : ''}>${st}</option>
+            </c:forEach>
+        </select>
+        <button type="submit">Filter</button>
+        <a class="btn ghost" href="${ctx}/RemoteCommandController">Clear</a>
+    </form>
 
     <div class="tablewrap">
     <table class="grid">
         <tr><th>#</th><th>Slot</th><th>Reason</th><th>Requested by</th><th>Status</th><th>Created</th><th>Used at</th></tr>
-        <%-- TODO 2: <c:forEach var="x" items="${items}"> one row per item, <c:out> for every text --%>
+        <c:forEach var="cmd" items="${items}">
+        <tr class="${cmd.status == 'PENDING' ? 'locked' : ''}">
+            <td>#${cmd.command_id}</td>
+            <td><c:out value="${cmd.slot_code}"/></td>
+            <td><c:out value="${cmd.reason}"/></td>
+            <td><c:out value="${cmd.requested_by_name}"/></td>
+            <td class="c">
+                <span class="badge ${cmd.status == 'DONE' ? '' : (cmd.status == 'PENDING' ? 'danger' : '')}">${cmd.status}</span>
+            </td>
+            <td>${cmd.created_at}</td>
+            <td>${not empty cmd.done_at ? cmd.done_at : '-'}</td>
+        </tr>
+        </c:forEach>
         <c:if test="${empty items}"><tr><td colspan="7" class="c">Nothing to show</td></tr></c:if>
     </table>
     </div>
 
-    <%-- TODO 3: the pager (class="pager") and, where the controller has a form mode, the form (class="form") --%>
+    <div class="pager">
+        <c:forEach var="p" begin="1" end="${pages}">
+            <c:choose>
+                <c:when test="${p == page}"><b>${p}</b></c:when>
+                <c:otherwise>
+                    <c:url var="pageUrl" value="/RemoteCommandController">
+                        <c:param name="status" value="${status}"/>
+                        <c:param name="page" value="${p}"/>
+                    </c:url>
+                    <a href="${pageUrl}">${p}</a>
+                </c:otherwise>
+            </c:choose>
+        </c:forEach>
+    </div>
 </div>
 <script src="${ctx}/js/app.js"></script>
 </body>

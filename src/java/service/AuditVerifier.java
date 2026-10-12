@@ -1,6 +1,5 @@
 package service;
 
-import util.Todo;
 import dao.DbContext;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
@@ -47,20 +46,58 @@ public class AuditVerifier {
     /** The prev_hash of the first row of the chain: 64 zeros. */
     public static final String ZERO_HASH = "0000000000000000000000000000000000000000000000000000000000000000";
 
-    // TODO helpers (fields, constants, private methods) used by the demos in the guide: the character set and the hex helper
+    /** SQL Server hashes an NVARCHAR as UTF-16 little endian, so Java must hash the same bytes. */
+    private static final Charset UTF16LE = Charset.forName("UTF-16LE");
+
+    private static String toHex(byte[] bytes) {   // Java 8 has no HexFormat
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
 
     /** The audit_id of the first broken row, or -1 when the whole chain is intact. Works on rows already loaded. */
     public static long findFirstBroken(List<Row> rows) {
-        throw Todo.of("AuditVerifier.findFirstBroken: walk the chain in order: the link to the previous row, then the recomputed hash");
+        // walk the chain in order: the link to the previous row, then the recomputed hash
+        String prevHash = ZERO_HASH;
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            for (Row r : rows) {
+                String text = r.auditId + "|" + r.tsText + "|" + r.actor + "|" + r.action + "|" + r.objectType + "|"
+                        + r.objectId + "|" + r.diff + "|" + prevHash;
+                String expected = toHex(digest.digest(text.getBytes(UTF16LE)));
+                if (!prevHash.equals(r.prevHash) || !expected.equals(r.chainHash)) {
+                    return r.auditId;
+                }
+                prevHash = expected;
+            }
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+        return -1;
     }
 
     /** Reads the log from the database in chain order. */
     public static List<Row> loadRows() throws SQLException {
-        throw Todo.of("AuditVerifier.loadRows: the query converts ts to text in SQL and turns NULL into an empty diff");
+        // the query converts ts to text in SQL and turns NULL into an empty diff
+        String sql = "SELECT a.audit_id, CONVERT(NVARCHAR(33), a.ts, 126), a.actor_user_id, a.action, a.object_type, "
+                + "a.object_id, ISNULL(a.diff_json, N''), h.prev_hash, h.chain_hash "
+                + "FROM AuditLog a JOIN HashChain h ON h.audit_id = a.audit_id ORDER BY h.anchor_id";
+        List<Row> rows = new ArrayList<>();
+        try (Connection conn = DbContext.getConnection();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                rows.add(new Row(rs.getLong(1), rs.getString(2), rs.getInt(3), rs.getString(4), rs.getString(5),
+                        rs.getLong(6), rs.getString(7), rs.getString(8), rs.getString(9)));
+            }
+        }
+        return rows;
     }
 
     /** The audit_id of the first broken row, or -1 when intact. */
     public static long findFirstBroken() throws SQLException {
-        throw Todo.of("AuditVerifier.findFirstBroken");
+        return findFirstBroken(loadRows());
     }
 }

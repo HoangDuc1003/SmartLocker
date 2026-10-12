@@ -23,14 +23,31 @@ public class LockerMonitor implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         // one thread, every 30 seconds: Device_MarkOffline, Deposit_ExpireNoShow, RemoteCommand_Expire
-        // TODO nothing runs yet: start the scheduler here (a listener that throws would stop the whole application from starting)
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                runProcedure("{call Device_MarkOffline(86400)}");   // 24h timeout so demo devices stay active
+                runProcedure("{call Deposit_ExpireNoShow}");
+                runProcedure("{call RemoteCommand_Expire}");
+            }
+        }, 30, 30, TimeUnit.SECONDS);
     }
 
-    // TODO helpers (fields, constants, private methods) used by the demos in the guide: one failing call must not stop the others, or the timer
+    private void runProcedure(String call) {
+        try (Connection conn = DbContext.getConnection(); CallableStatement cs = conn.prepareCall(call)) {
+            cs.execute();
+        } catch (SQLException e) {
+            // an exception that escapes run() silently cancels every later run, so catch it here
+            LOG.log(Level.WARNING, "LockerMonitor " + call + " failed: " + e.getMessage());
+        }
+    }
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         // NetBeans redeploys often: stop the thread or every redeploy leaks one
-        // TODO stop the scheduler here
+        if (scheduler != null) {
+            scheduler.shutdownNow();
+        }
     }
 }

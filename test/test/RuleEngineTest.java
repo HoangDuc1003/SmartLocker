@@ -11,8 +11,8 @@ import service.SessionContext;
 import service.Verdict;
 
 /**
- * SKELETON. Explained in docs/HUONG_DAN_TUNG_FILE.md, section "test/RuleEngineTest.java".
  * One test per rule. No database and no server: RuleEngine only needs a session and a context.
+ * Add one test for every new rule you write.
  */
 public class RuleEngineTest {
 
@@ -53,15 +53,79 @@ public class RuleEngineTest {
         assertTrue(v.isMlEligible());
     }
 
-    // TODO remoteOpenWithValidCommandIsNotForcedOpen   (case 2: open_source REMOTE + commandValid -> STAFF_OPEN, no alert, not for the model)
-    // TODO remoteOpenWithoutCommandIsSpoof             (case 2: REMOTE with an unknown command id -> SUSPECTED_SPOOF)
-    // TODO lostCardIsFlagged                           (case 3: card status LOST -> LOST_CARD_USED)
-    // TODO impossibleWeightIsSensorFaultNotForcedOpen  (case 5: weight -5000 -> SENSOR_FAULT, not for the model)
-    // TODO expiredCalibrationIsSensorFault             (case 5)
-    // TODO deviceClockAheadIsSensorFault               (case 5: setUploadDelaySec(-3600))
-    // TODO doorOpenedWithoutValidCardIsForcedOpen      (rfid false, door open)
-    // TODO cardOfAnotherUserIsWrongUser                (card owner is not the booking owner)
-    // TODO weightChangedWithClosedDoorIsSpoof          (door 0 s, weight moved)
-    // TODO itemStillInsideIsItemLeft                   (weight 400 g)
-    // TODO stayLongerThanPlanIsOverdue                 (stay 200 min, 130 allowed)
+    @Test
+    public void remoteOpenWithValidCommandIsNotForcedOpen() {
+        LockerSession s = session(8, 0, false, 40);
+        s.setOpenSource("REMOTE");
+        s.setCommandId(15L);
+        SessionContext ctx = healthy();
+        ctx.setCommandValid(true);
+        Verdict v = engine.evaluate(s, ctx);
+        assertEquals(v.getLabel(), "STAFF_OPEN");
+        assertFalse(v.isAlert());
+        assertFalse(v.isMlEligible());
+    }
+
+    @Test
+    public void remoteOpenWithoutCommandIsSpoof() {
+        LockerSession s = session(8, 0, false, 40);
+        s.setOpenSource("REMOTE");
+        s.setCommandId(999999L);
+        assertEquals(engine.evaluate(s, healthy()).getLabel(), "SUSPECTED_SPOOF");
+    }
+
+    @Test
+    public void lostCardIsFlagged() {
+        SessionContext ctx = healthy();
+        ctx.setCardStatus("LOST");
+        assertEquals(engine.evaluate(session(6, 2, true, 30), ctx).getLabel(), "LOST_CARD_USED");
+    }
+
+    @Test
+    public void impossibleWeightIsSensorFaultNotForcedOpen() {
+        Verdict v = engine.evaluate(session(6, -5000, false, 30), healthy());
+        assertEquals(v.getLabel(), "SENSOR_FAULT");
+        assertFalse(v.isMlEligible());
+    }
+
+    @Test
+    public void expiredCalibrationIsSensorFault() {
+        SessionContext ctx = healthy();
+        ctx.setCalibrationValid(false);
+        assertEquals(engine.evaluate(session(6, 2, true, 30), ctx).getLabel(), "SENSOR_FAULT");
+    }
+
+    @Test
+    public void deviceClockAheadIsSensorFault() {
+        SessionContext ctx = healthy();
+        ctx.setUploadDelaySec(-3600);
+        assertEquals(engine.evaluate(session(6, 2, true, 30), ctx).getLabel(), "SENSOR_FAULT");
+    }
+
+    @Test
+    public void doorOpenedWithoutValidCardIsForcedOpen() {
+        assertEquals(engine.evaluate(session(6, 2, false, 40), healthy()).getLabel(), "FORCED_OPEN");
+    }
+
+    @Test
+    public void cardOfAnotherUserIsWrongUser() {
+        SessionContext ctx = healthy();
+        ctx.setCardOwnerId(9);
+        assertEquals(engine.evaluate(session(6, 2, true, 40), ctx).getLabel(), "WRONG_USER");
+    }
+
+    @Test
+    public void weightChangedWithClosedDoorIsSpoof() {
+        assertEquals(engine.evaluate(session(0, -150, true, 40), healthy()).getLabel(), "SUSPECTED_SPOOF");
+    }
+
+    @Test
+    public void itemStillInsideIsItemLeft() {
+        assertEquals(engine.evaluate(session(6, 400, true, 40), healthy()).getLabel(), "ITEM_LEFT");
+    }
+
+    @Test
+    public void stayLongerThanPlanIsOverdue() {
+        assertEquals(engine.evaluate(session(6, 2, true, 200), healthy()).getLabel(), "OVERDUE");
+    }
 }

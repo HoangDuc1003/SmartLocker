@@ -18,6 +18,18 @@ public class LockerMapApi extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
         // the role decides how much the JSON tells; the filter has already checked MAP:READ
-        res.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "TODO LockerMapApi.doGet");
+        User me = Web.currentUser(req);
+        @SuppressWarnings("unchecked")
+        Set<String> keys = (Set<String>) req.getAttribute("perms");   // put there by SecurityFilter
+        boolean staff = keys != null && keys.contains("ALERT:READ");  // staff may see names, alerts and tickets
+        try {
+            String json = new LockerMapDao().load(Web.trimmed(req, "area"), me.getUserId(), staff).toString();
+            res.setContentType("application/json;charset=UTF-8");
+            res.setHeader("Cache-Control", "no-store");
+            res.getWriter().write(json);
+        } catch (SQLException e) {
+            log("Locker map failed", e);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
     }
 }

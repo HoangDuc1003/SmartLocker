@@ -11,31 +11,50 @@ public class Web {
 
     /** The request parameter, trimmed. An absent parameter gives an empty string, never null. */
     public static String trimmed(HttpServletRequest req, String name) {
-        throw Todo.of("Web.trimmed");
+        String value = req.getParameter(name);
+        return value == null ? "" : value.trim();
     }
 
     /** The parameter as an int, or the default when it is absent or not a number. */
     public static int intParam(HttpServletRequest req, String name, int defaultValue) {
-        throw Todo.of("Web.intParam");
+        try {
+            return Integer.parseInt(trimmed(req, name));
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
     }
 
-    /** The parameter as an Integer, or null when it is absent or not a number (used by filters). */
     public static Integer optionalInt(HttpServletRequest req, String name) {
-        throw Todo.of("Web.optionalInt");
+        try {
+            return Integer.valueOf(trimmed(req, name));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** The parameter as a long, or the default when it is absent or not a number. */
+    public static long longParam(HttpServletRequest req, String name, long defaultValue) {
+        try {
+            return Long.parseLong(trimmed(req, name));
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
     }
 
     /** The signed-in user, or null. */
     public static User currentUser(HttpServletRequest req) {
-        throw Todo.of("Web.currentUser");
+        HttpSession session = req.getSession(false);
+        return session == null ? null : (User) session.getAttribute(LOGIN_USER);
     }
 
     /** One message for the next page; common/nav.jspf shows it once and removes it. */
     public static void flash(HttpSession session, String message, boolean bad) {
-        throw Todo.of("Web.flash");
+        session.setAttribute("flash", message);
+        session.setAttribute("flashBad", bad);
     }
 
     /** Number of pages for a total, at least 1. */
     public static int pages(int total, int pageSize) {
-        throw Todo.of("Web.pages");
+        return Math.max(1, (total + pageSize - 1) / pageSize);
     }
 }

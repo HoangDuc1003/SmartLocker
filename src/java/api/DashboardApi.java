@@ -17,6 +17,15 @@ public class DashboardApi extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
         // a JSON array of {time, a, b}, a = door open seconds, b = weight change in grams
-        res.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "TODO DashboardApi.doGet");
+        int deviceId = Web.intParam(req, "device", 1);
+        try {
+            String json = new Gson().toJson(new DashboardDao().recentSessions(deviceId, 50));
+            res.setContentType("application/json;charset=UTF-8");
+            res.setHeader("Cache-Control", "no-store");
+            res.getWriter().write(json);
+        } catch (SQLException e) {
+            log("Dashboard data failed", e);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
     }
 }

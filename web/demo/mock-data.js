@@ -74,7 +74,8 @@
     return {
       id: i + 1, username: r[0], fullName: r[1], role: r[2], area: r[3], locked: !!r[4],
       email: r[0] + '@smartlocker.edu.vn',
-      phone: i % 3 === 0 ? '' : '09' + String(10000000 + i * 1234567).slice(0, 8)
+      phone: i % 3 === 0 ? '' : '09' + String(10000000 + i * 1234567).slice(0, 8),
+      balance: 0
     };
   });
 

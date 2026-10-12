@@ -3,11 +3,17 @@
      <c:set var="activeNav" value="slots"/>.
      "perms" is the set of "RESOURCE:ACTION" strings that SecurityFilter puts in the request, so the menu always
      shows what the signed-in user may open. Hiding a link is a convenience: the filter is what really blocks. --%>
+<%@ page pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <c:set var="me" value="${sessionScope.LOGIN_USER}"/>
 <div class="topbar">
     <div class="brand">Smart Locker <span class="sem">FALL2026</span></div>
     <div class="who">
+        <span class="badge" title="Số dư tài khoản" style="background:#e8f5e9; color:#2e7d32; padding:3px 8px; border-radius:4px; font-weight:600; margin-right:8px; border:1px solid #c8e6c9;">
+            &#128176; <fmt:formatNumber value="${me.balance}" type="number" groupingUsed="true"/> VND
+        </span>
         <c:out value="${me.fullName}"/>
         <span class="tag"><c:out value="${me.roleName}"/></span>
         <a class="out" href="${ctx}/LogoutController">Logout</a>
@@ -21,11 +27,13 @@
     </c:if>
     <c:if test="${perms.contains('BOOKING:READ')}"><a href="${ctx}/BookingController" class="${activeNav == 'bookings' ? 'on' : ''}">My bookings</a></c:if>
     <c:if test="${perms.contains('MYCARD:READ')}"><a href="${ctx}/MyCardController" class="${activeNav == 'mycards' ? 'on' : ''}">My cards</a></c:if>
+    <c:if test="${perms.contains('TOPUP:READ')}"><a href="${ctx}/TopupController" class="${activeNav == 'topup' ? 'on' : ''}">N&#7841;p th&#7867;</a></c:if>
     <c:if test="${perms.contains('USER:READ')}"><a href="${ctx}/UserController" class="${activeNav == 'users' ? 'on' : ''}">Users</a></c:if>
     <c:if test="${perms.contains('ROLE:READ')}"><a href="${ctx}/RoleController" class="${activeNav == 'roles' ? 'on' : ''}">Roles</a></c:if>
     <c:if test="${perms.contains('AREA:READ') or perms.contains('LOCKERBANK:READ') or perms.contains('LOCKERSLOT:READ')
                   or perms.contains('STORAGEPLAN:READ') or perms.contains('USERCARD:READ') or perms.contains('DEPOSIT:READ')
-                  or perms.contains('COMMAND:READ') or perms.contains('CALIBRATION:READ') or perms.contains('MAINTENANCE:READ')}">
+                  or perms.contains('COMMAND:READ') or perms.contains('CALIBRATION:READ') or perms.contains('MAINTENANCE:READ')
+                  or perms.contains('TOPUP:WRITE')}">
         <details class="menu-more">
             <summary>Manage</summary>
             <div class="menu-more__list">
@@ -38,6 +46,7 @@
                 <c:if test="${perms.contains('COMMAND:READ')}"><a href="${ctx}/RemoteCommandController">Remote commands</a></c:if>
                 <c:if test="${perms.contains('CALIBRATION:READ')}"><a href="${ctx}/CalibrationController">Calibration</a></c:if>
                 <c:if test="${perms.contains('MAINTENANCE:READ')}"><a href="${ctx}/MaintenanceController">Maintenance</a></c:if>
+                <c:if test="${perms.contains('TOPUP:WRITE')}"><a href="${ctx}/TopupController">Duy&#7875;t n&#7841;p th&#7867;</a></c:if>
             </div>
         </details>
     </c:if>

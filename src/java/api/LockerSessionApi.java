@@ -30,11 +30,80 @@ import service.AlertService;
 @WebServlet(name = "LockerSessionApi", urlPatterns = {"/api/locker/batch"})
 public class LockerSessionApi extends HttpServlet {
 
-    // TODO helpers (fields, constants, private methods) used by the demos in the guide: JSON readers: a boolean may arrive as true or as 1.0, and one bad session must not drop the batch
+    /** getAsBoolean() turns the number 1.0 into FALSE, so accept both forms. */
+    private static boolean readBool(JsonObject json, String key) {
+        JsonPrimitive p = json.getAsJsonPrimitive(key);
+        return p.isBoolean() ? p.getAsBoolean() : p.getAsDouble() != 0;
+    }
+
+    private static String readString(JsonObject json, String key) {
+        return json.has(key) && !json.get(key).isJsonNull() ? json.get(key).getAsString() : null;
+    }
+
+    private static LockerSession parse(JsonObject json, int deviceId) {
+        LockerSession s = new LockerSession();
+        s.setDeviceId(deviceId);                                  // from the API key, never from the body
+        s.setDeviceSeq(json.get("seq").getAsInt());
+        s.setMeasuredAt(Timestamp.valueOf(json.get("measured_at").getAsString()));   // "yyyy-MM-dd HH:mm:ss", UTC
+        s.setDoorOpenSec(json.get("door_open_sec").getAsDouble());
+        s.setWeightDeltaG(json.get("weight_delta_g").getAsDouble());
+        s.setUnlockCount(json.get("unlock_count").getAsInt());
+        s.setRfidOk(readBool(json, "rfid_ok"));
+        s.setStayMin(json.get("stay_min").getAsDouble());
+        s.setSlotCode(readString(json, "slot_code"));
+        s.setCardUid(readString(json, "card_uid"));
+        String source = readString(json, "open_source");
+        s.setOpenSource(source == null ? "RFID" : source);
+        s.setCommandId(json.has("command_id") && !json.get("command_id").isJsonNull() ? json.get("command_id").getAsLong() : null);
+        return s;
+    }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException {
         // insert each session, evaluate it, then free the slot; count saved, duplicate and rejected
-        res.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "TODO LockerSessionApi.doPost");
+        int deviceId = (Integer) req.getAttribute("DEVICE_ID");
+        JsonArray sessions;
+        try {
+            JsonElement parsed = JsonParser.parseReader(req.getReader());
+            sessions = parsed.getAsJsonObject().getAsJsonArray("sessions");
+        } catch (RuntimeException bad) {
+            res.sendError(HttpServletResponse.SC_BAD_REQUEST, "Body must be {\"sessions\":[...]}");
+            return;
+        }
+        LockerSessionDao dao = new LockerSessionDao();
+        int saved = 0, duplicates = 0, rejected = 0;
+        try {
+            for (JsonElement element : sessions) {
+                LockerSession s;
+                try {
+                    s = parse(element.getAsJsonObject(), deviceId);
+                } catch (RuntimeException bad) {
+                    rejected++;                                   // a malformed session is skipped, the others go on
+                    continue;
+                }
+                long id = dao.insert(s);
+                if (id < 0) {
+                    duplicates++;
+                    continue;
+                }
+                s.setSessionId(id);
+                saved++;
+                try {
+                    new AlertService().evaluate(s);              // before complete(): the rules read the active booking
+                } catch (SQLException e) {
+                    log("Alert evaluation failed for session " + id, e);   // the session is stored; do not make the device resend it
+                }
+                if (s.getSlotCode() != null) {
+                    new DepositDao().complete(deviceId, s.getSlotCode());
+                }
+            }
+            new DeviceDao().heartbeat(deviceId);                  // a batch also proves the device is alive
+        } catch (SQLException e) {
+            log("Batch insert failed", e);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            return;
+        }
+        res.setContentType("application/json;charset=UTF-8");
+        res.getWriter().write("{\"saved\":" + saved + ",\"duplicates\":" + duplicates + ",\"rejected\":" + rejected + "}");
     }
 }

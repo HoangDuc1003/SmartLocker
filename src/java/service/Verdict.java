@@ -1,6 +1,5 @@
 package service;
 
-import util.Todo;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,24 +18,28 @@ public class Verdict {
 
     /** An alert with its first piece of evidence. Add more with with(). */
     public static Verdict alert(String label, String item, String value) {
-        throw Todo.of("Verdict.alert: new Verdict(label, true).with(item, value)");
+        // new Verdict(label, true).with(item, value)
+        return new Verdict(label, true).with(item, value);
     }
 
     public static Verdict normal() {
-        throw Todo.of("Verdict.normal");
+        return new Verdict("NORMAL", false);
     }
 
     /** A legitimate remote open by staff: no alert, and the model never sees this session. */
     public static Verdict staffOpen(long commandId) {
-        throw Todo.of("Verdict.staffOpen");
+        return new Verdict("STAFF_OPEN", false).with("command_id", String.valueOf(commandId)).noMl();
     }
 
     public Verdict with(String item, String value) {
-        throw Todo.of("Verdict.with: add one {item, value} pair and return this, so calls can be chained");
+        // add one {item, value} pair and return this, so calls can be chained
+        evidence.add(new String[]{item, value});
+        return this;
     }
 
     public Verdict noMl() {
-        throw Todo.of("Verdict.noMl");
+        mlEligible = false;
+        return this;
     }
 
     public String getLabel() { return label; }
