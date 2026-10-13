@@ -131,8 +131,8 @@
                     <form method="post" action="${ctx}/UserController" style="display:inline-flex; gap:3px; align-items:center; margin-right:4px;">
                         <input type="hidden" name="action" value="grantBalance">
                         <input type="hidden" name="id" value="${x.userId}">
-                        <input type="number" name="amount" value="50000" step="10000" min="1000" style="width:75px; padding:2px 4px; font-size:11px; border:1px solid #ccc; border-radius:3px;" title="Số tiền cần cấp">
-                        <button type="submit" class="btn" style="padding:2px 6px; font-size:11px; background:#2e7d32; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="return confirm('Cấp tiền cho user ${x.username}?');">+ Cấp tiền</button>
+                        <input type="number" name="amount" value="50000" step="10000" min="1000" style="width:75px; padding:2px 4px; font-size:11px; border:1px solid #ccc; border-radius:3px;" title="Amount to add">
+                        <button type="submit" class="btn" style="padding:2px 6px; font-size:11px; background:#2e7d32; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="return confirm('Add funds to ${x.username}?');">+ Add funds</button>
                     </form>
                 </c:if>
                 <c:set var="canAct" value="${LOGIN_USER.roleName == 'ADMIN' or x.roleRank > LOGIN_USER.roleRank}"/>

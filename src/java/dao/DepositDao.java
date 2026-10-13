@@ -17,7 +17,7 @@ import model.Deposit;
 public class DepositDao {
 
     private static final String SELECT = "SELECT d.deposit_id, d.user_id, u.username, d.slot_id, s.slot_code, b.bank_code, "
-            + "d.plan_id, p.plan_name, d.card_id, d.status, d.reserved_at, d.hold_until, "
+            + "d.plan_id, p.plan_name, d.card_id, d.paid_amount, d.status, d.reserved_at, d.hold_until, "
             + "d.started_at, d.due_at, d.ended_at, d.extend_count "
             + "FROM Deposit d "
             + "JOIN Users u ON u.user_id = d.user_id "
@@ -37,6 +37,7 @@ public class DepositDao {
         d.setPlanName(rs.getString("plan_name"));
         int cardId = rs.getInt("card_id");
         d.setCardId(rs.wasNull() ? null : cardId);
+        d.setPaidAmount(rs.getLong("paid_amount"));
         d.setStatus(rs.getString("status"));
         d.setReservedAt(rs.getTimestamp("reserved_at"));
         d.setHoldUntil(rs.getTimestamp("hold_until"));

@@ -46,7 +46,9 @@
     source: root.getAttribute('data-source') || 'api',
     api: root.getAttribute('data-api') || 'api/locker-map',
     role: (root.getAttribute('data-role') || 'END_USER').toUpperCase(),
+    balance: Number(root.getAttribute('data-balance')) || 0,
     bookingUrl: root.getAttribute('data-booking-url') || 'BookingController',
+    topupUrl: root.getAttribute('data-topup-url') || 'TopupController',
     commandUrl: root.getAttribute('data-command-url') || 'RemoteCommandController',
     alertUrl: root.getAttribute('data-alert-url') || 'AlertController',
     ticketUrl: root.getAttribute('data-ticket-url') || 'MaintenanceController'
@@ -284,6 +286,9 @@
     if (bank.device_status === 'MAINTENANCE') {
       return '<span class="device-tag device-tag--maintenance"><span class="dot"></span>Device maintenance</span>';
     }
+    if (bank.device_status === 'OFFLINE') {
+      return '<span class="device-tag device-tag--maintenance"><span class="dot"></span>Device offline</span>';
+    }
     return '<span class="device-tag device-tag--live"><span class="dot"></span>Live device</span>';
   }
 
@@ -368,9 +373,9 @@
     var mine = slot.mine;
     switch (slot.status) {
       case 'AVAILABLE':
-        return 'Free to use. Swipe your card at the locker, or reserve it here first.';
+        return 'Choose a storage plan and reserve this slot.';
       case 'RESERVED':
-        return mine ? 'Reserved for you. Swipe your card at the locker before the hold ends, or the slot is released.'
+        return mine ? 'Reserved for you. Check in before the hold ends, or the slot is released.'
                     : 'Someone has reserved this slot.';
       case 'OCCUPIED':
         return mine ? 'Your items are inside.' : 'In use.';
@@ -405,16 +410,44 @@
 
   function reserveForm(slot) {
     var plans = (state.data && state.data.plans) || [];
+    if (!plans.length) {
+      return '<p class="notice notice--warn">No storage plans are available.</p>';
+    }
     var options = plans.map(function (p) {
       var price = p.price ? ' · ' + Number(p.price).toLocaleString() + ' VND' : '';
-      return '<option value="' + esc(p.plan_id) + '">' + esc(p.plan_name) + price + '</option>';
+      return '<option value="' + esc(p.plan_id) + '" data-price="' + esc(p.price || 0) + '">' +
+        esc(p.plan_name) + price + '</option>';
     }).join('');
     return formStart(cfg.bookingUrl, 'reserve', slot) +
       '<h3>Reserve this slot</h3>' +
-      (plans.length ? '<label class="field"><span>Storage plan</span><select name="planId">' + options + '</select></label>' : '') +
-      '<button type="submit" class="btn btn--primary btn--block">' + icon('bookmark') + 'Reserve, hold ' + HOLD_MINUTES + ' min</button>' +
-      '<p class="hint">The slot is held for ' + HOLD_MINUTES + ' minutes. Three no-shows in 7 days pause online booking.</p>' +
+      (plans.length ? '<label class="field"><span>Storage plan</span><select name="planId" data-plan-select>' + options + '</select></label>' : '') +
+      '<p class="hint">Account balance: <strong data-account-balance></strong></p>' +
+      '<button type="submit" class="btn btn--primary btn--block" data-reserve-button>' +
+        icon('bookmark') + 'Reserve and pay</button>' +
+      '<p class="notice notice--warn" data-balance-warning hidden>Insufficient balance. ' +
+        '<a href="' + esc(cfg.topupUrl) + '">Add funds</a></p>' +
+      '<p class="hint">The slot is held for ' + HOLD_MINUTES +
+        ' minutes. Payments are refunded if you cancel before check-in or the hold expires. ' +
+        'Three no-shows in 7 days pause online booking.</p>' +
     '</form>';
+  }
+
+  function updateReserveForm() {
+    var form = el.panel.querySelector('[data-plan-select]');
+    if (!form) {
+      return;
+    }
+    var selected = form.options[form.selectedIndex];
+    var price = selected ? Number(selected.getAttribute('data-price')) || 0 : 0;
+    var balance = Math.max(0, Number(cfg.balance) || 0);
+    var insufficient = cfg.source === 'api' && price > balance;
+    el.panel.querySelector('[data-account-balance]').textContent =
+      balance.toLocaleString() + ' VND';
+    var button = el.panel.querySelector('[data-reserve-button]');
+    button.disabled = insufficient;
+    button.innerHTML = icon('bookmark') + (price ? 'Reserve and pay ' +
+      price.toLocaleString() + ' VND' : 'Reserve for free');
+    el.panel.querySelector('[data-balance-warning]').hidden = !insufficient;
   }
 
   function cancelForm(slot) {
@@ -481,7 +514,7 @@
     return parts.join('');
   }
 
-  // the storage prices, shown as soon as a slot is selected (no payment step involved)
+  // Prices are shown before the user pays from the account balance.
   function priceHtml() {
     var plans = (state.data && state.data.plans) || [];
     if (!plans.length) {
@@ -547,6 +580,7 @@
       return;
     }
     el.panel.innerHTML = panelHtml(found);
+    updateReserveForm();
     state.panelDirty = false;
   }
 
@@ -622,12 +656,16 @@
 
   function onData(data) {
     state.data = normalize(data);
+    if (data.balance !== undefined && data.balance !== null) {
+      cfg.balance = Number(data.balance) || 0;
+    }
     state.error = null;
     state.loadedAt = Date.now();
     if (data.area && data.area.area_code) {
       state.area = data.area.area_code;
     }
     renderAll();
+    updateReserveForm();
     if (state.slotId !== null && findSlot(state.slotId)) {
       openOverlay();
     }
@@ -744,6 +782,11 @@
     root.addEventListener('submit', onSubmit);
     el.panel.addEventListener('input', function () {
       state.panelDirty = true;
+    });
+    el.panel.addEventListener('change', function (e) {
+      if (e.target.hasAttribute('data-plan-select')) {
+        updateReserveForm();
+      }
     });
     el.backdrop.addEventListener('click', clearSelection);
     el.search.addEventListener('input', function () {

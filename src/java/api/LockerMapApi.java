@@ -23,7 +23,9 @@ public class LockerMapApi extends HttpServlet {
         Set<String> keys = (Set<String>) req.getAttribute("perms");   // put there by SecurityFilter
         boolean staff = keys != null && keys.contains("ALERT:READ");  // staff may see names, alerts and tickets
         try {
-            String json = new LockerMapDao().load(Web.trimmed(req, "area"), me.getUserId(), staff).toString();
+            com.google.gson.JsonObject map = new LockerMapDao().load(Web.trimmed(req, "area"), me.getUserId(), staff);
+            map.addProperty("balance", me.getBalance());
+            String json = map.toString();
             res.setContentType("application/json;charset=UTF-8");
             res.setHeader("Cache-Control", "no-store");
             res.getWriter().write(json);

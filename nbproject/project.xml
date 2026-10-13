@@ -19,9 +19,6 @@
                     <path-in-war>WEB-INF/lib</path-in-war>
                 </library>
                 <library dirs="200">
-                    <file>${file.reference.weka-stable-3.8.6.jar}</file>
-                </library>
-                <library dirs="200">
                     <file>${file.reference.weka.jar}</file>
                     <path-in-war>WEB-INF/lib</path-in-war>
                 </library>

@@ -43,10 +43,10 @@ public class BookingController extends HttpServlet {
         try {
             if ("reserve".equals(action)) {
                 dao.reserve(me.getUserId(), Web.intParam(req, "slotId", 0), Web.intParam(req, "planId", 0));
-                Web.flash(req.getSession(), "Slot reserved. Swipe your card at the locker within 15 minutes.", false);
+                Web.flash(req.getSession(), "Slot reserved. Check in within 15 minutes.", false);
             } else if ("cancel".equals(action)) {
                 dao.cancel(Web.intParam(req, "depositId", 0), me.getUserId());
-                Web.flash(req.getSession(), "Reservation cancelled.", false);
+                Web.flash(req.getSession(), "Reservation cancelled. Any payment has been refunded.", false);
             } else if ("extend".equals(action)) {
                 dao.extend(Web.intParam(req, "depositId", 0), Web.intParam(req, "minutes", 60), me.getUserId());
                 Web.flash(req.getSession(), "Your time was extended.", false);

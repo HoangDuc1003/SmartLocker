@@ -26,7 +26,6 @@
             <td class="c">
                 <c:choose>
                     <c:when test="${c.status == 'ACTIVE'}">
-                        <a class="btn btn--sm" href="${ctx}/TopupController?cardId=${c.cardId}" style="margin-right:6px; padding:2px 8px; font-size:12px; background:#2e7d32; color:#fff; text-decoration:none; border-radius:3px;">💳 Nạp thẻ</a>
                         <form method="post" action="${ctx}/MyCardController" style="display:inline;" onsubmit="return confirm('Report this card as lost? It will be immediately deactivated.');">
                             <input type="hidden" name="action" value="reportLost">
                             <input type="hidden" name="cardId" value="${c.cardId}">
@@ -45,7 +44,7 @@
     </div>
 
     <div style="margin-top:16px;">
-        <a class="btn btn--primary" href="${ctx}/TopupController">💳 Nạp tiền vào thẻ ngay (Quét VietQR)</a>
+        <a class="btn btn--primary" href="${ctx}/TopupController">Add funds to your account</a>
     </div>
 </div>
 <script src="${ctx}/js/app.js"></script>

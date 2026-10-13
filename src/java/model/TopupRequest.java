@@ -9,8 +9,6 @@ public class TopupRequest {
     private int userId;
     private String username;
     private String fullName;
-    private Integer cardId;
-    private String cardUid;
     private long amount;
     private String transferCode;
     private String qrUrl;
@@ -32,12 +30,6 @@ public class TopupRequest {
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
-
-    public Integer getCardId() { return cardId; }
-    public void setCardId(Integer cardId) { this.cardId = cardId; }
-
-    public String getCardUid() { return cardUid; }
-    public void setCardUid(String cardUid) { this.cardUid = cardUid; }
 
     public long getAmount() { return amount; }
     public void setAmount(long amount) { this.amount = amount; }

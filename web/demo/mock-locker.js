@@ -106,7 +106,6 @@
           name: def.name,
           live: !!def.live,
           device_status: def.live ? 'ACTIVE' : null,
-          last_seen_sec: def.live ? 3 : null,
           rows: def.rows,
           slots: []
         };
@@ -218,7 +217,6 @@
         return {
           bank_id: b.bank_id, bank_code: b.bank_code, name: b.name, live: b.live,
           device_status: b.device_status,
-          last_seen_sec: b.live && b.device_status === 'ACTIVE' ? 1 + Math.floor(Math.random() * 9) : b.last_seen_sec,
           rows: b.rows,
           slots: b.slots.map(function (s) { return view(s, role); })
         };
@@ -250,7 +248,7 @@
         }
         fillStatus(slot, 'RESERVED', ME);
         slot.hold_until = iso(Date.now() + 15 * MINUTE);
-        return { ok: true, message: 'Slot ' + slot.slot_code + ' reserved. Swipe your card at the locker within 15 minutes.' };
+        return { ok: true, message: 'Slot ' + slot.slot_code + ' reserved. Check in within 15 minutes.' };
       case 'cancel':
         if (slot.owner !== ME || slot.status !== 'RESERVED') {
           return { ok: false, message: 'Nothing to cancel' };
@@ -286,7 +284,6 @@
     if (off && !offlineBackup) {
       offlineBackup = bank.slots.map(function (s) { return s.status; });
       bank.device_status = 'OFFLINE';
-      bank.last_seen_sec = 95;
       bank.slots.forEach(function (s) { s.status = 'OFFLINE'; });
     } else if (!off && offlineBackup) {
       bank.slots.forEach(function (s, i) { s.status = offlineBackup[i]; });

@@ -167,7 +167,7 @@
   function renderNav(user, active) {
     var bal = (user.balance !== undefined ? user.balance : 0).toLocaleString() + ' VND';
     var html = '<div class="topbar"><div class="brand">Smart Locker <span class="sem">FALL2026</span></div>' +
-      '<div class="who"><span class="badge" title="Số dư tài khoản" style="background:#e8f5e9; color:#2e7d32; padding:3px 8px; border-radius:4px; font-weight:600; margin-right:8px; border:1px solid #c8e6c9;">💰 ' + bal + '</span>' +
+      '<div class="who"><span class="badge" title="Account balance" style="background:#e8f5e9; color:#2e7d32; padding:3px 8px; border-radius:4px; font-weight:600; margin-right:8px; border:1px solid #c8e6c9;">💰 ' + bal + '</span>' +
       esc(user.fullName) + ' <span class="tag">' + esc(user.role) + '</span>' +
       '<a class="out" href="index.html" id="demoLogout">Logout</a></div></div><div class="menu">';
     MENU.forEach(function (m) {

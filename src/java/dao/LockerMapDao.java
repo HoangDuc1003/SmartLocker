@@ -100,8 +100,7 @@ public class LockerMapDao {
             // the banks of the chosen area
             JsonArray banks = new JsonArray();
             Map<Integer, JsonArray> slotsOfBank = new HashMap<>();
-            String bankSql = "SELECT b.bank_id, b.bank_code, b.name, b.device_id, b.door_rows, v.status AS device_status, "
-                    + "DATEDIFF(SECOND, v.last_seen, SYSUTCDATETIME()) AS last_seen_sec "
+            String bankSql = "SELECT b.bank_id, b.bank_code, b.name, b.device_id, b.door_rows, v.status AS device_status "
                     + "FROM LockerBank b JOIN LockerArea a ON a.area_id = b.area_id LEFT JOIN Device v ON v.device_id = b.device_id "
                     + "WHERE a.area_code = ? AND b.status = N'ACTIVE' ORDER BY b.bank_code";
             try (PreparedStatement ps = conn.prepareStatement(bankSql)) {
@@ -115,12 +114,6 @@ public class LockerMapDao {
                         b.addProperty("live", true);
                         String devStatus = rs.getString("device_status");
                         put(b, "device_status", devStatus != null ? devStatus : "ACTIVE");
-                        int seen = rs.getInt("last_seen_sec");
-                        if (rs.wasNull()) {
-                            b.add("last_seen_sec", com.google.gson.JsonNull.INSTANCE);
-                        } else {
-                            b.addProperty("last_seen_sec", seen);
-                        }
                         b.addProperty("rows", rs.getInt("door_rows"));
                         JsonArray slots = new JsonArray();
                         b.add("slots", slots);

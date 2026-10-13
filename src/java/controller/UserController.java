@@ -160,6 +160,10 @@ public class UserController extends HttpServlet {
         dao.AuditDao auditDao = new dao.AuditDao();
         try {
             if ("grantBalance".equals(action)) {
+                if (!"ADMIN".equals(me.getRoleName())) {
+                    res.sendError(HttpServletResponse.SC_FORBIDDEN, "Only administrators can add funds directly.");
+                    return;
+                }
                 User target = dao.findById(id);
                 long amount = Web.longParam(req, "amount", 0);
                 if (target == null) {
@@ -169,7 +173,9 @@ public class UserController extends HttpServlet {
                 } else {
                     dao.addBalance(id, amount);
                     auditDao.append(me.getUserId(), "GRANT_MONEY", "USER", id, "Granted " + amount + " VND to " + target.getUsername());
-                    Web.flash(req.getSession(), "Cấp thành công " + String.format("%,d", amount) + " VND cho " + target.getUsername() + ". Số dư mới: " + String.format("%,d", target.getBalance() + amount) + " VND", false);
+                    Web.flash(req.getSession(), "Added " + String.format("%,d", amount) + " VND to "
+                            + target.getUsername() + ". New balance: "
+                            + String.format("%,d", target.getBalance() + amount) + " VND.", false);
                 }
                 res.sendRedirect("UserController");
                 return;

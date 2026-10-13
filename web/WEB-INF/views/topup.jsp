@@ -3,11 +3,11 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <c:set var="activeNav" value="topup"/>
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Nạp tiền vào thẻ - Smart Locker</title>
+    <title>Add funds - Smart Locker</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
     <style>
         .topup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; }
@@ -30,22 +30,22 @@
 <%@ include file="common/nav.jspf" %>
 
 <div class="wrap">
-    <h2>Nạp tiền vào thẻ Smart Locker</h2>
-    <p class="sub">Quét mã VietQR để chuyển khoản. Admin sẽ xác nhận và thêm tiền vào thẻ/tài khoản của bạn ngay lập tức.</p>
+    <h2>Add funds to your account</h2>
+    <p class="sub">Scan the VietQR code to transfer funds. Your account balance updates after staff confirms the payment.</p>
 
     <c:if test="${isStaff}">
-        <%-- ==================== ADMIN / OPERATOR VIEW: DUYỆT NẠP TIỀN ==================== --%>
+        <%-- Staff review of account top-ups. --%>
         <div style="background: #eef6fc; border: 1px solid #bce; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
-            <h3 style="margin-top: 0; color: #004b87;">Danh sách yêu cầu nạp tiền (Admin / Quản lý)</h3>
+            <h3 style="margin-top: 0; color: #004b87;">Top-up requests</h3>
             <form class="filter" method="get" action="${ctx}/TopupController">
                 <select name="status">
-                    <option value="">-- Tất cả trạng thái --</option>
-                    <option value="PENDING" ${status == 'PENDING' ? 'selected' : ''}>Chờ duyệt (PENDING)</option>
-                    <option value="APPROVED" ${status == 'APPROVED' ? 'selected' : ''}>Đã duyệt (APPROVED)</option>
-                    <option value="REJECTED" ${status == 'REJECTED' ? 'selected' : ''}>Đã từ chối (REJECTED)</option>
+                    <option value="">All statuses</option>
+                    <option value="PENDING" ${status == 'PENDING' ? 'selected' : ''}>Pending</option>
+                    <option value="APPROVED" ${status == 'APPROVED' ? 'selected' : ''}>Approved</option>
+                    <option value="REJECTED" ${status == 'REJECTED' ? 'selected' : ''}>Rejected</option>
                 </select>
-                <button type="submit">Lọc</button>
-                <a class="btn ghost" href="${ctx}/TopupController">Xóa lọc</a>
+                <button type="submit">Filter</button>
+                <a class="btn ghost" href="${ctx}/TopupController">Clear filter</a>
             </form>
 
             <div class="tablewrap" style="background:#fff; border-radius:6px;">
@@ -53,13 +53,12 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Khách hàng</th>
-                            <th>Thẻ RFID</th>
-                            <th class="r">Số tiền</th>
-                            <th>Mã chuyển khoản</th>
-                            <th>Thời gian</th>
-                            <th class="c">Trạng thái</th>
-                            <th>Thao tác Admin</th>
+                            <th>User</th>
+                            <th class="r">Amount</th>
+                            <th>Transfer code</th>
+                            <th>Created</th>
+                            <th class="c">Status</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -67,7 +66,6 @@
                             <tr>
                                 <td>${req.requestId}</td>
                                 <td><b><c:out value="${req.username}"/></b> <span class="muted">(<c:out value="${req.fullName}"/>)</span></td>
-                                <td><c:out value="${req.cardUid != null ? req.cardUid : '-'}"/></td>
                                 <td class="r" style="font-weight:bold; color:#2e7d32;">
                                     <fmt:formatNumber value="${req.amount}" type="number" groupingUsed="true"/> VND
                                 </td>
@@ -76,37 +74,37 @@
                                 <td class="c">
                                     <c:choose>
                                         <c:when test="${req.status == 'PENDING'}">
-                                            <span class="status-badge status-pending">⏳ Chờ duyệt</span>
+                                            <span class="status-badge status-pending">Pending</span>
                                         </c:when>
                                         <c:when test="${req.status == 'APPROVED'}">
-                                            <span class="status-badge status-approved">✓ Đã nạp</span>
+                                            <span class="status-badge status-approved">Approved</span>
                                         </c:when>
                                         <c:otherwise>
-                                            <span class="status-badge status-rejected">✗ Đã từ chối</span>
+                                            <span class="status-badge status-rejected">Rejected</span>
                                         </c:otherwise>
                                     </c:choose>
                                 </td>
                                 <td class="ops">
                                     <c:if test="${req.status == 'PENDING'}">
-                                        <form method="post" action="${ctx}/TopupController" style="display:inline;" onsubmit="return confirm('Xác nhận đã nhận tiền và thêm <fmt:formatNumber value="${req.amount}"/> VND vào tài khoản ${req.username}?');">
+                                        <form method="post" action="${ctx}/TopupController" style="display:inline;" onsubmit="return confirm('Confirm payment and add funds to this account?');">
                                             <input type="hidden" name="action" value="approve">
                                             <input type="hidden" name="id" value="${req.requestId}">
-                                            <button type="submit" class="btn" style="background:#2e7d32; color:#fff; padding:4px 8px; font-size:12px; border:none; cursor:pointer;">✓ Xác nhận &amp; Thêm tiền</button>
+                                            <button type="submit" class="btn" style="background:#2e7d32; color:#fff; padding:4px 8px; font-size:12px; border:none; cursor:pointer;">Approve and add funds</button>
                                         </form>
-                                        <form method="post" action="${ctx}/TopupController" style="display:inline;" onsubmit="return confirm('Từ chối yêu cầu nạp tiền này?');">
+                                        <form method="post" action="${ctx}/TopupController" style="display:inline;" onsubmit="return confirm('Reject this top-up request?');">
                                             <input type="hidden" name="action" value="reject">
                                             <input type="hidden" name="id" value="${req.requestId}">
-                                            <button type="submit" class="btn btn--danger" style="padding:4px 8px; font-size:12px;">Từ chối</button>
+                                            <button type="submit" class="btn btn--danger" style="padding:4px 8px; font-size:12px;">Reject</button>
                                         </form>
                                     </c:if>
                                     <c:if test="${req.status == 'APPROVED'}">
-                                        <span class="muted" style="font-size:11px;">Duyệt bởi <c:out value="${req.approvedByName}"/></span>
+                                        <span class="muted" style="font-size:11px;">Approved by <c:out value="${req.approvedByName}"/></span>
                                     </c:if>
                                 </td>
                             </tr>
                         </c:forEach>
                         <c:if test="${empty allRequests}">
-                            <tr><td colspan="8" class="c">Chưa có yêu cầu nạp tiền nào</td></tr>
+                            <tr><td colspan="7" class="c">No top-up requests.</td></tr>
                         </c:if>
                     </tbody>
                 </table>
@@ -114,24 +112,14 @@
         </div>
     </c:if>
 
-    <%-- ==================== KHÁCH HÀNG VIEW: FORM NẠP & MÃ QR ==================== --%>
+    <%-- Account top-up form and VietQR payment details. --%>
     <div class="topup-grid">
-        <%-- Cột trái: Form tạo yêu cầu nạp tiền --%>
         <div class="box" style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:20px;">
-            <h3 style="margin-top:0;">Tạo yêu cầu nạp tiền</h3>
+            <h3 style="margin-top:0;">Create a top-up request</h3>
             <form method="post" action="${ctx}/TopupController" id="topupForm">
                 <input type="hidden" name="action" value="create">
 
-                <c:if test="${not empty cards}">
-                    <label for="cardId"><b>Chọn thẻ RFID cần nạp:</b></label>
-                    <select id="cardId" name="cardId" style="width:100%; margin-bottom:16px; padding:8px;">
-                        <c:forEach var="c" items="${cards}">
-                            <option value="${c.cardId}">Thẻ UID: ${c.cardUid} (${c.status})</option>
-                        </c:forEach>
-                    </select>
-                </c:if>
-
-                <label><b>Chọn số tiền nạp nhanh:</b></label>
+                <label><b>Choose an amount:</b></label>
                 <div class="preset-amounts">
                     <button type="button" class="preset-btn" onclick="setAmount(20000)">20,000 VND</button>
                     <button type="button" class="preset-btn" onclick="setAmount(50000)">50,000 VND</button>
@@ -139,48 +127,47 @@
                     <button type="button" class="preset-btn" onclick="setAmount(200000)">200,000 VND</button>
                 </div>
 
-                <label for="amount"><b>Hoặc nhập số tiền (VND) *:</b></label>
+                <label for="amount"><b>Or enter an amount (VND):</b></label>
                 <input type="number" id="amount" name="amount" value="50000" min="1000" step="1000" required style="width:100%; margin-bottom:16px; padding:8px; font-size:16px; font-weight:bold;">
 
                 <button type="submit" class="btn btn--primary btn--block" style="font-size:15px; padding:10px;">
-                    💳 Tạo mã VietQR nạp tiền
+                    Generate VietQR code
                 </button>
             </form>
         </div>
 
-        <%-- Cột phải: Mã QR VietQR thanh toán --%>
         <div>
             <c:choose>
                 <c:when test="${not empty currentQr}">
                     <div class="qr-card">
-                        <h3 style="margin-top:0; color:#004b87;">Quét mã VietQR để thanh toán</h3>
-                        <p style="font-size:13px; color:#666; margin-bottom:8px;">Mở ứng dụng Ngân hàng (MB, Vietcombank, Momo, v.v.) và quét mã QR:</p>
+                        <h3 style="margin-top:0; color:#004b87;">Scan to pay</h3>
+                        <p style="font-size:13px; color:#666; margin-bottom:8px;">Open your banking app and scan this VietQR code:</p>
 
-                        <img class="qr-img" src="${currentQr.qrUrl}" alt="VietQR Thanh Toán">
+                        <img class="qr-img" src="${currentQr.qrUrl}" alt="VietQR payment code">
 
                         <div class="bank-info">
                             <dl style="margin:0;">
-                                <dt>Ngân hàng:</dt>
-                                <dd>MBBank (Ngân hàng Quân Đội)</dd>
-                                <dt>Số tài khoản:</dt>
-                                <dd><code>0981025559</code></dd>
-                                <dt>Chủ tài khoản:</dt>
-                                <dd>MB BANK</dd>
-                                <dt>Số tiền:</dt>
+                                <dt>Bank:</dt>
+                                <dd><c:out value="${bankName}"/></dd>
+                                <dt>Account number:</dt>
+                                <dd><code><c:out value="${accountNumber}"/></code></dd>
+                                <dt>Account name:</dt>
+                                <dd><c:out value="${accountName}"/></dd>
+                                <dt>Amount:</dt>
                                 <dd><strong style="color:#2e7d32; font-size:16px;"><fmt:formatNumber value="${currentQr.amount}" groupingUsed="true"/> VND</strong></dd>
-                                <dt>Nội dung chuyển khoản (bắt buộc):</dt>
-                                <dd><code style="background:#fff3e0; color:#d32f2f; font-weight:bold; font-size:14px; padding:2px 6px; border-radius:4px;">${currentQr.transferCode}</code></dd>
-                                <dt>Trạng thái yêu cầu:</dt>
+                                <dt>Transfer note (required):</dt>
+                                <dd><code style="background:#fff3e0; color:#d32f2f; font-weight:bold; font-size:14px; padding:2px 6px; border-radius:4px;"><c:out value="${currentQr.transferCode}"/></code></dd>
+                                <dt>Request status:</dt>
                                 <dd>
                                     <c:choose>
                                         <c:when test="${currentQr.status == 'PENDING'}">
-                                            <span class="status-badge status-pending">⏳ Chờ Admin xác nhận và thêm tiền</span>
+                                            <span class="status-badge status-pending">Waiting for staff confirmation</span>
                                         </c:when>
                                         <c:when test="${currentQr.status == 'APPROVED'}">
-                                            <span class="status-badge status-approved">✓ Đã thêm tiền thành công vào thẻ!</span>
+                                            <span class="status-badge status-approved">Funds added to your account</span>
                                         </c:when>
                                         <c:otherwise>
-                                            <span class="status-badge status-rejected">✗ Đã từ chối (${currentQr.note})</span>
+                                            <span class="status-badge status-rejected">Rejected: <c:out value="${currentQr.note}"/></span>
                                         </c:otherwise>
                                     </c:choose>
                                 </dd>
@@ -190,33 +177,31 @@
                 </c:when>
                 <c:otherwise>
                     <div class="qr-card" style="padding:40px 20px; color:#888;">
-                        <p style="font-size:16px;">Vui lòng chọn số tiền và bấm <b>"Tạo mã VietQR nạp tiền"</b> ở bên trái để hiển thị mã QR.</p>
+                        <p style="font-size:16px;">Choose an amount and select <b>Generate VietQR code</b> to see payment details.</p>
                     </div>
                 </c:otherwise>
             </c:choose>
         </div>
     </div>
 
-    <%-- ==================== LỊCH SỬ NẠP CỦA KHÁCH ==================== --%>
-    <h3 style="margin-top:32px;">Lịch sử nạp tiền của bạn</h3>
+    <%-- The user's top-up history. --%>
+    <h3 style="margin-top:32px;">Your top-up history</h3>
     <div class="tablewrap" style="background:#fff; border-radius:6px;">
         <table class="grid">
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Thẻ RFID</th>
-                    <th class="r">Số tiền</th>
-                    <th>Nội dung CK</th>
-                    <th>Thời gian</th>
-                    <th class="c">Trạng thái</th>
-                    <th>Xem lại QR</th>
+                    <th class="r">Amount</th>
+                    <th>Transfer code</th>
+                    <th>Created</th>
+                    <th class="c">Status</th>
+                    <th>QR code</th>
                 </tr>
             </thead>
             <tbody>
                 <c:forEach var="req" items="${myRequests}">
                     <tr>
                         <td>${req.requestId}</td>
-                        <td><c:out value="${req.cardUid != null ? req.cardUid : '-'}"/></td>
                         <td class="r" style="font-weight:bold; color:#2e7d32;">
                             <fmt:formatNumber value="${req.amount}" type="number" groupingUsed="true"/> VND
                         </td>
@@ -225,23 +210,23 @@
                         <td class="c">
                             <c:choose>
                                 <c:when test="${req.status == 'PENDING'}">
-                                    <span class="status-badge status-pending">⏳ Chờ duyệt</span>
+                                    <span class="status-badge status-pending">Pending</span>
                                 </c:when>
                                 <c:when test="${req.status == 'APPROVED'}">
-                                    <span class="status-badge status-approved">✓ Đã nạp</span>
+                                    <span class="status-badge status-approved">Approved</span>
                                 </c:when>
                                 <c:otherwise>
-                                    <span class="status-badge status-rejected">✗ Từ chối</span>
+                                    <span class="status-badge status-rejected">Rejected</span>
                                 </c:otherwise>
                             </c:choose>
                         </td>
                         <td>
-                            <a class="btn ghost btn--sm" href="${ctx}/TopupController?id=${req.requestId}" style="padding:2px 8px; font-size:12px;">Xem mã QR</a>
+                            <a class="btn ghost btn--sm" href="${ctx}/TopupController?id=${req.requestId}" style="padding:2px 8px; font-size:12px;">View QR</a>
                         </td>
                     </tr>
                 </c:forEach>
                 <c:if test="${empty myRequests}">
-                    <tr><td colspan="7" class="c">Bạn chưa có yêu cầu nạp tiền nào</td></tr>
+                    <tr><td colspan="6" class="c">You have no top-up requests.</td></tr>
                 </c:if>
             </tbody>
         </table>

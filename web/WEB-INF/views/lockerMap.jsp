@@ -19,7 +19,9 @@
 <main id="lockerApp" data-source="api"
       data-api="${ctx}/api/locker-map"
       data-role="<c:out value='${me.roleName}'/>"
+      data-balance="${me.balance}"
       data-booking-url="${ctx}/BookingController"
+      data-topup-url="${ctx}/TopupController"
       data-command-url="${ctx}/RemoteCommandController"
       data-alert-url="${ctx}/AlertController"
       data-ticket-url="${ctx}/MaintenanceController">

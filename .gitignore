@@ -1,8 +1,7 @@
-@"
 build/
 dist/
 nbproject/private/
+test-output/
 *.class
 *.war
 *.log
-"@ | Set-Content -Path .gitignore -Encoding ascii

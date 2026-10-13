@@ -12,6 +12,7 @@ public class Deposit {
     private int planId;
     private String planName;   // joined
     private Integer cardId;
+    private long paidAmount;
     private String status;   // RESERVED, ACTIVE, COMPLETED, NO_SHOW or CANCELLED
     private java.sql.Timestamp reservedAt;
     private java.sql.Timestamp holdUntil;
@@ -38,6 +39,8 @@ public class Deposit {
     public void setPlanName(String planName) { this.planName = planName; }
     public Integer getCardId() { return cardId; }
     public void setCardId(Integer cardId) { this.cardId = cardId; }
+    public long getPaidAmount() { return paidAmount; }
+    public void setPaidAmount(long paidAmount) { this.paidAmount = paidAmount; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public java.sql.Timestamp getReservedAt() { return reservedAt; }

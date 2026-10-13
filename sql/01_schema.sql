@@ -5,7 +5,7 @@
 --   Part A  database
 --   Part B  the 14 shared tables of the assignment (copied from De-01, Workshop 1, step 2)
 --   Part C  the 4 tables of the topic, trigger and view of the assignment
---   Part D  our additions: areas, banks, cards, plans, deposits, remote commands
+--   Part D  our additions: areas, banks, account funds, cards, plans, deposits, remote commands
 --   Part E  seed data and the Audit_Append procedure
 -- ============================================================
 
@@ -200,7 +200,8 @@ CREATE UNIQUE INDEX UX_LockerBank_device ON LockerBank(device_id) WHERE device_i
 ALTER TABLE Users ADD
     email   NVARCHAR(150) NULL,
     phone   NVARCHAR(20)  NULL,
-    area_id INT NULL CONSTRAINT FK_Users_Area REFERENCES LockerArea(area_id);
+    area_id INT NULL CONSTRAINT FK_Users_Area REFERENCES LockerArea(area_id),
+    balance BIGINT NOT NULL CONSTRAINT DF_Users_balance DEFAULT 0;
 GO
 -- a column added by ALTER cannot be used in the same batch, hence the GO above
 CREATE UNIQUE INDEX UX_Users_email ON Users(email) WHERE email IS NOT NULL;
@@ -236,6 +237,20 @@ CREATE TABLE UserCard (
     issued_at DATETIME2 DEFAULT SYSUTCDATETIME(),
     lost_at   DATETIME2 NULL);
 
+-- Funds belong to the user account; an RFID card is not required.
+CREATE TABLE TopupRequest (
+    request_id    INT IDENTITY PRIMARY KEY,
+    user_id       INT NOT NULL REFERENCES Users,
+    amount        BIGINT NOT NULL CHECK (amount >= 1000),
+    transfer_code NVARCHAR(80) NOT NULL UNIQUE,
+    qr_url        NVARCHAR(1000) NOT NULL,
+    status        NVARCHAR(20) NOT NULL DEFAULT 'PENDING'
+                  CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED')),
+    created_at    DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    approved_at   DATETIME2 NULL,
+    approved_by   INT NULL REFERENCES Users,
+    note          NVARCHAR(400) NULL);
+
 CREATE TABLE StoragePlan (
     plan_id      INT IDENTITY PRIMARY KEY,
     plan_name    NVARCHAR(40) NOT NULL,
@@ -250,6 +265,7 @@ CREATE TABLE Deposit (
     slot_id      INT NOT NULL REFERENCES LockerSlot(locker_slot_id),
     plan_id      INT NOT NULL REFERENCES StoragePlan,
     card_id      INT NULL REFERENCES UserCard,
+    paid_amount  BIGINT NOT NULL DEFAULT 0,
     status       NVARCHAR(20) NOT NULL
                  CHECK (status IN ('RESERVED', 'ACTIVE', 'COMPLETED', 'NO_SHOW', 'CANCELLED')),
     reserved_at  DATETIME2 DEFAULT SYSUTCDATETIME(),
@@ -347,11 +363,11 @@ SELECT r.res, a.act
 FROM (VALUES (N'USER'), (N'ROLE'), (N'DEVICE'), (N'SENSOR_TYPE'), (N'CALIBRATION'), (N'PROFILE'),
              (N'LOCKERSESSION'), (N'LOCKERSLOT'), (N'ALERT'), (N'MAINTENANCE'), (N'AUDIT'),
              (N'MAP'), (N'AREA'), (N'LOCKERBANK'), (N'STORAGEPLAN'), (N'USERCARD'), (N'MYCARD'),
-             (N'DEPOSIT'), (N'BOOKING'), (N'COMMAND')) r(res)
+             (N'DEPOSIT'), (N'BOOKING'), (N'COMMAND'), (N'TOPUP')) r(res)
 CROSS JOIN (VALUES (N'READ'), (N'WRITE')) a(act);
 
 -- who may do what. R = READ only, RW = READ and WRITE, * = every resource.
--- Replace this table with the one in the assignment's "Quy dinh chung" file if it differs.
+-- Replace this table with the course-wide role rules if they differ.
 INSERT INTO RolePerm (role_id, perm_id)
 SELECT r.role_id, p.perm_id
 FROM (VALUES
@@ -365,6 +381,7 @@ FROM (VALUES
     (N'OPERATOR',   N'AREA',          N'RW'), (N'OPERATOR', N'LOCKERBANK',  N'RW'),
     (N'OPERATOR',   N'STORAGEPLAN',   N'RW'), (N'OPERATOR', N'USERCARD',    N'RW'),
     (N'OPERATOR',   N'DEPOSIT',       N'RW'), (N'OPERATOR', N'COMMAND',     N'RW'),
+    (N'OPERATOR',   N'TOPUP',         N'RW'),
     (N'TECHNICIAN', N'USER',          N'R'),  (N'TECHNICIAN', N'DEVICE',    N'RW'),
     (N'TECHNICIAN', N'SENSOR_TYPE',   N'RW'), (N'TECHNICIAN', N'CALIBRATION', N'RW'),
     (N'TECHNICIAN', N'PROFILE',       N'R'),  (N'TECHNICIAN', N'LOCKERSESSION', N'R'),
@@ -374,7 +391,7 @@ FROM (VALUES
     (N'TECHNICIAN', N'DEPOSIT',       N'R'),
     (N'AUDITOR',    N'*',             N'R'),
     (N'END_USER',   N'MAP',           N'R'),  (N'END_USER', N'BOOKING',     N'RW'),
-    (N'END_USER',   N'MYCARD',        N'RW')
+    (N'END_USER',   N'MYCARD',        N'RW'), (N'END_USER', N'TOPUP',       N'RW')
 ) g(role_name, resource, mode)
 JOIN Roles r ON r.role_name = g.role_name
 JOIN Permissions p ON (g.resource = N'*' OR p.resource = g.resource)

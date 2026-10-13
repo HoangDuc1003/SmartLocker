@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <jsp:useBean id="now" class="java.util.Date"/>
 <c:set var="activeNav" value="bookings"/>
 <!DOCTYPE html>
@@ -16,18 +17,29 @@
 <div class="wrap">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
         <h2 style="margin:0;">My bookings</h2>
-        <a class="btn btn--primary" href="${ctx}/TopupController">💳 Nạp tiền vào thẻ (VietQR)</a>
+        <a class="btn btn--primary" href="${ctx}/TopupController">Add funds</a>
     </div>
 
     <div class="tablewrap">
     <table class="grid">
-        <tr><th>Bank</th><th>Slot</th><th>Plan</th><th>Status</th><th>Reserved</th><th>Due</th><th>Actions</th></tr>
+        <tr><th>Bank</th><th>Slot</th><th>Plan</th><th>Payment</th><th>Status</th><th>Reserved</th><th>Due</th><th>Actions</th></tr>
         <c:forEach var="d" items="${items}">
         <c:set var="isOverdue" value="${d.status == 'ACTIVE' and not empty d.dueAt and d.dueAt.time lt now.time}"/>
         <tr class="${isOverdue ? 'locked' : ''}">
             <td><c:out value="${d.bankCode}"/></td>
             <td><c:out value="${d.slotCode}"/></td>
             <td><c:out value="${d.planName}"/></td>
+            <td>
+                <c:choose>
+                    <c:when test="${d.paidAmount == 0}">Free</c:when>
+                    <c:when test="${d.status == 'CANCELLED' or d.status == 'NO_SHOW'}">
+                        Refunded <fmt:formatNumber value="${d.paidAmount}" groupingUsed="true"/> VND
+                    </c:when>
+                    <c:otherwise>
+                        Paid <fmt:formatNumber value="${d.paidAmount}" groupingUsed="true"/> VND
+                    </c:otherwise>
+                </c:choose>
+            </td>
             <td class="c">
                 ${d.status}
                 <c:if test="${isOverdue}"><span class="badge danger" style="color:var(--danger, #e74c3c);font-weight:bold;"> (OVERDUE)</span></c:if>
@@ -71,7 +83,7 @@
             </td>
         </tr>
         </c:forEach>
-        <c:if test="${empty items}"><tr><td colspan="7" class="c">You have no booking records.</td></tr></c:if>
+        <c:if test="${empty items}"><tr><td colspan="8" class="c">You have no booking records.</td></tr></c:if>
     </table>
     </div>
 </div>
