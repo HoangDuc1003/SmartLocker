@@ -18,8 +18,8 @@
      draws the areas, the cabinets and the slot panel. The forms of the panel post to the urls below. --%>
 <main id="lockerApp" data-source="api"
       data-api="${ctx}/api/locker-map"
-      data-role="<c:out value='${me.roleName}'/>"
-      data-balance="${me.balance}"
+      data-role="<c:out value='${not empty me ? me.roleName : \"END_USER\"}'/>"
+      data-balance="${not empty me and not empty me.balance ? me.balance : 0}"
       data-booking-url="${ctx}/BookingController"
       data-topup-url="${ctx}/TopupController"
       data-command-url="${ctx}/RemoteCommandController"

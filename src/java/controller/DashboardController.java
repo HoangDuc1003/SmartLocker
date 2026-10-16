@@ -25,6 +25,8 @@ public class DashboardController extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         try {
             DashboardDao dashboardDao = new DashboardDao();
+            DashboardDao.KpiSnapshot kpis = dashboardDao.fetchKpis();
+            req.setAttribute("kpis", kpis);
             Map<String, Integer> counts = dashboardDao.lockerCounts();
             req.setAttribute("counts", counts);
 

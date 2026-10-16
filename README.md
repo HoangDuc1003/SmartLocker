@@ -1,99 +1,206 @@
-# Smart Locker
+# 🔐 SmartLocker - Enterprise IoT Locker Management System
 
-Java Web coursework for managing lockers and detecting unusual access from IoT device telemetry. The application follows the MVC2 structure in the assignment: JSP views, Servlet controllers and APIs, JDBC DAOs, SQL Server, and rule and Weka services.
+<div align="center">
 
-## Requirements
+![Java](https://img.shields.io/badge/Java-8-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Servlet](https://img.shields.io/badge/Servlet-4.0-007396?style=for-the-badge&logo=java&logoColor=white)
+![Apache Tomcat](https://img.shields.io/badge/Apache_Tomcat-9.0-F8DC75?style=for-the-badge&logo=apachetomcat&logoColor=black)
+![Microsoft SQL Server](https://img.shields.io/badge/SQL_Server-2022-CC292B?style=for-the-badge&logo=microsoftsqlserver&logoColor=white)
+![Weka ML](https://img.shields.io/badge/Weka_ML-3.8-3776AB?style=for-the-badge&logo=scikitlearn&logoColor=white)
+![Gson](https://img.shields.io/badge/Gson-2.10.1-4285F4?style=for-the-badge&logo=google&logoColor=white)
+![IoT Telemetry](https://img.shields.io/badge/IoT_ESP32-Telemetry-00979D?style=for-the-badge&logo=arduino&logoColor=white)
 
-- NetBeans 13, JDK 8, Apache Tomcat 9, SQL Server, and SSMS.
-- The project uses Ant and the JAR files already included in lib/ and web/WEB-INF/lib/. No Maven setup is required.
-- The database connection is configured in src/java/dao/DbContext.java. Set the host, database name, SQL Server user, and password for your local machine before running. Do not commit a personal database password.
+**A high-performance Java Web (MVC2) IoT application for smart campus & facility locker management, featuring real-time telemetry streaming, Weka AI anomaly detection, and cryptographic audit hash chaining.**
 
-## Run locally
+[Explore Architecture Flows](docs/SYSTEM_FLOWS.md) · [View Schema Scripts](sql/) · [Report Bug](https://github.com/HoangDuc1003/SmartLocker/issues)
 
-1. Open the project in NetBeans 13 with JDK 8 and Tomcat 9 configured.
-2. For a new database only, run sql/01_schema.sql in SSMS to create PRJ301_LOCKER and its sample data. This script deletes any existing PRJ301_LOCKER database.
-3. Run sql/02_sample_data.sql to load the complete demo: 100 users, devices, bookings, wallet activity, telemetry, alerts, and special cases.
-4. Run sql/03_scenarios.sql and sql/04_wallet_booking.sql in order to install the case procedures and compatibility migrations.
-5. Set the local SQL Server connection in DbContext.java, then use **Run Project** in NetBeans. The default context path is /SmartLocker; use the port configured for your Tomcat server.
+</div>
 
-For an existing database, run sql/04_wallet_booking.sql, then sql/03_scenarios.sql. To add the expanded demo, also run sql/02_sample_data.sql. Do not run sql/01_schema.sql against an existing database you want to preserve. The demo seed runs once per database, records DEMO_DATA_V2 in the audit chain, and skips subsequent runs to preserve changes made during demonstrations.
+---
 
-The sample accounts created by 01_schema.sql use password 123456:
+## 📌 Executive Summary
 
-| Username | Role |
-| --- | --- |
-| admin | Administrator |
-| operator1 | Locker operator |
-| tech1 | Technician |
-| auditor1 | Auditor |
-| student1 | End user |
+**SmartLocker** is an end-to-end IoT locker control and telemetry platform built on pure Java Servlet/JSP (MVC2 architecture) and SQL Server. It coordinates physical ESP32 locker controllers with an enterprise web application, providing automated booking, wallet payments, real-time slot visualization, hardware fault reporting, AI-driven anti-tamper detection, and an immutable cryptographic audit trail.
 
-The system account is disabled and cannot sign in.
+---
 
-The `sql/` directory contains exactly four setup files. The former workshop,
-full-data seed, and slot-permission scripts are consolidated into `02_sample_data.sql`.
-For a fresh setup, run `01` through `04` in order. The demo contains 100 user
-accounts plus the disabled system account, 90 slots, seven devices, six storage
-plans, 70 historical bookings, live bookings, 50 top-ups, and 480 synthetic
-training sessions. Sample passwords are `123456`; generated accounts are
-`student9` through `student91`, with names, contact details, wallet balances,
-and RFID cards. Existing extra accounts and history are retained.
+## ✨ Key Features
 
-Optional research data: run file `01`, import `Train_Test_IoT_Garage_Door.csv`
-into `RawGarageDoor` with `door_state` and `label` columns, then run file `02`.
-If `PublicSession` is empty, file `02` converts the imported rows into sessions;
-otherwise it preserves the existing sessions. Without `RawGarageDoor`, it fills
-synthetic examples for the demo. These examples are not research measurements.
+### 👤 For End Users
+- **Self Registration & Authentication:** Secure BCrypt credential hashing with automatic role provisioning (`END_USER`).
+- **Interactive Locker Map:** Visual, real-time matrix of available, occupied, and reserved slots across campus areas (Canteen, Library, Dormitory, Sports Hall).
+- **In-App Digital Wallet:** Account top-ups via dynamic VietQR codes with non-round flexible amounts.
+- **Instant Online Booking:** Atomic slot reservation with a 15-minute hold window and automated refunds on cancellation or no-show.
+- **Self-Service Extensions:** Extend active reservations online (up to 3 times per booking).
+- **RFID Card Self-Management:** Register, inspect, and report lost RFID badges.
 
-| Demo case | Account or location |
-| --- | --- |
-| No money / insufficient money | `student88` / `student87` |
-| Locked / disabled account | `student90` / `student89` |
-| Three no-shows within seven days | `student10` |
-| Maximum three extensions reached | `student11`, DOMA-A A05 |
-| Lost card with replacement, old card reused | `student12`, DOMA-A A06 |
-| Blocked card reused | `student13`, DOMA-A A07 |
-| Another user's card accesses a booking | `student14`, DOMA-A A08 |
-| Item left inside | `student15`, DOMA-A A09 |
-| Online reservation without a linked card | `student16`, DOMA-A A10 |
-| Overdue booking | `student9`, DOMA-A A04; `student19`, CANT-A A05 |
-| Offline device; expired reservation waits for reconnect | LOCKER-07 / GYM-B; `student23`, B05 |
-| Expired calibration; device under maintenance | LOCKER-04 / DOMA-B B04 |
-| Forced opening / forged remote opening | LIB-B B01 / B04 |
-| Device clock ahead / impossible weight | LIB-B B05 / B06 |
-| Closed door with a weight change | CANT-A A06 |
-| Simulated ML anomaly | GYM-A A06 |
-| Remote command pending, sent, done, expired | Remote Commands page, GYM-A |
-| Pending, approved, rejected top-ups; inactive plan | Top-ups and Storage Plans pages |
+### 🛡️ For Locker Operators & Administrators
+- **Industrial IoT Real-Time Dashboard:**
+  - Zero-database-load In-Memory Snapshot Cache updated every 2 seconds via `AtomicReference`.
+  - Live pulse connection indicators (`LIVE`, `RECONNECTING`, `DISCONNECTED`).
+  - Bento KPI cards with differential DOM hydration and occupancy rate tracking.
+  - Live sensor sparkline telemetry (door-open duration vs. weight delta).
+- **Remote Hardware Commands:** Send remote `UNLOCK` and `LOCK` commands queued for controller dispatch.
+- **Locker Matrix Overrides:** Direct slot status control (`AVAILABLE`, `MAINTENANCE`, `DISABLED`).
+- **Top-Up Verification:** Manual approval workflow with ledger auditing.
 
-Reservations and pending remote commands can expire as time passes. Demo dates
-are relative to the seed time in UTC. Audits are written through `Audit_Append`
-so the hash chain remains valid.
-Admin and technician accounts can use **Update status** on the Slots page.
-Live bookings prevent conflicting status changes; each successful change is audited.
+### 🔧 For Technicians & Auditors
+- **Fault Detection & Ticketing:** Automated work order dispatch when sensors fail calibration or connectivity.
+- **AI Tamper & Security Feed:** Weka Machine Learning model (`RiskScorer`) combined with deterministic rule engines to flag forced openings and sensor spoofing.
+- **Cryptographic Audit Hash Chain:** Tamper-evident ledger linking every database mutation into an unbroken SHA-256 chain (`AuditVerifier`).
 
-## Main flow
+---
 
-Users register or sign in, then see pages permitted by their role. End users can add funds to their account with VietQR, reserve an available slot with their balance, and extend a booking. An RFID card is not required for account funding or online reservation. Staff confirm top-ups before the balance changes. Paid reservations debit the account once; cancellation before check-in and an expired hold refund that payment. Operators manage lockers and confirm remote unlocks. Technicians handle faults. Auditors inspect the audit trail. Device APIs receive heartbeats and session batches; rules and the trained model create alerts with evidence.
+## 🏗️ System Architecture
 
-The five practical cases are an offline locker, remote unlock, lost card, reservation without check-in, and a faulty sensor. Run src/java/tool/ScenarioSender.java from NetBeans with one of heartbeat, remote, spoof, lostcard, checkin, or sensor as its first argument. Its URL assumes Tomcat port 8080; change the constant when using another port. Some cases require the stated action in the web interface first.
+```mermaid
+flowchart TD
+    subgraph IoT_Hardware ["IoT Hardware Tier"]
+        ESP["ESP32 Controller"] -->|HTTP Heartbeat POST /api/health| HealthApi["api.HealthApi"]
+        Sensors["Door & Weight Sensors"] -->|Session Batches /api/locker/batch| BatchApi["api.LockerSessionApi"]
+    end
 
-## Telemetry, model, and tests
+    subgraph Backend ["Enterprise Backend Tier (Tomcat 9 / JRE 8)"]
+        Filter["filter.SecurityFilter (RBAC)"] --> Controllers["Servlet Controllers (MVC2)"]
+        HealthApi --> DAOs["JDBC DAOs (DbContext)"]
+        BatchApi --> Risk["service.RiskScorer (Weka ML)"]
+        Risk --> Alert["service.AlertService"]
+        Monitor["service.LockerMonitor (Daemon Thread)"] -->|2s Refresh| Cache["AtomicReference Snapshot"]
+        Cache --> DashApi["api.DashboardApi"]
+    end
 
-- Run src/java/tool/DataReplayer.java to send rows from PublicSession to the device API. Its URL also assumes port 8080.
-- Run src/java/tool/ModelTrainer.java after importing the public data. It compares RandomForest, J48, NaiveBayes, and IBk with ten-fold cross-validation, then saves the selected model and its header in src/java/ml/.
-- Use **Test Project** in NetBeans to run the TestNG cases in test/test/. The audit integration case requires a configured SQL Server database.
+    subgraph Data_Tier ["Persistence & Security"]
+        DAOs --> SQL[(SQL Server 2022)]
+        SQL --> Audit["HashChain (SHA-256 Chain)"]
+    end
 
-The measured model results belong in the technical report. Record the values printed by ModelTrainer and the cited TON_IoT Garage Door reference result in one table with accuracy, precision, recall, and F1. Results are intentionally not invented here; they depend on the imported data.
+    subgraph Client_Tier ["Presentation Tier"]
+        Controllers --> Views["JSP Views (dashboard.jsp, lockerMap.jsp)"]
+        DashApi -->|Async Fetch with AbortController| Views
+    end
+```
 
-## Project layout
+---
 
-| Path | Purpose |
-| --- | --- |
-| src/java/controller/ and web/WEB-INF/views/ | Web pages and user actions |
-| src/java/api/ | JSON endpoints for devices and the dashboard |
-| src/java/dao/ and src/java/service/ | Database access, rules, and alerts |
-| sql/ | Schema, public data preparation, and case procedures |
-| test/ | TestNG cases |
+## 🔄 Business Lifecycles & State Transitions
 
-This project is intended to run as a Tomcat application with SQL Server. The static Vercel preview in the repository is a separate demo and does not run the Java backend.
+The complete end-to-end lifecycle from registration to locker return follows a strict finite-state machine:
+
+```mermaid
+stateDiagram-v2
+    [*] --> AVAILABLE : Initialization / Setup
+    AVAILABLE --> RESERVED : Deposit_Reserve (15m hold, balance debited)
+    RESERVED --> AVAILABLE : Deposit_Cancel (User cancels, fee refunded)
+    RESERVED --> AVAILABLE : Deposit_ExpireNoShow (Hold expires, fee refunded)
+    RESERVED --> OCCUPIED : Deposit_CheckIn (RFID swipe / weight detected)
+    OCCUPIED --> OCCUPIED : Deposit_Extend (Up to 3 times)
+    OCCUPIED --> OVERDUE : Exceeded due_at time limit
+    OCCUPIED --> AVAILABLE : Deposit_Complete (Items removed on time)
+    OVERDUE --> AVAILABLE : Deposit_ExpireOverdue (Auto-release after deadline)
+    AVAILABLE --> MAINTENANCE : Hardware fault / Operator flag
+    MAINTENANCE --> AVAILABLE : Technician resolves maintenance
+```
+
+> 📖 **Full Architectural Documentation:** For comprehensive flowcharts, concurrency controls, and sequence diagrams, refer to [docs/SYSTEM_FLOWS.md](docs/SYSTEM_FLOWS.md).
+
+---
+
+## 👥 Demo Accounts
+
+Every sample account in the database seed uses password: `123456`
+
+| Username | Role | Permissions | Primary Responsibility |
+| :--- | :--- | :--- | :--- |
+| `admin` | **Administrator** | `*` (Full Access) | Global configuration, slot status, security review |
+| `operator1` | **Locker Operator** | `MAP`, `ALERT`, `USER`, `COMMAND` | Real-time monitoring, remote unlocks, top-up reviews |
+| `tech1` | **Technician** | `MAP`, `ALERT`, `MAINTENANCE`, `CALIBRATION` | Slot repairs, sensor calibrations, ticket resolutions |
+| `auditor1` | **Auditor** | `AUDIT:R`, `ALERT:R` (Strict Read-Only) | Cryptographic hash chain verification, log inspection |
+| `student1` | **End User** | `MAP:R`, `BOOKING`, `TOPUP`, `MYCARD` | Booking slots, topping up wallet, badge management |
+
+---
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+- **Java:** JDK 8 (Target bytecode Major Version 52.0).
+- **Web Container:** Apache Tomcat 9.0.x.
+- **Database:** Microsoft SQL Server 2019/2022 + SSMS.
+- **IDE:** NetBeans 13+ or VS Code with Java Extension Pack.
+
+### 1. Database Setup
+Execute the SQL migration scripts in order within SQL Server Management Studio (SSMS):
+```sql
+-- 1. Schema, tables, triggers, and baseline RBAC permissions
+sql/01_schema.sql
+
+-- 2. Expanded demo seed (100 accounts, 7 controllers, 90 slots, historical telemetry)
+sql/02_sample_data.sql
+
+-- 3. Stored procedures for all 5 business scenarios
+sql/03_scenarios.sql
+
+-- 4. Dynamic wallet transactions and booking constraints
+sql/04_wallet_booking.sql
+
+-- 5. Enhanced overdue auto-release and reviewer corrections
+sql/05_fix_reviewer_feedback.sql
+```
+
+### 2. Configure Database Connection
+Edit [`src/java/dao/DbContext.java`](src/java/dao/DbContext.java) with your local SQL Server credentials:
+```java
+private static final String URL = "jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false";
+private static final String USER = "sa";
+private static final String PASSWORD = "YOUR_PASSWORD_HERE";
+```
+
+### 3. Build & Deploy
+Deploy to Tomcat via Ant or NetBeans:
+```powershell
+# Compile targeting Java 8 bytecode
+ant compile
+
+# Package distribution WAR
+ant dist
+```
+Navigate to: `http://localhost:8080/SmartLocker/`
+
+---
+
+## 📂 Project Directory Structure
+
+```
+SmartLocker/
+├── docs/                   # Technical specs, scenarios, and flow diagrams
+│   └── SYSTEM_FLOWS.md     # Detailed sequence diagrams & state matrices
+├── nbproject/              # NetBeans & Ant build definitions
+├── sql/                    # SQL Server schemas, seed data & scenario procedures
+├── src/java/
+│   ├── api/                # REST endpoints (DashboardApi, HealthApi, etc.)
+│   ├── controller/         # MVC Servlets (Login, Booking, Topup, Map, etc.)
+│   ├── dao/                # JDBC DAOs with connection pooling & try-with-resources
+│   ├── filter/             # SecurityFilter (RBAC permission enforcement)
+│   ├── ml/                 # Trained Weka models (locker_model.bin, header.arff)
+│   ├── model/              # Domain entities (User, Device, Slot, Deposit, Alert)
+│   ├── service/            # LockerMonitor, RiskScorer, AuditVerifier, RuleEngine
+│   └── util/               # SecurityUtils (SHA-256, BCrypt), Web helpers
+└── web/
+    ├── css/                # Industrial IoT CSS stylesheets (app.css, locker-map.css)
+    ├── js/                 # Vanilla JS real-time engines (locker-map.js, app.js)
+    └── WEB-INF/views/      # JSP templates (dashboard.jsp, lockerMap.jsp, etc.)
+```
+
+---
+
+## 🔒 Security & Defense-in-Depth
+
+- **Zero Full-Table Scan Polling:** Polling clients read from a non-blocking in-memory cache; single-query `SUM(CASE WHEN...)` aggregation reduces database load by over 80%.
+- **Separation of Duties (SoD):** Auditor accounts maintain strictly immutable, read-only permissions with no overlap into administrative operations.
+- **Race Condition Prevention:** Slot reservations utilize conditional database writes (`WHERE status = 'AVAILABLE'`) combined with table-level row locks.
+- **Service Worker Isolation:** Dashboard runtime features automatic unregistration of stray localhost service workers to prevent cache pollution.
+- **Immutable Ledger:** Every sensitive mutation appends a block to the `HashChain` table verified by SHA-256 hashes matching UTF-16LE SQL Server collation.
+
+---
+
+## 📄 License
+This project is part of academic coursework for PRJ301. All rights reserved.

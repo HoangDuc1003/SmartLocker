@@ -26,7 +26,10 @@ import util.Web;
  * and for everything else checks the signed-in user holds the permission of the resource behind the path.
  * Hiding a link in a JSP is a convenience; this class is what really stops a request.
  */
-@WebFilter(urlPatterns = {"/*"})
+@WebFilter(urlPatterns = {"/*"}, dispatcherTypes = {
+        javax.servlet.DispatcherType.REQUEST,
+        javax.servlet.DispatcherType.ERROR
+})
 public class SecurityFilter implements Filter {
 
     /** Reachable without signing in. */
@@ -91,6 +94,20 @@ public class SecurityFilter implements Filter {
 
         // 1. pages and files anyone may open
         if (isPublic(path)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // 1b. Error page dispatch (404, 403, 500) or internal view dispatch - populate perms if signed in, but never block
+        if (req.getAttribute("javax.servlet.error.status_code") != null || path.startsWith("/WEB-INF/")) {
+            User user = Web.currentUser(req);
+            if (user != null) {
+                try {
+                    user.setBalance(new dao.UserDao().getBalance(user.getUserId()));
+                    Set<String> keys = new dao.PermissionDao().loadKeys(user.getUserId());
+                    req.setAttribute("perms", keys);
+                } catch (SQLException ignored) {}
+            }
             chain.doFilter(request, response);
             return;
         }
