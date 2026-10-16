@@ -11,7 +11,7 @@
 <div class="topbar">
     <div class="brand">Smart Locker <span class="sem">FALL2026</span></div>
     <div class="who">
-        <span class="badge" title="Account balance" style="background:#e8f5e9; color:#2e7d32; padding:3px 8px; border-radius:4px; font-weight:600; margin-right:8px; border:1px solid #c8e6c9;">
+        <span class="badge" title="Account balance" style="background:#135d28; color:#ffffff; padding:4px 10px; border-radius:4px; font-weight:bold; margin-right:8px; border:1px solid #0e441d; box-shadow:0 1px 2px rgba(0,0,0,0.25); display:inline-block;">
             &#128176; <fmt:formatNumber value="${me.balance}" type="number" groupingUsed="true"/> VND
         </span>
         <c:out value="${me.fullName}"/>

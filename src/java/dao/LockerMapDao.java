@@ -37,6 +37,13 @@ public class LockerMapDao {
         // four queries: areas, plans, banks of the area, slots of the area; the JSON matches the frontend
         JsonObject root = new JsonObject();
         try (Connection conn = DbContext.getConnection()) {
+            // Ensure any expired reservations or overdue bookings are freed before rendering
+            try (java.sql.CallableStatement cs = conn.prepareCall("{call Deposit_ExpireNoShow}")) {
+                cs.execute();
+            } catch (SQLException ignored) {}
+            try (java.sql.CallableStatement cs = conn.prepareCall("{call Deposit_ExpireOverdue}")) {
+                cs.execute();
+            } catch (SQLException ignored) {}
 
             // the menu: one row per area that has slots
             JsonArray areas = new JsonArray();

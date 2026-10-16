@@ -288,6 +288,7 @@ CREATE TABLE RemoteCommand (
     status       NVARCHAR(20) NOT NULL DEFAULT 'PENDING',   -- PENDING, SENT, DONE, EXPIRED
     created_at   DATETIME2 DEFAULT SYSUTCDATETIME(),
     expires_at   DATETIME2 NOT NULL,
+    sent_at      DATETIME2 NULL,
     done_at      DATETIME2 NULL,
     session_id   BIGINT NULL);                              -- the session that used the command
 GO
@@ -382,7 +383,7 @@ FROM (VALUES
     (N'OPERATOR',   N'STORAGEPLAN',   N'RW'), (N'OPERATOR', N'USERCARD',    N'RW'),
     (N'OPERATOR',   N'DEPOSIT',       N'RW'), (N'OPERATOR', N'COMMAND',     N'RW'),
     (N'OPERATOR',   N'TOPUP',         N'RW'),
-    (N'TECHNICIAN', N'USER',          N'R'),  (N'TECHNICIAN', N'DEVICE',    N'RW'),
+    (N'TECHNICIAN', N'DEVICE',        N'RW'),
     (N'TECHNICIAN', N'SENSOR_TYPE',   N'RW'), (N'TECHNICIAN', N'CALIBRATION', N'RW'),
     (N'TECHNICIAN', N'PROFILE',       N'R'),  (N'TECHNICIAN', N'LOCKERSESSION', N'R'),
     (N'TECHNICIAN', N'LOCKERSLOT',    N'R'),  (N'TECHNICIAN', N'ALERT',     N'RW'),
@@ -399,6 +400,11 @@ JOIN Permissions p ON (g.resource = N'*' OR p.resource = g.resource)
 GO
 
 -- G2. Areas, device, banks and slots
+INSERT INTO Permissions (resource, action) VALUES (N'SLOTSTATUS', N'WRITE');
+INSERT INTO RolePerm (role_id, perm_id)
+SELECT r.role_id, p.perm_id FROM Roles r CROSS JOIN Permissions p
+WHERE r.role_name IN (N'ADMIN', N'TECHNICIAN') AND p.resource = N'SLOTSTATUS';
+
 INSERT INTO LockerArea (area_code, name, location) VALUES
     (N'LIB',  N'Library',     N'Library, 1st floor'),
     (N'DOMA', N'Dormitory A', N'Dorm A lobby'),

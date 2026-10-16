@@ -105,6 +105,18 @@
             <td><c:out value="${s.sizeCm}"/></td>
             <td class="c">${s.status}</td>
             <td class="ops">
+                <c:if test="${perms.contains('SLOTSTATUS:WRITE')}">
+                    <form method="post" action="${ctx}/LockerSlotController">
+                        <input type="hidden" name="action" value="status">
+                        <input type="hidden" name="id" value="${s.slotId}">
+                        <select name="status" aria-label="Slot status" required>
+                            <c:forEach var="st" items="AVAILABLE,RESERVED,OCCUPIED,MAINTENANCE">
+                                <option value="${st}" ${s.status == st ? 'selected' : ''}>${st}</option>
+                            </c:forEach>
+                        </select>
+                        <button type="submit">Update status</button>
+                    </form>
+                </c:if>
                 <c:if test="${perms.contains('LOCKERSLOT:WRITE')}">
                     <a href="${ctx}/LockerSlotController?action=edit&amp;id=${s.slotId}">Edit</a>
                     <%-- never print data inside inline JavaScript: a quote in the data would break out of the string --%>

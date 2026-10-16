@@ -99,7 +99,7 @@ CREATE OR ALTER PROCEDURE RemoteCommand_TakePending @device_id INT
 AS
 BEGIN
     SET NOCOUNT ON;
-    UPDATE c SET c.status = N'SENT'
+    UPDATE c SET c.status = N'SENT', c.sent_at = SYSUTCDATETIME()
     OUTPUT inserted.command_id, s.slot_code, inserted.action
     FROM RemoteCommand c
     JOIN LockerSlot s ON s.locker_slot_id = c.slot_id
@@ -304,11 +304,12 @@ BEGIN
     FROM Deposit d
     JOIN LockerSlot s ON s.locker_slot_id = d.slot_id
     JOIN LockerBank b ON b.bank_id = s.bank_id
-    LEFT JOIN Device v ON v.device_id = b.device_id
-    WHERE d.status = N'RESERVED' AND d.hold_until < SYSUTCDATETIME()
-      AND (v.device_id IS NULL OR v.status = N'ACTIVE');   -- device offline: we cannot know, so we wait
+    WHERE d.status = N'RESERVED' AND d.hold_until < SYSUTCDATETIME();
+
     UPDATE s SET s.status = N'AVAILABLE'
-    FROM LockerSlot s JOIN @expired e ON e.slot_id = s.locker_slot_id;
+    FROM LockerSlot s JOIN @expired e ON e.slot_id = s.locker_slot_id
+    WHERE s.status = N'RESERVED';
+
     UPDATE u SET u.balance = u.balance + r.refund
     FROM Users u
     JOIN (SELECT user_id, SUM(paid_amount) AS refund FROM @expired GROUP BY user_id) r
@@ -318,6 +319,35 @@ BEGIN
         SELECT TOP 1 @id = deposit_id, @refund = paid_amount FROM @expired;
         EXEC Audit_Append @sys, N'NO_SHOW', N'DEPOSIT', @id, @refund;
         DELETE FROM @expired WHERE deposit_id = @id;
+    END
+    COMMIT;
+END;
+GO
+
+-- When usage time has ended (due_at passed), release the slot so the next person can book it
+CREATE OR ALTER PROCEDURE Deposit_ExpireOverdue
+AS
+BEGIN
+    SET NOCOUNT ON; SET XACT_ABORT ON;
+    DECLARE @sys INT = (SELECT user_id FROM Users WHERE username = N'system');
+    DECLARE @overdue TABLE (deposit_id BIGINT, slot_id INT, user_id INT);
+    DECLARE @id BIGINT;
+    BEGIN TRAN;
+    UPDATE d SET d.status = N'COMPLETED', d.ended_at = SYSUTCDATETIME()
+    OUTPUT inserted.deposit_id, inserted.slot_id, inserted.user_id INTO @overdue
+    FROM Deposit d
+    JOIN LockerSlot s ON s.locker_slot_id = d.slot_id
+    WHERE d.status = N'ACTIVE' AND d.due_at < SYSUTCDATETIME();
+
+    UPDATE s SET s.status = N'AVAILABLE'
+    FROM LockerSlot s JOIN @overdue o ON o.slot_id = s.locker_slot_id
+    WHERE s.status <> N'MAINTENANCE';
+
+    WHILE EXISTS (SELECT 1 FROM @overdue)
+    BEGIN
+        SELECT TOP 1 @id = deposit_id FROM @overdue;
+        EXEC Audit_Append @sys, N'AUTO_RELEASE_OVERDUE', N'DEPOSIT', @id, N'Expired booking auto-released to AVAILABLE';
+        DELETE FROM @overdue WHERE deposit_id = @id;
     END
     COMMIT;
 END;

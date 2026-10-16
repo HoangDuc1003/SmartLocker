@@ -51,7 +51,8 @@
     topupUrl: root.getAttribute('data-topup-url') || 'TopupController',
     commandUrl: root.getAttribute('data-command-url') || 'RemoteCommandController',
     alertUrl: root.getAttribute('data-alert-url') || 'AlertController',
-    ticketUrl: root.getAttribute('data-ticket-url') || 'MaintenanceController'
+    ticketUrl: root.getAttribute('data-ticket-url') || 'MaintenanceController',
+    slotUrl: root.getAttribute('data-slot-url') || 'LockerSlotController'
   };
 
   var state = {
@@ -483,6 +484,25 @@
     '</form>';
   }
 
+  function statusForm(slot, bank) {
+    var cur = slot.status;
+    return '<form class="action-form" method="post" action="' + esc(cfg.slotUrl) + '">' +
+      hidden('action', 'status') +
+      hidden('id', slot.slot_id) +
+      hidden('back', 'map') +
+      hidden('area', state.area) +
+      hidden('slot', slot.slot_id) +
+      '<h3>Set slot status</h3>' +
+      '<label class="field"><span>Status</span><select name="status">' +
+        '<option value="AVAILABLE"' + (cur === 'AVAILABLE' ? ' selected' : '') + '>AVAILABLE (Free / Green)</option>' +
+        '<option value="MAINTENANCE"' + (cur === 'MAINTENANCE' ? ' selected' : '') + '>MAINTENANCE (Out of service)</option>' +
+        (cur === 'OCCUPIED' ? '<option value="OCCUPIED" selected>OCCUPIED (In use)</option>' : '') +
+        (cur === 'RESERVED' ? '<option value="RESERVED" selected>RESERVED</option>' : '') +
+      '</select></label>' +
+      '<button type="submit" class="btn btn--primary btn--block">' + icon('check') + 'Update status</button>' +
+    '</form>';
+  }
+
   function linkButton(url, id, text) {
     var href = url + (url.indexOf('?') === -1 ? '?' : '&') + 'id=' + encodeURIComponent(id);
     return '<a class="btn ghost btn--block" href="' + esc(href) + '">' + esc(text) + '</a>';
@@ -508,6 +528,7 @@
       }
     } else if (isStaff()) {
       parts.push(unlockForm(slot, bank));
+      parts.push(statusForm(slot, bank));
     } else if (role === 'AUDITOR') {
       parts.push('<p class="notice">Read-only access. Every remote unlock is listed in the audit log.</p>');
     }

@@ -24,7 +24,8 @@
       data-topup-url="${ctx}/TopupController"
       data-command-url="${ctx}/RemoteCommandController"
       data-alert-url="${ctx}/AlertController"
-      data-ticket-url="${ctx}/MaintenanceController">
+      data-ticket-url="${ctx}/MaintenanceController"
+      data-slot-url="${ctx}/LockerSlotController">
     <p class="app-loading">Loading locker map…</p>
     <noscript><p class="app-loading">The locker map needs JavaScript. Please enable it in your browser.</p></noscript>
 </main>

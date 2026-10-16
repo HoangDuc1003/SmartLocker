@@ -31,12 +31,14 @@
             <td><c:out value="${d.planName}"/></td>
             <td>
                 <c:choose>
-                    <c:when test="${d.paidAmount == 0}">Free</c:when>
+                    <c:when test="${d.paidAmount == 0}"><span class="tag">Free</span></c:when>
                     <c:when test="${d.status == 'CANCELLED' or d.status == 'NO_SHOW'}">
-                        Refunded <fmt:formatNumber value="${d.paidAmount}" groupingUsed="true"/> VND
+                        <span style="color:#667;">Refunded <fmt:formatNumber value="${d.paidAmount}" groupingUsed="true"/> VND</span>
                     </c:when>
                     <c:otherwise>
-                        Paid <fmt:formatNumber value="${d.paidAmount}" groupingUsed="true"/> VND
+                        <span style="background:#135d28; color:#ffffff; padding:2px 7px; border-radius:3px; font-weight:bold; font-size:12px; display:inline-block;">
+                            Paid <fmt:formatNumber value="${d.paidAmount}" groupingUsed="true"/> VND
+                        </span>
                     </c:otherwise>
                 </c:choose>
             </td>

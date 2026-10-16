@@ -121,6 +121,10 @@ public class SecurityFilter implements Filter {
             Set<String> keys = new PermissionDao().loadKeys(user.getUserId());
             req.setAttribute("perms", keys);   // common/nav.jspf reads it to draw the menu
             String resource = RESOURCE_BY_PATH.get(path);
+            if ("/LockerSlotController".equals(path) && "POST".equals(req.getMethod())
+                    && "status".equals(Web.trimmed(req, "action"))) {
+                resource = "SLOTSTATUS";
+            }
             String action = "GET".equals(req.getMethod()) ? "READ" : "WRITE";
             if (resource == null || !keys.contains(resource + ":" + action)) {
                 res.sendError(HttpServletResponse.SC_FORBIDDEN, "Permission denied");

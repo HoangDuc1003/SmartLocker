@@ -149,6 +149,32 @@ public class LockerSlotController extends HttpServlet {
         User me = Web.currentUser(req);
         String action = Web.trimmed(req, "action");
         try {
+            if ("status".equals(action)) {
+                int id = Web.intParam(req, "id", 0);
+                String status = Web.trimmed(req, "status");
+                LockerSlot old = dao.findById(id);
+                boolean isAdmin = "ADMIN".equals(me.getRoleName());
+                if (old == null || !STATUSES.contains(status)) {
+                    Web.flash(req.getSession(), "Slot or status is not valid", true);
+                } else {
+                    boolean ok = isAdmin ? dao.updateStatusAdmin(id, status) : dao.updateStatus(id, status);
+                    if (ok) {
+                        new AuditDao().append(me.getUserId(), "STATUS", "LOCKERSLOT", id,
+                                old.getSlotCode() + ": " + old.getStatus() + " -> " + status);
+                        Web.flash(req.getSession(), "Slot " + old.getSlotCode() + " status updated to " + status, false);
+                    } else {
+                        Web.flash(req.getSession(), "Slot status conflicts with an active booking", true);
+                    }
+                }
+                if ("map".equals(Web.trimmed(req, "back"))) {
+                    String area = Web.trimmed(req, "area");
+                    res.sendRedirect("LockerMapController?area=" + java.net.URLEncoder.encode(area, "UTF-8")
+                            + "&slot=" + id);
+                    return;
+                }
+                res.sendRedirect("LockerSlotController");
+                return;
+            }
             if ("delete".equals(action)) {
                 int id = Web.intParam(req, "id", 0);
                 LockerSlot old = dao.findById(id);

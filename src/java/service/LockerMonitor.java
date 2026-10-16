@@ -29,9 +29,10 @@ public class LockerMonitor implements ServletContextListener {
             public void run() {
                 runProcedure("{call Device_MarkOffline(86400)}");   // 24h timeout so demo devices stay active
                 runProcedure("{call Deposit_ExpireNoShow}");
+                runProcedure("{call Deposit_ExpireOverdue}");
                 runProcedure("{call RemoteCommand_Expire}");
             }
-        }, 30, 30, TimeUnit.SECONDS);
+        }, 15, 15, TimeUnit.SECONDS);
     }
 
     private void runProcedure(String call) {

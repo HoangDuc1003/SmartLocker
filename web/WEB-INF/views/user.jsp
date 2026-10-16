@@ -124,15 +124,19 @@
             <td><c:out value="${x.email}"/></td>
             <td><c:out value="${x.roleName}"/></td>
             <td><c:out value="${x.areaCode != null ? x.areaCode : '-'}"/></td>
-            <td class="r" style="font-weight:600; color:#2e7d32;"><fmt:formatNumber value="${x.balance}" type="number" groupingUsed="true"/> VND</td>
+            <td class="r">
+                <span style="background:#135d28; color:#ffffff; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:12px; display:inline-block; box-shadow:0 1px 2px rgba(0,0,0,0.15);">
+                    <fmt:formatNumber value="${x.balance}" type="number" groupingUsed="true"/> VND
+                </span>
+            </td>
             <td class="c">${x.status}</td>
             <td class="ops">
                 <c:if test="${LOGIN_USER.roleName == 'ADMIN'}">
                     <form method="post" action="${ctx}/UserController" style="display:inline-flex; gap:3px; align-items:center; margin-right:4px;">
                         <input type="hidden" name="action" value="grantBalance">
                         <input type="hidden" name="id" value="${x.userId}">
-                        <input type="number" name="amount" value="50000" step="10000" min="1000" style="width:75px; padding:2px 4px; font-size:11px; border:1px solid #ccc; border-radius:3px;" title="Amount to add">
-                        <button type="submit" class="btn" style="padding:2px 6px; font-size:11px; background:#2e7d32; color:#fff; border:none; border-radius:3px; cursor:pointer;" onclick="return confirm('Add funds to ${x.username}?');">+ Add funds</button>
+                        <input type="number" name="amount" value="50000" step="1" min="1000" style="width:85px; padding:3px 6px; font-size:12px; border:1px solid #ccc; border-radius:3px;" title="Amount to add">
+                        <button type="submit" class="btn" style="padding:3px 8px; font-size:12px; background:#135d28; color:#ffffff; border:none; border-radius:3px; cursor:pointer; font-weight:600;" onclick="return confirm('Add funds to ${x.username}?');">+ Add funds</button>
                     </form>
                 </c:if>
                 <c:set var="canAct" value="${LOGIN_USER.roleName == 'ADMIN' or x.roleRank > LOGIN_USER.roleRank}"/>

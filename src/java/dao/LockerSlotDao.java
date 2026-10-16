@@ -115,6 +115,53 @@ public class LockerSlotDao {
         }
     }
 
+    public boolean updateStatus(int slotId, String status) throws SQLException {
+        // Keep a live booking consistent, including when another request books this slot.
+        String sql = "UPDATE s SET status = ? FROM LockerSlot s WITH (UPDLOCK, HOLDLOCK) "
+                + "WHERE s.locker_slot_id = ? AND NOT EXISTS ("
+                + "SELECT 1 FROM Deposit d WITH (UPDLOCK, HOLDLOCK) WHERE d.slot_id = s.locker_slot_id "
+                + "AND ((d.status = 'ACTIVE' AND ? <> 'OCCUPIED') "
+                + "OR (d.status = 'RESERVED' AND ? <> 'RESERVED')))";
+        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, slotId);
+            ps.setString(3, status);
+            ps.setString(4, status);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    /** Administrator override: changes slot status and cleans up any open bookings if setting to AVAILABLE or MAINTENANCE. */
+    public boolean updateStatusAdmin(int slotId, String status) throws SQLException {
+        try (Connection conn = DbContext.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                if ("AVAILABLE".equals(status) || "MAINTENANCE".equals(status)) {
+                    String cancelSql = "UPDATE Deposit SET status = 'CANCELLED', ended_at = SYSUTCDATETIME() "
+                            + "WHERE slot_id = ? AND status IN ('RESERVED', 'ACTIVE')";
+                    try (PreparedStatement ps = conn.prepareStatement(cancelSql)) {
+                        ps.setInt(1, slotId);
+                        ps.executeUpdate();
+                    }
+                }
+                String sql = "UPDATE LockerSlot SET status = ? WHERE locker_slot_id = ?";
+                boolean ok;
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, status);
+                    ps.setInt(2, slotId);
+                    ok = ps.executeUpdate() == 1;
+                }
+                conn.commit();
+                return ok;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+
     public boolean update(LockerSlot s) throws SQLException {
         // UPDATE ... WHERE locker_slot_id = ?, true when one row changed
         String sql = "UPDATE LockerSlot SET slot_code = ?, bank_id = ?, size_cm = ?, size_code = ?, status = ? "
