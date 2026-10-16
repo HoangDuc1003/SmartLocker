@@ -76,7 +76,7 @@ flowchart TD
     ReservedState --> CheckInDecision{"Customer arrives within 15 mins?"}
     
     CheckInDecision -- "Customer Cancels (Deposit_Cancel)" --> Refund["Refund 100% deposit -> Slot: AVAILABLE"]
-    CheckInDecision -- "Hold Expires (Deposit_ExpireNoShow)" --> NoShow["Mark NO_SHOW, refund cọc -> Slot: AVAILABLE"]
+    CheckInDecision -- "Hold Expires (Deposit_ExpireNoShow)" --> NoShow["Mark NO_SHOW, refund full deposit -> Slot: AVAILABLE"]
     CheckInDecision -- "Customer Check-In (Deposit_CheckIn)" --> ActiveState["Slot: OCCUPIED (Status: ACTIVE)"]
     
     ActiveState --> InUseEvents{"Events During Session"}

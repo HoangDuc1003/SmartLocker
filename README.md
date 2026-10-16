@@ -109,13 +109,17 @@ stateDiagram-v2
 
 Every sample account in the database seed uses password: `123456`
 
-| Username | Role | Permissions | Primary Responsibility |
-| :--- | :--- | :--- | :--- |
-| `admin` | **Administrator** | `*` (Full Access) | Global configuration, slot status, security review |
-| `operator1` | **Locker Operator** | `MAP`, `ALERT`, `USER`, `COMMAND` | Real-time monitoring, remote unlocks, top-up reviews |
-| `tech1` | **Technician** | `MAP`, `ALERT`, `MAINTENANCE`, `CALIBRATION` | Slot repairs, sensor calibrations, ticket resolutions |
-| `auditor1` | **Auditor** | `AUDIT:R`, `ALERT:R` (Strict Read-Only) | Cryptographic hash chain verification, log inspection |
-| `student1` | **End User** | `MAP:R`, `BOOKING`, `TOPUP`, `MYCARD` | Booking slots, topping up wallet, badge management |
+The database includes **100 sample user accounts** distributed realistically across all 5 roles:
+
+| Role | Count | Sample Usernames | Permissions | Primary Responsibility |
+| :--- | :--- | :--- | :--- | :--- |
+| **Administrator** (`ADMIN`) | 10 | `admin`, `admin_ops`, `admin_lib`, `sysadmin1`, `manager1` | `*` (Full Access) | Global configuration, slot status, security review |
+| **Locker Operator** (`OPERATOR`) | 22 | `operator1` to `operator22` | `MAP`, `ALERT`, `USER`, `COMMAND` | Real-time monitoring, remote unlocks, top-up reviews |
+| **Technician** (`TECHNICIAN`) | 22 | `tech1` to `tech22` | `MAP`, `ALERT`, `MAINTENANCE`, `CALIBRATION` | Slot repairs, sensor calibrations, ticket resolutions |
+| **Auditor** (`AUDITOR`) | 16 | `auditor1` to `auditor16` | `AUDIT:R`, `ALERT:R` (Strict Read-Only) | Cryptographic hash chain verification, log inspection |
+| **End User** (`END_USER`) | 30 | `student1` to `student28`, `locked1`, `user1` | `MAP:R`, `BOOKING`, `TOPUP`, `MYCARD` | Booking slots, topping up wallet, badge management |
+
+> 💡 **Demo Account Statuses:** 90 accounts are `ACTIVE`, 5 accounts are `LOCKED` (e.g., `locked1`, `student28`), and 5 accounts are `DISABLED` (e.g., `sysadmin2`, `operator22`), allowing complete testing of authorization error handling.
 
 ---
 
