@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- 05_fix_reviewer_feedback.sql
 -- Fixes based on team reviewer feedback:
 --   Issue #2: Remove USER:READ from TECHNICIAN role

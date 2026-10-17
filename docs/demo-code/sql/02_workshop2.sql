@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- 02_workshop2.sql  The public data set (TON_IoT garage door) turned into sessions.
 -- Run it in two rounds: part 1 now, then import the csv, then part 2.
 -- Source of the file: research.unsw.edu.au/projects/toniot-datasets, folder Train_Test_datasets,

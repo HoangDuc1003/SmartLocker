@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- 01_schema.sql  Smart Locker, PRJ301 FALL2026, topic 01
 -- Run the whole file in SSMS. It drops and recreates the database,
 -- so run it again whenever you want a clean start.

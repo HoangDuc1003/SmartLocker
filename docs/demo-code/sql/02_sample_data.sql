@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- 02_sample_data.sql: Consolidated Demo Seed Data for SmartLocker
 -- PRJ301 FALL2026 - Comprehensive Enterprise Demo Dataset
 --

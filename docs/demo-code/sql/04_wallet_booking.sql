@@ -1,4 +1,4 @@
--- Apply once to an existing PRJ301_LOCKER database without deleting its data.
+﻿-- Apply once to an existing PRJ301_LOCKER database without deleting its data.
 -- Then run 03_scenarios.sql again to update the booking procedures.
 USE PRJ301_LOCKER;
 GO

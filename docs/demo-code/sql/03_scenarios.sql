@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- 03_scenarios.sql  Stored procedures of the 5 real-life cases.
 -- Run after 01_schema.sql. Safe to run again (CREATE OR ALTER).
 --   Case 1  locker goes offline     Device_Heartbeat, Device_MarkOffline
