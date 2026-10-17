@@ -99,7 +99,7 @@ CREATE OR ALTER PROCEDURE RemoteCommand_TakePending @device_id INT
 AS
 BEGIN
     SET NOCOUNT ON;
-    UPDATE c SET c.status = N'SENT'
+    UPDATE c SET c.status = N'SENT', c.sent_at = SYSUTCDATETIME()
     OUTPUT inserted.command_id, s.slot_code, inserted.action
     FROM RemoteCommand c
     JOIN LockerSlot s ON s.locker_slot_id = c.slot_id
@@ -160,31 +160,43 @@ CREATE OR ALTER PROCEDURE Deposit_Reserve
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
-    DECLARE @card_id INT = (SELECT TOP 1 card_id FROM UserCard WHERE user_id = @user_id AND status = N'ACTIVE');
-    IF @card_id IS NULL THROW 50030, N'You need an active card to reserve', 1;
     IF (SELECT COUNT(*) FROM Deposit WHERE user_id = @user_id AND status = N'NO_SHOW'
         AND reserved_at > DATEADD(DAY, -7, SYSUTCDATETIME())) >= 3
         THROW 50031, N'Booking is blocked: 3 no-shows in the last 7 days', 1;
     IF EXISTS (SELECT 1 FROM Deposit WHERE user_id = @user_id AND status IN (N'RESERVED', N'ACTIVE'))
         THROW 50032, N'You already have a booking in progress', 1;
-    IF NOT EXISTS (SELECT 1 FROM StoragePlan WHERE plan_id = @plan_id AND is_active = 1)
-        THROW 50034, N'This storage plan is not available', 1;
     IF EXISTS (SELECT 1 FROM v_LockerSlotMap WHERE slot_id = @slot_id AND device_status = N'OFFLINE')
         THROW 50035, N'The locker is offline, booking is paused', 1;
 
-    BEGIN TRAN;
-    -- the WHERE clause is the lock: when two users click the same slot, only one row is updated
-    UPDATE LockerSlot SET status = N'RESERVED' WHERE locker_slot_id = @slot_id AND status = N'AVAILABLE';
-    IF @@ROWCOUNT = 0
-    BEGIN
-        ROLLBACK;
-        THROW 50033, N'This slot is no longer available', 1;
-    END
-    INSERT INTO Deposit (user_id, slot_id, plan_id, card_id, status, hold_until)
-    VALUES (@user_id, @slot_id, @plan_id, @card_id, N'RESERVED', DATEADD(MINUTE, 15, SYSUTCDATETIME()));
-    SET @new_id = SCOPE_IDENTITY();
-    EXEC Audit_Append @user_id, N'RESERVE', N'DEPOSIT', @new_id, NULL;
-    COMMIT;
+    BEGIN TRY
+        BEGIN TRAN;
+        DECLARE @price BIGINT;
+        SELECT @price = price FROM StoragePlan WITH (UPDLOCK, HOLDLOCK)
+        WHERE plan_id = @plan_id AND is_active = 1;
+        IF @price IS NULL THROW 50034, N'This storage plan is not available', 1;
+        IF @price < 0 THROW 50040, N'The storage plan has an invalid price', 1;
+
+        -- The conditional update prevents spending the same balance twice.
+        UPDATE Users SET balance = balance - @price
+        WHERE user_id = @user_id AND balance >= @price;
+        IF @@ROWCOUNT = 0 THROW 50030, N'Insufficient balance. Add funds before booking.', 1;
+
+        -- The WHERE clause is the lock: only one user can reserve a free slot.
+        UPDATE LockerSlot SET status = N'RESERVED'
+        WHERE locker_slot_id = @slot_id AND status = N'AVAILABLE';
+        IF @@ROWCOUNT = 0 THROW 50033, N'This slot is no longer available', 1;
+
+        INSERT INTO Deposit (user_id, slot_id, plan_id, card_id, paid_amount, status, hold_until)
+        VALUES (@user_id, @slot_id, @plan_id, NULL, @price, N'RESERVED',
+                DATEADD(MINUTE, 15, SYSUTCDATETIME()));
+        SET @new_id = SCOPE_IDENTITY();
+        EXEC Audit_Append @user_id, N'RESERVE', N'DEPOSIT', @new_id, @price;
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK;
+        THROW;
+    END CATCH;
 END;
 GO
 
@@ -192,13 +204,26 @@ CREATE OR ALTER PROCEDURE Deposit_Cancel @deposit_id BIGINT, @actor INT
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
-    DECLARE @slot INT = (SELECT slot_id FROM Deposit WHERE deposit_id = @deposit_id AND user_id = @actor AND status = N'RESERVED');
-    IF @slot IS NULL THROW 50036, N'Nothing to cancel: not your reservation, or it already started', 1;
-    BEGIN TRAN;
-    UPDATE Deposit SET status = N'CANCELLED', ended_at = SYSUTCDATETIME() WHERE deposit_id = @deposit_id;
-    UPDATE LockerSlot SET status = N'AVAILABLE' WHERE locker_slot_id = @slot;
-    EXEC Audit_Append @actor, N'CANCEL', N'DEPOSIT', @deposit_id, NULL;
-    COMMIT;
+    BEGIN TRY
+        BEGIN TRAN;
+        DECLARE @slot INT, @refund BIGINT;
+        SELECT @slot = slot_id, @refund = paid_amount
+        FROM Deposit WITH (UPDLOCK, HOLDLOCK)
+        WHERE deposit_id = @deposit_id AND user_id = @actor AND status = N'RESERVED';
+        IF @slot IS NULL
+            THROW 50036, N'Nothing to cancel: not your reservation, or it already started', 1;
+
+        UPDATE Deposit SET status = N'CANCELLED', ended_at = SYSUTCDATETIME()
+        WHERE deposit_id = @deposit_id;
+        UPDATE Users SET balance = balance + @refund WHERE user_id = @actor;
+        UPDATE LockerSlot SET status = N'AVAILABLE' WHERE locker_slot_id = @slot;
+        EXEC Audit_Append @actor, N'CANCEL', N'DEPOSIT', @deposit_id, @refund;
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK;
+        THROW;
+    END CATCH;
 END;
 GO
 
@@ -271,24 +296,58 @@ AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
     DECLARE @sys INT = (SELECT user_id FROM Users WHERE username = N'system');
-    DECLARE @expired TABLE (deposit_id BIGINT, slot_id INT);
-    DECLARE @id BIGINT;
+    DECLARE @expired TABLE (deposit_id BIGINT, slot_id INT, user_id INT, paid_amount BIGINT);
+    DECLARE @id BIGINT, @refund BIGINT;
     BEGIN TRAN;
     UPDATE d SET d.status = N'NO_SHOW', d.ended_at = SYSUTCDATETIME()
-    OUTPUT inserted.deposit_id, inserted.slot_id INTO @expired
+    OUTPUT inserted.deposit_id, inserted.slot_id, inserted.user_id, inserted.paid_amount INTO @expired
     FROM Deposit d
     JOIN LockerSlot s ON s.locker_slot_id = d.slot_id
     JOIN LockerBank b ON b.bank_id = s.bank_id
-    LEFT JOIN Device v ON v.device_id = b.device_id
-    WHERE d.status = N'RESERVED' AND d.hold_until < SYSUTCDATETIME()
-      AND (v.device_id IS NULL OR v.status = N'ACTIVE');   -- device offline: we cannot know, so we wait
+    WHERE d.status = N'RESERVED' AND d.hold_until < SYSUTCDATETIME();
+
     UPDATE s SET s.status = N'AVAILABLE'
-    FROM LockerSlot s JOIN @expired e ON e.slot_id = s.locker_slot_id;
+    FROM LockerSlot s JOIN @expired e ON e.slot_id = s.locker_slot_id
+    WHERE s.status = N'RESERVED';
+
+    UPDATE u SET u.balance = u.balance + r.refund
+    FROM Users u
+    JOIN (SELECT user_id, SUM(paid_amount) AS refund FROM @expired GROUP BY user_id) r
+      ON r.user_id = u.user_id;
     WHILE EXISTS (SELECT 1 FROM @expired)
     BEGIN
-        SELECT TOP 1 @id = deposit_id FROM @expired;
-        EXEC Audit_Append @sys, N'NO_SHOW', N'DEPOSIT', @id, NULL;
+        SELECT TOP 1 @id = deposit_id, @refund = paid_amount FROM @expired;
+        EXEC Audit_Append @sys, N'NO_SHOW', N'DEPOSIT', @id, @refund;
         DELETE FROM @expired WHERE deposit_id = @id;
+    END
+    COMMIT;
+END;
+GO
+
+-- When usage time has ended (due_at passed), release the slot so the next person can book it
+CREATE OR ALTER PROCEDURE Deposit_ExpireOverdue
+AS
+BEGIN
+    SET NOCOUNT ON; SET XACT_ABORT ON;
+    DECLARE @sys INT = (SELECT user_id FROM Users WHERE username = N'system');
+    DECLARE @overdue TABLE (deposit_id BIGINT, slot_id INT, user_id INT);
+    DECLARE @id BIGINT;
+    BEGIN TRAN;
+    UPDATE d SET d.status = N'COMPLETED', d.ended_at = SYSUTCDATETIME()
+    OUTPUT inserted.deposit_id, inserted.slot_id, inserted.user_id INTO @overdue
+    FROM Deposit d
+    JOIN LockerSlot s ON s.locker_slot_id = d.slot_id
+    WHERE d.status = N'ACTIVE' AND d.due_at < SYSUTCDATETIME();
+
+    UPDATE s SET s.status = N'AVAILABLE'
+    FROM LockerSlot s JOIN @overdue o ON o.slot_id = s.locker_slot_id
+    WHERE s.status <> N'MAINTENANCE';
+
+    WHILE EXISTS (SELECT 1 FROM @overdue)
+    BEGIN
+        SELECT TOP 1 @id = deposit_id FROM @overdue;
+        EXEC Audit_Append @sys, N'AUTO_RELEASE_OVERDUE', N'DEPOSIT', @id, N'Expired booking auto-released to AVAILABLE';
+        DELETE FROM @overdue WHERE deposit_id = @id;
     END
     COMMIT;
 END;

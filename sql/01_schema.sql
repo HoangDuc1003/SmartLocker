@@ -34,6 +34,7 @@ CREATE TABLE Users (
     password_hash CHAR(60) NOT NULL,                  -- BCrypt, always 60 characters
     full_name     NVARCHAR(80),
     status        NVARCHAR(20) DEFAULT 'ACTIVE',      -- ACTIVE, LOCKED, DISABLED
+    balance       BIGINT NOT NULL CONSTRAINT DF_Users_balance DEFAULT 0,
     created_at    DATETIME2 DEFAULT SYSUTCDATETIME());
 
 CREATE TABLE Roles (
@@ -197,11 +198,14 @@ CREATE TABLE LockerBank (
 CREATE UNIQUE INDEX UX_LockerBank_device ON LockerBank(device_id) WHERE device_id IS NOT NULL;
 
 -- D2. Extra columns on the assignment's tables
-ALTER TABLE Users ADD
-    email   NVARCHAR(150) NULL,
-    phone   NVARCHAR(20)  NULL,
-    area_id INT NULL CONSTRAINT FK_Users_Area REFERENCES LockerArea(area_id),
-    balance BIGINT NOT NULL CONSTRAINT DF_Users_balance DEFAULT 0;
+IF COL_LENGTH('dbo.Users', 'email') IS NULL
+    ALTER TABLE Users ADD email NVARCHAR(150) NULL;
+IF COL_LENGTH('dbo.Users', 'phone') IS NULL
+    ALTER TABLE Users ADD phone NVARCHAR(20) NULL;
+IF COL_LENGTH('dbo.Users', 'area_id') IS NULL
+    ALTER TABLE Users ADD area_id INT NULL CONSTRAINT FK_Users_Area REFERENCES LockerArea(area_id);
+IF COL_LENGTH('dbo.Users', 'balance') IS NULL
+    ALTER TABLE Users ADD balance BIGINT NOT NULL CONSTRAINT DF_Users_balance DEFAULT 0;
 GO
 -- a column added by ALTER cannot be used in the same batch, hence the GO above
 CREATE UNIQUE INDEX UX_Users_email ON Users(email) WHERE email IS NOT NULL;
@@ -489,6 +493,7 @@ GO
 INSERT INTO StoragePlan (plan_name, duration_min, grace_min, price) VALUES
     (N'2 hours', 120, 10, 5000),
     (N'4 hours', 240, 10, 9000),
+    (N'Day pass', 1440, 30, 25000),
     (N'Demo 2 minutes', 2, 1, 0);        -- makes OVERDUE appear quickly in the video
 
 INSERT INTO SensorType (name, unit, min_valid, max_valid) VALUES

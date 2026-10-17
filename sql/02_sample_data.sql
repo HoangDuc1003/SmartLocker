@@ -1,4 +1,4 @@
-﻿-- ============================================================
+-- ============================================================
 -- 02_sample_data.sql: Consolidated Demo Seed Data for SmartLocker
 -- PRJ301 FALL2026 - Comprehensive Enterprise Demo Dataset
 --
@@ -28,6 +28,12 @@ SET XACT_ABORT ON;
 GO
 
 -- Ensure schema prerequisites
+IF COL_LENGTH('dbo.Users', 'balance') IS NULL
+    ALTER TABLE dbo.Users ADD balance BIGINT NOT NULL CONSTRAINT DF_Users_balance DEFAULT 0;
+GO
+IF COL_LENGTH('dbo.Deposit', 'paid_amount') IS NULL
+    ALTER TABLE dbo.Deposit ADD paid_amount BIGINT NOT NULL DEFAULT 0;
+GO
 IF COL_LENGTH('dbo.RemoteCommand', 'sent_at') IS NULL
     ALTER TABLE dbo.RemoteCommand ADD sent_at DATETIME2 NULL;
 GO
@@ -36,6 +42,22 @@ IF OBJECT_ID(N'dbo.PublicSession', N'U') IS NULL
         public_id INT IDENTITY PRIMARY KEY,
         door_open_sec FLOAT, weight_delta_g FLOAT, unlock_count INT,
         rfid_ok BIT, stay_min FLOAT, label NVARCHAR(40), sent BIT DEFAULT 0);
+GO
+IF OBJECT_ID(N'dbo.TopupRequest', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.TopupRequest (
+        request_id    INT IDENTITY PRIMARY KEY,
+        user_id       INT NOT NULL REFERENCES dbo.Users,
+        amount        BIGINT NOT NULL CHECK (amount >= 1000),
+        transfer_code NVARCHAR(80) NOT NULL UNIQUE,
+        qr_url        NVARCHAR(1000) NOT NULL,
+        status        NVARCHAR(20) NOT NULL DEFAULT 'PENDING'
+                      CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED')),
+        created_at    DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+        approved_at   DATETIME2 NULL,
+        approved_by   INT NULL REFERENCES dbo.Users,
+        note          NVARCHAR(400) NULL);
+END;
 GO
 
 BEGIN TRY
@@ -365,9 +387,15 @@ BEGIN TRY
 
     PRINT '5. Seeding Multi-Day Booking History & Live Locker State...';
 
-    DECLARE @plan2h INT = (SELECT plan_id FROM dbo.StoragePlan WHERE plan_name = N'2 hours');
-    DECLARE @plan4h INT = (SELECT plan_id FROM dbo.StoragePlan WHERE plan_name = N'4 hours');
-    DECLARE @planDay INT = (SELECT plan_id FROM dbo.StoragePlan WHERE plan_name = N'Day pass');
+    IF NOT EXISTS (SELECT 1 FROM dbo.StoragePlan WHERE plan_name = N'Day pass')
+        INSERT INTO dbo.StoragePlan (plan_name, duration_min, grace_min, price) VALUES (N'Day pass', 1440, 30, 25000);
+
+    DECLARE @plan2h INT = (SELECT TOP 1 plan_id FROM dbo.StoragePlan WHERE plan_name = N'2 hours');
+    DECLARE @plan4h INT = (SELECT TOP 1 plan_id FROM dbo.StoragePlan WHERE plan_name = N'4 hours');
+    DECLARE @planDay INT = (SELECT TOP 1 plan_id FROM dbo.StoragePlan WHERE plan_name = N'Day pass');
+    IF @plan2h IS NULL SET @plan2h = (SELECT TOP 1 plan_id FROM dbo.StoragePlan ORDER BY plan_id);
+    IF @plan4h IS NULL SET @plan4h = @plan2h;
+    IF @planDay IS NULL SET @planDay = @plan2h;
 
     -- 5.1 Historical completed bookings across past 30 days (50 rows)
     ;WITH HistNums AS (

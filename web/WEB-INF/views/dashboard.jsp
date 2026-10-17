@@ -238,6 +238,88 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ─── Live sensor feed widget ─────────────────────────────────────────── */
+    .db-sensor-head-actions {
+      display: flex; align-items: center; gap: 8px; margin-left: auto;
+    }
+    .db-sensor-select {
+      font-size: 11px; font-weight: 600; padding: 3px 8px;
+      border: 1px solid var(--db-card-border); border-radius: 5px;
+      background: #ffffff; color: var(--db-navy); cursor: pointer; outline: none;
+    }
+    .db-sensor-select:focus { border-color: var(--db-blue); }
+    .db-sensor-tabs {
+      display: inline-flex; background: #edf0f5; border-radius: 5px; padding: 2px; gap: 2px;
+    }
+    .db-tab-btn {
+      border: none; background: transparent; padding: 3px 8px; font-size: 11px;
+      font-weight: 500; color: #64748b; border-radius: 4px; cursor: pointer;
+      transition: all .15s ease; font-family: inherit;
+    }
+    .db-tab-btn:hover { color: var(--db-navy); }
+    .db-tab-btn.active {
+      background: #ffffff; color: var(--db-blue); font-weight: 700;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    }
+    .db-sensor-kpis {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;
+    }
+    .db-sensor-kpi-card {
+      background: var(--db-gray-soft); border: 1px solid var(--db-card-border);
+      border-radius: 8px; padding: 9px 12px; display: flex; flex-direction: column; gap: 4px;
+    }
+    .db-sensor-kpi-title {
+      font-size: 11px; color: #667; font-weight: 600; display: flex; align-items: center;
+      gap: 5px; text-transform: uppercase; letter-spacing: .3px;
+    }
+    .db-sensor-kpi-val-row {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 6px;
+    }
+    .db-sensor-kpi-num {
+      font-size: 19px; font-weight: 700; color: var(--db-navy); line-height: 1.1;
+    }
+    .db-sensor-kpi-unit {
+      font-size: 12px; font-weight: 500; color: #778; margin-left: 2px;
+    }
+    .db-sensor-kpi-badge {
+      font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; white-space: nowrap;
+    }
+    .db-badge--ok      { background: var(--db-green-soft); color: var(--db-green); }
+    .db-badge--warn    { background: var(--db-amber-soft); color: var(--db-amber); }
+    .db-badge--danger  { background: var(--db-red-soft);   color: var(--db-red);   }
+    .db-badge--neutral { background: #e2e8f0;              color: #475569;         }
+
+    .db-chart-container {
+      position: relative; width: 100%; height: 210px; background: #ffffff;
+      border: 1px solid var(--db-card-border); border-radius: 8px; user-select: none;
+    }
+    .db-chart-tooltip {
+      position: absolute; pointer-events: none; background: rgba(26, 37, 64, 0.94);
+      color: #ffffff; padding: 8px 12px; border-radius: 6px; font-size: 11px;
+      line-height: 1.45; box-shadow: 0 4px 14px rgba(0,0,0,0.22); z-index: 20;
+      white-space: nowrap; transform: translate(-50%, -100%); transition: opacity .1s ease;
+      margin-top: -8px;
+    }
+    .db-chart-tooltip::after {
+      content: ''; position: absolute; top: 100%; left: 50%; margin-left: -5px;
+      border-width: 5px; border-style: solid;
+      border-color: rgba(26, 37, 64, 0.94) transparent transparent transparent;
+    }
+    .db-chart-tooltip.tooltip--bottom {
+      transform: translate(-50%, 0);
+      margin-top: 10px;
+    }
+    .db-chart-tooltip.tooltip--bottom::after {
+      top: auto; bottom: 100%;
+      border-color: transparent transparent rgba(26, 37, 64, 0.94) transparent;
+    }
+    .db-sensor-legend {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+      gap: 8px; margin-top: 10px; font-size: 11px; color: #64748b;
+      padding-top: 8px; border-top: 1px solid #f0f2f5;
+    }
+    .db-sensor-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+
     /* ─── Slot modal / tooltip ───────────────────────────────────────────── */
     .db-modal-backdrop {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
@@ -406,15 +488,77 @@
         </div>
       </div>
 
-      <%-- Mini sparkline (legacy, device 1) --%>
+      <%-- Live sensor feed & session telemetry --%>
       <div class="db-panel">
-        <div class="db-panel__head">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d6fa4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          <h3>Live sensor feed — Device 1</h3>
-          <span class="db-panel__meta">Door (s) · Weight (g)</span>
+        <div class="db-panel__head" style="flex-wrap:wrap; gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d6fa4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <h3 style="margin:0;">Live sensor feed</h3>
+          </div>
+          <div class="db-sensor-head-actions">
+            <select id="db-sensor-device-sel" class="db-sensor-select" title="Chọn thiết bị để xem cảm biến" onchange="onSensorDeviceChange(this.value)">
+              <option value="1">Thiết bị 1 (Device 1)</option>
+            </select>
+            <div class="db-sensor-tabs">
+              <button type="button" class="db-tab-btn active" data-mode="both" onclick="setSensorMode('both')">Kết hợp</button>
+              <button type="button" class="db-tab-btn" data-mode="door" onclick="setSensorMode('door')">🚪 Cửa</button>
+              <button type="button" class="db-tab-btn" data-mode="weight" onclick="setSensorMode('weight')">⚖️ Tải trọng</button>
+            </div>
+          </div>
         </div>
-        <div class="db-panel__body" style="padding:12px 16px;">
-          <canvas id="liveChart" width="440" height="180" style="width:100%;height:180px;border:none;padding:0;background:transparent;"></canvas>
+
+        <div class="db-panel__body" style="padding:14px 16px;">
+          <%-- Realtime KPI mini-cards --%>
+          <div class="db-sensor-kpis">
+            <div class="db-sensor-kpi-card">
+              <div class="db-sensor-kpi-title">
+                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#1d6fa4;"></span>
+                Thời gian mở cửa (gần nhất)
+              </div>
+              <div class="db-sensor-kpi-val-row">
+                <div class="db-sensor-kpi-num">
+                  <span id="db-sensor-door-val">—</span><span class="db-sensor-kpi-unit">s</span>
+                </div>
+                <span id="db-sensor-door-badge" class="db-sensor-kpi-badge db-badge--neutral">Chờ đo</span>
+              </div>
+            </div>
+
+            <div class="db-sensor-kpi-card">
+              <div class="db-sensor-kpi-title">
+                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#10b981;"></span>
+                Biến động tải trọng (gần nhất)
+              </div>
+              <div class="db-sensor-kpi-val-row">
+                <div class="db-sensor-kpi-num">
+                  <span id="db-sensor-weight-val">—</span><span class="db-sensor-kpi-unit">g</span>
+                </div>
+                <span id="db-sensor-weight-badge" class="db-sensor-kpi-badge db-badge--neutral">Chờ đo</span>
+              </div>
+            </div>
+          </div>
+
+          <%-- Chart canvas with hover tooltip --%>
+          <div class="db-chart-container" id="db-chart-container">
+            <canvas id="liveChart" style="width:100%;height:100%;display:block;cursor:crosshair;"></canvas>
+            <div id="liveChartTooltip" class="db-chart-tooltip" style="display:none;"></div>
+          </div>
+
+          <%-- Chart legend & meta footer --%>
+          <div class="db-sensor-legend">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <span class="db-sensor-legend-item">
+                <span style="width:12px;height:3px;background:#1d6fa4;border-radius:2px;display:inline-block;"></span>
+                <span style="color:#1d6fa4;font-weight:600;">Trục trái:</span> Mở cửa (s)
+              </span>
+              <span class="db-sensor-legend-item">
+                <span style="width:10px;height:10px;background:#10b981;border-radius:2px;display:inline-block;"></span>
+                <span style="color:#059669;font-weight:600;">Trục phải:</span> Cân nặng (g)
+              </span>
+            </div>
+            <div id="db-sensor-meta" style="color:#94a3b8;font-size:11px;">
+              Đang đồng bộ...
+            </div>
+          </div>
         </div>
       </div>
 
@@ -639,6 +783,7 @@ function updateDeviceHealth(devices) {
     list.innerHTML = '<div class="db-empty">No devices registered</div>';
     return;
   }
+  syncDeviceSelector(devices);
   const onlineCount = devices.filter(d => d.health === 'ONLINE').length;
   setText('db-online-label', onlineCount + '/' + devices.length + ' online');
 
@@ -657,32 +802,409 @@ function updateDeviceHealth(devices) {
   list.innerHTML = html;
 }
 
-// ── Sparkline canvas chart ────────────────────────────────────────────────────
-function drawSeries(ctx2d, values, w, h, color) {
-  if (values.length < 2) return;
-  const max = Math.max(...values), min = Math.min(...values), range = (max - min) || 1;
-  ctx2d.strokeStyle = color; ctx2d.lineWidth = 2;
-  ctx2d.beginPath();
-  values.forEach((v, i) => {
-    const x = i * w / (values.length - 1);
-    const y = h - (v - min) / range * (h - 20) - 10;
-    i === 0 ? ctx2d.moveTo(x, y) : ctx2d.lineTo(x, y);
+// ── Live Sensor Feed Visualization Engine ─────────────────────────────────────
+let currentSensorDeviceId = 1;
+let currentSensorMode     = 'both';
+let cachedSensorRows      = [];
+let hoverSessionIndex     = -1;
+
+function onSensorDeviceChange(val) {
+  currentSensorDeviceId = parseInt(val, 10) || 1;
+  refreshSparkline();
+}
+
+function setSensorMode(mode) {
+  currentSensorMode = mode;
+  document.querySelectorAll('.db-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-mode') === mode);
   });
-  ctx2d.stroke();
+  renderSensorChart(cachedSensorRows, currentSensorMode, hoverSessionIndex);
+}
+
+function syncDeviceSelector(devices) {
+  const sel = document.getElementById('db-sensor-device-sel');
+  if (!sel || !devices || devices.length === 0) return;
+  if (sel.dataset.populated === 'true' && sel.options.length === devices.length) return;
+
+  const currentVal = sel.value;
+  sel.innerHTML = '';
+  devices.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d.deviceId;
+    opt.textContent = (d.deviceCode || ('Thiết bị ' + d.deviceId)) + (d.location ? ' (' + d.location + ')' : '');
+    sel.appendChild(opt);
+  });
+  sel.dataset.populated = 'true';
+  if (currentVal && Array.from(sel.options).some(o => o.value === currentVal)) {
+    sel.value = currentVal;
+  } else if (devices.length > 0) {
+    sel.value = devices[0].deviceId;
+    currentSensorDeviceId = devices[0].deviceId;
+  }
+}
+
+function updateSensorKpis(rows) {
+  if (!rows || rows.length === 0) {
+    setText('db-sensor-door-val', '—');
+    setText('db-sensor-weight-val', '—');
+    const dbDoor = document.getElementById('db-sensor-door-badge');
+    if (dbDoor) { dbDoor.className = 'db-sensor-kpi-badge db-badge--neutral'; dbDoor.textContent = 'Chưa có dữ liệu'; }
+    const dbW = document.getElementById('db-sensor-weight-badge');
+    if (dbW) { dbW.className = 'db-sensor-kpi-badge db-badge--neutral'; dbW.textContent = 'Chưa có dữ liệu'; }
+    return;
+  }
+  const last = rows[rows.length - 1];
+  const door = Number(last.a) || 0;
+  const weight = Number(last.b) || 0;
+
+  setText('db-sensor-door-val', door.toFixed(1));
+  const doorBadge = document.getElementById('db-sensor-door-badge');
+  if (doorBadge) {
+    if (door <= 10) {
+      doorBadge.className = 'db-sensor-kpi-badge db-badge--ok';
+      doorBadge.textContent = 'Bình thường ✓';
+    } else if (door <= 25) {
+      doorBadge.className = 'db-sensor-kpi-badge db-badge--warn';
+      doorBadge.textContent = 'Mở lâu ⚠️';
+    } else {
+      doorBadge.className = 'db-sensor-kpi-badge db-badge--danger';
+      doorBadge.textContent = 'Cảnh báo >25s 🚨';
+    }
+  }
+
+  const sign = weight > 0 ? '+' : '';
+  setText('db-sensor-weight-val', sign + weight.toFixed(0));
+  const weightBadge = document.getElementById('db-sensor-weight-badge');
+  if (weightBadge) {
+    if (weight > 10) {
+      weightBadge.className = 'db-sensor-kpi-badge db-badge--ok';
+      weightBadge.textContent = 'Cất đồ (+) 📦';
+    } else if (weight < -10) {
+      weightBadge.className = 'db-sensor-kpi-badge db-badge--warn';
+      weightBadge.textContent = 'Lấy đồ (-) 📤';
+    } else {
+      weightBadge.className = 'db-sensor-kpi-badge db-badge--neutral';
+      weightBadge.textContent = 'Không đổi (0g) ➖';
+    }
+  }
+}
+
+function renderSensorChart(rows, mode, hoverIdx) {
+  const cv = document.getElementById('liveChart');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const rect = cv.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const w = rect.width || 440;
+  const h = rect.height || 200;
+
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+  }
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  if (!rows || rows.length === 0) {
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Chưa có dữ liệu phiên cảm biến cho thiết bị này', w / 2, h / 2 - 8);
+    ctx.font = '11px sans-serif';
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillText('Dữ liệu sẽ tự động xuất hiện khi có phiên mở/đóng tủ', w / 2, h / 2 + 14);
+    ctx.restore();
+    return;
+  }
+
+  const displayRows = rows.slice(-20);
+  const n = displayRows.length;
+
+  const padL = (mode === 'weight') ? 24 : 40;
+  const padR = (mode === 'door') ? 24 : 48;
+  const padT = 18;
+  const padB = 26;
+  const plotW = Math.max(10, w - padL - padR);
+  const plotH = Math.max(10, h - padT - padB);
+
+  // Door scale: min always 0s
+  const doorVals = displayRows.map(r => Number(r.a) || 0);
+  const rawMaxDoor = Math.max(...doorVals, 5);
+  const maxDoor = Math.ceil(rawMaxDoor / 5) * 5 + (rawMaxDoor % 5 === 0 ? 5 : 0);
+  const yDoor = (val) => padT + plotH - (Math.max(0, val) / maxDoor) * plotH;
+
+  // Weight scale: centered around 0g
+  const weightVals = displayRows.map(r => Number(r.b) || 0);
+  const maxAbsW = Math.max(...weightVals.map(Math.abs), 50);
+  let scaleWeight = 100;
+  if (maxAbsW > 1000) scaleWeight = Math.ceil(maxAbsW / 500) * 500;
+  else if (maxAbsW > 200) scaleWeight = Math.ceil(maxAbsW / 100) * 100;
+  else if (maxAbsW > 50) scaleWeight = Math.ceil(maxAbsW / 50) * 50;
+  else scaleWeight = 50;
+
+  const yZero = padT + plotH / 2;
+  const yWeight = (val) => padT + (plotH / 2) - (val / scaleWeight) * (plotH / 2);
+
+  const getX = (i) => {
+    if (n === 1) return padL + plotW / 2;
+    return padL + (i / (n - 1)) * plotW;
+  };
+
+  // 1. Gridlines
+  ctx.lineWidth = 1;
+  const gridSteps = 4;
+  for (let i = 0; i <= gridSteps; i++) {
+    const gy = padT + (plotH / gridSteps) * i;
+    const isZero = (i === gridSteps / 2);
+    ctx.strokeStyle = (isZero && mode !== 'door') ? 'rgba(100, 116, 139, 0.45)' : 'rgba(226, 232, 240, 0.85)';
+    ctx.beginPath();
+    if (isZero && mode !== 'door') ctx.setLineDash([4, 4]);
+    else ctx.setLineDash([]);
+    ctx.moveTo(padL, gy);
+    ctx.lineTo(padL + plotW, gy);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // 2. Y-Axis Labels
+  ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+  // Left Y-Axis (Door: Blue)
+  if (mode === 'both' || mode === 'door') {
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#1d6fa4';
+    ctx.fillText(maxDoor + 's', padL - 6, padT);
+    ctx.fillText(Math.round(maxDoor / 2) + 's', padL - 6, padT + plotH / 2);
+    ctx.fillText('0s', padL - 6, padT + plotH);
+  }
+
+  // Right Y-Axis (Weight: Green / Gray / Red)
+  if (mode === 'both' || mode === 'weight') {
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#059669';
+    ctx.fillText('+' + scaleWeight + 'g', padL + plotW + 6, padT);
+    ctx.fillStyle = '#64748b';
+    ctx.fillText('0g', padL + plotW + 6, yZero);
+    ctx.fillStyle = '#e11d48';
+    ctx.fillText('-' + scaleWeight + 'g', padL + plotW + 6, padT + plotH);
+  }
+
+  // 3. X-Axis Line & Time Labels
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT + plotH);
+  ctx.lineTo(padL + plotW, padT + plotH);
+  ctx.stroke();
+
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#94a3b8';
+  const labelStep = Math.max(1, Math.floor(n / 4));
+  for (let i = 0; i < n; i++) {
+    if (i === 0 || i === n - 1 || i % labelStep === 0) {
+      const tStr = String(displayRows[i].time || '');
+      let timePart = tStr;
+      if (tStr.includes(' ')) {
+        timePart = tStr.split(' ')[1].substring(0, 5);
+      } else if (tStr.length >= 16) {
+        timePart = tStr.substring(11, 16);
+      }
+      ctx.fillText(timePart, getX(i), padT + plotH + 6);
+    }
+  }
+
+  // 4. Weight Series (Bars from yZero)
+  if (mode === 'both' || mode === 'weight') {
+    const barW = Math.max(6, Math.min(22, (plotW / n) * 0.45));
+    for (let i = 0; i < n; i++) {
+      const v = Number(displayRows[i].b) || 0;
+      const cx = getX(i);
+      const yVal = yWeight(v);
+      const barH = Math.max(2, Math.abs(yVal - yZero));
+      const topY = v >= 0 ? yVal : yZero;
+
+      if (v >= 0) {
+        ctx.fillStyle = (i === hoverIdx) ? '#059669' : 'rgba(16, 185, 129, 0.72)';
+      } else {
+        ctx.fillStyle = (i === hoverIdx) ? '#e11d48' : 'rgba(244, 63, 94, 0.72)';
+      }
+
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(cx - barW / 2, topY, barW, barH, 3);
+      } else {
+        ctx.rect(cx - barW / 2, topY, barW, barH);
+      }
+      ctx.fill();
+
+      if (mode === 'weight' && n <= 10) {
+        ctx.font = 'bold 9px sans-serif';
+        ctx.fillStyle = v >= 0 ? '#059669' : '#e11d48';
+        ctx.textAlign = 'center';
+        const ty = v >= 0 ? topY - 5 : topY + barH + 3;
+        ctx.fillText((v > 0 ? '+' : '') + Math.round(v) + 'g', cx, ty);
+      }
+    }
+  }
+
+  // 5. Door Series (Line + Gradient + Dots)
+  if (mode === 'both' || mode === 'door') {
+    if (n > 1) {
+      ctx.beginPath();
+      ctx.moveTo(getX(0), padT + plotH);
+      for (let i = 0; i < n; i++) {
+        ctx.lineTo(getX(i), yDoor(Number(displayRows[i].a) || 0));
+      }
+      ctx.lineTo(getX(n - 1), padT + plotH);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, padT, 0, padT + plotH);
+      grad.addColorStop(0, 'rgba(29, 111, 164, 0.22)');
+      grad.addColorStop(1, 'rgba(29, 111, 164, 0.02)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.strokeStyle = '#1d6fa4';
+      ctx.lineWidth = 2.5;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      for (let i = 0; i < n; i++) {
+        const x = getX(i);
+        const y = yDoor(Number(displayRows[i].a) || 0);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    for (let i = 0; i < n; i++) {
+      const x = getX(i);
+      const y = yDoor(Number(displayRows[i].a) || 0);
+      const isHov = (i === hoverIdx);
+
+      ctx.beginPath();
+      ctx.arc(x, y, isHov ? 5.5 : 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = isHov ? '#1a2540' : '#1d6fa4';
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      if (mode === 'door' && n <= 10) {
+        ctx.font = 'bold 9px sans-serif';
+        ctx.fillStyle = '#1d6fa4';
+        ctx.textAlign = 'center';
+        ctx.fillText((Number(displayRows[i].a) || 0).toFixed(1) + 's', x, y - 8);
+      }
+    }
+  }
+
+  // 6. Crosshair if hovered
+  if (hoverIdx >= 0 && hoverIdx < n) {
+    const hx = getX(hoverIdx);
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(hx, padT);
+    ctx.lineTo(hx, padT + plotH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  ctx.restore();
+}
+
+function onChartMouseMove(e) {
+  if (!cachedSensorRows || cachedSensorRows.length === 0) return;
+  const cv = document.getElementById('liveChart');
+  const tt = document.getElementById('liveChartTooltip');
+  if (!cv || !tt) return;
+
+  const rect = cv.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  const displayRows = cachedSensorRows.slice(-20);
+  const n = displayRows.length;
+  const padL = (currentSensorMode === 'weight') ? 24 : 40;
+  const padR = (currentSensorMode === 'door') ? 24 : 48;
+  const plotW = rect.width - padL - padR;
+
+  if (mouseX < padL - 10 || mouseX > rect.width - padR + 10) {
+    tt.style.display = 'none';
+    if (hoverSessionIndex !== -1) {
+      hoverSessionIndex = -1;
+      renderSensorChart(cachedSensorRows, currentSensorMode, -1);
+    }
+    return;
+  }
+
+  let nearestIdx = 0;
+  if (n > 1) {
+    const ratio = Math.max(0, Math.min(1, (mouseX - padL) / plotW));
+    nearestIdx = Math.round(ratio * (n - 1));
+  }
+
+  hoverSessionIndex = nearestIdx;
+  renderSensorChart(cachedSensorRows, currentSensorMode, nearestIdx);
+
+  const row = displayRows[nearestIdx];
+  const doorSec = (Number(row.a) || 0).toFixed(1);
+  const weightG = Number(row.b) || 0;
+  const weightStr = (weightG > 0 ? '+' : '') + weightG.toFixed(0) + ' g';
+  const weightTag = weightG > 10 ? '📦 Đã cất đồ' : (weightG < -10 ? '📤 Đã lấy đồ' : '➖ Không đổi');
+
+  tt.innerHTML =
+    '<div style="font-weight:700;margin-bottom:4px;color:#93c5fd;">🕒 ' + esc(row.time || '—') + '</div>' +
+    '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;">' +
+      '<span style="color:#60a5fa;">🚪 Mở cửa:</span> <strong>' + doorSec + ' s</strong>' +
+    '</div>' +
+    '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;">' +
+      '<span style="color:#34d399;">⚖️ Tải trọng:</span> <strong>' + weightStr + '</strong> (' + weightTag + ')' +
+    '</div>';
+
+  tt.style.display = 'block';
+  const getX = (i) => (n === 1 ? padL + plotW / 2 : padL + (i / (n - 1)) * plotW);
+  const anchorX = getX(nearestIdx);
+  tt.style.left = Math.min(rect.width - 90, Math.max(90, anchorX)) + 'px';
+  if (mouseY < 75) {
+    tt.style.top = mouseY + 'px';
+    tt.classList.add('tooltip--bottom');
+  } else {
+    tt.style.top = mouseY + 'px';
+    tt.classList.remove('tooltip--bottom');
+  }
+}
+
+function onChartMouseLeave() {
+  const tt = document.getElementById('liveChartTooltip');
+  if (tt) tt.style.display = 'none';
+  if (hoverSessionIndex !== -1) {
+    hoverSessionIndex = -1;
+    renderSensorChart(cachedSensorRows, currentSensorMode, -1);
+  }
 }
 
 function refreshSparkline() {
-  fetch(API_URL + '?device=1', { credentials: 'same-origin' })
+  const devId = currentSensorDeviceId || 1;
+  fetch(API_URL + '?device=' + devId, { credentials: 'same-origin' })
     .then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(rows => {
-      const canvas = document.getElementById('liveChart');
-      if (!canvas) return;
-      const c = canvas.getContext('2d');
-      c.clearRect(0, 0, canvas.width, canvas.height);
-      drawSeries(c, rows.map(r => r.a), canvas.width, canvas.height, '#1d6fa4');
-      drawSeries(c, rows.map(r => r.b), canvas.width, canvas.height, '#c0392b');
+      cachedSensorRows = rows || [];
+      updateSensorKpis(cachedSensorRows);
+      renderSensorChart(cachedSensorRows, currentSensorMode, hoverSessionIndex);
+      setText('db-sensor-meta', cachedSensorRows.length + ' phiên gần nhất · Cập nhật 5s');
     })
-    .catch(() => {});
+    .catch(() => {
+      setText('db-sensor-meta', 'Mất kết nối cảm biến');
+    });
 }
 
 // ── Main poll cycle ───────────────────────────────────────────────────────────
@@ -732,7 +1254,17 @@ function closeModal(e) {
 }
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
+const chartCanvas = document.getElementById('liveChart');
+if (chartCanvas) {
+  chartCanvas.addEventListener('mousemove', onChartMouseMove);
+  chartCanvas.addEventListener('mouseleave', onChartMouseLeave);
+}
+window.addEventListener('resize', () => {
+  renderSensorChart(cachedSensorRows, currentSensorMode, hoverSessionIndex);
+});
+
 fetchDashboard();
+refreshSparkline();
 setInterval(refreshSparkline, 5000);
 </script>
 </body>
