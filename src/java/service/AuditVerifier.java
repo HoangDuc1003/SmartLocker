@@ -21,22 +21,28 @@ public class AuditVerifier {
     public static class Row {
         public long auditId;
         public String tsText;        // CONVERT(NVARCHAR(33), ts, 126) done by SQL, so the text is identical
-        public int actor;
+        public String actor;         // "" for NULL, as CONCAT in Audit_Append writes it
         public String action;
         public String objectType;
-        public long objectId;
+        public String objectId;      // "" for NULL
         public String diff;          // "" for NULL
         public String prevHash;
         public String chainHash;
 
         public Row(long auditId, String tsText, int actor, String action, String objectType, long objectId,
                    String diff, String prevHash, String chainHash) {
+            this(auditId, tsText, Integer.valueOf(actor), action, objectType, Long.valueOf(objectId), diff, prevHash, chainHash);
+        }
+
+        /** Nullable actor and object id: CONCAT turns NULL into an empty string, so must we. */
+        public Row(long auditId, String tsText, Integer actor, String action, String objectType, Long objectId,
+                   String diff, String prevHash, String chainHash) {
             this.auditId = auditId;
             this.tsText = tsText;
-            this.actor = actor;
-            this.action = action;
-            this.objectType = objectType;
-            this.objectId = objectId;
+            this.actor = actor == null ? "" : actor.toString();
+            this.action = action == null ? "" : action;
+            this.objectType = objectType == null ? "" : objectType;
+            this.objectId = objectId == null ? "" : objectId.toString();
             this.diff = diff == null ? "" : diff;
             this.prevHash = prevHash;
             this.chainHash = chainHash;
@@ -89,8 +95,12 @@ public class AuditVerifier {
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                rows.add(new Row(rs.getLong(1), rs.getString(2), rs.getInt(3), rs.getString(4), rs.getString(5),
-                        rs.getLong(6), rs.getString(7), rs.getString(8), rs.getString(9)));
+                int actor = rs.getInt(3);
+                Integer actorOrNull = rs.wasNull() ? null : actor;
+                long objectId = rs.getLong(6);
+                Long objectOrNull = rs.wasNull() ? null : objectId;
+                rows.add(new Row(rs.getLong(1), rs.getString(2), actorOrNull, rs.getString(4), rs.getString(5),
+                        objectOrNull, rs.getString(7), rs.getString(8), rs.getString(9)));
             }
         }
         return rows;

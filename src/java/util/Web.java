@@ -53,6 +53,47 @@ public class Web {
         session.setAttribute("flashBad", bad);
     }
 
+    /** Vietnamese text of the business errors the stored procedures THROW (50000+); other errors keep their own text. */
+    private static final java.util.Map<String, String> SQL_MESSAGES = new java.util.HashMap<>();
+    static {
+        String[][] pairs = {
+            {"This slot has no device", "Ngăn tủ này chưa gắn thiết bị"},
+            {"Device is not online, the command cannot be delivered", "Thiết bị đang mất kết nối, không gửi được lệnh"},
+            {"Another operator is controlling this device", "Một nhân viên khác đang điều khiển thiết bị này"},
+            {"A reason of at least 5 characters is required", "Cần nhập lý do ít nhất 5 ký tự"},
+            {"Card not found, not yours, or already reported", "Không tìm thấy thẻ, thẻ không phải của bạn hoặc đã báo mất"},
+            {"Only a lost or blocked card can be replaced", "Chỉ đổi được thẻ đã báo mất hoặc bị khóa"},
+            {"Insufficient balance. Add funds before booking.", "Số dư không đủ. Hãy nạp tiền trước khi đặt tủ."},
+            {"Booking is blocked: 3 no-shows in the last 7 days", "Bạn bị tạm khóa đặt tủ: 3 lần không đến trong 7 ngày qua"},
+            {"You already have a booking in progress", "Bạn đang có một lượt đặt chưa kết thúc"},
+            {"This slot is no longer available", "Ngăn tủ này không còn trống"},
+            {"This storage plan is not available", "Gói gửi đồ này không còn áp dụng"},
+            {"The locker is offline, booking is paused", "Tủ đang mất kết nối, tạm ngừng nhận đặt"},
+            {"Nothing to cancel: not your reservation, or it already started", "Không hủy được: không phải lượt đặt của bạn hoặc đã bắt đầu"},
+            {"You can add between 15 and 240 minutes", "Chỉ gia hạn được từ 15 đến 240 phút"},
+            {"Nothing to extend: not your active booking", "Không gia hạn được: không phải lượt gửi đang dùng của bạn"},
+            {"A booking can be extended 3 times at most", "Mỗi lượt gửi chỉ gia hạn tối đa 3 lần"},
+            {"The storage plan has an invalid price", "Gói gửi đồ có giá không hợp lệ"},
+            {"Ticket not found or already closed", "Không tìm thấy phiếu hoặc phiếu đã đóng"},
+            {"Alert not found or already resolved", "Không tìm thấy cảnh báo hoặc cảnh báo đã xử lý"},
+            // v2 (sql/06_demo_v2.sql)
+            {"Insufficient balance for the price and the 30,000 VND card deposit", "Số dư không đủ cho giá gói và tiền cọc thẻ 30.000 đ. Hãy nạp thêm tiền."},
+            {"Choose how to open the locker: PIN, card or fingerprint", "Hãy chọn cách mở tủ: mật mã, thẻ từ hoặc vân tay"},
+            {"Could not create a unique code, try again", "Không tạo được mã, hãy thử lại"},
+            {"This booking has nothing to enroll", "Lượt đặt này không cần đăng ký thẻ hoặc vân tay"},
+            {"Fingerprint not found or not yours", "Không tìm thấy vân tay hoặc vân tay không phải của bạn"},
+        };
+        for (String[] p : pairs) {
+            SQL_MESSAGES.put(p[0], p[1]);
+        }
+    }
+
+    public static String sqlMessage(java.sql.SQLException e) {
+        String text = e.getMessage() == null ? "" : e.getMessage().trim();
+        String vi = SQL_MESSAGES.get(text);
+        return vi != null ? vi : text;
+    }
+
     /** Number of pages for a total, at least 1. */
     public static int pages(int total, int pageSize) {
         return Math.max(1, (total + pageSize - 1) / pageSize);

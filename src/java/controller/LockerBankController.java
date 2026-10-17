@@ -61,19 +61,19 @@ public class LockerBankController extends HttpServlet {
 
     private String validate(model.LockerBank b) throws SQLException {
         if (!BANK_CODE.matcher(b.getBankCode()).matches()) {
-            return "Bank code must be 2 to 20 letters, digits, - or _";
+            return "Mã dãy tủ gồm 2 đến 20 ký tự: chữ, số, - hoặc _";
         }
         if (b.getName().length() < 1 || b.getName().length() > 40) {
-            return "Bank name must be 1 to 40 characters";
+            return "Tên dãy tủ dài từ 1 đến 40 ký tự";
         }
         if (b.getAreaId() <= 0) {
-            return "Please choose an area";
+            return "Hãy chọn khu vực";
         }
         if (b.getDoorRows() < 1 || b.getDoorRows() > 8) {
-            return "Door rows must be between 1 and 8";
+            return "Số hàng cửa phải từ 1 đến 8";
         }
         if (dao.codeExists(b.getBankCode(), b.getBankId())) {
-            return "Bank code " + b.getBankCode() + " already exists";
+            return "Mã dãy tủ " + b.getBankCode() + " đã tồn tại";
         }
         return null;
     }
@@ -91,7 +91,7 @@ public class LockerBankController extends HttpServlet {
                 int id = util.Web.intParam(req, "id", 0);
                 model.LockerBank item = dao.findById(id);
                 if (item == null) {
-                    util.Web.flash(req.getSession(), "Bank not found", true);
+                    util.Web.flash(req.getSession(), "Không tìm thấy dãy tủ", true);
                     res.sendRedirect("LockerBankController");
                     return;
                 }
@@ -118,9 +118,9 @@ public class LockerBankController extends HttpServlet {
                 String reason = dao.delete(id);
                 if (reason == null && old != null) {
                     auditDao.append(me.getUserId(), "DELETE", "LOCKERBANK", id, old.getBankCode());
-                    util.Web.flash(req.getSession(), "Bank " + old.getBankCode() + " deleted", false);
+                    util.Web.flash(req.getSession(), "Đã xóa dãy tủ " + old.getBankCode(), false);
                 } else {
-                    util.Web.flash(req.getSession(), reason == null ? "Nothing was deleted" : reason, true);
+                    util.Web.flash(req.getSession(), reason == null ? "Không có gì bị xóa" : reason, true);
                 }
                 res.sendRedirect("LockerBankController");
                 return;
@@ -148,11 +148,11 @@ public class LockerBankController extends HttpServlet {
             if ("create".equals(action) || b.getBankId() == 0) {
                 int id = dao.insert(b);
                 auditDao.append(me.getUserId(), "CREATE", "LOCKERBANK", id, b.getBankCode());
-                util.Web.flash(req.getSession(), "Bank " + b.getBankCode() + " created", false);
+                util.Web.flash(req.getSession(), "Đã tạo dãy tủ " + b.getBankCode(), false);
             } else {
                 dao.update(b);
                 auditDao.append(me.getUserId(), "UPDATE", "LOCKERBANK", b.getBankId(), b.getBankCode());
-                util.Web.flash(req.getSession(), "Bank " + b.getBankCode() + " saved", false);
+                util.Web.flash(req.getSession(), "Đã lưu dãy tủ " + b.getBankCode(), false);
             }
             res.sendRedirect("LockerBankController");
         } catch (SQLException e) {

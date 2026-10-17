@@ -1,0 +1,5262 @@
+{
+  "info": {
+    "_postman_id": "4f0a8f0d-8ff5-5422-b1d4-8824242352f7",
+    "name": "SmartLocker v2",
+    "description": "API thiết bị v2 (docs/spec/smart-locker-v2.md, mục 4 và 6). Trước khi chạy: sql/test_v2_setup.sql. Postman Runner: chạy cả collection theo thứ tự. Newman: newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<khóa LOCKER-01>. Khóa LOCKER-01 nằm trong config/device-keys.local.properties (scripts/set-device-key.ps1).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Heartbeat",
+      "item": [
+        {
+          "name": "Heartbeat v2 (giữ hộp trực tuyến)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
+                  "    pm.expect(r.interval_sec).to.eql(3);",
+                  "    pm.expect(r.commands).to.be.an('array');",
+                  "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
+                  "});",
+                  "pm.test('v1 keys kept for ScenarioSender', () => {",
+                  "    pm.expect(r.blocked_cards).to.be.an('array');",
+                  "    pm.expect(r.reserved).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "POST /api/health. Gọi đầu tiên để LOCKER-01 không bị đánh dấu OFFLINE."
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Sai API key -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "pm.test('reason BAD_API_KEY', () => pm.expect(pm.response.json().reason).to.eql('BAD_API_KEY'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{bad_api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/device/auth",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "device",
+                "auth"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"method\": \"PIN\", \"pin\": \"123456\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Body sai định dạng -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "pm.test('reason BAD_REQUEST', () => pm.expect(pm.response.json().reason).to.eql('BAD_REQUEST'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/device/auth",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "device",
+                "auth"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"method\":\"PIN\",\"pin\":",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cách mở không hỗ trợ -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/device/auth",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "device",
+                "auth"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"method\": \"FACE\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "POST /api/device/auth: các lỗi định dạng (không tính vào giới hạn sai 5 lần)."
+    },
+    {
+      "name": "Enroll",
+      "item": [
+        {
+          "name": "Loại đăng ký sai -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/device/enroll/start",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "device",
+                "enroll",
+                "start"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"type\": \"FACE\", \"enroll_code\": \"123456\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Thiếu card_uid khi finish -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/device/enroll/finish",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "device",
+                "enroll",
+                "finish"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"type\": \"CARD\", \"enroll_code\": \"123456\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "POST /api/device/enroll/start và /finish: lỗi định dạng. Luồng đầy đủ nằm ở Scenarios 3 và 4."
+    },
+    {
+      "name": "Kiosk (điện thoại)",
+      "item": [
+        {
+          "name": "Hộp không tồn tại -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "pm.test('reason UNKNOWN_DEVICE', () => pm.expect(pm.response.json().reason).to.eql('UNKNOWN_DEVICE'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/kiosk/unlock",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "kiosk",
+                "unlock"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"device_code\": \"LOCKER-99\", \"pin\": \"123456\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Mật mã không đủ 6 số -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/kiosk/unlock",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "kiosk",
+                "unlock"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"device_code\": \"{{device_code}}\", \"pin\": \"12\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "POST /api/kiosk/unlock: công khai, không cần API key."
+    },
+    {
+      "name": "Batch",
+      "item": [
+        {
+          "name": "Gửi bản ghi mở chốt (PIN)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const pad = n => String(n).padStart(2, '0');",
+                  "const d = new Date();",
+                  "pm.environment.set('now_utc', d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()) + ' '",
+                  "    + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ':' + pad(d.getUTCSeconds()));",
+                  "pm.environment.set('seq', Math.floor(Date.now() / 1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('one session saved', () => pm.expect(pm.response.json().saved).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/locker/batch",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "locker",
+                "batch"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"sessions\":[{\"seq\":{{seq}},\"measured_at\":\"{{now_utc}}\",\"door_open_sec\":8,\"weight_delta_g\":0,\"unlock_count\":1,\"rfid_ok\":true,\"stay_min\":1,\"slot_code\":\"A15\",\"card_uid\":null,\"open_source\":\"PIN\",\"command_id\":null}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "POST /api/locker/batch: chỉ lưu lịch sử, không kết thúc lượt gửi (v2)."
+    },
+    {
+      "name": "Scenarios",
+      "item": [
+        {
+          "name": "1. Mật mã: CHECK_IN rồi PICKUP",
+          "item": [
+            {
+              "name": "Heartbeat",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
+                      "    pm.expect(r.interval_sec).to.eql(3);",
+                      "    pm.expect(r.commands).to.be.an('array');",
+                      "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
+                      "});",
+                      "pm.test('v1 keys kept for ScenarioSender', () => {",
+                      "    pm.expect(r.blocked_cards).to.be.an('array');",
+                      "    pm.expect(r.reserved).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v2pin",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_pin}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_pin'), () => pm.expect(me.username).to.eql(pm.environment.get('user_pin')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Chọn ngăn trống trên CANT-A",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
+                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "pm.environment.set('slot_id', slot.slot_id);",
+                      "pm.environment.set('slot_code', slot.slot_code);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đặt tủ: PIN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "reserve"
+                    },
+                    {
+                      "key": "slotId",
+                      "value": "{{slot_id}}"
+                    },
+                    {
+                      "key": "planId",
+                      "value": "{{plan_id}}"
+                    },
+                    {
+                      "key": "openMethod",
+                      "value": "PIN"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt đặt PIN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "pm.test('booking RESERVED with PIN', () => {",
+                      "    pm.expect(b).to.be.an('object');",
+                      "    pm.expect(b.status).to.eql('RESERVED');",
+                      "    pm.expect(b.open_method).to.eql('PIN');",
+                      "    pm.expect(b.slot_id).to.eql(pm.environment.get('slot_id'));",
+                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
+                      "});",
+                      "pm.environment.set('deposit_id', b.deposit_id);",
+                      "pm.environment.set('pin', b.pin_code || '');",
+                      "pm.environment.set('enroll_code', b.enroll_code || '');",
+                      "pm.test('6-digit PIN, no enroll code', () => { pm.expect(b.pin_code).to.match(/^\\d{6}$/); pm.expect(b.enroll_code).to.be.null; });",
+                      "pm.test('price unchanged for PIN', () => pm.expect(b.paid_amount).to.eql(Number(pm.environment.get('plan_price'))));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Sơ đồ: ngăn RESERVED",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const slot = bank.slots.find(s => s.slot_id === pm.environment.get('slot_id'));",
+                      "pm.test('slot is RESERVED', () => pm.expect(slot.status).to.eql('RESERVED'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "auth PIN lần 1 -> CHECK_IN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK CHECK_IN', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('CHECK_IN');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Sơ đồ: ngăn OCCUPIED",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const slot = bank.slots.find(s => s.slot_id === pm.environment.get('slot_id'));",
+                      "pm.test('slot is OCCUPIED', () => pm.expect(slot.status).to.eql('OCCUPIED'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "auth PIN lần 2 -> PICKUP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK PICKUP', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('PICKUP');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});",
+                      "pm.environment.set('old_pin', pm.environment.get('pin'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Sơ đồ: ngăn AVAILABLE",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const slot = bank.slots.find(s => s.slot_id === pm.environment.get('slot_id'));",
+                      "pm.test('slot is AVAILABLE', () => pm.expect(slot.status).to.eql('AVAILABLE'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Mở bằng trang điện thoại (lệnh UNLOCK qua heartbeat)",
+          "item": [
+            {
+              "name": "Heartbeat",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
+                      "    pm.expect(r.interval_sec).to.eql(3);",
+                      "    pm.expect(r.commands).to.be.an('array');",
+                      "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
+                      "});",
+                      "pm.test('v1 keys kept for ScenarioSender', () => {",
+                      "    pm.expect(r.blocked_cards).to.be.an('array');",
+                      "    pm.expect(r.reserved).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v2pin",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_pin}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_pin'), () => pm.expect(me.username).to.eql(pm.environment.get('user_pin')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Chọn ngăn trống trên CANT-A",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
+                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "pm.environment.set('slot_id', slot.slot_id);",
+                      "pm.environment.set('slot_code', slot.slot_code);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đặt tủ: PIN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "reserve"
+                    },
+                    {
+                      "key": "slotId",
+                      "value": "{{slot_id}}"
+                    },
+                    {
+                      "key": "planId",
+                      "value": "{{plan_id}}"
+                    },
+                    {
+                      "key": "openMethod",
+                      "value": "PIN"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt đặt PIN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "pm.test('booking RESERVED with PIN', () => {",
+                      "    pm.expect(b).to.be.an('object');",
+                      "    pm.expect(b.status).to.eql('RESERVED');",
+                      "    pm.expect(b.open_method).to.eql('PIN');",
+                      "    pm.expect(b.slot_id).to.eql(pm.environment.get('slot_id'));",
+                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
+                      "});",
+                      "pm.environment.set('deposit_id', b.deposit_id);",
+                      "pm.environment.set('pin', b.pin_code || '');",
+                      "pm.environment.set('enroll_code', b.enroll_code || '');"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Heartbeat (hộp vừa báo sống, dưới 10 giây)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
+                      "    pm.expect(r.interval_sec).to.eql(3);",
+                      "    pm.expect(r.commands).to.be.an('array');",
+                      "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
+                      "});",
+                      "pm.test('v1 keys kept for ScenarioSender', () => {",
+                      "    pm.expect(r.blocked_cards).to.be.an('array');",
+                      "    pm.expect(r.reserved).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "kiosk/unlock -> CHECK_IN + lệnh UNLOCK",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK CHECK_IN with command_id', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('CHECK_IN');",
+                      "    pm.expect(r.command_id).to.be.a('number');",
+                      "});",
+                      "pm.test('Vietnamese message', () => pm.expect(r.message).to.include('Mời cất đồ'));",
+                      "pm.environment.set('command_id', r.command_id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/kiosk/unlock",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "kiosk",
+                    "unlock"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"device_code\": \"{{device_code}}\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Chưa đổi trạng thái khi hộp chưa nhận lệnh",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "pm.test('booking RESERVED', () => pm.expect(me.booking.status).to.eql('RESERVED'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "kiosk/unlock lần nữa -> cùng lệnh",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK CHECK_IN with command_id', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('CHECK_IN');",
+                      "    pm.expect(r.command_id).to.be.a('number');",
+                      "});",
+                      "pm.test('Vietnamese message', () => pm.expect(r.message).to.include('Mời cất đồ'));",
+                      "pm.test('same command as before (not delivered yet)', () => pm.expect(r.command_id).to.eql(pm.environment.get('command_id')));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/kiosk/unlock",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "kiosk",
+                    "unlock"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"device_code\": \"{{device_code}}\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Heartbeat kế tiếp nhận lệnh UNLOCK",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
+                      "    pm.expect(r.interval_sec).to.eql(3);",
+                      "    pm.expect(r.commands).to.be.an('array');",
+                      "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
+                      "});",
+                      "pm.test('v1 keys kept for ScenarioSender', () => {",
+                      "    pm.expect(r.blocked_cards).to.be.an('array');",
+                      "    pm.expect(r.reserved).to.be.an('array');",
+                      "});",
+                      "",
+                      "const cmd = r.commands.find(c => c.command_id === pm.environment.get('command_id'));",
+                      "pm.test('UNLOCK command delivered', () => {",
+                      "    pm.expect(cmd).to.be.an('object');",
+                      "    pm.expect(cmd.action).to.eql('UNLOCK');",
+                      "    pm.expect(cmd.open_sec).to.eql(8);",
+                      "    pm.expect(cmd.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Heartbeat sau đó không lặp lại lệnh",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
+                      "    pm.expect(r.interval_sec).to.eql(3);",
+                      "    pm.expect(r.commands).to.be.an('array');",
+                      "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
+                      "});",
+                      "pm.test('v1 keys kept for ScenarioSender', () => {",
+                      "    pm.expect(r.blocked_cards).to.be.an('array');",
+                      "    pm.expect(r.reserved).to.be.an('array');",
+                      "});",
+                      "",
+                      "pm.test('command handed over once', () => pm.expect(r.commands.find(c => c.command_id === pm.environment.get('command_id'))).to.be.undefined);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Hộp nhận lệnh: lượt đã ACTIVE",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "pm.test('booking ACTIVE', () => pm.expect(me.booking.status).to.eql('ACTIVE'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Batch: bản ghi PHONE dùng command_id",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const pad = n => String(n).padStart(2, '0');",
+                      "const d = new Date();",
+                      "pm.environment.set('now_utc', d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()) + ' '",
+                      "    + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ':' + pad(d.getUTCSeconds()));",
+                      "pm.environment.set('seq', Math.floor(Date.now() / 1000) + 7);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('saved', () => pm.expect(pm.response.json().saved).to.eql(1));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/locker/batch",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker",
+                    "batch"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"sessions\":[{\"seq\":{{seq}},\"measured_at\":\"{{now_utc}}\",\"door_open_sec\":8,\"weight_delta_g\":0,\"unlock_count\":1,\"rfid_ok\":true,\"stay_min\":1,\"slot_code\":\"{{slot_code}}\",\"card_uid\":null,\"open_source\":\"PHONE\",\"command_id\":{{command_id}}}]}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "kiosk/unlock -> PICKUP + lệnh UNLOCK",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK PICKUP with command_id', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('PICKUP');",
+                      "    pm.expect(r.command_id).to.be.a('number');",
+                      "});",
+                      "pm.test('Vietnamese message', () => pm.expect(r.message).to.include('Mời lấy đồ'));",
+                      "pm.environment.set('command_id', r.command_id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/kiosk/unlock",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "kiosk",
+                    "unlock"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"device_code\": \"{{device_code}}\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Chưa kết thúc khi hộp chưa nhận lệnh",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "pm.test('booking ACTIVE', () => pm.expect(me.booking.status).to.eql('ACTIVE'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Heartbeat nhận lệnh lấy đồ",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
+                      "    pm.expect(r.interval_sec).to.eql(3);",
+                      "    pm.expect(r.commands).to.be.an('array');",
+                      "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
+                      "});",
+                      "pm.test('v1 keys kept for ScenarioSender', () => {",
+                      "    pm.expect(r.blocked_cards).to.be.an('array');",
+                      "    pm.expect(r.reserved).to.be.an('array');",
+                      "});",
+                      "",
+                      "const cmd = r.commands.find(c => c.command_id === pm.environment.get('command_id'));",
+                      "pm.test('UNLOCK command delivered', () => {",
+                      "    pm.expect(cmd).to.be.an('object');",
+                      "    pm.expect(cmd.action).to.eql('UNLOCK');",
+                      "    pm.expect(cmd.open_sec).to.eql(8);",
+                      "    pm.expect(cmd.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Hộp nhận lệnh: lượt đã kết thúc",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "pm.test('booking closed', () => pm.expect(me.booking).to.be.null);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Sơ đồ: ngăn AVAILABLE",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const slot = bank.slots.find(s => s.slot_id === pm.environment.get('slot_id'));",
+                      "pm.test('slot is AVAILABLE', () => pm.expect(slot.status).to.eql('AVAILABLE'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Thẻ từ lần đầu: đăng ký, cọc 30.000 đ, giảm 5%",
+          "item": [
+            {
+              "name": "Heartbeat",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
+                      "    pm.expect(r.interval_sec).to.eql(3);",
+                      "    pm.expect(r.commands).to.be.an('array');",
+                      "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
+                      "});",
+                      "pm.test('v1 keys kept for ScenarioSender', () => {",
+                      "    pm.expect(r.blocked_cards).to.be.an('array');",
+                      "    pm.expect(r.reserved).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v2card",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_card}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_card'), () => pm.expect(me.username).to.eql(pm.environment.get('user_card')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Chưa có thẻ: phải cọc",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "pm.test('card deposit due', () => pm.expect(me.card_deposit_due).to.be.true);",
+                      "const plan = me.plans.find(p => p.plan_id === Number(pm.environment.get('plan_id')));",
+                      "pm.test('card price 5% off rounded up to 100 VND', () => pm.expect(plan.price_card).to.eql(Math.ceil(plan.price_pin * 0.95 / 100) * 100));",
+                      "pm.environment.set('card_price', plan.price_card);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Chọn ngăn trống trên CANT-A",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
+                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "pm.environment.set('slot_id', slot.slot_id);",
+                      "pm.environment.set('slot_code', slot.slot_code);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đặt tủ: CARD",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "reserve"
+                    },
+                    {
+                      "key": "slotId",
+                      "value": "{{slot_id}}"
+                    },
+                    {
+                      "key": "planId",
+                      "value": "{{plan_id}}"
+                    },
+                    {
+                      "key": "openMethod",
+                      "value": "CARD"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt đặt CARD",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "pm.test('booking RESERVED with CARD', () => {",
+                      "    pm.expect(b).to.be.an('object');",
+                      "    pm.expect(b.status).to.eql('RESERVED');",
+                      "    pm.expect(b.open_method).to.eql('CARD');",
+                      "    pm.expect(b.slot_id).to.eql(pm.environment.get('slot_id'));",
+                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
+                      "});",
+                      "pm.environment.set('deposit_id', b.deposit_id);",
+                      "pm.environment.set('pin', b.pin_code || '');",
+                      "pm.environment.set('enroll_code', b.enroll_code || '');",
+                      "",
+                      "pm.test('enroll code, no PIN', () => { pm.expect(b.enroll_code).to.match(/^\\d{6}$/); pm.expect(b.pin_code).to.be.null; });",
+                      "pm.test('paid the card price', () => pm.expect(b.paid_amount).to.eql(pm.environment.get('card_price')));",
+                      "pm.test('wallet charged only the price for now', () => pm.expect(me.balance).to.eql(pm.environment.get('balance_before') - b.paid_amount));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "enroll/start CARD",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.environment.set('card_uid', 'C' + Math.floor(Math.random() * 0xFFFFFFF).toString(16).toUpperCase().padStart(7, '0'));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('OK, Quet the', () => { pm.expect(r.result).to.eql('OK'); pm.expect(r.message).to.eql('Quet the'); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/enroll/start",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "enroll",
+                    "start"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"type\": \"CARD\", \"enroll_code\": \"{{enroll_code}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "enroll/finish CARD (UID mới)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('OK, Dang ky xong', () => { pm.expect(r.result).to.eql('OK'); pm.expect(r.message).to.eql('Dang ky xong'); });",
+                      "pm.environment.set('used_enroll_code', pm.environment.get('enroll_code'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/enroll/finish",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "enroll",
+                    "finish"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"type\": \"CARD\", \"enroll_code\": \"{{enroll_code}}\", \"card_uid\": \"{{card_uid}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: UID thẻ, cọc 30.000 đ",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "const card = me.cards.find(c => c.card_uid === pm.environment.get('card_uid'));",
+                      "pm.test('card shown with its UID and deposit', () => {",
+                      "    pm.expect(card).to.be.an('object');",
+                      "    pm.expect(card.status).to.eql('ACTIVE');",
+                      "    pm.expect(card.deposit_amount).to.eql(30000);",
+                      "});",
+                      "pm.test('30,000 VND taken from the wallet', () => pm.expect(me.balance).to.eql(pm.environment.get('balance_before') - 30000));",
+                      "pm.test('no deposit due any more', () => pm.expect(me.card_deposit_due).to.be.false);",
+                      "pm.environment.set('card_id', card.card_id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "auth CARD lần 1 -> CHECK_IN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK CHECK_IN', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('CHECK_IN');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"CARD\", \"card_uid\": \"{{card_uid}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "auth CARD lần 2 -> PICKUP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK PICKUP', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('PICKUP');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"CARD\", \"card_uid\": \"{{card_uid}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "9. Đặt bằng mật mã nhưng quẹt thẻ",
+          "item": [
+            {
+              "name": "Heartbeat",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
+                      "    pm.expect(r.interval_sec).to.eql(3);",
+                      "    pm.expect(r.commands).to.be.an('array');",
+                      "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
+                      "});",
+                      "pm.test('v1 keys kept for ScenarioSender', () => {",
+                      "    pm.expect(r.blocked_cards).to.be.an('array');",
+                      "    pm.expect(r.reserved).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v2card",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_card}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_card'), () => pm.expect(me.username).to.eql(pm.environment.get('user_card')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Chọn ngăn trống trên CANT-A",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
+                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "pm.environment.set('slot_id', slot.slot_id);",
+                      "pm.environment.set('slot_code', slot.slot_code);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đặt tủ: PIN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "reserve"
+                    },
+                    {
+                      "key": "slotId",
+                      "value": "{{slot_id}}"
+                    },
+                    {
+                      "key": "planId",
+                      "value": "{{plan_id}}"
+                    },
+                    {
+                      "key": "openMethod",
+                      "value": "PIN"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt đặt PIN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "pm.test('booking RESERVED with PIN', () => {",
+                      "    pm.expect(b).to.be.an('object');",
+                      "    pm.expect(b.status).to.eql('RESERVED');",
+                      "    pm.expect(b.open_method).to.eql('PIN');",
+                      "    pm.expect(b.slot_id).to.eql(pm.environment.get('slot_id'));",
+                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
+                      "});",
+                      "pm.environment.set('deposit_id', b.deposit_id);",
+                      "pm.environment.set('pin', b.pin_code || '');",
+                      "pm.environment.set('enroll_code', b.enroll_code || '');"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "auth CARD -> METHOD_MISMATCH",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('DENY METHOD_MISMATCH', () => {",
+                      "    pm.expect(r.result).to.eql('DENY');",
+                      "    pm.expect(r.reason).to.eql('METHOD_MISMATCH');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"CARD\", \"card_uid\": \"{{card_uid}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "auth PIN -> CHECK_IN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK CHECK_IN', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('CHECK_IN');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "auth PIN -> PICKUP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK PICKUP', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('PICKUP');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "8. Thẻ đã báo mất",
+          "item": [
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v2card",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_card}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_card'), () => pm.expect(me.username).to.eql(pm.environment.get('user_card')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Báo mất thẻ (trang Thẻ của tôi)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/MyCardController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "MyCardController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "reportLost"
+                    },
+                    {
+                      "key": "cardId",
+                      "value": "{{card_id}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "auth CARD -> CARD_BLOCKED",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('DENY CARD_BLOCKED', () => {",
+                      "    pm.expect(r.result).to.eql('DENY');",
+                      "    pm.expect(r.reason).to.eql('CARD_BLOCKED');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"CARD\", \"card_uid\": \"{{card_uid}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Vân tay: đăng ký một lần, dùng lại",
+          "item": [
+            {
+              "name": "Heartbeat",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
+                      "    pm.expect(r.interval_sec).to.eql(3);",
+                      "    pm.expect(r.commands).to.be.an('array');",
+                      "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
+                      "});",
+                      "pm.test('v1 keys kept for ScenarioSender', () => {",
+                      "    pm.expect(r.blocked_cards).to.be.an('array');",
+                      "    pm.expect(r.reserved).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v2fp",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_fp}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_fp'), () => pm.expect(me.username).to.eql(pm.environment.get('user_fp')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Chọn ngăn trống trên CANT-A",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
+                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "pm.environment.set('slot_id', slot.slot_id);",
+                      "pm.environment.set('slot_code', slot.slot_code);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đặt tủ: FINGERPRINT",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "reserve"
+                    },
+                    {
+                      "key": "slotId",
+                      "value": "{{slot_id}}"
+                    },
+                    {
+                      "key": "planId",
+                      "value": "{{plan_id}}"
+                    },
+                    {
+                      "key": "openMethod",
+                      "value": "FINGERPRINT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt đặt FINGERPRINT",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "pm.test('booking RESERVED with FINGERPRINT', () => {",
+                      "    pm.expect(b).to.be.an('object');",
+                      "    pm.expect(b.status).to.eql('RESERVED');",
+                      "    pm.expect(b.open_method).to.eql('FINGERPRINT');",
+                      "    pm.expect(b.slot_id).to.eql(pm.environment.get('slot_id'));",
+                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
+                      "});",
+                      "pm.environment.set('deposit_id', b.deposit_id);",
+                      "pm.environment.set('pin', b.pin_code || '');",
+                      "pm.environment.set('enroll_code', b.enroll_code || '');",
+                      "pm.test('enroll code given', () => pm.expect(b.enroll_code).to.match(/^\\d{6}$/));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "enroll/start FINGERPRINT -> sensor_slot",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('OK with a sensor slot 1..160', () => {",
+                      "    pm.expect(r.result).to.eql('OK');",
+                      "    pm.expect(r.sensor_slot).to.be.within(1, 160);",
+                      "});",
+                      "pm.environment.set('sensor_slot', r.sensor_slot);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/enroll/start",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "enroll",
+                    "start"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"type\": \"FINGERPRINT\", \"enroll_code\": \"{{enroll_code}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "enroll/finish FINGERPRINT",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('OK', () => pm.expect(pm.response.json().result).to.eql('OK'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/enroll/finish",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "enroll",
+                    "finish"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"type\":\"FINGERPRINT\",\"enroll_code\":\"{{enroll_code}}\",\"sensor_slot\":{{sensor_slot}}}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "auth FINGERPRINT lần 1 -> CHECK_IN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK CHECK_IN', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('CHECK_IN');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\":\"FINGERPRINT\",\"sensor_slot\":{{sensor_slot}}}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "auth FINGERPRINT lần 2 -> PICKUP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK PICKUP', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('PICKUP');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\":\"FINGERPRINT\",\"sensor_slot\":{{sensor_slot}}}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Chọn ngăn trống trên CANT-A",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
+                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "pm.environment.set('slot_id', slot.slot_id);",
+                      "pm.environment.set('slot_code', slot.slot_code);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đặt tủ: FINGERPRINT",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "reserve"
+                    },
+                    {
+                      "key": "slotId",
+                      "value": "{{slot_id}}"
+                    },
+                    {
+                      "key": "planId",
+                      "value": "{{plan_id}}"
+                    },
+                    {
+                      "key": "openMethod",
+                      "value": "FINGERPRINT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt đặt FINGERPRINT",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "pm.test('booking RESERVED with FINGERPRINT', () => {",
+                      "    pm.expect(b).to.be.an('object');",
+                      "    pm.expect(b.status).to.eql('RESERVED');",
+                      "    pm.expect(b.open_method).to.eql('FINGERPRINT');",
+                      "    pm.expect(b.slot_id).to.eql(pm.environment.get('slot_id'));",
+                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
+                      "});",
+                      "pm.environment.set('deposit_id', b.deposit_id);",
+                      "pm.environment.set('pin', b.pin_code || '');",
+                      "pm.environment.set('enroll_code', b.enroll_code || '');",
+                      "",
+                      "pm.test('second booking needs no enroll', () => pm.expect(b.enroll_code).to.be.null);",
+                      "pm.test('the finger is listed', () => pm.expect(me.fingerprints.map(f => f.sensor_slot)).to.include(pm.environment.get('sensor_slot')));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "lượt 2: auth FINGERPRINT -> CHECK_IN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK CHECK_IN', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('CHECK_IN');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\":\"FINGERPRINT\",\"sensor_slot\":{{sensor_slot}}}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "lượt 2: auth FINGERPRINT -> PICKUP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK PICKUP', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('PICKUP');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\":\"FINGERPRINT\",\"sensor_slot\":{{sensor_slot}}}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "6. Không đến: NO_SHOW, hoàn 90%",
+          "item": [
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v2noshow",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_noshow}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_noshow'), () => pm.expect(me.username).to.eql(pm.environment.get('user_noshow')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt đã NO_SHOW (chờ LockerMonitor)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// sql/test_v2_setup.sql made a booking whose hold time is over; LockerMonitor expires it within 15 s",
+                      "const tries = pm.environment.get('noshow_tries') || 0;",
+                      "if (tries > 0) { setTimeout(() => {}, 5000); }"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const tries = (pm.environment.get('noshow_tries') || 0) + 1;",
+                      "if (me.booking && tries < 6) {",
+                      "    pm.environment.set('noshow_tries', tries);",
+                      "    postman.setNextRequest(pm.info.requestName);   // not expired yet, ask again in 5 s",
+                      "} else {",
+                      "    pm.environment.unset('noshow_tries');",
+                      "    const h = me.history[0];",
+                      "    pm.test('no open booking', () => pm.expect(me.booking).to.be.null);",
+                      "    pm.test('last booking NO_SHOW, 90% back', () => {",
+                      "        pm.expect(h.status).to.eql('NO_SHOW');",
+                      "        pm.expect(h.refund).to.eql(h.paid_amount - Math.ceil(h.paid_amount / 10));",
+                      "    });",
+                      "    pm.test('wallet: 200,000 - 5,000 + 4,500', () => pm.expect(me.balance).to.eql(199500));",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "10. Sai API key hoặc body sai",
+          "item": [
+            {
+              "name": "auth sai key -> 401",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{bad_api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"123456\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "heartbeat sai key -> 401",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{bad_api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "enroll thiếu key -> 401",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/enroll/start",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "enroll",
+                    "start"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"type\": \"CARD\", \"enroll_code\": \"123456\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "auth body không phải JSON -> 400",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "pin=123456",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "heartbeat body sai -> 400",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "[1,2",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "auth PIN chữ -> 400",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"abcdef\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "5. Sai mật mã 5 lần: khóa 2 phút",
+          "item": [
+            {
+              "name": "Heartbeat",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
+                      "    pm.expect(r.interval_sec).to.eql(3);",
+                      "    pm.expect(r.commands).to.be.an('array');",
+                      "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
+                      "});",
+                      "pm.test('v1 keys kept for ScenarioSender', () => {",
+                      "    pm.expect(r.blocked_cards).to.be.an('array');",
+                      "    pm.expect(r.reserved).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Sai mật mã (lặp tới khi bị khóa)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('wrong_try')) pm.environment.set('wrong_try', 0);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "const n = pm.environment.get('wrong_try') + 1;",
+                      "pm.environment.set('wrong_try', n);",
+                      "if (n <= 5) {",
+                      "    pm.test('try ' + n + ': WRONG_CODE, ' + (5 - n) + ' left', () => {",
+                      "        pm.expect(r.reason).to.eql('WRONG_CODE');",
+                      "        pm.expect(r.attempts_left).to.eql(5 - n);",
+                      "    });",
+                      "    postman.setNextRequest(pm.info.requestName);",
+                      "} else {",
+                      "    pm.test('try 6: LOCKED_OUT with retry_after_sec', () => {",
+                      "        pm.expect(r.reason).to.eql('LOCKED_OUT');",
+                      "        pm.expect(r.retry_after_sec).to.be.within(1, 120);",
+                      "    });",
+                      "    pm.environment.unset('wrong_try');",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{wrong_pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Hộp đã khóa: thẻ cũng bị từ chối",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('DENY LOCKED_OUT', () => {",
+                      "    pm.expect(r.result).to.eql('DENY');",
+                      "    pm.expect(r.reason).to.eql('LOCKED_OUT');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"CARD\", \"card_uid\": \"FFFF0001\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Trang điện thoại đếm riêng: chưa bị khóa",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.environment.get('phone_try')) pm.environment.set('phone_try', 0);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const r = pm.response.json();",
+                      "const n = pm.environment.get('phone_try') + 1;",
+                      "pm.environment.set('phone_try', n);",
+                      "if (n <= 5) {",
+                      "    pm.test('phone try ' + n + ': WRONG_CODE, ' + (5 - n) + ' left', () => {",
+                      "        pm.expect(r.reason).to.eql('WRONG_CODE');",
+                      "        pm.expect(r.attempts_left).to.eql(5 - n);",
+                      "    });",
+                      "    postman.setNextRequest(pm.info.requestName);",
+                      "} else {",
+                      "    pm.test('phone try 6: LOCKED_OUT on the phone page', () => pm.expect(r.reason).to.eql('LOCKED_OUT'));",
+                      "    pm.environment.unset('phone_try');",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/kiosk/unlock",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "kiosk",
+                    "unlock"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"device_code\": \"{{device_code}}\", \"pin\": \"{{wrong_pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Sau 2 phút nhập lại được",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "setTimeout(() => {}, 122000);   // the lockout lasts 120 s"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const r = pm.response.json();",
+                      "pm.test('not locked any more: WRONG_CODE, 4 left', () => {",
+                      "    pm.expect(r.reason).to.eql('WRONG_CODE');",
+                      "    pm.expect(r.attempts_left).to.eql(4);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{wrong_pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Heartbeat (giữ hộp trực tuyến)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
+                      "    pm.expect(r.interval_sec).to.eql(3);",
+                      "    pm.expect(r.commands).to.be.an('array');",
+                      "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
+                      "});",
+                      "pm.test('v1 keys kept for ScenarioSender', () => {",
+                      "    pm.expect(r.blocked_cards).to.be.an('array');",
+                      "    pm.expect(r.reserved).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "7. Mật mã của lượt đã kết thúc hoặc của hộp khác",
+          "item": [
+            {
+              "name": "Heartbeat",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
+                      "    pm.expect(r.interval_sec).to.eql(3);",
+                      "    pm.expect(r.commands).to.be.an('array');",
+                      "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
+                      "});",
+                      "pm.test('v1 keys kept for ScenarioSender', () => {",
+                      "    pm.expect(r.blocked_cards).to.be.an('array');",
+                      "    pm.expect(r.reserved).to.be.an('array');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v2pin",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_pin}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_pin'), () => pm.expect(me.username).to.eql(pm.environment.get('user_pin')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Mật mã của lượt đã kết thúc -> WRONG_CODE",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('DENY WRONG_CODE', () => {",
+                      "    pm.expect(r.result).to.eql('DENY');",
+                      "    pm.expect(r.reason).to.eql('WRONG_CODE');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{old_pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Mã đăng ký đã dùng -> BAD_CODE",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('ERROR BAD_CODE', () => { pm.expect(pm.response.json().result).to.eql('ERROR'); pm.expect(pm.response.json().reason).to.eql('BAD_CODE'); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/enroll/finish",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "enroll",
+                    "finish"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"type\": \"CARD\", \"enroll_code\": \"{{used_enroll_code}}\", \"card_uid\": \"{{card_uid}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Chọn ngăn trống trên CANT-A",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
+                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "pm.environment.set('slot_id', slot.slot_id);",
+                      "pm.environment.set('slot_code', slot.slot_code);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đặt tủ: PIN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "reserve"
+                    },
+                    {
+                      "key": "slotId",
+                      "value": "{{slot_id}}"
+                    },
+                    {
+                      "key": "planId",
+                      "value": "{{plan_id}}"
+                    },
+                    {
+                      "key": "openMethod",
+                      "value": "PIN"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt đặt PIN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "pm.test('booking RESERVED with PIN', () => {",
+                      "    pm.expect(b).to.be.an('object');",
+                      "    pm.expect(b.status).to.eql('RESERVED');",
+                      "    pm.expect(b.open_method).to.eql('PIN');",
+                      "    pm.expect(b.slot_id).to.eql(pm.environment.get('slot_id'));",
+                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
+                      "});",
+                      "pm.environment.set('deposit_id', b.deposit_id);",
+                      "pm.environment.set('pin', b.pin_code || '');",
+                      "pm.environment.set('enroll_code', b.enroll_code || '');"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Mật mã đúng nhưng gửi tới hộp khác -> WRONG_CODE",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('DENY WRONG_CODE', () => {",
+                      "    pm.expect(r.result).to.eql('DENY');",
+                      "    pm.expect(r.reason).to.eql('WRONG_CODE');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{other_api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Tại đúng hộp -> CHECK_IN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK CHECK_IN', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('CHECK_IN');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Tại đúng hộp -> PICKUP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK PICKUP', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('PICKUP');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Spec 6.2. Chạy sql/test_v2_setup.sql ngay trước mỗi lần chạy. Thứ tự: 9 cần thẻ của 3, 8 báo mất thẻ đó; 5 chạy gần cuối vì khóa hộp 2 phút (có bước chờ 122 giây); 7 dùng mật mã đã kết thúc của 1."
+    }
+  ]
+}

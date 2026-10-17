@@ -55,17 +55,20 @@ public class LockerMonitor implements ServletContextListener {
         public final java.util.List<DashboardDao.AreaBreakdown>  slotBreakdown;
         public final java.util.List<DashboardDao.AlertRow>       recentAlerts;
         public final java.util.List<DashboardDao.DeviceHealth>   deviceHealth;
+        public final java.util.List<java.util.Map<String, Object>> recentSessions;
         public final long capturedAt;           // System.currentTimeMillis()
 
         Snapshot(DashboardDao.KpiSnapshot kpis,
                  java.util.List<DashboardDao.AreaBreakdown> slotBreakdown,
                  java.util.List<DashboardDao.AlertRow>      recentAlerts,
-                 java.util.List<DashboardDao.DeviceHealth>  deviceHealth) {
-            this.kpis          = kpis;
-            this.slotBreakdown = slotBreakdown;
-            this.recentAlerts  = recentAlerts;
-            this.deviceHealth  = deviceHealth;
-            this.capturedAt    = System.currentTimeMillis();
+                 java.util.List<DashboardDao.DeviceHealth>  deviceHealth,
+                 java.util.List<java.util.Map<String, Object>> recentSessions) {
+            this.kpis           = kpis;
+            this.slotBreakdown  = slotBreakdown;
+            this.recentAlerts   = recentAlerts;
+            this.deviceHealth   = deviceHealth;
+            this.recentSessions = recentSessions;
+            this.capturedAt     = System.currentTimeMillis();
         }
     }
 
@@ -114,9 +117,12 @@ public class LockerMonitor implements ServletContextListener {
         //    request isn't blocked by a potentially slow stored-procedure call)
         scheduler.scheduleWithFixedDelay(new Runnable() {
             @Override public void run() {
-                // Keep active demo bank controllers alive with fresh heartbeats so demo lockers never drop offline
-                runProcedure("UPDATE Device SET last_seen = SYSUTCDATETIME(), status = 'ACTIVE' WHERE device_id IN (1, 2, 3, 5, 6) AND status <> 'MAINTENANCE'");
-                runProcedure("{call Device_MarkOffline(86400)}");   // 24 h so demo devices stay ACTIVE
+                // Demo devices have no ESP32 behind them, so their heartbeat is simulated here. Only the ones the
+                // seed marks "demo":true in OperatingProfile: a real device that stops calling still goes OFFLINE.
+                runProcedure("UPDATE d SET last_seen = SYSUTCDATETIME() FROM Device d "
+                        + "WHERE d.status = 'ACTIVE' AND EXISTS (SELECT 1 FROM OperatingProfile p "
+                        + "WHERE p.device_id = d.device_id AND p.params_json LIKE '%\"demo\":true%')");
+                runProcedure("{call Device_MarkOffline(90)}");   // demo devices get a heartbeat above, a silent one is OFFLINE after 90 s
                 runProcedure("{call Deposit_ExpireNoShow}");
                 runProcedure("{call Deposit_ExpireOverdue}");
                 runProcedure("{call RemoteCommand_Expire}");
@@ -159,7 +165,8 @@ public class LockerMonitor implements ServletContextListener {
                 kpis,
                 dao.fetchAreaBreakdown(),
                 dao.fetchRecentAlerts(10),
-                dao.fetchDeviceHealth()
+                dao.fetchDeviceHealth(),
+                new dao.LockerSessionDao().search(null, 1, 10)
             );
         } catch (SQLException e) {
             LOG.log(Level.WARNING, "Dashboard snapshot build failed: " + e.getMessage());

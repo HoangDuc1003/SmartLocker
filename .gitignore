@@ -5,3 +5,6 @@ test-output/
 *.class
 *.war
 *.log
+
+# secret device keys (scripts/set-device-key.ps1)
+config/*.local.properties

@@ -18,7 +18,6 @@ public class Verdict {
 
     /** An alert with its first piece of evidence. Add more with with(). */
     public static Verdict alert(String label, String item, String value) {
-        // new Verdict(label, true).with(item, value)
         return new Verdict(label, true).with(item, value);
     }
 

@@ -18,12 +18,14 @@ public class DepositDao {
 
     private static final String SELECT = "SELECT d.deposit_id, d.user_id, u.username, d.slot_id, s.slot_code, b.bank_code, "
             + "d.plan_id, p.plan_name, d.card_id, d.paid_amount, d.status, d.reserved_at, d.hold_until, "
-            + "d.started_at, d.due_at, d.ended_at, d.extend_count "
+            + "d.started_at, d.due_at, d.ended_at, d.extend_count, "
+            + "d.open_method, d.pin_code, d.enroll_code, d.enroll_expires, v.device_code "
             + "FROM Deposit d "
             + "JOIN Users u ON u.user_id = d.user_id "
             + "JOIN LockerSlot s ON s.locker_slot_id = d.slot_id "
             + "JOIN LockerBank b ON b.bank_id = s.bank_id "
-            + "JOIN StoragePlan p ON p.plan_id = d.plan_id";
+            + "JOIN StoragePlan p ON p.plan_id = d.plan_id "
+            + "LEFT JOIN Device v ON v.device_id = b.device_id";
 
     private static Deposit map(ResultSet rs) throws SQLException {
         Deposit d = new Deposit();
@@ -45,6 +47,11 @@ public class DepositDao {
         d.setDueAt(rs.getTimestamp("due_at"));
         d.setEndedAt(rs.getTimestamp("ended_at"));
         d.setExtendCount(rs.getInt("extend_count"));
+        d.setOpenMethod(rs.getString("open_method"));
+        d.setPinCode(rs.getString("pin_code"));
+        d.setEnrollCode(rs.getString("enroll_code"));
+        d.setEnrollExpires(rs.getTimestamp("enroll_expires"));
+        d.setDeviceCode(rs.getString("device_code"));
         return d;
     }
 
@@ -69,16 +76,48 @@ public class DepositDao {
         }
     }
 
-    /** Case 4: books a slot for the user. The procedure throws a readable error when it cannot (50030 to 50035). */
+    /** The open methods a booking may choose (spec v2, Q9). */
+    public static final java.util.List<String> OPEN_METHODS = java.util.Arrays.asList("PIN", "CARD", "FINGERPRINT");
+
+    /** Case 4: books a slot for the user, PIN by default. The procedure throws a readable error when it cannot (50030 to 50042). */
     public long reserve(int userId, int slotId, int planId) throws SQLException {
+        return reserve(userId, slotId, planId, "PIN");
+    }
+
+    /** v2: the price and the code depend on the open method (card 5% off, a PIN or an enroll code). */
+    public long reserve(int userId, int slotId, int planId, String openMethod) throws SQLException {
         try (Connection conn = DbContext.getConnection();
-             CallableStatement cs = conn.prepareCall("{call Deposit_Reserve(?, ?, ?, ?)}")) {
+             CallableStatement cs = conn.prepareCall("{call Deposit_Reserve(?, ?, ?, ?, ?)}")) {
             cs.setInt(1, userId);
             cs.setInt(2, slotId);
             cs.setInt(3, planId);
             cs.registerOutParameter(4, Types.BIGINT);
+            cs.setString(5, openMethod);
             cs.execute();
             return cs.getLong(4);
+        }
+    }
+
+    /** The open booking (RESERVED or ACTIVE) of a user, or null. */
+    public Deposit findOpenByUser(int userId) throws SQLException {
+        String sql = SELECT + " WHERE d.user_id = ? AND d.status IN ('RESERVED', 'ACTIVE')";
+        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? map(rs) : null;
+            }
+        }
+    }
+
+    /** A new 10-minute enroll code for the owner's open booking; throws 50044 when nothing is left to enroll. */
+    public String newEnrollCode(long depositId, int userId) throws SQLException {
+        try (Connection conn = DbContext.getConnection();
+             CallableStatement cs = conn.prepareCall("{call Enroll_NewCode(?, ?, ?)}")) {
+            cs.setLong(1, depositId);
+            cs.setInt(2, userId);
+            cs.registerOutParameter(3, Types.CHAR);
+            cs.execute();
+            return cs.getString(3);
         }
     }
 
@@ -259,17 +298,17 @@ public class DepositDao {
     /** null when deleted, otherwise the reason. Only a booking that is not open may be deleted. */
     public String delete(long depositId) throws SQLException {
         Deposit d = findById(depositId);
-        if (d == null) return "Deposit not found";
+        if (d == null) return "Không tìm thấy lượt gửi";
         if ("RESERVED".equals(d.getStatus()) || "ACTIVE".equals(d.getStatus())) {
-            return "Cannot delete an active or reserved booking. Cancel or complete it first.";
+            return "Không xóa được lượt gửi đang dùng hoặc đang giữ chỗ. Hãy hủy hoặc kết thúc trước.";
         }
         String sql = "DELETE FROM Deposit WHERE deposit_id = ?";
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, depositId);
-            return ps.executeUpdate() == 1 ? null : "Nothing was deleted";
+            return ps.executeUpdate() == 1 ? null : "Không có gì bị xóa";
         } catch (SQLException e) {
             if (e.getErrorCode() == 547) {
-                return "This booking is referenced by other records and cannot be deleted.";
+                return "Lượt gửi này đang được dữ liệu khác tham chiếu, không xóa được.";
             }
             throw e;
         }

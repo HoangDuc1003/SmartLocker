@@ -274,7 +274,7 @@ BEGIN TRY
         (1, N'LOCKER-01', N'LIB-A'), (2, N'LOCKER-02', N'LIB-B'),
         (3, N'LOCKER-03', N'DOMA-A'),(4, N'LOCKER-04', N'DOMA-B'),
         (5, N'LOCKER-05', N'CANT-A'),(6, N'LOCKER-06', N'GYM-A'),
-        (7, N'LOCKER-07', N'GYM-B');
+        (7, N'LOCKER-07', N'GYM-B'), (8, N'LOCKER-08', N'CANT-B');
 
     INSERT INTO dbo.Device (device_code, location, firmware, status, last_seen, api_key_hash)
     SELECT v.code, a.location, N'1.2-enterprise', N'ACTIVE', @now,
@@ -307,7 +307,7 @@ BEGIN TRY
     WHERE d.device_code = N'LOCKER-04' AND c.sensor_type_id = @weightSensor;
 
     INSERT INTO dbo.OperatingProfile (device_id, params_json, updated_by, updated_at)
-    SELECT d.device_id, N'{"demo":true,"heartbeat_sec":10,"offline_timeout_sec":86400,"item_left_g":50}', @adminId, @now
+    SELECT d.device_id, N'{"demo":true,"heartbeat_sec":10,"offline_timeout_sec":90,"item_left_g":50}', @adminId, @now
     FROM dbo.Device d JOIN @devices v ON v.code = d.device_code
     WHERE NOT EXISTS (SELECT 1 FROM dbo.OperatingProfile p WHERE p.device_id = d.device_id);
 
@@ -387,12 +387,13 @@ BEGIN TRY
 
     PRINT '5. Seeding Multi-Day Booking History & Live Locker State...';
 
-    IF NOT EXISTS (SELECT 1 FROM dbo.StoragePlan WHERE plan_name = N'Day pass')
+    -- plans are looked up by duration, not by name: 07_vietnamese_data.sql renames them
+    IF NOT EXISTS (SELECT 1 FROM dbo.StoragePlan WHERE duration_min = 1440)
         INSERT INTO dbo.StoragePlan (plan_name, duration_min, grace_min, price) VALUES (N'Day pass', 1440, 30, 25000);
 
-    DECLARE @plan2h INT = (SELECT TOP 1 plan_id FROM dbo.StoragePlan WHERE plan_name = N'2 hours');
-    DECLARE @plan4h INT = (SELECT TOP 1 plan_id FROM dbo.StoragePlan WHERE plan_name = N'4 hours');
-    DECLARE @planDay INT = (SELECT TOP 1 plan_id FROM dbo.StoragePlan WHERE plan_name = N'Day pass');
+    DECLARE @plan2h INT = (SELECT TOP 1 plan_id FROM dbo.StoragePlan WHERE duration_min = 120 ORDER BY plan_id);
+    DECLARE @plan4h INT = (SELECT TOP 1 plan_id FROM dbo.StoragePlan WHERE duration_min = 240 ORDER BY plan_id);
+    DECLARE @planDay INT = (SELECT TOP 1 plan_id FROM dbo.StoragePlan WHERE duration_min = 1440 ORDER BY plan_id);
     IF @plan2h IS NULL SET @plan2h = (SELECT TOP 1 plan_id FROM dbo.StoragePlan ORDER BY plan_id);
     IF @plan4h IS NULL SET @plan4h = @plan2h;
     IF @planDay IS NULL SET @planDay = @plan2h;

@@ -32,13 +32,13 @@ public class RegisterController extends HttpServlet {
 
         String error = null;
         if (!USERNAME.matcher(username).matches()) {
-            error = "Username must be 3 to 50 characters: letters without accents, digits, _ and .";
+            error = "Tên đăng nhập dài 3 đến 50 ký tự: chữ không dấu, số, _ và .";
         } else if (fullName.length() < 2 || fullName.length() > 80) {
-            error = "Full name must be 2 to 80 characters";
+            error = "Họ tên dài từ 2 đến 80 ký tự";
         } else if (password.length() < 6) {
-            error = "Password must have at least 6 characters";
+            error = "Mật khẩu có ít nhất 6 ký tự";
         } else if (!password.equals(confirm)) {
-            error = "Passwords do not match";
+            error = "Mật khẩu nhập lại không khớp";
         }
 
         if (error != null) {
@@ -52,11 +52,11 @@ public class RegisterController extends HttpServlet {
         try {
             int id = new UserDao().register(username, password, fullName);
             new dao.AuditDao().append(id, "REGISTER", "USER", id, null);
-            Web.flash(req.getSession(), "Registration successful! You can now sign in.", false);
+            Web.flash(req.getSession(), "Đăng ký thành công. Bạn có thể đăng nhập.", false);
             res.sendRedirect(req.getContextPath() + "/LoginController");
         } catch (SQLException e) {
             if (e.getErrorCode() == 2627 || e.getErrorCode() == 2601) {
-                req.setAttribute("error", "Username " + username + " is already taken");
+                req.setAttribute("error", "Tên đăng nhập " + username + " đã được dùng");
                 req.setAttribute("username", username);
                 req.setAttribute("fullName", fullName);
                 req.getRequestDispatcher(VIEW).forward(req, res);

@@ -51,7 +51,7 @@ public class SessionContextDao {
             }
 
             // 4. a remote open is genuine only for a SENT command of this device and slot, issued less than 30 minutes before
-            if ("REMOTE".equals(s.getOpenSource()) && s.getCommandId() != null) {
+            if (("REMOTE".equals(s.getOpenSource()) || "PHONE".equals(s.getOpenSource())) && s.getCommandId() != null) {
                 try (PreparedStatement ps = conn.prepareStatement(
                         "SELECT COUNT(*) FROM RemoteCommand c JOIN LockerSession s ON s.session_id = ? "
                         + "WHERE c.command_id = s.command_id AND c.device_id = s.device_id AND c.slot_id = s.slot_id "

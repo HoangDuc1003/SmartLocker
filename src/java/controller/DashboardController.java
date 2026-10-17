@@ -39,6 +39,13 @@ public class DashboardController extends HttpServlet {
             req.setAttribute("roleLabels", roleLabels);
             req.setAttribute("roleValues", roleValues);
 
+            try {
+                req.setAttribute("recentSessions", new dao.LockerSessionDao().search(null, 1, 10));
+            } catch (Exception e) {
+                // the page still works without this table; keep the reason in the server log
+                getServletContext().log("DashboardController: recent sessions not loaded", e);
+            }
+
             req.getRequestDispatcher(VIEW).forward(req, res);
         } catch (SQLException e) {
             throw new ServletException(e);

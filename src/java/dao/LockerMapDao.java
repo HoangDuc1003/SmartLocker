@@ -99,6 +99,7 @@ public class LockerMapDao {
                     p.addProperty("plan_name", rs.getString(2));
                     p.addProperty("duration_min", rs.getInt(3));
                     p.addProperty("price", rs.getInt(4));
+                    p.addProperty("price_card", util.Pricing.priceFor(rs.getInt(4), "CARD"));   // v2: card 5% off
                     plans.add(p);
                 }
             }
@@ -107,7 +108,7 @@ public class LockerMapDao {
             // the banks of the chosen area
             JsonArray banks = new JsonArray();
             Map<Integer, JsonArray> slotsOfBank = new HashMap<>();
-            String bankSql = "SELECT b.bank_id, b.bank_code, b.name, b.device_id, b.door_rows, v.status AS device_status "
+            String bankSql = "SELECT b.bank_id, b.bank_code, b.name, b.device_id, b.door_rows, v.status AS device_status, v.device_code "
                     + "FROM LockerBank b JOIN LockerArea a ON a.area_id = b.area_id LEFT JOIN Device v ON v.device_id = b.device_id "
                     + "WHERE a.area_code = ? AND b.status = N'ACTIVE' ORDER BY b.bank_code";
             try (PreparedStatement ps = conn.prepareStatement(bankSql)) {
@@ -122,6 +123,7 @@ public class LockerMapDao {
                         String devStatus = rs.getString("device_status");
                         put(b, "device_status", devStatus != null ? devStatus : "ACTIVE");
                         b.addProperty("rows", rs.getInt("door_rows"));
+                        put(b, "device_code", rs.getString("device_code"));
                         JsonArray slots = new JsonArray();
                         b.add("slots", slots);
                         slotsOfBank.put(rs.getInt("bank_id"), slots);

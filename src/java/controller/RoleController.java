@@ -22,7 +22,7 @@ public class RoleController extends HttpServlet {
             if (roleId != null && roleId > 0) {
                 String roleName = dao.roleName(roleId);
                 if (roleName == null) {
-                    util.Web.flash(req.getSession(), "Role not found", true);
+                    util.Web.flash(req.getSession(), "Không tìm thấy vai trò", true);
                     res.sendRedirect("RoleController");
                     return;
                 }
@@ -48,7 +48,7 @@ public class RoleController extends HttpServlet {
         try {
             String roleName = dao.roleName(roleId);
             if (roleName == null) {
-                util.Web.flash(req.getSession(), "Role not found", true);
+                util.Web.flash(req.getSession(), "Không tìm thấy vai trò", true);
                 res.sendRedirect("RoleController");
                 return;
             }
@@ -80,7 +80,7 @@ public class RoleController extends HttpServlet {
 
             dao.saveRolePerms(roleId, permIds);
             new dao.AuditDao().append(me.getUserId(), "UPDATE", "ROLE", roleId, "Saved permissions for role " + roleName);
-            util.Web.flash(req.getSession(), "Permissions updated for role " + roleName, false);
+            util.Web.flash(req.getSession(), "Đã cập nhật quyền cho vai trò " + roleName, false);
             res.sendRedirect("RoleController?id=" + roleId);
         } catch (SQLException e) {
             throw new ServletException(e);

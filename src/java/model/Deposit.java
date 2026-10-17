@@ -20,6 +20,11 @@ public class Deposit {
     private java.sql.Timestamp dueAt;
     private java.sql.Timestamp endedAt;
     private int extendCount;
+    private String openMethod;   // PIN, CARD or FINGERPRINT
+    private String pinCode;      // 6 digits, only for PIN; shown to the owner only
+    private String enrollCode;   // 6 digits while a card or finger still has to be enrolled at the box
+    private java.sql.Timestamp enrollExpires;
+    private String deviceCode;   // joined: the box of the slot
 
     public long getDepositId() { return depositId; }
     public void setDepositId(long depositId) { this.depositId = depositId; }
@@ -55,4 +60,14 @@ public class Deposit {
     public void setEndedAt(java.sql.Timestamp endedAt) { this.endedAt = endedAt; }
     public int getExtendCount() { return extendCount; }
     public void setExtendCount(int extendCount) { this.extendCount = extendCount; }
+    public String getOpenMethod() { return openMethod; }
+    public void setOpenMethod(String openMethod) { this.openMethod = openMethod; }
+    public String getPinCode() { return pinCode; }
+    public void setPinCode(String pinCode) { this.pinCode = pinCode; }
+    public String getEnrollCode() { return enrollCode; }
+    public void setEnrollCode(String enrollCode) { this.enrollCode = enrollCode; }
+    public java.sql.Timestamp getEnrollExpires() { return enrollExpires; }
+    public void setEnrollExpires(java.sql.Timestamp enrollExpires) { this.enrollExpires = enrollExpires; }
+    public String getDeviceCode() { return deviceCode; }
+    public void setDeviceCode(String deviceCode) { this.deviceCode = deviceCode; }
 }

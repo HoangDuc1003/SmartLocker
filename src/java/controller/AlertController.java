@@ -32,7 +32,7 @@ public class AlertController extends HttpServlet {
                 int id = Web.intParam(req, "id", 0);
                 Alert a = dao.findById(id);
                 if (a == null) {
-                    Web.flash(req.getSession(), "Alert not found", true);
+                    Web.flash(req.getSession(), "Không tìm thấy cảnh báo.", true);
                     res.sendRedirect("AlertController");
                     return;
                 }
@@ -41,6 +41,10 @@ public class AlertController extends HttpServlet {
                 if (a.getSessionId() != null) {
                     LockerSession s = new LockerSessionDao().findById(a.getSessionId());
                     req.setAttribute("session", s);
+                }
+                if (a.getDeviceId() > 0) {
+                    model.Device dev = new dao.DeviceDao().findById(a.getDeviceId());
+                    req.setAttribute("device", dev);
                 }
                 req.getRequestDispatcher(VIEW).forward(req, res);
                 return;
@@ -74,15 +78,46 @@ public class AlertController extends HttpServlet {
             int id = Web.intParam(req, "id", 0);
             try {
                 dao.resolve(id, me.getUserId());
-                Web.flash(req.getSession(), "Alert #" + id + " marked as resolved.", false);
+                Web.flash(req.getSession(), "Đã đánh dấu cảnh báo #" + id + " là đã xử lý.", false);
             } catch (SQLException e) {
                 if (e.getErrorCode() >= 50000) {
-                    Web.flash(req.getSession(), e.getMessage(), true);
+                    Web.flash(req.getSession(), Web.sqlMessage(e), true);
                 } else {
                     throw new ServletException(e);
                 }
             }
+            res.sendRedirect("AlertController?id=" + id);
+            return;
         }
+
+        if ("device_status".equals(action)) {
+            int alertId = Web.intParam(req, "alertId", 0);
+            int deviceId = Web.intParam(req, "deviceId", 0);
+            String status = Web.trimmed(req, "status").toUpperCase();
+            try {
+                model.Device oldDev = new dao.DeviceDao().findById(deviceId);
+                if (oldDev != null && ("ACTIVE".equals(status) || "MAINTENANCE".equals(status) || "OFFLINE".equals(status))) {
+                    boolean ok = new dao.DeviceDao().setStatus(deviceId, status);
+                    if (ok) {
+                        new dao.AuditDao().append(me.getUserId(), "DEVICE_STATUS", "DEVICE", deviceId,
+                                oldDev.getDeviceCode() + ": " + oldDev.getStatus() + " -> " + status);
+                        String statusLabel = "ACTIVE".equals(status) ? "hoạt động" : "MAINTENANCE".equals(status) ? "bảo trì" : "mất kết nối";
+                        Web.flash(req.getSession(), "Đã chuyển thiết bị " + oldDev.getDeviceCode() + " sang trạng thái " + statusLabel + ".", false);
+                    } else {
+                        Web.flash(req.getSession(), "Không cập nhật được trạng thái thiết bị.", true);
+                    }
+                }
+            } catch (SQLException e) {
+                throw new ServletException(e);
+            }
+            if (alertId > 0) {
+                res.sendRedirect("AlertController?id=" + alertId);
+                return;
+            }
+            res.sendRedirect("AlertController");
+            return;
+        }
+
         res.sendRedirect("AlertController");
     }
 }

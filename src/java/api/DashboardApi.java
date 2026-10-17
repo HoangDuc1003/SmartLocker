@@ -46,9 +46,11 @@ import service.LockerMonitor;
 @WebServlet(name = "DashboardApi", urlPatterns = {"/api/dashboard"})
 public class DashboardApi extends HttpServlet {
 
+    /** Not ApiJson.GSON: the browser dashboard wants ISO dates with Z, the device API wants "yyyy-MM-dd HH:mm:ss". */
     private static final Gson GSON = new GsonBuilder()
             .serializeNulls()
             .disableHtmlEscaping()
+            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")   // ISO; the DB stores UTC, the Z lets the browser show local time
             .create();
 
     @Override
@@ -80,6 +82,7 @@ public class DashboardApi extends HttpServlet {
         payload.add("slotBreakdown", GSON.toJsonTree(snap.slotBreakdown));
         payload.add("recentAlerts",  GSON.toJsonTree(snap.recentAlerts));
         payload.add("deviceHealth",  GSON.toJsonTree(snap.deviceHealth));
+        payload.add("recentSessions", GSON.toJsonTree(snap.recentSessions));
 
         res.getWriter().write(GSON.toJson(payload));
     }

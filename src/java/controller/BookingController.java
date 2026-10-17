@@ -16,22 +16,14 @@ import util.Web;
 /**
  * Case 4. The Locker User reserves, cancels and extends a booking.
  * The forms are in the slot panel of the locker map, so every POST goes back to the map.
- * GET shows "My bookings".
+ * GET (the old "My bookings" page) redirects to "Tủ của tôi" (MyLockerController, spec v2 Q17).
  */
 @WebServlet(name = "BookingController", urlPatterns = {"/BookingController"})
 public class BookingController extends HttpServlet {
 
-    private static final String VIEW = "/WEB-INF/views/booking.jsp";
-
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        try {
-            User me = Web.currentUser(req);
-            req.setAttribute("items", new DepositDao().listByUser(me.getUserId()));
-            req.getRequestDispatcher(VIEW).forward(req, res);
-        } catch (SQLException e) {
-            throw new ServletException(e);
-        }
+    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        res.sendRedirect(req.getContextPath() + "/MyLockerController");
     }
 
     @Override
@@ -42,20 +34,29 @@ public class BookingController extends HttpServlet {
         DepositDao dao = new DepositDao();
         try {
             if ("reserve".equals(action)) {
-                dao.reserve(me.getUserId(), Web.intParam(req, "slotId", 0), Web.intParam(req, "planId", 0));
-                Web.flash(req.getSession(), "Slot reserved. Check in within 15 minutes.", false);
+                // v2: openMethod = PIN (default, keeps the old form working), CARD or FINGERPRINT
+                String method = Web.trimmed(req, "openMethod").toUpperCase();
+                if (method.isEmpty()) {
+                    method = "PIN";
+                }
+                if (!DepositDao.OPEN_METHODS.contains(method)) {
+                    Web.flash(req.getSession(), "Cách mở tủ không hợp lệ", true);
+                } else {
+                    long id = dao.reserve(me.getUserId(), Web.intParam(req, "slotId", 0), Web.intParam(req, "planId", 0), method);
+                    Web.flash(req.getSession(), reservedMessage(dao.findById(id)), false);
+                }
             } else if ("cancel".equals(action)) {
                 dao.cancel(Web.intParam(req, "depositId", 0), me.getUserId());
-                Web.flash(req.getSession(), "Reservation cancelled. Any payment has been refunded.", false);
+                Web.flash(req.getSession(), "Đã hủy lượt đặt. Số tiền đã trả (nếu có) được hoàn vào ví.", false);
             } else if ("extend".equals(action)) {
                 dao.extend(Web.intParam(req, "depositId", 0), Web.intParam(req, "minutes", 60), me.getUserId());
-                Web.flash(req.getSession(), "Your time was extended.", false);
+                Web.flash(req.getSession(), "Đã gia hạn thời gian gửi.", false);
             } else {
-                Web.flash(req.getSession(), "Unknown action", true);
+                Web.flash(req.getSession(), "Thao tác không hợp lệ", true);
             }
         } catch (SQLException e) {
             if (e.getErrorCode() >= 50000) {                 // our own THROW: the text is written for the user
-                Web.flash(req.getSession(), e.getMessage(), true);
+                Web.flash(req.getSession(), Web.sqlMessage(e), true);
             } else {
                 throw new ServletException(e);
             }
@@ -63,9 +64,26 @@ public class BookingController extends HttpServlet {
         res.sendRedirect(backUrl(req));
     }
 
+    /** What to do next at the box, by open method. The PIN itself stays on "Tủ của tôi", not in the flash. */
+    private static String reservedMessage(model.Deposit d) {
+        String box = d == null || d.getDeviceCode() == null ? "hộp tủ" : "hộp " + d.getDeviceCode();
+        if (d != null && d.getEnrollCode() != null) {
+            return "Đã giữ ngăn. Hãy tới " + box + " đăng ký "
+                    + ("CARD".equals(d.getOpenMethod()) ? "thẻ từ" : "vân tay")
+                    + " bằng mã " + d.getEnrollCode() + " (hạn 10 phút), rồi mở tủ trong vòng 15 phút.";
+        }
+        if (d != null && "CARD".equals(d.getOpenMethod())) {
+            return "Đã giữ ngăn. Hãy quẹt thẻ tại " + box + " trong vòng 15 phút.";
+        }
+        if (d != null && "FINGERPRINT".equals(d.getOpenMethod())) {
+            return "Đã giữ ngăn. Hãy đặt vân tay tại " + box + " trong vòng 15 phút.";
+        }
+        return "Đã giữ ngăn. Xem mật mã ở mục Tủ của tôi và mở tủ tại " + box + " trong vòng 15 phút.";
+    }
+
     private static String backUrl(HttpServletRequest req) throws UnsupportedEncodingException {
         if ("list".equals(Web.trimmed(req, "back"))) {
-            return "BookingController";
+            return "MyLockerController";
         }
         return "LockerMapController?area=" + URLEncoder.encode(Web.trimmed(req, "area"), "UTF-8")
                 + "&slot=" + Web.intParam(req, "slot", 0);

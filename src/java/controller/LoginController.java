@@ -39,12 +39,12 @@ public class LoginController extends HttpServlet {
             User user = new UserDao().checkLogin(username, password);
             String error = null;
             if (user == null) {
-                error = "Invalid username or password";
+                error = "Sai tên đăng nhập hoặc mật khẩu";
                 new AuditDao().append(AuditDao.SYSTEM_USER_ID, "LOGIN_FAIL", "USER", 0, "username=" + username);
             } else if (user.isLocked()) {
-                error = "This account is locked, ask a Locker Operator to unlock it";
+                error = "Tài khoản đang bị khóa, hãy liên hệ nhân viên vận hành để mở khóa";
             } else if (!"ACTIVE".equals(user.getStatus())) {
-                error = "This account cannot sign in";
+                error = "Tài khoản này không thể đăng nhập";
             }
             if (error != null) {
                 req.setAttribute("error", error);

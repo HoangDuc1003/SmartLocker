@@ -8,12 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import model.LockerBank;
 
-/** Banks: one cabinet of doors in an area. Write it like LockerSlotDao. */
+/** Banks: one cabinet of doors in an area, linked to the device that drives it. */
 public class LockerBankDao {
 
     /** Every bank, for the drop-downs of other pages. No paging. */
     public List<LockerBank> listAll() throws SQLException {
-        // SELECT with the area code, ORDER BY bank_code
         String sql = "SELECT b.bank_id, b.bank_code, b.name, b.area_id, a.area_code, b.device_id, b.door_rows, b.status, "
                 + "(SELECT COUNT(*) FROM LockerSlot s WHERE s.bank_id = b.bank_id) AS slot_count "
                 + "FROM LockerBank b JOIN LockerArea a ON a.area_id = b.area_id ORDER BY b.bank_code";
@@ -164,10 +163,10 @@ public class LockerBankDao {
         try (Connection conn = DbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM LockerBank WHERE bank_id = ?")) {
             ps.setInt(1, bankId);
-            return ps.executeUpdate() == 1 ? null : "Bank not found";
+            return ps.executeUpdate() == 1 ? null : "Không tìm thấy dãy tủ";
         } catch (SQLException e) {
             if (e.getErrorCode() == 547) {
-                return "This bank still has locker slots, delete or move them first";
+                return "Dãy tủ còn ngăn, hãy xóa hoặc chuyển các ngăn trước";
             }
             throw e;
         }

@@ -25,6 +25,18 @@ public class LockerMapApi extends HttpServlet {
         try {
             com.google.gson.JsonObject map = new LockerMapDao().load(Web.trimmed(req, "area"), me.getUserId(), staff);
             map.addProperty("balance", me.getBalance());
+            if (!staff) {
+                // v2 booking form: "cọc 30.000 đ lần đầu" for the card, and the boxes where the user's finger is enrolled
+                dao.DeviceAuthDao auth = new dao.DeviceAuthDao();
+                map.addProperty("card_deposit_due", !auth.hasRegisteredCard(me.getUserId()));
+                map.addProperty("card_deposit", util.Pricing.CARD_DEPOSIT);
+                map.addProperty("hold_min", util.Pricing.HOLD_MIN);
+                com.google.gson.JsonArray fp = new com.google.gson.JsonArray();
+                for (java.util.Map<String, Object> f : auth.fingerprintsOf(me.getUserId())) {
+                    fp.add(String.valueOf(f.get("device_code")));
+                }
+                map.add("fp_devices", fp);
+            }
             String json = map.toString();
             res.setContentType("application/json;charset=UTF-8");
             res.setHeader("Cache-Control", "no-store");

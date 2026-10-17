@@ -11,21 +11,13 @@ import javax.servlet.http.HttpServletResponse;
 import model.User;
 import util.Web;
 
-/** The cards of the signed-in Locker User, and the Report lost button (case 3). */
+/** Report lost (case 3). The cards are listed on "Tủ của tôi"; GET of the old page redirects there (spec v2 Q17). */
 @WebServlet(name = "MyCardController", urlPatterns = {"/MyCardController"})
 public class MyCardController extends HttpServlet {
 
-    private static final String VIEW = "/WEB-INF/views/myCard.jsp";
-
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        try {
-            User me = Web.currentUser(req);
-            req.setAttribute("items", new UserCardDao().listByUser(me.getUserId()));
-            req.getRequestDispatcher(VIEW).forward(req, res);
-        } catch (SQLException e) {
-            throw new ServletException(e);
-        }
+    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        res.sendRedirect(req.getContextPath() + "/MyLockerController");
     }
 
     @Override
@@ -36,15 +28,15 @@ public class MyCardController extends HttpServlet {
             int cardId = Web.intParam(req, "cardId", 0);
             try {
                 new UserCardDao().reportLost(cardId, me.getUserId());
-                Web.flash(req.getSession(), "Card reported as lost and deactivated.", false);
+                Web.flash(req.getSession(), "Đã báo mất thẻ và khóa thẻ.", false);
             } catch (SQLException e) {
                 if (e.getErrorCode() >= 50000) {
-                    Web.flash(req.getSession(), e.getMessage(), true);
+                    Web.flash(req.getSession(), Web.sqlMessage(e), true);
                 } else {
                     throw new ServletException(e);
                 }
             }
         }
-        res.sendRedirect("MyCardController");
+        res.sendRedirect("MyLockerController#cards");
     }
 }

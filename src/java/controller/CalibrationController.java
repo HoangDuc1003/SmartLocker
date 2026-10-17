@@ -99,16 +99,16 @@ public class CalibrationController extends HttpServlet {
 
     private String validate(Calibration c, boolean isNew) {
         if (isNew && c.getDeviceId() <= 0) {
-            return "Please select a device";
+            return "Hãy chọn thiết bị";
         }
         if (isNew && c.getSensorTypeId() <= 0) {
-            return "Please select a sensor type";
+            return "Hãy chọn loại cảm biến";
         }
         if (c.getScaleVal() <= 0) {
-            return "Scale value must be greater than 0";
+            return "Hệ số hiệu chuẩn phải lớn hơn 0";
         }
         if (c.getValidUntil() == null) {
-            return "Valid until date is required (YYYY-MM-DD)";
+            return "Cần nhập ngày hết hiệu lực (YYYY-MM-DD)";
         }
         return null;
     }
@@ -127,7 +127,7 @@ public class CalibrationController extends HttpServlet {
                 int id = Web.intParam(req, "id", 0);
                 Calibration item = dao.findById(id);
                 if (item == null) {
-                    Web.flash(req.getSession(), "Calibration record not found", true);
+                    Web.flash(req.getSession(), "Không tìm thấy bản ghi hiệu chuẩn", true);
                     res.sendRedirect("CalibrationController");
                     return;
                 }
@@ -153,9 +153,9 @@ public class CalibrationController extends HttpServlet {
                 String reason = dao.delete(id);
                 if (reason == null && old != null) {
                     new AuditDao().append(me.getUserId(), "DELETE", "CALIBRATION", id, old.getDeviceCode() + " " + old.getSensorName());
-                    Web.flash(req.getSession(), "Calibration record deleted", false);
+                    Web.flash(req.getSession(), "Đã xóa bản ghi hiệu chuẩn", false);
                 } else {
-                    Web.flash(req.getSession(), reason == null ? "Nothing was deleted" : reason, true);
+                    Web.flash(req.getSession(), reason == null ? "Không có gì bị xóa" : reason, true);
                 }
                 res.sendRedirect("CalibrationController");
                 return;
@@ -174,11 +174,11 @@ public class CalibrationController extends HttpServlet {
             if (isNew) {
                 int id = dao.insert(c);
                 new AuditDao().append(me.getUserId(), "CREATE", "CALIBRATION", id, "Device #" + c.getDeviceId() + " Sensor #" + c.getSensorTypeId());
-                Web.flash(req.getSession(), "Calibration record added successfully", false);
+                Web.flash(req.getSession(), "Đã thêm bản ghi hiệu chuẩn", false);
             } else {
                 dao.update(c);
                 new AuditDao().append(me.getUserId(), "UPDATE", "CALIBRATION", c.getCalibId(), "Calibration #" + c.getCalibId());
-                Web.flash(req.getSession(), "Calibration record updated", false);
+                Web.flash(req.getSession(), "Đã cập nhật bản ghi hiệu chuẩn", false);
             }
             res.sendRedirect("CalibrationController");
         } catch (SQLException e) {

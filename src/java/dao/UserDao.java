@@ -129,7 +129,6 @@ public class UserDao {
 
     /** One page of users. page starts at 1. */
     public List<User> search(String keyword, String role, String status, int page, int size) throws SQLException {
-        // dynamic WHERE with ? parameters, ORDER BY ... OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
         List<Object> params = new ArrayList<>();
         String sql = "SELECT " + COLUMNS + FROM + where(keyword, role, status, params)
                 + " ORDER BY u.user_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
@@ -150,7 +149,6 @@ public class UserDao {
     }
 
     public int count(String keyword, String role, String status) throws SQLException {
-        // the same WHERE, SELECT COUNT(*)
         List<Object> params = new ArrayList<>();
         String sql = "SELECT COUNT(*)" + FROM + where(keyword, role, status, params);
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -276,12 +274,12 @@ public class UserDao {
                     ps.setInt(1, userId);
                     int n = ps.executeUpdate();
                     conn.commit();
-                    return n == 1 ? null : "User not found";
+                    return n == 1 ? null : "Không tìm thấy người dùng";
                 }
             } catch (SQLException e) {
                 conn.rollback();
                 if (e.getErrorCode() == 547) {
-                    return "This user has related data (cards, bookings, audit logs), set status to DISABLED or LOCKED instead";
+                    return "Người dùng đã có dữ liệu liên quan (thẻ, lượt gửi, nhật ký), hãy chuyển sang DISABLED hoặc LOCKED thay vì xóa";
                 }
                 throw e;
             }
@@ -290,7 +288,6 @@ public class UserDao {
 
     /** exceptUserId = 0 when creating. */
     public boolean usernameExists(String username, int exceptUserId) throws SQLException {
-        // SELECT COUNT(*) FROM Users WHERE username = ? AND user_id <> ?
         String sql = "SELECT COUNT(*) FROM Users WHERE username = ? AND user_id <> ?";
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, username);

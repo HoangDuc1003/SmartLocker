@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import model.LockerArea;
 
-/** Areas: Library, Dormitory ... Write it like LockerSlotDao. */
+/** Areas (Thư viện, Ký túc xá A...): list, find, insert, update, delete. */
 public class LockerAreaDao {
 
     /** Every area with its slot count and user count, ordered by code. The list page and the drop-downs use it. */
@@ -150,10 +150,10 @@ public class LockerAreaDao {
         try (Connection conn = DbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM LockerArea WHERE area_id = ?")) {
             ps.setInt(1, areaId);
-            return ps.executeUpdate() == 1 ? null : "Area not found";
+            return ps.executeUpdate() == 1 ? null : "Không tìm thấy khu vực";
         } catch (SQLException e) {
             if (e.getErrorCode() == 547) {
-                return "This area has banks or users attached to it, deactivate it instead";
+                return "Khu vực còn dãy tủ hoặc người dùng, hãy chuyển sang ngừng hoạt động thay vì xóa";
             }
             throw e;
         }

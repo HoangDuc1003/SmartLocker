@@ -93,7 +93,7 @@ public class DepositController extends HttpServlet {
                 long id = Web.intParam(req, "id", 0);
                 Deposit item = dao.findById(id);
                 if (item == null) {
-                    Web.flash(req.getSession(), "Deposit not found", true);
+                    Web.flash(req.getSession(), "Không tìm thấy lượt gửi", true);
                     res.sendRedirect("DepositController");
                     return;
                 }
@@ -119,9 +119,9 @@ public class DepositController extends HttpServlet {
                 String reason = dao.delete(id);
                 if (reason == null && old != null) {
                     new AuditDao().append(me.getUserId(), "DELETE", "DEPOSIT", id, "Deposit #" + id);
-                    Web.flash(req.getSession(), "Deposit #" + id + " deleted", false);
+                    Web.flash(req.getSession(), "Đã xóa lượt gửi #" + id, false);
                 } else {
-                    Web.flash(req.getSession(), reason == null ? "Nothing was deleted" : reason, true);
+                    Web.flash(req.getSession(), reason == null ? "Không có gì bị xóa" : reason, true);
                 }
                 res.sendRedirect("DepositController");
                 return;
@@ -132,7 +132,7 @@ public class DepositController extends HttpServlet {
                 int slotId = Web.intParam(req, "slotId", 0);
                 int planId = Web.intParam(req, "planId", 0);
                 if (userId <= 0 || slotId <= 0 || planId <= 0) {
-                    req.setAttribute("error", "User, slot, and storage plan are required.");
+                    req.setAttribute("error", "Cần chọn người dùng, ngăn tủ và gói gửi đồ.");
                     Deposit d = new Deposit();
                     d.setUserId(userId);
                     d.setSlotId(slotId);
@@ -146,15 +146,18 @@ public class DepositController extends HttpServlet {
                 d.setSlotId(slotId);
                 d.setPlanId(planId);
                 d.setStatus("ACTIVE");
-                long now = System.currentTimeMillis();
                 int duration = (plan != null) ? plan.getDurationMin() : 60;
-                d.setDueAt(new Timestamp(now + duration * 60000L));
+                // started_at is SYSUTCDATETIME(), so the due time is UTC as well
+                d.setDueAt(Timestamp.valueOf(java.time.LocalDateTime.now(java.time.ZoneOffset.UTC).plusMinutes(duration)));
                 try {
                     long newId = dao.insert(d);
                     new AuditDao().append(me.getUserId(), "CREATE", "DEPOSIT", newId, "Walk-in deposit");
-                    Web.flash(req.getSession(), "Deposit #" + newId + " created successfully", false);
+                    Web.flash(req.getSession(), "Đã tạo lượt gửi #" + newId, false);
                 } catch (SQLException e) {
-                    req.setAttribute("error", e.getMessage());
+                    if (e.getErrorCode() < 50000) {
+                        throw e;   // not a business rule: the outer handler turns it into a server error
+                    }
+                    req.setAttribute("error", Web.sqlMessage(e));
                     showForm(req, res, d, true);
                     return;
                 }
@@ -164,7 +167,7 @@ public class DepositController extends HttpServlet {
                 String status = Web.trimmed(req, "status");
                 Deposit d = dao.findById(id);
                 if (d == null) {
-                    Web.flash(req.getSession(), "Deposit not found", true);
+                    Web.flash(req.getSession(), "Không tìm thấy lượt gửi", true);
                     res.sendRedirect("DepositController");
                     return;
                 }
@@ -176,15 +179,21 @@ public class DepositController extends HttpServlet {
                         if (dueStr.length() == 16) {
                             dueStr += ":00";
                         }
-                        d.setDueAt(Timestamp.valueOf(dueStr.replace("T", " ")));
-                    } catch (Exception ignored) {
+                        // the operator types Vietnam time, the DB stores UTC (read back as the UTC wall clock)
+                        java.time.Instant due = java.time.LocalDateTime.parse(dueStr.replace(" ", "T"))
+                                .atZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
+                        d.setDueAt(Timestamp.valueOf(java.time.LocalDateTime.ofInstant(due, java.time.ZoneOffset.UTC)));
+                    } catch (java.time.DateTimeException e) {
+                        Web.flash(req.getSession(), "Hạn trả không đúng định dạng, ví dụ 2026-10-20 18:00:00.", true);
+                        res.sendRedirect("DepositController?action=edit&id=" + id);
+                        return;
                     }
                 }
                 dao.update(d);
                 new AuditDao().append(me.getUserId(), "UPDATE", "DEPOSIT", id, "Status: " + status);
-                Web.flash(req.getSession(), "Deposit #" + id + " updated", false);
+                Web.flash(req.getSession(), "Đã cập nhật lượt gửi #" + id, false);
             } else {
-                Web.flash(req.getSession(), "Unknown action", true);
+                Web.flash(req.getSession(), "Thao tác không hợp lệ", true);
             }
             res.sendRedirect("DepositController");
         } catch (SQLException e) {

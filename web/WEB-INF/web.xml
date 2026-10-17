@@ -6,6 +6,30 @@
 
     <!-- Servlets, the filter and the listener are declared with annotations in the source. -->
 
+    <!-- Static files are UTF-8. Tomcat reads them with the platform charset (Cp1252 on Windows) and
+         re-encodes them to the UTF-8 response charset set by SecurityFilter, which breaks Vietnamese text in js/*.js. -->
+    <servlet>
+        <servlet-name>default</servlet-name>
+        <servlet-class>org.apache.catalina.servlets.DefaultServlet</servlet-class>
+        <init-param>
+            <param-name>debug</param-name>
+            <param-value>0</param-value>
+        </init-param>
+        <init-param>
+            <param-name>listings</param-name>
+            <param-value>false</param-value>
+        </init-param>
+        <init-param>
+            <param-name>fileEncoding</param-name>
+            <param-value>UTF-8</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+
     <session-config>
         <session-timeout>45</session-timeout>
     </session-config>

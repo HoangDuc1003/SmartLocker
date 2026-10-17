@@ -3,9 +3,7 @@ package api;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
-import dao.DepositDao;
 import dao.DeviceDao;
 import dao.LockerSessionDao;
 import java.io.IOException;
@@ -19,6 +17,7 @@ import model.LockerSession;
 import service.AlertService;
 
 /**
+ * v2: open_source is PIN, PHONE, CARD, FINGERPRINT or REMOTE; command_id comes with PHONE and REMOTE opens.
  * Receives sessions in batches: the device sends everything it buffered while the network was down.
  * Safe to send twice: a session with the same (device, seq) is ignored by the UNIQUE constraint.
  *
@@ -60,14 +59,13 @@ public class LockerSessionApi extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException {
-        // insert each session, evaluate it, then free the slot; count saved, duplicate and rejected
+        // insert each session and evaluate it; count saved, duplicate and rejected
         int deviceId = (Integer) req.getAttribute("DEVICE_ID");
-        JsonArray sessions;
-        try {
-            JsonElement parsed = JsonParser.parseReader(req.getReader());
-            sessions = parsed.getAsJsonObject().getAsJsonArray("sessions");
-        } catch (RuntimeException bad) {
-            res.sendError(HttpServletResponse.SC_BAD_REQUEST, "Body must be {\"sessions\":[...]}");
+        JsonObject body = ApiJson.body(req);
+        JsonArray sessions = body != null && body.has("sessions") && body.get("sessions").isJsonArray()
+                ? body.getAsJsonArray("sessions") : null;
+        if (sessions == null) {
+            ApiJson.error(res, HttpServletResponse.SC_BAD_REQUEST, "BAD_REQUEST", "Sai du lieu");   // body must be {"sessions":[...]}
             return;
         }
         LockerSessionDao dao = new LockerSessionDao();
@@ -89,21 +87,22 @@ public class LockerSessionApi extends HttpServlet {
                 s.setSessionId(id);
                 saved++;
                 try {
-                    new AlertService().evaluate(s);              // before complete(): the rules read the active booking
+                    new AlertService().evaluate(s);
                 } catch (SQLException e) {
                     log("Alert evaluation failed for session " + id, e);   // the session is stored; do not make the device resend it
                 }
-                if (s.getSlotCode() != null) {
-                    new DepositDao().complete(deviceId, s.getSlotCode());
-                }
+                // v2: the booking ends at /api/device/auth (phase PICKUP), a batch only keeps the history
             }
             new DeviceDao().heartbeat(deviceId);                  // a batch also proves the device is alive
         } catch (SQLException e) {
             log("Batch insert failed", e);
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            ApiJson.error(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "SERVER_ERROR", "Loi may chu");
             return;
         }
-        res.setContentType("application/json;charset=UTF-8");
-        res.getWriter().write("{\"saved\":" + saved + ",\"duplicates\":" + duplicates + ",\"rejected\":" + rejected + "}");
+        JsonObject reply = new JsonObject();
+        reply.addProperty("saved", saved);
+        reply.addProperty("duplicates", duplicates);
+        reply.addProperty("rejected", rejected);
+        ApiJson.write(res, 200, reply);
     }
 }

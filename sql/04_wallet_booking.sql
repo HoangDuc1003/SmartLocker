@@ -1,28 +1,11 @@
-﻿-- Apply once to an existing PRJ301_LOCKER database without deleting its data.
--- Then run 03_scenarios.sql again to update the booking procedures.
+﻿-- 04_wallet_booking.sql  Wallet and booking additions. Run after 01..03 (order: 01 -> 07, see README).
+-- Safe to run again: every change is guarded. TopupRequest itself is created in 01_schema.sql.
 USE PRJ301_LOCKER;
 GO
 
 IF COL_LENGTH('dbo.Users', 'balance') IS NULL
     ALTER TABLE dbo.Users ADD balance BIGINT NOT NULL
         CONSTRAINT DF_Users_balance DEFAULT 0;
-GO
-
-IF OBJECT_ID('dbo.TopupRequest', 'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.TopupRequest (
-        request_id    INT IDENTITY PRIMARY KEY,
-        user_id       INT NOT NULL REFERENCES dbo.Users,
-        amount        BIGINT NOT NULL CHECK (amount >= 1000),
-        transfer_code NVARCHAR(80) NOT NULL UNIQUE,
-        qr_url        NVARCHAR(1000) NOT NULL,
-        status        NVARCHAR(20) NOT NULL DEFAULT 'PENDING'
-                      CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED')),
-        created_at    DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-        approved_at   DATETIME2 NULL,
-        approved_by   INT NULL REFERENCES dbo.Users,
-        note          NVARCHAR(400) NULL);
-END;
 GO
 
 IF COL_LENGTH('dbo.Deposit', 'paid_amount') IS NULL

@@ -5,7 +5,7 @@ public class LockerBank {
 
     private int bankId;
     private String bankCode;   // LIB-A
-    private String name;   // Bank A
+    private String name;   // display name, e.g. Dãy A
     private int areaId;
     private String areaCode;   // joined
     private Integer deviceId;   // null = illustration only

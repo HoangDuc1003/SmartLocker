@@ -17,7 +17,6 @@ public class AuditDao {
      * Always pass a real actor and a real object id: a NULL is hashed differently by SQL and Java.
      */
     public void append(int actorId, String action, String objectType, long objectId, String diff) throws SQLException {
-        // CallableStatement {call Audit_Append(?,?,?,?,?)}
         try (Connection conn = DbContext.getConnection();
              CallableStatement cs = conn.prepareCall("{call Audit_Append(?, ?, ?, ?, ?)}")) {
             cs.setInt(1, actorId);

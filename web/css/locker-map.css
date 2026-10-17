@@ -2,7 +2,6 @@
    Layout: phone = area chips + bottom sheet, tablet = side menu + drawer, desktop = 3 columns. */
 
 :root {
-  --header-h: 0px;
   --cabinet: #d5dbe3;
   --cabinet-edge: #b9c2cd;
   --door-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.06);
@@ -29,6 +28,32 @@
   --offline-bg: #d9dee5;
   --offline-edge: #aeb7c2;
   --hatch: rgba(30, 40, 55, 0.09);
+}
+
+/* dark theme: same rule as css/app.css (explicit choice, or the OS when nothing was picked) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --cabinet: #2a3038; --cabinet-edge: #3a414b; --door-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+    --available: #6cc98c; --available-bg: #183324; --available-edge: #2c5a3e;
+    --reserved: #e3b45c; --reserved-bg: #3a2e14; --reserved-edge: #6a5424;
+    --occupied: #8db2ee; --occupied-bg: #1c2b44; --occupied-edge: #34507c;
+    --overdue: #f0a070; --overdue-bg: #3c2416; --overdue-edge: #6e4128;
+    --alert: #f08178; --alert-bg: #3d1f1d; --alert-edge: #6e3530;
+    --maintenance: #b3bcc7; --maintenance-bg: #2b3038; --maintenance-edge: #474f5a;
+    --offline: #9aa3ad; --offline-bg: #22262c; --offline-edge: #3f454e;
+    --hatch: rgba(255, 255, 255, 0.06);
+  }
+}
+:root[data-theme="dark"] {
+  --cabinet: #2a3038; --cabinet-edge: #3a414b; --door-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+  --available: #6cc98c; --available-bg: #183324; --available-edge: #2c5a3e;
+  --reserved: #e3b45c; --reserved-bg: #3a2e14; --reserved-edge: #6a5424;
+  --occupied: #8db2ee; --occupied-bg: #1c2b44; --occupied-edge: #34507c;
+  --overdue: #f0a070; --overdue-bg: #3c2416; --overdue-edge: #6e4128;
+  --alert: #f08178; --alert-bg: #3d1f1d; --alert-edge: #6e3530;
+  --maintenance: #b3bcc7; --maintenance-bg: #2b3038; --maintenance-edge: #474f5a;
+  --offline: #9aa3ad; --offline-bg: #22262c; --offline-edge: #3f454e;
+  --hatch: rgba(255, 255, 255, 0.06);
 }
 
 /* status classes only set variables, every component reads them */
@@ -67,7 +92,7 @@
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1440px) {
   .map-layout {
     grid-template-columns: 250px minmax(0, 1fr) 340px;
   }
@@ -624,7 +649,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1440px) {
   .slot-panel {
     position: sticky;
     top: calc(var(--header-h) + 20px);
@@ -638,7 +663,7 @@
   }
 }
 
-@media (max-width: 1199px) {
+@media (max-width: 1439px) {
   .slot-panel {
     position: fixed;
     z-index: 50;
@@ -655,7 +680,7 @@
   }
 }
 
-@media (min-width: 900px) and (max-width: 1199px) {
+@media (min-width: 900px) and (max-width: 1439px) {
   .slot-panel {
     top: 0;
     right: 0;

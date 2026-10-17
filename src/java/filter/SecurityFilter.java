@@ -34,12 +34,14 @@ public class SecurityFilter implements Filter {
 
     /** Reachable without signing in. */
     private static final Set<String> PUBLIC_PATHS = new HashSet<>(Arrays.asList(
-            "/", "/index.html", "/favicon.ico", "/LoginController", "/RegisterController", "/LogoutController"));
-    private static final String[] PUBLIC_PREFIXES = {"/css/", "/js/", "/img/", "/demo/"};
+            "/", "/index.html", "/favicon.ico", "/LoginController", "/RegisterController", "/LogoutController",
+            "/k", "/api/kiosk/unlock"));                 // v2 phone page (a /k/* servlet has servlet path "/k"): the PIN is the secret, the box lockout limits guesses
+    private static final String[] PUBLIC_PREFIXES = {"/css/", "/js/", "/img/", "/k/"};
 
     /** The device signs with an X-API-Key header instead of a login. */
     private static final Set<String> DEVICE_API_PATHS = new HashSet<>(Arrays.asList(
-            "/api/health", "/api/locker/batch"));
+            "/api/health", "/api/locker/batch",
+            "/api/device/auth", "/api/device/enroll/start", "/api/device/enroll/finish"));
 
     /** servlet path -> resource name in the Permissions table. GET needs READ, anything else needs WRITE. */
     private static final Map<String, String> RESOURCE_BY_PATH = new HashMap<>();
@@ -60,6 +62,8 @@ public class SecurityFilter implements Filter {
         RESOURCE_BY_PATH.put("/DepositController", "DEPOSIT");
         RESOURCE_BY_PATH.put("/RemoteCommandController", "COMMAND");
         RESOURCE_BY_PATH.put("/BookingController", "BOOKING");
+        RESOURCE_BY_PATH.put("/api/my-locker", "BOOKING");
+        RESOURCE_BY_PATH.put("/MyLockerController", "BOOKING");
         RESOURCE_BY_PATH.put("/MyCardController", "MYCARD");
         RESOURCE_BY_PATH.put("/UserController", "USER");
         RESOURCE_BY_PATH.put("/RoleController", "ROLE");
@@ -79,6 +83,13 @@ public class SecurityFilter implements Filter {
         return false;
     }
 
+    /** 401 as JSON: the box prints "message" on its OLED. */
+    private static void deviceUnauthorized(HttpServletResponse res) throws IOException {
+        res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        res.setContentType("application/json;charset=UTF-8");
+        res.getWriter().write("{\"result\":\"ERROR\",\"reason\":\"BAD_API_KEY\",\"message\":\"Sai khoa thiet bi\"}");
+    }
+
     @Override
     public void init(FilterConfig filterConfig) {
     }
@@ -92,6 +103,10 @@ public class SecurityFilter implements Filter {
         req.setCharacterEncoding("UTF-8");
         res.setCharacterEncoding("UTF-8");
         String path = req.getServletPath();
+        // the browser revalidates css/js on each load (a 304 when unchanged), so a redeploy is never hidden by a stale copy
+        if (path.endsWith(".css") || path.endsWith(".js")) {
+            res.setHeader("Cache-Control", "no-cache");
+        }
 
         // 1. pages and files anyone may open
         if (isPublic(path)) {
@@ -116,13 +131,26 @@ public class SecurityFilter implements Filter {
         try {
             // 2. a device signs with its key; the id comes from the key, never from the body it sends
             if (DEVICE_API_PATHS.contains(path)) {
-                Integer deviceId = new DeviceDao().findIdByApiKey(req.getHeader("X-API-Key"));
-                if (deviceId == null) {
-                    res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid API key");
+                String apiKey = req.getHeader("X-API-Key");
+                if (apiKey != null) {
+                    Integer deviceId = new DeviceDao().findIdByApiKey(apiKey);
+                    if (deviceId == null) {
+                        deviceUnauthorized(res);
+                        return;
+                    }
+                    req.setAttribute("DEVICE_ID", deviceId);
+                    chain.doFilter(request, response);
                     return;
                 }
-                req.setAttribute("DEVICE_ID", deviceId);
-                chain.doFilter(request, response);
+                // an admin may check the health of the server (DB status) from the browser, without a device key
+                if ("GET".equalsIgnoreCase(req.getMethod()) && "/api/health".equals(path)) {
+                    User user = Web.currentUser(req);
+                    if (user != null && "ADMIN".equals(user.getRoleName())) {
+                        chain.doFilter(request, response);
+                        return;
+                    }
+                }
+                deviceUnauthorized(res);
                 return;
             }
 

@@ -36,6 +36,7 @@ public class MaintenanceController extends HttpServlet {
             req.setAttribute("page", page);
             req.setAttribute("pages", pages);
             req.setAttribute("status", status);
+            req.setAttribute("hlId", Web.intParam(req, "id", 0));   // the row linked from the locker map
             req.getRequestDispatcher(VIEW).forward(req, res);
         } catch (SQLException e) {
             throw new ServletException(e);
@@ -51,10 +52,10 @@ public class MaintenanceController extends HttpServlet {
             String note = Web.trimmed(req, "note");
             try {
                 dao.close(ticketId, me.getUserId(), note);
-                Web.flash(req.getSession(), "Ticket #" + ticketId + " closed successfully. Associated slot restored to AVAILABLE.", false);
+                Web.flash(req.getSession(), "Đã đóng phiếu #" + ticketId + ". Ngăn tủ liên quan trở lại trạng thái AVAILABLE.", false);
             } catch (SQLException e) {
                 if (e.getErrorCode() >= 50000) {
-                    Web.flash(req.getSession(), e.getMessage(), true);
+                    Web.flash(req.getSession(), Web.sqlMessage(e), true);
                 } else {
                     throw new ServletException(e);
                 }

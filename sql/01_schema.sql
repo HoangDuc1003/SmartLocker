@@ -3,7 +3,7 @@
 -- Run the whole file in SSMS. It drops and recreates the database,
 -- so run it again whenever you want a clean start.
 --   Part A  database
---   Part B  the 14 shared tables of the assignment (copied from De-01, Workshop 1, step 2)
+--   Part B  the 14 shared tables of the assignment (the shared schema of topic 01)
 --   Part C  the 4 tables of the topic, trigger and view of the assignment
 --   Part D  our additions: areas, banks, account funds, cards, plans, deposits, remote commands
 --   Part E  seed data and the Audit_Append procedure
@@ -426,18 +426,18 @@ INSERT INTO LockerBank (bank_code, name, area_id, device_id, door_rows)
 SELECT v.code, v.name, a.area_id, v.device_id, v.door_rows
 FROM (VALUES (N'LIB-A',  N'Bank A', N'LIB',  1,    2), (N'LIB-B',  N'Bank B', N'LIB',  NULL, 4),
              (N'DOMA-A', N'Bank A', N'DOMA', NULL, 4), (N'DOMA-B', N'Bank B', N'DOMA', NULL, 4),
-             (N'CANT-A', N'Bank A', N'CANT', NULL, 4),
+             (N'CANT-A', N'Bank A', N'CANT', NULL, 4), (N'CANT-B', N'Bank B', N'CANT', NULL, 4),
              (N'GYM-A',  N'Bank A', N'GYM',  NULL, 4), (N'GYM-B',  N'Bank B', N'GYM',  NULL, 4)
      ) v(code, name, area_code, device_id, door_rows)
 JOIN LockerArea a ON a.area_code = v.area_code;
 
--- 90 doors: the slot code is the bank letter and a number, A01, A02 ...
+-- 105 doors: the slot code is the bank letter and a number, A01, A02 ...
 WITH n AS (SELECT TOP (20) ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS i FROM sys.all_objects)
 INSERT INTO LockerSlot (slot_code, bank_id, size_cm, size_code, status)
 SELECT RIGHT(b.bank_code, 1) + RIGHT('0' + CAST(n.i AS VARCHAR(2)), 2), b.bank_id, N'30x30x45', 'S', N'AVAILABLE'
 FROM LockerBank b
 JOIN (VALUES (N'LIB-A', 4), (N'LIB-B', 16), (N'DOMA-A', 20), (N'DOMA-B', 10),
-             (N'CANT-A', 15), (N'GYM-A', 16), (N'GYM-B', 9)) c(code, cnt) ON c.code = b.bank_code
+             (N'CANT-A', 15), (N'CANT-B', 12), (N'GYM-A', 16), (N'GYM-B', 9)) c(code, cnt) ON c.code = b.bank_code
 JOIN n ON n.i <= c.cnt;
 
 -- a few tall doors
@@ -445,6 +445,7 @@ UPDATE s SET size_code = 'L', size_cm = N'40x40x90'
 FROM LockerSlot s JOIN LockerBank b ON b.bank_id = s.bank_id
 WHERE (b.bank_code = N'DOMA-B' AND s.slot_code IN ('B03', 'B06', 'B07', 'B08', 'B09', 'B10'))
    OR (b.bank_code = N'CANT-A' AND s.slot_code IN ('A03', 'A06', 'A09', 'A12', 'A15'))
+   OR (b.bank_code = N'CANT-B' AND s.slot_code IN ('B03', 'B06', 'B09', 'B12'))
    OR (b.bank_code = N'GYM-B'  AND s.slot_code IN ('B03', 'B06', 'B09'));
 GO
 

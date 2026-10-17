@@ -14,14 +14,14 @@ public class RuleEngine {
     public static final long CLOCK_AHEAD_SEC = 300;   // measured_at more than 5 minutes in the future
 
     public Verdict evaluate(LockerSession s, SessionContext ctx) {
-        // 1 sensor fault, 2 remote open, 3 lost card, 4 the six labels of the assignment
+        // 1 sensor fault, 2 remote open, 3 lost card, 4 the six behaviour labels
         // 1. SENSOR_FAULT: data we cannot trust, blame the sensor and not the user
         String fault = findSensorFault(s, ctx);
         if (fault != null) {
             return Verdict.alert("SENSOR_FAULT", "reason", fault).noMl();
         }
-        // 2. Remote open: a valid command means staff opened it, otherwise someone faked the signal
-        if ("REMOTE".equals(s.getOpenSource())) {
+        // 2. Remote or phone open: a valid command means staff (or the phone page) opened it, otherwise someone faked the signal
+        if ("REMOTE".equals(s.getOpenSource()) || "PHONE".equals(s.getOpenSource())) {
             if (s.getCommandId() != null && ctx.isCommandValid()) {
                 return Verdict.staffOpen(s.getCommandId());
             }
@@ -34,7 +34,7 @@ public class RuleEngine {
                     .with("card_status", ctx.getCardStatus())
                     .with("card_owner_id", String.valueOf(ctx.getCardOwnerId()));
         }
-        // 4. The six labels of the assignment
+        // 4. The six behaviour labels
         if (!s.isRfidOk() && s.getDoorOpenSec() > 0) {
             return Verdict.alert("FORCED_OPEN", "door_open_sec", String.valueOf(s.getDoorOpenSec()))
                     .with("rfid_ok", "false");

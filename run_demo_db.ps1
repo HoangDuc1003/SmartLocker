@@ -25,7 +25,9 @@ $scripts = @(
     "02_sample_data.sql",
     "03_scenarios.sql",
     "04_wallet_booking.sql",
-    "05_fix_reviewer_feedback.sql"
+    "05_fix_reviewer_feedback.sql",
+    "06_demo_v2.sql",
+    "07_vietnamese_data.sql"
 )
 
 foreach ($s in $scripts) {
@@ -77,3 +79,6 @@ Write-Host "============================================================" -Foreg
 Write-Host "  SUCCESS! Database is fully seeded and ready for demo!   " -ForegroundColor Green
 Write-Host "  Password for all demo accounts: 123456                   " -ForegroundColor Green
 Write-Host "============================================================" -ForegroundColor Green
+Write-Host ""
+Write-Host "Next step: 06_demo_v2.sql resets the LOCKER-01 key to the public seed key." -ForegroundColor Yellow
+Write-Host "Run: powershell -ExecutionPolicy Bypass -File scripts\set-device-key.ps1" -ForegroundColor Yellow

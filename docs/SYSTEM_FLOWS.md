@@ -1,143 +1,116 @@
-# SmartLocker System Architecture & Business Flows
+# SmartLocker: luồng hệ thống và nghiệp vụ
 
-This document details the core data pipelines and business lifecycles of the **SmartLocker** IoT Management System, covering both the Real-Time Telemetry Pipeline and the End-to-End User Booking Lifecycle.
+Tài liệu mô tả đường đi của dữ liệu và vòng đời một lượt gửi đồ, đúng với code hiện tại (v2).
+Hợp đồng API chi tiết của thiết bị nằm ở [spec/smart-locker-v2.md](spec/smart-locker-v2.md) mục 4.
 
 ---
 
-## Part 1: Real-Time IoT Dashboard Pipeline
+## Phần 1: Dashboard và tiến trình nền
 
-### 1.1 High-Concurrency Architecture
-
-To support high-frequency client polling without degrading database throughput, the system employs an **In-Memory Snapshot Cache** managed by a dedicated daemon thread.
+### 1.1 Đường đi dữ liệu
 
 ```mermaid
 flowchart TD
-    DB[(SQL Server DB)] -->|Aggregated query every 2s| LM["LockerMonitor (Daemon Scheduler)"]
-    LM -->|Atomic swap| CACHE["AtomicReference&lt;DashboardSnapshot&gt;"]
-    
-    subgraph ReadPath ["Non-Blocking Read Path"]
-        API["DashboardApi (/api/dashboard)"] -->|Zero DB Queries| CACHE
-        API -->|JSON with Cache-Control: no-store| Client["dashboard.jsp (Vanilla JS Engine)"]
-    end
-    
-    subgraph ClientEngine ["Client-side Polling Engine"]
-        Client -->|Recursive setTimeout + AbortController| API
-        Client -->|Differential DOM Updates| UI["Bento KPI Cards & Live Matrices"]
-    end
+    DB[(SQL Server)] -->|truy vấn tổng hợp, 2 giây một lần| LM["LockerMonitor (luồng nền)"]
+    LM -->|thay nguyên ảnh chụp| CACHE["AtomicReference&lt;Snapshot&gt;"]
+    API["DashboardApi /api/dashboard"] -->|chỉ đọc bộ nhớ, không truy vấn DB| CACHE
+    Page["dashboard.jsp + js/dashboard.js"] -->|setTimeout 5 giây, hủy sau 8 giây bằng AbortController| API
+    LM -->|15 giây một lần| PROC["Procedure: Device_MarkOffline(90), Deposit_ExpireNoShow,
+    Deposit_ExpireOverdue, RemoteCommand_Expire"]
 ```
 
-### 1.2 Pipeline Components
-1. **`LockerMonitor` (Daemon Background Scheduler):**
-   - Refreshes a `DashboardSnapshot` object every 2 seconds.
-   - Evaluates slot status counts in a single query via `SUM(CASE WHEN...)` on `v_LockerSlotMap`.
-   - Checks the cryptographic integrity of the audit hash chain (`AuditVerifier`).
-   - Keeps active demo bank controllers alive with periodic keep-alive pings.
-2. **`DashboardApi` (`/api/dashboard`):**
-   - High-performance, read-only endpoint.
-   - Fetches the snapshot reference directly from memory in $< 1\text{ ms}$.
-   - Serializes payload using `Gson` with null safety.
-3. **`dashboard.jsp` (Client Real-Time Engine):**
-   - **Server-Side Rendering (SSR):** Initial state rendered server-side to prevent UI flicker (`—`).
-   - **Non-overlapping Polling:** Recursive `setTimeout` guarantees that a new request is dispatched only after the previous request settles.
-   - **Stray Service Worker Immunity:** Automatically unregisters stale localhost workers that intercept network requests.
-   - **Differential DOM Updates:** Only DOM nodes whose values changed trigger reflow and animations.
+### 1.2 Các thành phần
+1. **`LockerMonitor`** (`ServletContextListener`, một luồng nền):
+   - Mỗi 2 giây dựng `Snapshot` (KPI, số ngăn theo trạng thái, cảnh báo mới, tình trạng hộp, lượt mở gần đây) và kết quả kiểm tra chuỗi băm audit (`AuditVerifier`).
+   - Mỗi 15 giây chạy các procedure hết hạn. Hộp im lặng quá 90 giây chuyển `OFFLINE`.
+   - Hộp minh họa (`"demo":true` trong `OperatingProfile`) được giả heartbeat; hộp thật `LOCKER-01` thì không.
+2. **`DashboardApi`**: trả JSON từ ảnh chụp; trả 503 nếu ảnh chụp chưa có (vài giây đầu sau khi deploy).
+   `?device=ID` là truy vấn riêng cho biểu đồ của một hộp.
+3. **`dashboard.jsp`**: lần vẽ đầu do server render; sau đó `dashboard.js` hỏi lại theo chu kỳ người dùng chọn,
+   không gửi yêu cầu mới khi yêu cầu cũ chưa xong, và chỉ cập nhật ô có giá trị thay đổi.
 
 ---
 
-## Part 2: End-to-End Locker Lifecycle & Scenario Matrix
+## Phần 2: Vòng đời một lượt gửi
 
-### 2.1 Complete Flowchart (Registration to Return)
+### 2.1 Đặt và dùng tủ
 
 ```mermaid
 flowchart TD
-    Start(["User Registration"]) --> RegVerify{"Username Unique & Valid?"}
-    RegVerify -- "Duplicate / Invalid" --> RegError["Show validation error"]
-    RegError --> Start
-    RegVerify -- "Valid" --> AccCreated["Create Account (Role: END_USER, Balance: 0)"]
-    
-    AccCreated --> Login["Sign In (LoginController)"]
-    Login --> ChkBalance{"Wallet Balance >= Plan Price?"}
-    
-    ChkBalance -- "No" --> TopupFlow["Top-up via VietQR / Transfer"]
-    TopupFlow --> AdminReview["Staff Approval / Auto-Credit"]
-    AdminReview --> ChkBalance
-    
-    ChkBalance -- "Yes" --> BrowseMap["Explore Locker Map & Select Available Slot"]
-    BrowseMap --> ReserveCall{"Execute Deposit_Reserve"}
-    
-    ReserveCall -- "Balance < Price" --> Err30["Error 50030: Insufficient balance"]
-    ReserveCall -- "Active Booking Exists" --> Err32["Error 50032: Booking already in progress"]
-    ReserveCall -- ">= 3 No-Shows in 7d" --> Err31["Error 50031: Booking blocked"]
-    ReserveCall -- "Locker Offline" --> Err35["Error 50035: Locker is offline"]
-    ReserveCall -- "Slot Race Conflict" --> Err33["Error 50033: Slot no longer available"]
-    
-    ReserveCall -- "Success" --> ReservedState["Slot: RESERVED (15-min Hold Window)"]
-    
-    ReservedState --> CheckInDecision{"Customer arrives within 15 mins?"}
-    
-    CheckInDecision -- "Customer Cancels (Deposit_Cancel)" --> Refund["Refund 100% deposit -> Slot: AVAILABLE"]
-    CheckInDecision -- "Hold Expires (Deposit_ExpireNoShow)" --> NoShow["Mark NO_SHOW, refund full deposit -> Slot: AVAILABLE"]
-    CheckInDecision -- "Customer Check-In (Deposit_CheckIn)" --> ActiveState["Slot: OCCUPIED (Status: ACTIVE)"]
-    
-    ActiveState --> InUseEvents{"Events During Session"}
-    InUseEvents -- "Extend Time (Deposit_Extend)" --> ExtendSlot["Add 15-240 mins (Max 3 times)"]
-    ExtendSlot --> ActiveState
-    InUseEvents -- "Report Lost Card" --> BlockOld["Block old RFID card & bind new card"]
-    BlockOld --> ActiveState
-    InUseEvents -- "Door Tamper / Sensor Fault" --> AIAlert["RiskScorer & Rule Engine raise CRITICAL Alert"]
-    AIAlert --> ActiveState
-    
-    ActiveState --> CheckOut{"Session Completion (Check-out)"}
-    CheckOut -- "Normal Retrieval (due_at >= now)" --> CompleteNormal["Sensors detect empty slot (Deposit_Complete)"]
-    CheckOut -- "Overdue Retrieval (due_at < now)" --> OverdueState["Slot: OVERDUE (Auto-Release / Penalty)"]
-    
-    CompleteNormal --> AvailableAgain["Slot returned to AVAILABLE (Green)"]
-    OverdueState --> AvailableAgain
-    AvailableAgain --> Finish(["Ready for next customer"])
+    Start(["Đăng ký / đăng nhập"]) --> Map["Sơ đồ tủ: chọn ngăn trống"]
+    Map --> Form["Chọn gói và cách mở: mật mã, thẻ từ, vân tay"]
+    Form --> Confirm["Popup xác nhận: giá, cọc thẻ, tổng tiền"]
+    Confirm --> Reserve{"Deposit_Reserve"}
+    Reserve -- "50030 / 50041 thiếu tiền" --> Err["Thông báo lỗi tiếng Việt (Web.sqlMessage)"]
+    Reserve -- "50031 3 lần không đến trong 7 ngày" --> Err
+    Reserve -- "50032 đang có lượt gửi" --> Err
+    Reserve -- "50033 ngăn vừa bị đặt" --> Err
+    Reserve -- "50035 hộp mất kết nối" --> Err
+    Reserve -- "Thành công" --> Held["RESERVED, giữ chỗ 15 phút, đã trừ tiền"]
+    Held --> Mine["Tủ của tôi: mật mã hoặc mã đăng ký thẻ/vân tay"]
+    Mine --> Open1{"Mở lần 1 tại hộp (auth) hoặc điện thoại (/k/LOCKER-01)"}
+    Open1 -- "CHECK_IN" --> Active["ACTIVE, ngăn OCCUPIED, đếm tới due_at"]
+    Held -- "Hủy trước khi đến" --> Cancel["CANCELLED, hoàn 100%"]
+    Held -- "Hết 15 phút" --> NoShow["NO_SHOW, hoàn 90%, giữ 10%"]
+    Active -- "Gia hạn (tối đa 3 lần)" --> Active
+    Active --> Open2{"Mở lần 2"}
+    Open2 -- "PICKUP" --> Done["COMPLETED, ngăn AVAILABLE"]
+    Active -- "Quá due_at" --> Auto["Deposit_ExpireOverdue: COMPLETED, ngăn AVAILABLE"]
 ```
 
----
+### 2.2 Mở tủ tại hộp (`POST /api/device/auth`)
 
-### 2.2 Scenario Handling Matrix
+```mermaid
+sequenceDiagram
+    participant Box as Hộp ESP32
+    participant Api as DeviceAuthApi
+    participant Db as Device_Authorize
+    Box->>Api: X-API-Key + {"method":"PIN","pin":"..."}
+    Api->>Api: kiểm tra định dạng (400 nếu sai)
+    Api->>Db: device_id lấy từ khóa, không lấy từ body
+    Db-->>Api: UNLOCK (CHECK_IN / PICKUP) hoặc DENY + reason
+    Api-->>Box: message ASCII cho màn OLED, open_sec, attempts_left, retry_after_sec
+```
 
-| Scenario Code | Trigger Condition | System Action | Resulting State |
-| :--- | :--- | :--- | :--- |
-| **Case 2.1: Happy Reserve** | Balance $\ge$ Plan price, slot is `AVAILABLE`, controller `ACTIVE`. | Atomically debits balance, sets slot to `RESERVED`, sets 15-minute hold. | `Deposit.RESERVED`, `Slot.RESERVED` |
-| **Case 2.2: Insufficient Funds** | Balance $<$ Plan price. | Aborts transaction, rolls back, returns user-friendly error message. | No state change |
-| **Case 2.3: Single Active Limit** | User already has an active or reserved booking. | Prevents double-booking via check on `Deposit(status IN ('RESERVED','ACTIVE'))`. | No state change |
-| **Case 2.4: No-Show Ban** | User incurred $\ge 3$ No-Show events within the past 7 days. | Temporarily suspends booking privileges to prevent slot hoarding. | Request rejected |
-| **Case 2.5: Hardware Offline** | Device heartbeats stopped ($> 24\text{ h}$). | Flags all child slots as `OFFLINE`; booking disallowed until back online. | Slot disabled |
-| **Case 3.1: Active Check-In** | User scans card or places belongings in locker within 15 minutes. | Transition session to `ACTIVE`, start duration countdown (`due_at = now + plan_min`). | `Deposit.ACTIVE`, `Slot.OCCUPIED` |
-| **Case 3.2: User Cancellation** | User clicks Cancel before check-in. | Refunds full fee to balance, releases slot lock immediately. | `Deposit.CANCELLED`, `Slot.AVAILABLE` |
-| **Case 3.3: Hold Expiry (No-Show)**| 15 minutes elapse without sensor or RFID activity. | `LockerMonitor` executes `Deposit_ExpireNoShow`: releases slot, refunds balance, logs audit. | `Deposit.NO_SHOW`, `Slot.AVAILABLE` |
-| **Case 4.1: Online Extension** | User requests more time before expiration. | Adds 15 to 240 minutes to `due_at` (allowed at most 3 times per booking). | `Deposit.ACTIVE` (`extend_count += 1`) |
-| **Case 4.2: Lost Card Security** | User reports RFID badge lost or compromised. | Marks card `BLOCKED`; pushes blocked UID to device heartbeat blacklist; re-binds booking to replacement card. | Card blacklisted |
-| **Case 4.3: Tamper Detection** | Door opened without RFID authorization or weight anomaly detected. | Weka ML `RiskScorer` flags anomaly ($Risk \ge 0.70$); triggers `CRITICAL` alert on dashboard. | Alert created, Technician notified |
-| **Case 5.1: Normal Return** | User removes belongings, sensors record weight $\approx 0\text{ g}$, door closes. | Heartbeat executes `Deposit_Complete`: ends session, frees slot. | `Deposit.COMPLETED`, `Slot.AVAILABLE` |
-| **Case 5.2: Overdue Auto-Release** | `due_at` has elapsed without locker retrieval. | Slot displays `OVERDUE` (orange/red); `Deposit_ExpireOverdue` releases slot to prevent deadlocks. | `Deposit.COMPLETED`, `Slot.AVAILABLE` |
+- Lý do từ chối thường gặp: `WRONG_CODE`, `UNKNOWN_CARD`, `UNKNOWN_FINGER`, `CARD_BLOCKED`, `METHOD_MISMATCH`, `LOCKED_OUT`.
+- Chỉ các lần đoán sai mới tính vào bộ đếm. Sai 5 lần thì hộp tạm khóa 120 giây. Điện thoại có bộ đếm riêng.
+- Điện thoại (`/api/kiosk/unlock`) không mở trực tiếp: máy chủ xếp lệnh `UNLOCK`, hộp nhận lệnh ở heartbeat kế tiếp,
+  và lúc đó lượt gửi mới chuyển CHECK_IN hoặc PICKUP. Hộp không thấy heartbeat trong 10 giây thì trả `DEVICE_OFFLINE`.
 
----
+### 2.3 Thẻ từ và vân tay
+- Đặt bằng thẻ lần đầu: cần đủ tiền cho giá gói và cọc 30.000 đ; cọc chỉ bị trừ khi đăng ký thẻ xong (`enroll/finish`).
+- Đăng ký tại hộp: bấm B/C, nhập mã đăng ký 6 số (hết hạn sau 10 phút, lấy mã mới ở "Tủ của tôi").
+- Báo mất thẻ: thẻ chuyển `LOST`, UID nằm trong `blocked_cards` của heartbeat; dùng lại sẽ bị `CARD_BLOCKED`.
+- Xóa vân tay: máy chủ xếp lệnh `DELETE_FP` cho hộp; nếu đang có lượt gửi bằng vân tay trên hộp đó, lượt đó nhận mã đăng ký mới.
 
-### 2.3 State Machine Diagram
+### 2.4 Bảng tình huống
+
+| Tình huống | Điều kiện | Hệ thống làm gì | Kết quả |
+|---|---|---|---|
+| Đặt thành công | Đủ tiền, ngăn trống, hộp hoạt động | Trừ tiền, giữ chỗ 15 phút, ghi audit `RESERVE` | Lượt `RESERVED`, ngăn `RESERVED` |
+| Thiếu tiền | Số dư nhỏ hơn giá (và cọc thẻ nếu có) | `THROW 50030` / `50041`, không đổi gì | Báo lỗi |
+| Đang có lượt gửi | Đã có lượt `RESERVED` hoặc `ACTIVE` | `THROW 50032` | Báo lỗi |
+| Hay không đến | 3 lần `NO_SHOW` trong 7 ngày | `THROW 50031` | Tạm cấm đặt |
+| Hộp mất kết nối | Hộp `OFFLINE` | `THROW 50035` | Báo lỗi |
+| Không đến | Hết 15 phút giữ chỗ | `Deposit_ExpireNoShow`: hoàn 90% | Lượt `NO_SHOW`, ngăn trống |
+| Hủy | Người dùng hủy trước khi mở lần đầu | Hoàn đủ số đã trả | Lượt `CANCELLED`, ngăn trống |
+| Quá hạn | `due_at` đã qua | `Deposit_ExpireOverdue`, audit `AUTO_RELEASE_OVERDUE` | Lượt `COMPLETED`, ngăn trống |
+| Mở từ xa | Nhân viên gửi lệnh có lý do | `RemoteCommand` chờ hộp nhận ở heartbeat; hết hạn nếu không ai nhận | Hộp mở, luật ghi nhận `STAFF_OPEN` |
+| Mở giả | Lượt mở `REMOTE`/`PHONE` không có lệnh hợp lệ | `RuleEngine` | Cảnh báo `SUSPECTED_SPOOF` |
+| Cảm biến hỏng | Số đo ngoài khoảng, đồng hồ lệch, hết hạn hiệu chuẩn | `RuleEngine` | Cảnh báo `SENSOR_FAULT`, phiếu bảo trì |
+
+### 2.5 Trạng thái ngăn tủ
 
 ```mermaid
 stateDiagram-v2
-    [*] --> AVAILABLE : System Initialization / Slot Reset
-    
-    AVAILABLE --> RESERVED : Deposit_Reserve (Balance debited, 15m hold)
-    
-    RESERVED --> AVAILABLE : Deposit_Cancel (User cancels, fee refunded)
-    RESERVED --> AVAILABLE : Deposit_ExpireNoShow (15m elapsed, fee refunded)
-    
-    RESERVED --> OCCUPIED : Deposit_CheckIn (Belongings detected / RFID swipe)
-    
-    OCCUPIED --> OCCUPIED : Deposit_Extend (Extension granted, max 3 times)
-    OCCUPIED --> OVERDUE : due_at elapsed without check-out
-    
-    OCCUPIED --> AVAILABLE : Deposit_Complete (Items removed on time)
-    OVERDUE --> AVAILABLE : Deposit_ExpireOverdue (Auto-release or penalty settled)
-    
-    AVAILABLE --> MAINTENANCE : Hardware fault / Operator flag
-    OCCUPIED --> MAINTENANCE : Critical sensor anomaly / Lock failure
-    MAINTENANCE --> AVAILABLE : Technician resolves ticket
+    [*] --> AVAILABLE
+    AVAILABLE --> RESERVED : Deposit_Reserve
+    RESERVED --> AVAILABLE : hủy / không đến
+    RESERVED --> OCCUPIED : mở lần 1 (CHECK_IN)
+    OCCUPIED --> AVAILABLE : mở lần 2 (PICKUP) / quá hạn tự giải phóng
+    AVAILABLE --> MAINTENANCE : kỹ thuật viên / nhân viên
+    MAINTENANCE --> AVAILABLE : đóng phiếu bảo trì
 ```
+
+Trên sơ đồ tủ còn có các trạng thái hiển thị `OVERDUE`, `ALERT`, `OFFLINE`: chúng được tính từ lượt gửi, cảnh báo đang mở
+và trạng thái hộp, không lưu trong cột `LockerSlot.status`.

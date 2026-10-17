@@ -99,7 +99,6 @@ public class LockerSlotDao {
 
     /** Returns the new id. */
     public int insert(LockerSlot s) throws SQLException {
-        // INSERT ... with RETURN_GENERATED_KEYS
         String sql = "INSERT INTO LockerSlot (slot_code, bank_id, size_cm, size_code, status) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -163,7 +162,6 @@ public class LockerSlotDao {
     }
 
     public boolean update(LockerSlot s) throws SQLException {
-        // UPDATE ... WHERE locker_slot_id = ?, true when one row changed
         String sql = "UPDATE LockerSlot SET slot_code = ?, bank_id = ?, size_cm = ?, size_code = ?, status = ? "
                 + "WHERE locker_slot_id = ?";
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -183,10 +181,10 @@ public class LockerSlotDao {
         try (Connection conn = DbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM LockerSlot WHERE locker_slot_id = ?")) {
             ps.setInt(1, slotId);
-            return ps.executeUpdate() == 1 ? null : "This slot no longer exists";
+            return ps.executeUpdate() == 1 ? null : "Ngăn tủ không còn tồn tại";
         } catch (SQLException e) {
             if (e.getErrorCode() == 547) {
-                return "This slot has bookings or sessions, set it to MAINTENANCE instead";
+                return "Ngăn đã có lượt gửi hoặc phiên mở tủ, hãy chuyển sang MAINTENANCE thay vì xóa";
             }
             throw e;
         }

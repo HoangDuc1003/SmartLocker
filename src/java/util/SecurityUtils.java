@@ -10,13 +10,11 @@ public class SecurityUtils {
 
     /** 60 characters, a new random salt every call, so the same password never gives the same hash. */
     public static String hashPassword(String plain) {
-        // BCrypt.hashpw(plain, BCrypt.gensalt(10))
         return BCrypt.hashpw(plain, BCrypt.gensalt(10));
     }
 
     /** true when the password matches the stored hash. Never throws. */
     public static boolean checkPassword(String plain, String hash) {
-        // null check, BCrypt.checkpw, catch IllegalArgumentException
         if (plain == null || hash == null) {
             return false;
         }
@@ -29,7 +27,6 @@ public class SecurityUtils {
 
     /** Lower-case hex SHA-256, the same text SQL Server gives for HASHBYTES('SHA2_256', varchar). */
     public static String sha256Hex(String text) {
-        // MessageDigest SHA-256 over UTF-8 bytes, then hex
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();

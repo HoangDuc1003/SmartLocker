@@ -55,16 +55,16 @@ public class LockerAreaController extends HttpServlet {
 
     private String validate(model.LockerArea a) throws SQLException {
         if (!AREA_CODE.matcher(a.getAreaCode()).matches()) {
-            return "Area code must be 2 to 16 alphanumeric characters";
+            return "Mã khu vực gồm 2 đến 16 chữ cái hoặc chữ số";
         }
         if (a.getName().length() < 2 || a.getName().length() > 80) {
-            return "Name must be 2 to 80 characters";
+            return "Tên dài từ 2 đến 80 ký tự";
         }
         if (a.getLocation() != null && a.getLocation().length() > 120) {
-            return "Location must be at most 120 characters";
+            return "Vị trí dài tối đa 120 ký tự";
         }
         if (dao.codeExists(a.getAreaCode(), a.getAreaId())) {
-            return "Area code " + a.getAreaCode() + " already exists";
+            return "Mã khu vực " + a.getAreaCode() + " đã tồn tại";
         }
         return null;
     }
@@ -81,7 +81,7 @@ public class LockerAreaController extends HttpServlet {
                 int id = util.Web.intParam(req, "id", 0);
                 model.LockerArea item = dao.findById(id);
                 if (item == null) {
-                    util.Web.flash(req.getSession(), "Area not found", true);
+                    util.Web.flash(req.getSession(), "Không tìm thấy khu vực", true);
                     res.sendRedirect("LockerAreaController");
                     return;
                 }
@@ -108,9 +108,9 @@ public class LockerAreaController extends HttpServlet {
                 String reason = dao.delete(id);
                 if (reason == null && old != null) {
                     auditDao.append(me.getUserId(), "DELETE", "AREA", id, old.getAreaCode());
-                    util.Web.flash(req.getSession(), "Area " + old.getAreaCode() + " deleted", false);
+                    util.Web.flash(req.getSession(), "Đã xóa khu vực " + old.getAreaCode(), false);
                 } else {
-                    util.Web.flash(req.getSession(), reason == null ? "Nothing was deleted" : reason, true);
+                    util.Web.flash(req.getSession(), reason == null ? "Không có gì bị xóa" : reason, true);
                 }
                 res.sendRedirect("LockerAreaController");
                 return;
@@ -133,11 +133,11 @@ public class LockerAreaController extends HttpServlet {
             if ("create".equals(action) || a.getAreaId() == 0) {
                 int id = dao.insert(a);
                 auditDao.append(me.getUserId(), "CREATE", "AREA", id, a.getAreaCode());
-                util.Web.flash(req.getSession(), "Area " + a.getAreaCode() + " created", false);
+                util.Web.flash(req.getSession(), "Đã tạo khu vực " + a.getAreaCode(), false);
             } else {
                 dao.update(a);
                 auditDao.append(me.getUserId(), "UPDATE", "AREA", a.getAreaId(), a.getAreaCode());
-                util.Web.flash(req.getSession(), "Area " + a.getAreaCode() + " saved", false);
+                util.Web.flash(req.getSession(), "Đã lưu khu vực " + a.getAreaCode(), false);
             }
             res.sendRedirect("LockerAreaController");
         } catch (SQLException e) {

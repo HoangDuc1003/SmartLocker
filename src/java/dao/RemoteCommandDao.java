@@ -16,7 +16,6 @@ public class RemoteCommandDao {
 
     /** Queues an UNLOCK for the slot. Returns the command id. The procedure refuses an offline device (50011). */
     public long create(int slotId, String reason, int actorId) throws SQLException {
-        // {call RemoteCommand_Create(?, ?, ?, ?)} with a BIGINT OUTPUT parameter
         try (Connection conn = DbContext.getConnection();
              CallableStatement cs = conn.prepareCall("{call RemoteCommand_Create(?, ?, ?, ?)}")) {
             cs.setInt(1, slotId);
@@ -28,19 +27,29 @@ public class RemoteCommandDao {
         }
     }
 
-    /** Hands the pending commands to the device in the heartbeat reply. Keys: command_id, slot_code, action. */
+    /** Hands the pending commands to the device in the heartbeat reply. Keys: command_id, slot_code, action, sensor_slot, source. */
     public List<Map<String, Object>> takePending(int deviceId) throws SQLException {
-        // the procedure is an UPDATE ... OUTPUT, so it returns a result set
+        // the procedure ends with one SELECT; it also checks in or picks up phone bookings, so skip any update count first
         List<Map<String, Object>> list = new ArrayList<>();
         try (Connection conn = DbContext.getConnection();
              CallableStatement cs = conn.prepareCall("{call RemoteCommand_TakePending(?)}")) {
             cs.setInt(1, deviceId);
-            try (ResultSet rs = cs.executeQuery()) {
+            boolean isResult = cs.execute();
+            while (!isResult && cs.getUpdateCount() != -1) {
+                isResult = cs.getMoreResults();
+            }
+            if (!isResult) {
+                return list;
+            }
+            try (ResultSet rs = cs.getResultSet()) {
                 while (rs.next()) {
                     Map<String, Object> cmd = new LinkedHashMap<>();
                     cmd.put("command_id", rs.getLong("command_id"));
                     cmd.put("slot_code", rs.getString("slot_code"));
                     cmd.put("action", rs.getString("action"));
+                    int sensorSlot = rs.getInt("sensor_slot");
+                    cmd.put("sensor_slot", rs.wasNull() ? null : sensorSlot);
+                    cmd.put("source", rs.getString("source"));
                     list.add(cmd);
                 }
             }
@@ -65,7 +74,7 @@ public class RemoteCommandDao {
         String sql = "SELECT rc.command_id, rc.device_id, rc.slot_id, s.slot_code, rc.action, rc.status, "
                 + "rc.reason, u.username AS requested_by_name, rc.created_at, rc.sent_at, rc.done_at, rc.session_id "
                 + "FROM RemoteCommand rc "
-                + "JOIN LockerSlot s ON s.locker_slot_id = rc.slot_id "
+                + "LEFT JOIN LockerSlot s ON s.locker_slot_id = rc.slot_id "   // DELETE_FP has no slot
                 + "JOIN Users u ON u.user_id = rc.requested_by ";
         if (status != null && !status.trim().isEmpty()) {
             sql += "WHERE rc.status = ? ";
@@ -84,7 +93,7 @@ public class RemoteCommandDao {
                     Map<String, Object> map = new LinkedHashMap<>();
                     map.put("command_id", rs.getLong("command_id"));
                     map.put("device_id", rs.getInt("device_id"));
-                    map.put("slot_id", rs.getInt("slot_id"));
+                    map.put("slot_id", rs.getObject("slot_id"));
                     map.put("slot_code", rs.getString("slot_code"));
                     map.put("action", rs.getString("action"));
                     map.put("status", rs.getString("status"));

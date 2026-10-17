@@ -43,7 +43,6 @@ public class RiskScorer {
 
     /** For tests: a scorer built from streams you control. */
     public static RiskScorer fromStreams(InputStream modelStream, InputStream headerStream) throws Exception {
-        // SerializationHelper.read for the model, new Instances(reader) for the ARFF header
         Classifier model = (Classifier) SerializationHelper.read(modelStream);
         Instances header = new Instances(new BufferedReader(new InputStreamReader(headerStream, StandardCharsets.UTF_8)));
         header.setClassIndex(header.numAttributes() - 1);

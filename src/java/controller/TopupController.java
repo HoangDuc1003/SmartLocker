@@ -40,7 +40,8 @@ public class TopupController extends HttpServlet {
 
         try {
             if (isStaff) {
-                req.setAttribute("allRequests", topupDao.listAll(status));
+                // "ALL" in the filter of the review page means no status filter
+                req.setAttribute("allRequests", topupDao.listAll("ALL".equals(status) ? null : status));
             }
             List<TopupRequest> myRequests = topupDao.listByUser(me.getUserId());
             req.setAttribute("myRequests", myRequests);
@@ -80,7 +81,7 @@ public class TopupController extends HttpServlet {
                 // User creates topup request
                 long amount = Web.longParam(req, "amount", 0);
                 if (amount < 1000) {
-                    Web.flash(req.getSession(), "The minimum top-up amount is 1,000 VND.", true);
+                    Web.flash(req.getSession(), "Số tiền nạp tối thiểu là 1.000 VND.", true);
                     res.sendRedirect("TopupController");
                     return;
                 }
@@ -91,15 +92,15 @@ public class TopupController extends HttpServlet {
                 String qrUrl = generateVietQrUrl(amount, code);
 
                 int reqId = topupDao.create(me.getUserId(), amount, code, qrUrl);
-                Web.flash(req.getSession(), "Top-up request created for " + String.format("%,d", amount)
-                        + " VND. Scan the VietQR code below.", false);
+                Web.flash(req.getSession(), "Đã tạo yêu cầu nạp " + String.format("%,d", amount).replace(',', '.')
+                        + " VND. Quét mã VietQR bên dưới để chuyển khoản.", false);
                 res.sendRedirect("TopupController?id=" + reqId);
                 return;
             }
 
             if ("approve".equals(action)) {
                 if (!isStaff) {
-                    res.sendError(HttpServletResponse.SC_FORBIDDEN, "Only staff can approve topup");
+                    res.sendError(HttpServletResponse.SC_FORBIDDEN, "Chỉ nhân viên mới được duyệt nạp tiền");
                     return;
                 }
                 int reqId = Web.intParam(req, "id", 0);
@@ -107,35 +108,44 @@ public class TopupController extends HttpServlet {
                 if (ok) {
                     TopupRequest tr = topupDao.findById(reqId);
                     String userTarget = tr != null ? tr.getUsername() : ("#" + reqId);
-                    Web.flash(req.getSession(), "Funds added to " + userTarget + "'s account.", false);
+                    Web.flash(req.getSession(), "Đã cộng tiền vào tài khoản " + userTarget + ".", false);
                 } else {
-                    Web.flash(req.getSession(), "This request has already been processed or is invalid.", true);
+                    Web.flash(req.getSession(), "Yêu cầu này đã được xử lý hoặc không hợp lệ.", true);
                 }
-                res.sendRedirect("TopupController");
+                res.sendRedirect(reviewPage(req));
                 return;
             }
 
             if ("reject".equals(action)) {
                 if (!isStaff) {
-                    res.sendError(HttpServletResponse.SC_FORBIDDEN, "Only staff can reject topup");
+                    res.sendError(HttpServletResponse.SC_FORBIDDEN, "Chỉ nhân viên mới được từ chối nạp tiền");
                     return;
                 }
                 int reqId = Web.intParam(req, "id", 0);
                 String reason = Web.trimmed(req, "reason");
-                if (reason.isEmpty()) reason = "Bank transfer not received";
+                if (reason.isEmpty()) reason = "Chưa nhận được chuyển khoản";
                 boolean rejected = topupDao.reject(reqId, me.getUserId(), reason);
                 Web.flash(req.getSession(), rejected
-                        ? "Top-up request #" + reqId + " rejected."
-                        : "This request has already been processed or is invalid.", !rejected);
-                res.sendRedirect("TopupController");
+                        ? "Đã từ chối yêu cầu nạp tiền #" + reqId + "."
+                        : "Yêu cầu này đã được xử lý hoặc không hợp lệ.", !rejected);
+                res.sendRedirect(reviewPage(req));
                 return;
             }
 
-            Web.flash(req.getSession(), "Invalid action.", true);
+            Web.flash(req.getSession(), "Thao tác không hợp lệ.", true);
             res.sendRedirect("TopupController");
         } catch (SQLException e) {
             throw new ServletException(e);
         }
+    }
+
+    /** The review page of staff, keeping its status filter (only known values, so the redirect is safe). */
+    private static String reviewPage(HttpServletRequest req) {
+        String status = Web.trimmed(req, "status");
+        if (!"ALL".equals(status) && !"PENDING".equals(status) && !"APPROVED".equals(status) && !"REJECTED".equals(status)) {
+            status = "PENDING";
+        }
+        return "TopupController?status=" + status;
     }
 
     private static String generateVietQrUrl(long amount, String transferCode) throws UnsupportedEncodingException {

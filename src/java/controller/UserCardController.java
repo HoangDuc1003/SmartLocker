@@ -98,7 +98,7 @@ public class UserCardController extends HttpServlet {
                 String cardUid = Web.trimmed(req, "cardUid").toUpperCase();
                 int userId = Web.intParam(req, "userId", 0);
                 if (!HEX_UID.matcher(cardUid).matches()) {
-                    req.setAttribute("error", "Card UID must be 4 to 32 hexadecimal characters");
+                    req.setAttribute("error", "Mã UID thẻ gồm 4 đến 32 ký tự hexa");
                     UserCard c = new UserCard();
                     c.setCardUid(cardUid);
                     c.setUserId(userId);
@@ -106,7 +106,7 @@ public class UserCardController extends HttpServlet {
                     return;
                 }
                 if (userId <= 0) {
-                    req.setAttribute("error", "Please select a user");
+                    req.setAttribute("error", "Hãy chọn người dùng");
                     UserCard c = new UserCard();
                     c.setCardUid(cardUid);
                     showForm(req, res, c, true);
@@ -119,10 +119,10 @@ public class UserCardController extends HttpServlet {
                     c.setStatus("ACTIVE");
                     int cardId = dao.insert(c);
                     new AuditDao().append(me.getUserId(), "CREATE", "USERCARD", cardId, cardUid);
-                    Web.flash(req.getSession(), "Card " + cardUid + " issued successfully", false);
+                    Web.flash(req.getSession(), "Đã cấp thẻ " + cardUid, false);
                 } catch (SQLException e) {
                     if (e.getErrorCode() == 2627) {
-                        req.setAttribute("error", "Card UID " + cardUid + " is already registered");
+                        req.setAttribute("error", "Mã UID " + cardUid + " đã được đăng ký");
                         UserCard c = new UserCard();
                         c.setCardUid(cardUid);
                         c.setUserId(userId);
@@ -137,7 +137,7 @@ public class UserCardController extends HttpServlet {
                 if (c != null) {
                     dao.setStatus(cardId, "BLOCKED");
                     new AuditDao().append(me.getUserId(), "BLOCK", "USERCARD", cardId, c.getCardUid());
-                    Web.flash(req.getSession(), "Card " + c.getCardUid() + " blocked", false);
+                    Web.flash(req.getSession(), "Đã khóa thẻ " + c.getCardUid(), false);
                 }
             } else if ("unblock".equals(action)) {
                 int cardId = Web.intParam(req, "id", 0);
@@ -145,23 +145,29 @@ public class UserCardController extends HttpServlet {
                 if (c != null) {
                     dao.setStatus(cardId, "ACTIVE");
                     new AuditDao().append(me.getUserId(), "UNBLOCK", "USERCARD", cardId, c.getCardUid());
-                    Web.flash(req.getSession(), "Card " + c.getCardUid() + " unblocked", false);
+                    Web.flash(req.getSession(), "Đã mở khóa thẻ " + c.getCardUid(), false);
                 }
             } else if ("replace".equals(action)) {
                 int cardId = Web.intParam(req, "id", 0);
                 String newUid = Web.trimmed(req, "newUid").toUpperCase();
                 if (!HEX_UID.matcher(newUid).matches()) {
-                    Web.flash(req.getSession(), "New card UID must be 4 to 32 hex characters", true);
+                    Web.flash(req.getSession(), "Mã UID thẻ mới gồm 4 đến 32 ký tự hexa", true);
                 } else {
                     try {
                         int newCardId = dao.replace(cardId, newUid, me.getUserId());
-                        Web.flash(req.getSession(), "Card replaced successfully. New card ID: " + newCardId, false);
+                        Web.flash(req.getSession(), "Đã đổi thẻ. Mã thẻ mới: #" + newCardId, false);
                     } catch (SQLException e) {
-                        Web.flash(req.getSession(), e.getMessage(), true);
+                        if (e.getErrorCode() == 2627) {
+                            Web.flash(req.getSession(), "Mã UID " + newUid + " đã được đăng ký", true);
+                        } else if (e.getErrorCode() >= 50000) {
+                            Web.flash(req.getSession(), Web.sqlMessage(e), true);
+                        } else {
+                            throw e;
+                        }
                     }
                 }
             } else {
-                Web.flash(req.getSession(), "Unknown action", true);
+                Web.flash(req.getSession(), "Thao tác không hợp lệ", true);
             }
             res.sendRedirect("UserCardController");
         } catch (SQLException e) {

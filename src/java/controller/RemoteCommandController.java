@@ -40,6 +40,8 @@ public class RemoteCommandController extends HttpServlet {
             req.setAttribute("page", page);
             req.setAttribute("pages", pages);
             req.setAttribute("status", status);
+            // the slots for the unlock form of the page
+            req.setAttribute("slots", new dao.LockerSlotDao().search(null, null, null, 1, 1000));
             req.getRequestDispatcher(VIEW).forward(req, res);
         } catch (SQLException e) {
             throw new ServletException(e);
@@ -51,13 +53,18 @@ public class RemoteCommandController extends HttpServlet {
         User me = Web.currentUser(req);
         try {
             long id = dao.create(Web.intParam(req, "slotId", 0), Web.trimmed(req, "reason"), me.getUserId());
-            Web.flash(req.getSession(), "Command #" + id + " queued, the slot opens within 10 seconds.", false);
+            Web.flash(req.getSession(), "Đã xếp lệnh #" + id + ", ngăn tủ sẽ mở trong khoảng 10 giây.", false);
         } catch (SQLException e) {
             if (e.getErrorCode() >= 50000) {
-                Web.flash(req.getSession(), e.getMessage(), true);
+                Web.flash(req.getSession(), Web.sqlMessage(e), true);
             } else {
                 throw new ServletException(e);
             }
+        }
+        // the form of the command page sends back=list, the slot panel of the map sends area + slot
+        if ("list".equals(Web.trimmed(req, "back"))) {
+            res.sendRedirect("RemoteCommandController");
+            return;
         }
         res.sendRedirect("LockerMapController?area=" + URLEncoder.encode(Web.trimmed(req, "area"), "UTF-8")
                 + "&slot=" + Web.intParam(req, "slot", 0));
