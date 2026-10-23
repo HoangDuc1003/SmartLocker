@@ -62,7 +62,7 @@ sequenceDiagram
     participant Web as 💻 Trình duyệt (JSP + JS)
     participant App as ⚙️ Tomcat (Servlet)
     participant DB as 🗄️ SQL Server
-    participant Box as 📟 Hộp ESP32
+    participant Device as 📟 Hộp ESP32
 
     User->>Web: Chọn ngăn, gói và cách mở
     Web->>User: Popup: số tiền trừ ngay, các quy tắc
@@ -71,11 +71,11 @@ sequenceDiagram
     App->>DB: EXEC Deposit_Reserve (UPDLOCK, HOLDLOCK)
     DB-->>App: Lượt RESERVED, đã trừ ví (hoặc lỗi dễ hiểu)
     App-->>Web: Mật mã hoặc mã đăng ký, giữ chỗ 15 phút
-    User->>Box: Nhập mật mã, quẹt thẻ hoặc đặt vân tay
-    Box->>App: POST /api/device/auth (X-API-Key)
+    User->>Device: Nhập mật mã, quẹt thẻ hoặc đặt vân tay
+    Device->>App: POST /api/device/auth (X-API-Key)
     App->>DB: EXEC Device_Authorize
     DB-->>App: Lượt ACTIVE (hoặc OVERDUE_UNPAID, WRONG_CODE...)
-    App-->>Box: OPEN hoặc DENY kèm chữ trên màn OLED
+    App-->>Device: OPEN hoặc DENY kèm chữ trên màn OLED
     Note over App,DB: LockerMonitor (15 giây một lần) khóa lượt quá hạn, tính phụ phí và chuyển xử lý sau 48 giờ
 ```
 

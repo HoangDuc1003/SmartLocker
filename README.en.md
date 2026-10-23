@@ -62,7 +62,7 @@ sequenceDiagram
     participant Web as 💻 Browser (JSP + JS)
     participant App as ⚙️ Tomcat (Servlets)
     participant DB as 🗄️ SQL Server
-    participant Box as 📟 ESP32 Box
+    participant Device as 📟 ESP32 Box
 
     User->>Web: Pick a slot, plan and open method
     Web->>User: Popup: amount charged now, rules
@@ -71,11 +71,11 @@ sequenceDiagram
     App->>DB: EXEC Deposit_Reserve (UPDLOCK, HOLDLOCK)
     DB-->>App: Booking RESERVED, wallet charged (or a readable error)
     App-->>Web: PIN / enrollment code, 15 min hold
-    User->>Box: Enter PIN or tap card or scan finger
-    Box->>App: POST /api/device/auth (X-API-Key)
+    User->>Device: Enter PIN or tap card or scan finger
+    Device->>App: POST /api/device/auth (X-API-Key)
     App->>DB: EXEC Device_Authorize
     DB-->>App: Booking ACTIVE (or OVERDUE_UNPAID, WRONG_CODE...)
-    App-->>Box: OPEN / DENY + OLED text
+    App-->>Device: OPEN / DENY + OLED text
     Note over App,DB: LockerMonitor (every 15 s) locks overdue bookings, charges late fees and escalates after 48 h
 ```
 
