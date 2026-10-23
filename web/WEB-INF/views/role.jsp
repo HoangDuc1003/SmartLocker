@@ -46,7 +46,7 @@
                                ${p[3] == '1' ? 'checked' : ''}
                                ${isCriticalAdminPerm or not perms.contains('ROLE:WRITE') ? 'disabled' : ''}
                                ${isCriticalAdminPerm ? 'title="ADMIN phải giữ quyền ROLE"' : ''}>
-                        <c:if test="${isCriticalAdminPerm}">
+                        <c:if test="${isCriticalAdminPerm and p[3] == '1'}">
                             <input type="hidden" name="permIds" value="${p[0]}">
                         </c:if>
                     </td>

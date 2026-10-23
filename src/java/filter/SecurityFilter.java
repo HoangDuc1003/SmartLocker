@@ -36,6 +36,8 @@ public class SecurityFilter implements Filter {
     private static final Set<String> PUBLIC_PATHS = new HashSet<>(Arrays.asList(
             "/", "/index.html", "/favicon.ico", "/LoginController", "/RegisterController", "/LogoutController",
             "/k", "/api/kiosk/unlock"));                 // v2 phone page (a /k/* servlet has servlet path "/k"): the PIN is the secret, the box lockout limits guesses
+    /** v4: a visitor who is not signed in may open the map (GET only); the booking forms need a login (popup on the page). */
+    private static final Set<String> GUEST_PATHS = new HashSet<>(Arrays.asList("/LockerMapController", "/api/locker-map"));
     private static final String[] PUBLIC_PREFIXES = {"/css/", "/js/", "/img/", "/k/"};
 
     /** The device signs with an X-API-Key header instead of a login. */
@@ -51,6 +53,7 @@ public class SecurityFilter implements Filter {
         RESOURCE_BY_PATH.put("/api/locker-map", "MAP");
         RESOURCE_BY_PATH.put("/DashboardController", "ALERT");
         RESOURCE_BY_PATH.put("/api/dashboard", "ALERT");
+        RESOURCE_BY_PATH.put("/api/dashboard/stats", "ALERT");
         RESOURCE_BY_PATH.put("/AlertController", "ALERT");
         RESOURCE_BY_PATH.put("/MaintenanceController", "MAINTENANCE");
         RESOURCE_BY_PATH.put("/CalibrationController", "CALIBRATION");
@@ -157,10 +160,29 @@ public class SecurityFilter implements Filter {
             // 3. everybody else must be signed in
             User user = Web.currentUser(req);
             if (user == null) {
+                if ("GET".equalsIgnoreCase(req.getMethod()) && GUEST_PATHS.contains(path)) {
+                    req.setAttribute("perms", new HashSet<>(Arrays.asList("MAP:READ")));   // the menu shows the map only
+                    res.setHeader("Cache-Control", "no-store");
+                    chain.doFilter(request, response);
+                    return;
+                }
                 res.sendRedirect(req.getContextPath() + "/LoginController");
                 return;
             }
-            user.setBalance(new dao.UserDao().getBalance(user.getUserId()));
+            // the session copy is refreshed on every request: a locked or deleted account is signed out at once,
+            // and a changed role takes effect without a new login (controllers read the role from the session)
+            User fresh = new dao.UserDao().findById(user.getUserId());
+            if (fresh == null || !"ACTIVE".equals(fresh.getStatus())) {
+                req.getSession().invalidate();
+                res.sendRedirect(req.getContextPath() + "/LoginController");
+                return;
+            }
+            user.setStatus(fresh.getStatus());
+            user.setRoleName(fresh.getRoleName());
+            user.setRoleRank(fresh.getRoleRank());
+            user.setAreaId(fresh.getAreaId());
+            user.setAreaCode(fresh.getAreaCode());
+            user.setBalance(fresh.getBalance());
 
             // 4. and must hold READ (GET) or WRITE (other methods) on the resource behind the path.
             //    A path that is not in the table is refused: forgetting a line is safe, not open.

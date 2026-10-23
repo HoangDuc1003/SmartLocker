@@ -30,6 +30,12 @@
         <url-pattern>/</url-pattern>
     </servlet-mapping>
 
+    <!-- money and dates printed by JSTL fmt are Vietnamese (5.000 đ) whatever the browser language -->
+    <context-param>
+        <param-name>javax.servlet.jsp.jstl.fmt.locale</param-name>
+        <param-value>vi_VN</param-value>
+    </context-param>
+
     <session-config>
         <session-timeout>45</session-timeout>
     </session-config>

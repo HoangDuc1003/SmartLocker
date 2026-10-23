@@ -43,14 +43,24 @@ public class BookingController extends HttpServlet {
                     Web.flash(req.getSession(), "Cách mở tủ không hợp lệ", true);
                 } else {
                     long id = dao.reserve(me.getUserId(), Web.intParam(req, "slotId", 0), Web.intParam(req, "planId", 0), method);
-                    Web.flash(req.getSession(), reservedMessage(dao.findById(id)), false);
+                    int hold = new dao.AppConfigDao().getInt("HOLD_MIN", util.Pricing.HOLD_MIN);
+                    Web.flash(req.getSession(), reservedMessage(dao.findById(id), hold), false);
                 }
             } else if ("cancel".equals(action)) {
-                dao.cancel(Web.intParam(req, "depositId", 0), me.getUserId());
-                Web.flash(req.getSession(), "Đã hủy lượt đặt. Số tiền đã trả (nếu có) được hoàn vào ví.", false);
+                dao.cancel(Web.longParam(req, "depositId", 0), me.getUserId());
+                Web.flash(req.getSession(), "Đã hủy lượt đặt. Toàn bộ số tiền đã trả được hoàn vào ví.", false);
             } else if ("extend".equals(action)) {
-                dao.extend(Web.intParam(req, "depositId", 0), Web.intParam(req, "minutes", 60), me.getUserId());
-                Web.flash(req.getSession(), "Đã gia hạn thời gian gửi.", false);
+                // v3: an extension is paid; the flash says what was taken (the procedure computes the same amount)
+                long depositId = Web.longParam(req, "depositId", 0);
+                int minutes = Web.intParam(req, "minutes", 60);
+                model.Deposit before = dao.findById(depositId);
+                dao.extend(depositId, minutes, me.getUserId());
+                model.Deposit after = dao.findById(depositId);
+                String text = "Đã gia hạn thêm " + minutes + " phút.";
+                if (before != null && after != null) {
+                    text += " Đã trừ " + service.AuthText.vnd(after.getPaidAmount() - before.getPaidAmount()) + " vào ví.";
+                }
+                Web.flash(req.getSession(), text, false);
             } else {
                 Web.flash(req.getSession(), "Thao tác không hợp lệ", true);
             }
@@ -65,20 +75,20 @@ public class BookingController extends HttpServlet {
     }
 
     /** What to do next at the box, by open method. The PIN itself stays on "Tủ của tôi", not in the flash. */
-    private static String reservedMessage(model.Deposit d) {
+    private static String reservedMessage(model.Deposit d, int hold) {
         String box = d == null || d.getDeviceCode() == null ? "hộp tủ" : "hộp " + d.getDeviceCode();
         if (d != null && d.getEnrollCode() != null) {
             return "Đã giữ ngăn. Hãy tới " + box + " đăng ký "
                     + ("CARD".equals(d.getOpenMethod()) ? "thẻ từ" : "vân tay")
-                    + " bằng mã " + d.getEnrollCode() + " (hạn 10 phút), rồi mở tủ trong vòng 15 phút.";
+                    + " bằng mã " + d.getEnrollCode() + " (hạn 10 phút), rồi mở tủ trong vòng " + hold + " phút.";
         }
         if (d != null && "CARD".equals(d.getOpenMethod())) {
-            return "Đã giữ ngăn. Hãy quẹt thẻ tại " + box + " trong vòng 15 phút.";
+            return "Đã giữ ngăn. Hãy quẹt thẻ tại " + box + " trong vòng " + hold + " phút.";
         }
         if (d != null && "FINGERPRINT".equals(d.getOpenMethod())) {
-            return "Đã giữ ngăn. Hãy đặt vân tay tại " + box + " trong vòng 15 phút.";
+            return "Đã giữ ngăn. Hãy đặt vân tay tại " + box + " trong vòng " + hold + " phút.";
         }
-        return "Đã giữ ngăn. Xem mật mã ở mục Tủ của tôi và mở tủ tại " + box + " trong vòng 15 phút.";
+        return "Đã giữ ngăn. Xem mật mã ở mục Tủ của tôi và mở tủ tại " + box + " trong vòng " + hold + " phút.";
     }
 
     private static String backUrl(HttpServletRequest req) throws UnsupportedEncodingException {

@@ -1,0 +1,8 @@
+Subject: Smart Locker: đã cộng {{amount}} vào ví của bạn
+
+Chào {{name}},
+
+Yêu cầu nạp tiền {{amount}} của bạn đã được duyệt.
+Số dư ví hiện tại: {{balance}}.
+
+?Xem ví: {{topup_url}}

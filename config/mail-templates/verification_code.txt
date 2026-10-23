@@ -1,0 +1,8 @@
+Subject: Smart Locker: mã xác nhận email {{code}}
+
+Chào {{name}},
+
+Mã xác nhận email của bạn là: {{code}}
+
+Mã có hiệu lực trong {{expires_min}} phút. Hãy nhập mã vào trang Tủ của tôi để bật email nhắc hạn.
+Nếu bạn không yêu cầu, hãy bỏ qua email này và không chia sẻ mã cho ai.

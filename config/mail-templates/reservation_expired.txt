@@ -1,0 +1,10 @@
+Subject: Smart Locker: lượt đặt ngăn {{slot_code}} đã hết hạn giữ chỗ
+
+Chào {{name}},
+
+Ngăn {{slot_code}} ({{area_name}}) đã được giữ cho bạn {{hold_min}} phút nhưng bạn chưa tới gửi đồ, nên lượt đặt đã bị hủy và ngăn được trả lại.
+Số tiền hoàn lại: {{refund_amount}} ({{refund_pct}}% giá đã thanh toán).
+
+Nếu không tới nhiều lần trong 7 ngày, bạn sẽ tạm thời chưa đặt được tủ mới. Bạn có thể đặt lại bất cứ lúc nào khi còn ngăn trống.
+
+?Đặt lại: {{map_url}}

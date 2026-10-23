@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "4f0a8f0d-8ff5-5422-b1d4-8824242352f7",
     "name": "SmartLocker v2",
-    "description": "API thiết bị v2 (docs/spec/smart-locker-v2.md, mục 4 và 6). Trước khi chạy: sql/test_v2_setup.sql. Postman Runner: chạy cả collection theo thứ tự. Newman: newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<khóa LOCKER-01>. Khóa LOCKER-01 nằm trong config/device-keys.local.properties (scripts/set-device-key.ps1).",
+    "description": "API thiết bị v2 (docs/spec/smart-locker-v2.md, mục 4 và 6) và thư mục v3 (docs/spec/smart-locker-v3.md, mục 7.3). Trước khi chạy: sql/test_v2_setup.sql rồi sql/test_v3_setup.sql. Postman Runner: chạy cả collection theo thứ tự. Newman: newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<khóa LOCKER-01>. Khóa LOCKER-01 nằm trong config/device-keys.local.properties (scripts/set-device-key.ps1).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -648,12 +648,19 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const map = pm.response.json();",
+                      "const bank = map.banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
                       "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
-                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
-                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "// v3: prices depend on the size; the scenarios expect the S price, so they take an S slot",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE' && (s.size_code || s.size) === 'S');",
+                      "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
-                      "pm.environment.set('slot_code', slot.slot_code);"
+                      "pm.environment.set('slot_code', slot.slot_code);",
+                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "const plan = map.plans.find(p => p.duration_min === 120);",
+                      "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
+                      "pm.environment.set('plan_id', plan.plan_id);",
+                      "pm.environment.set('plan_price', plan.prices.S.PIN);"
                     ]
                   }
                 }
@@ -1167,12 +1174,19 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const map = pm.response.json();",
+                      "const bank = map.banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
                       "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
-                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
-                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "// v3: prices depend on the size; the scenarios expect the S price, so they take an S slot",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE' && (s.size_code || s.size) === 'S');",
+                      "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
-                      "pm.environment.set('slot_code', slot.slot_code);"
+                      "pm.environment.set('slot_code', slot.slot_code);",
+                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "const plan = map.plans.find(p => p.duration_min === 120);",
+                      "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
+                      "pm.environment.set('plan_id', plan.plan_id);",
+                      "pm.environment.set('plan_price', plan.prices.S.PIN);"
                     ]
                   }
                 }
@@ -2063,9 +2077,12 @@
                     "exec": [
                       "const me = pm.response.json();",
                       "pm.test('card deposit due', () => pm.expect(me.card_deposit_due).to.be.true);",
-                      "const plan = me.plans.find(p => p.plan_id === Number(pm.environment.get('plan_id')));",
+                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "const plan = me.plans.find(p => p.duration_min === 120);",
+                      "pm.environment.set('plan_id', plan.plan_id);",
                       "pm.test('card price 5% off rounded up to 100 VND', () => pm.expect(plan.price_card).to.eql(Math.ceil(plan.price_pin * 0.95 / 100) * 100));",
-                      "pm.environment.set('card_price', plan.price_card);"
+                      "pm.test('v3: size S keeps the plan price (x1.00)', () => pm.expect(plan.prices.S.CARD).to.eql(plan.price_card));",
+                      "pm.environment.set('card_price', plan.prices.S.CARD);"
                     ]
                   }
                 }
@@ -2094,12 +2111,19 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const map = pm.response.json();",
+                      "const bank = map.banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
                       "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
-                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
-                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "// v3: prices depend on the size; the scenarios expect the S price, so they take an S slot",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE' && (s.size_code || s.size) === 'S');",
+                      "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
-                      "pm.environment.set('slot_code', slot.slot_code);"
+                      "pm.environment.set('slot_code', slot.slot_code);",
+                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "const plan = map.plans.find(p => p.duration_min === 120);",
+                      "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
+                      "pm.environment.set('plan_id', plan.plan_id);",
+                      "pm.environment.set('plan_price', plan.prices.S.PIN);"
                     ]
                   }
                 }
@@ -2651,12 +2675,19 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const map = pm.response.json();",
+                      "const bank = map.banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
                       "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
-                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
-                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "// v3: prices depend on the size; the scenarios expect the S price, so they take an S slot",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE' && (s.size_code || s.size) === 'S');",
+                      "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
-                      "pm.environment.set('slot_code', slot.slot_code);"
+                      "pm.environment.set('slot_code', slot.slot_code);",
+                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "const plan = map.plans.find(p => p.duration_min === 120);",
+                      "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
+                      "pm.environment.set('plan_id', plan.plan_id);",
+                      "pm.environment.set('plan_price', plan.prices.S.PIN);"
                     ]
                   }
                 }
@@ -3303,12 +3334,19 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const map = pm.response.json();",
+                      "const bank = map.banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
                       "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
-                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
-                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "// v3: prices depend on the size; the scenarios expect the S price, so they take an S slot",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE' && (s.size_code || s.size) === 'S');",
+                      "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
-                      "pm.environment.set('slot_code', slot.slot_code);"
+                      "pm.environment.set('slot_code', slot.slot_code);",
+                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "const plan = map.plans.find(p => p.duration_min === 120);",
+                      "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
+                      "pm.environment.set('plan_id', plan.plan_id);",
+                      "pm.environment.set('plan_price', plan.prices.S.PIN);"
                     ]
                   }
                 }
@@ -3652,12 +3690,19 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const map = pm.response.json();",
+                      "const bank = map.banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
                       "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
-                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
-                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "// v3: prices depend on the size; the scenarios expect the S price, so they take an S slot",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE' && (s.size_code || s.size) === 'S');",
+                      "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
-                      "pm.environment.set('slot_code', slot.slot_code);"
+                      "pm.environment.set('slot_code', slot.slot_code);",
+                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "const plan = map.plans.find(p => p.duration_min === 120);",
+                      "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
+                      "pm.environment.set('plan_id', plan.plan_id);",
+                      "pm.environment.set('plan_price', plan.prices.S.PIN);"
                     ]
                   }
                 }
@@ -3895,7 +3940,7 @@
           ]
         },
         {
-          "name": "6. Không đến: NO_SHOW, hoàn 90%",
+          "name": "6. Không đến: NO_SHOW, không hoàn tiền",
           "item": [
             {
               "name": "Đăng xuất",
@@ -4024,11 +4069,12 @@
                       "    pm.environment.unset('noshow_tries');",
                       "    const h = me.history[0];",
                       "    pm.test('no open booking', () => pm.expect(me.booking).to.be.null);",
-                      "    pm.test('last booking NO_SHOW, 90% back', () => {",
+                      "    pm.test('v3: last booking NO_SHOW, nothing back (0%)', () => {",
                       "        pm.expect(h.status).to.eql('NO_SHOW');",
-                      "        pm.expect(h.refund).to.eql(h.paid_amount - Math.ceil(h.paid_amount / 10));",
+                      "        pm.expect(h.refund).to.eql(0);",
                       "    });",
-                      "    pm.test('wallet: 200,000 - 5,000 + 4,500', () => pm.expect(me.balance).to.eql(199500));",
+                      "    // test_v2_setup.sql: 200,000 VND, then the booking price (A15 is size M since 09_v3.sql: 6,500 VND)",
+                      "    pm.test('wallet: 200,000 - price, no refund', () => pm.expect(me.balance).to.eql(200000 - h.paid_amount));",
                       "}"
                     ]
                   }
@@ -4964,12 +5010,19 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const map = pm.response.json();",
+                      "const bank = map.banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
                       "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
-                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE');",
-                      "pm.test('a free slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "// v3: prices depend on the size; the scenarios expect the S price, so they take an S slot",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE' && (s.size_code || s.size) === 'S');",
+                      "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
-                      "pm.environment.set('slot_code', slot.slot_code);"
+                      "pm.environment.set('slot_code', slot.slot_code);",
+                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "const plan = map.plans.find(p => p.duration_min === 120);",
+                      "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
+                      "pm.environment.set('plan_id', plan.plan_id);",
+                      "pm.environment.set('plan_price', plan.prices.S.PIN);"
                     ]
                   }
                 }
@@ -5257,6 +5310,3227 @@
         }
       ],
       "description": "Spec 6.2. Chạy sql/test_v2_setup.sql ngay trước mỗi lần chạy. Thứ tự: 9 cần thẻ của 3, 8 báo mất thẻ đó; 5 chạy gần cuối vì khóa hộp 2 phút (có bước chờ 122 giây); 7 dùng mật mã đã kết thúc của 1."
+    },
+    {
+      "name": "v3",
+      "description": "Kịch bản 11–17 của docs/spec/smart-locker-v3.md mục 7.3. Trước khi chạy: sql/test_v2_setup.sql rồi sql/test_v3_setup.sql. Thứ tự chạy 11, 16, 17, 12, 13, 14, 15 (16 và 17 dùng lượt bị khóa của 11 trước khi 12 nạp tiền và lấy đồ). Không có bước đoán sai mã.",
+      "item": [
+        {
+          "name": "11. Quá hạn: hộp từ chối OVERDUE_UNPAID, có số nợ",
+          "description": "sql/test_v3_setup.sql: v3overdue có lượt ACTIVE quá hạn 130 phút, ví 5.000 đ. Device_Authorize tự khóa và tính phụ phí khi nhập mã.",
+          "item": [
+            {
+              "name": "Heartbeat",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "pm.test('v2 reply', () => pm.expect(pm.response.json().interval_sec).to.eql(3));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v3overdue",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_overdue}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_overdue'), () => pm.expect(me.username).to.eql(pm.environment.get('user_overdue')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt ACTIVE đã quá hạn (test_v3_setup.sql)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "pm.test('booking ACTIVE with PIN', () => {",
+                      "    pm.expect(b).to.be.an('object');",
+                      "    pm.expect(b.status).to.eql('ACTIVE');",
+                      "    pm.expect(b.open_method).to.eql('PIN');",
+                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
+                      "});",
+                      "pm.environment.set('deposit_id', b.deposit_id);",
+                      "pm.environment.set('slot_id', b.slot_id);",
+                      "pm.environment.set('slot_code', b.slot_code);",
+                      "pm.environment.set('pin', b.pin_code || '');",
+                      "pm.environment.set('paid_before', b.paid_amount);",
+                      "pm.environment.set('balance_before', me.balance);",
+                      "const utc = s => new Date(String(s).replace(' ', 'T') + 'Z');   // the API prints UTC without a zone",
+                      "pm.test('due time is more than 2 hours ago', () => pm.expect(Date.now() - utc(b.due_at).getTime()).to.be.above(2 * 3600 * 1000));",
+                      "pm.test('late fee per hour of the size is known', () => pm.expect(b.overdue_rate).to.be.above(0));",
+                      "pm.environment.set('overdue_rate', b.overdue_rate);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "auth PIN -> DENY OVERDUE_UNPAID (phí tính ngay tại hộp)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "const rate = pm.environment.get('overdue_rate');",
+                      "pm.test('DENY OVERDUE_UNPAID for this booking', () => {",
+                      "    pm.expect(r.result).to.eql('DENY');",
+                      "    pm.expect(r.reason).to.eql('OVERDUE_UNPAID');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "});",
+                      "pm.test('late fee: started hours x rate, 3 hours at least (130 min late)', () => {",
+                      "    pm.expect(r.overdue_fee % rate).to.eql(0);",
+                      "    pm.expect(r.overdue_fee / rate).to.be.at.least(3);",
+                      "});",
+                      "// test_v3_setup.sql set the wallet to 5,000 VND; LockerMonitor may already have charged it before this request",
+                      "pm.test('debt = fee - the 5,000 VND wallet of test_v3_setup.sql', () => pm.expect(r.debt).to.eql(r.overdue_fee - 5000));",
+                      "pm.test('OLED text of the spec', () => pm.expect(r.message).to.eql('Qua han tra tu\\nNap tien de mo'));",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});",
+                      "pm.environment.set('debt', r.debt);",
+                      "pm.environment.set('overdue_fee', r.overdue_fee);",
+                      "pm.environment.set('attempts_left', r.attempts_left);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "auth PIN lần nữa: không thu trùng, không tính lần sai",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('still OVERDUE_UNPAID', () => pm.expect(r.reason).to.eql('OVERDUE_UNPAID'));",
+                      "pm.test('same fee and debt (charged once)', () => {",
+                      "    pm.expect(r.overdue_fee).to.eql(pm.environment.get('overdue_fee'));",
+                      "    pm.expect(r.debt).to.eql(pm.environment.get('debt'));",
+                      "});",
+                      "pm.test('not counted as a wrong guess (attempts_left unchanged)', () => pm.expect(r.attempts_left).to.eql(pm.environment.get('attempts_left')));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt bị khóa, ví âm",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "pm.test('booking locked, fee recorded', () => {",
+                      "    pm.expect(b.status).to.eql('ACTIVE');",
+                      "    pm.expect(b.locked).to.be.true;",
+                      "    pm.expect(b.overdue_fee).to.eql(pm.environment.get('overdue_fee'));",
+                      "    pm.expect(b.overdue_hours * b.overdue_rate).to.eql(b.overdue_fee);",
+                      "});",
+                      "pm.test('wallet below zero by the debt', () => {",
+                      "    pm.expect(me.balance).to.eql(-pm.environment.get('debt'));",
+                      "    pm.expect(me.debt).to.eql(pm.environment.get('debt'));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Sơ đồ: ngăn bị khóa quá hạn",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const slot = bank.slots.find(s => s.slot_id === pm.environment.get('slot_id'));",
+                      "pm.test('slot is locked and not free', () => {",
+                      "    pm.expect(slot.locked).to.be.true;",
+                      "    pm.expect(slot.status).to.not.eql('AVAILABLE');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "16. Trang điện thoại với lượt bị khóa",
+          "description": "Cùng lượt của kịch bản 11, mở bằng /api/kiosk/unlock (kênh điện thoại).",
+          "item": [
+            {
+              "name": "Heartbeat (hộp vừa báo sống, dưới 10 giây)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "kiosk/unlock -> DENY OVERDUE_UNPAID, tiếng Việt có số nợ",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const vnd = n => String(n).replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.') + ' đ';   // AuthText.vnd: 14.700 đ",
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('DENY OVERDUE_UNPAID, no command', () => {",
+                      "    pm.expect(r.result).to.eql('DENY');",
+                      "    pm.expect(r.reason).to.eql('OVERDUE_UNPAID');",
+                      "    pm.expect(r.debt).to.eql(pm.environment.get('debt'));",
+                      "    pm.expect(r.command_id == null).to.be.true;",
+                      "});",
+                      "pm.test('Vietnamese message with the debt', () => {",
+                      "    pm.expect(r.message).to.include('quá hạn');",
+                      "    pm.expect(r.message).to.include('Bạn còn nợ ' + vnd(pm.environment.get('debt')));",
+                      "    pm.expect(r.message).to.include('nạp tiền');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/kiosk/unlock",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "kiosk",
+                    "unlock"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"device_code\": \"{{device_code}}\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "17. Gia hạn: lượt đang dùng trả tiền, lượt bị khóa thì từ chối",
+          "description": "Phần đầu dùng lượt bị khóa của v3overdue (kịch bản 11). Phần sau: v2pin đặt cỡ S, mở tủ, gia hạn 90 phút = 2 × giá một giờ của cỡ S (sizes[].hour_rate).",
+          "item": [
+            {
+              "name": "Gia hạn lượt bị khóa (v3overdue) -> lỗi 50048",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));",
+                      "pm.test('flash shows the 50048 text', () => pm.expect(pm.response.text()).to.include('quá hạn và tủ đang bị khóa nên không gia hạn được'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "extend"
+                    },
+                    {
+                      "key": "depositId",
+                      "value": "{{deposit_id}}"
+                    },
+                    {
+                      "key": "minutes",
+                      "value": "60"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: không đổi gì",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "pm.test('nothing taken, no extension', () => {",
+                      "    pm.expect(me.balance).to.eql(-pm.environment.get('debt'));",
+                      "    pm.expect(me.booking.extend_count).to.eql(0);",
+                      "    pm.expect(me.booking.paid_amount).to.eql(pm.environment.get('paid_before'));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Heartbeat",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "pm.test('v2 reply', () => pm.expect(pm.response.json().interval_sec).to.eql(3));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v2pin",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_pin}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_pin'), () => pm.expect(me.username).to.eql(pm.environment.get('user_pin')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Chọn ngăn trống cỡ S trên CANT-A",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const map = pm.response.json();",
+                      "const bank = map.banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
+                      "// v3: prices depend on the size; the scenarios expect the S price, so they take an S slot",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE' && (s.size_code || s.size) === 'S');",
+                      "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "pm.environment.set('slot_id', slot.slot_id);",
+                      "pm.environment.set('slot_code', slot.slot_code);",
+                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "const plan = map.plans.find(p => p.duration_min === 120);",
+                      "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
+                      "pm.environment.set('plan_id', plan.plan_id);",
+                      "pm.environment.set('plan_price', plan.prices.S.PIN);",
+                      "const size = map.sizes.find(z => z.code === 'S');",
+                      "pm.environment.set('hour_rate', size.hour_rate);",
+                      "pm.environment.set('booking_buffer', map.rules.booking_buffer);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đặt tủ: PIN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "reserve"
+                    },
+                    {
+                      "key": "slotId",
+                      "value": "{{slot_id}}"
+                    },
+                    {
+                      "key": "planId",
+                      "value": "{{plan_id}}"
+                    },
+                    {
+                      "key": "openMethod",
+                      "value": "PIN"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt đặt PIN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "pm.test('booking RESERVED with PIN', () => {",
+                      "    pm.expect(b).to.be.an('object');",
+                      "    pm.expect(b.status).to.eql('RESERVED');",
+                      "    pm.expect(b.open_method).to.eql('PIN');",
+                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
+                      "});",
+                      "pm.environment.set('deposit_id', b.deposit_id);",
+                      "pm.environment.set('slot_id', b.slot_id);",
+                      "pm.environment.set('slot_code', b.slot_code);",
+                      "pm.environment.set('pin', b.pin_code || '');",
+                      "pm.environment.set('paid_before', b.paid_amount);",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "auth PIN -> CHECK_IN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK CHECK_IN', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('CHECK_IN');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: trước khi gia hạn",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "pm.test('booking ACTIVE, not locked', () => { pm.expect(me.booking.status).to.eql('ACTIVE'); pm.expect(me.booking.locked).to.be.false; });",
+                      "pm.environment.set('paid_before', me.booking.paid_amount);",
+                      "pm.environment.set('balance_before', me.balance);",
+                      "pm.environment.set('due_before', me.booking.due_at);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Gia hạn 90 phút -> trừ 2 giờ của cỡ S",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const vnd = n => String(n).replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.') + ' đ';   // AuthText.vnd: 14.700 đ",
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));",
+                      "const charge = 2 * pm.environment.get('hour_rate');      // CEILING(90 / 60) started hours",
+                      "pm.environment.set('extend_charge', charge);",
+                      "pm.test('flash states the amount taken', () => {",
+                      "    pm.expect(pm.response.text()).to.include('Đã gia hạn thêm 90 phút.');",
+                      "    pm.expect(pm.response.text()).to.include('Đã trừ ' + vnd(charge) + ' vào ví.');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "extend"
+                    },
+                    {
+                      "key": "depositId",
+                      "value": "{{deposit_id}}"
+                    },
+                    {
+                      "key": "minutes",
+                      "value": "90"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: đã trừ tiền gia hạn",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const utc = s => new Date(String(s).replace(' ', 'T') + 'Z');   // the API prints UTC without a zone",
+                      "const me = pm.response.json();",
+                      "const charge = pm.environment.get('extend_charge');",
+                      "pm.test('wallet and paid amount moved by the charge', () => {",
+                      "    pm.expect(me.balance).to.eql(pm.environment.get('balance_before') - charge);",
+                      "    pm.expect(me.booking.paid_amount).to.eql(pm.environment.get('paid_before') + charge);",
+                      "    pm.expect(me.booking.extend_count).to.eql(1);",
+                      "});",
+                      "pm.test('due time 90 minutes later', () => pm.expect(utc(me.booking.due_at) - utc(pm.environment.get('due_before'))).to.eql(90 * 60 * 1000));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "auth PIN -> PICKUP, không phụ phí",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK PICKUP', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('PICKUP');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});",
+                      "pm.test('no late fee', () => pm.expect(r.overdue_fee).to.eql(0));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Sơ đồ: ngăn AVAILABLE",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const slot = bank.slots.find(s => s.slot_id === pm.environment.get('slot_id'));",
+                      "pm.test('slot is AVAILABLE', () => pm.expect(slot.status).to.eql('AVAILABLE'));",
+                      "pm.test('slot not locked', () => pm.expect(slot.locked).to.not.be.true);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "12. Nạp tiền, nhân viên duyệt, mở lại: PICKUP có overdue_fee",
+          "description": "Không có API riêng cho việc duyệt: dùng chính form của TopupController (người dùng action=create, nhân viên action=approve), tài khoản nhân viên trong biến staff_user.",
+          "item": [
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v3overdue",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_overdue}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_overdue'), () => pm.expect(me.username).to.eql(pm.environment.get('user_overdue')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt bị khóa của kịch bản 11",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "pm.test('booking ACTIVE with PIN', () => {",
+                      "    pm.expect(b).to.be.an('object');",
+                      "    pm.expect(b.status).to.eql('ACTIVE');",
+                      "    pm.expect(b.open_method).to.eql('PIN');",
+                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
+                      "});",
+                      "pm.environment.set('deposit_id', b.deposit_id);",
+                      "pm.environment.set('slot_id', b.slot_id);",
+                      "pm.environment.set('slot_code', b.slot_code);",
+                      "pm.environment.set('pin', b.pin_code || '');",
+                      "pm.environment.set('paid_before', b.paid_amount);",
+                      "pm.environment.set('balance_before', me.balance);",
+                      "pm.test('still locked, debt of scenario 11', () => { pm.expect(b.locked).to.be.true; pm.expect(me.debt).to.eql(pm.environment.get('debt')); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Yêu cầu nạp tiền (nợ + 20.000 đ)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// enough to clear the debt of scenario 11 and keep 20,000 VND",
+                      "pm.environment.set('topup_amount', pm.environment.get('debt') + 20000);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('302 to the QR page of the new request', () => pm.response.to.have.status(302));",
+                      "const m = /TopupController\\?id=(\\d+)/.exec(pm.response.headers.get('Location') || '');",
+                      "pm.test('request id in Location', () => pm.expect(m).to.not.be.null);",
+                      "pm.environment.set('topup_id', m[1]);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/TopupController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "TopupController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "create"
+                    },
+                    {
+                      "key": "amount",
+                      "value": "{{topup_amount}}"
+                    }
+                  ]
+                }
+              },
+              "protocolProfileBehavior": {
+                "followRedirects": false
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập nhân viên (admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{staff_user}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Nhân viên duyệt yêu cầu nạp",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));",
+                      "pm.test('flash: money added to v3overdue', () => pm.expect(pm.response.text()).to.include('Đã cộng tiền vào tài khoản ' + pm.environment.get('user_overdue')));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/TopupController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "TopupController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "approve"
+                    },
+                    {
+                      "key": "id",
+                      "value": "{{topup_id}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v3overdue",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_overdue}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: hết nợ, lượt vẫn khóa tới khi lấy đồ",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "pm.test('wallet = 20,000 VND, no debt', () => { pm.expect(me.balance).to.eql(20000); pm.expect(me.debt).to.eql(0); });",
+                      "pm.test('booking still ACTIVE and locked', () => { pm.expect(me.booking.status).to.eql('ACTIVE'); pm.expect(me.booking.locked).to.be.true; });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Heartbeat",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "pm.test('v2 reply', () => pm.expect(pm.response.json().interval_sec).to.eql(3));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "auth PIN -> UNLOCK PICKUP, có overdue_fee",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK PICKUP', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('PICKUP');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});",
+                      "pm.test('overdue_fee = the late fee of scenario 11', () => pm.expect(r.overdue_fee).to.eql(pm.environment.get('overdue_fee')));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt đã kết thúc, không thu thêm",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "const h = (me.history || []).find(x => x.deposit_id === pm.environment.get('deposit_id')) || {};",
+                      "pm.test('no open booking', () => pm.expect(me.booking).to.be.null);",
+                      "pm.test('last booking COMPLETED with its late fee', () => {",
+                      "    pm.expect(h.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(h.status).to.eql('COMPLETED');",
+                      "    pm.expect(h.overdue_fee).to.eql(pm.environment.get('overdue_fee'));",
+                      "});",
+                      "pm.test('wallet unchanged by the pickup', () => pm.expect(me.balance).to.eql(20000));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Sơ đồ: ngăn AVAILABLE",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const slot = bank.slots.find(s => s.slot_id === pm.environment.get('slot_id'));",
+                      "pm.test('slot is AVAILABLE', () => pm.expect(slot.status).to.eql('AVAILABLE'));",
+                      "pm.test('slot not locked', () => pm.expect(slot.locked).to.not.be.true);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "13. Hủy trong 5 phút hoàn đủ, sau 5 phút bị từ chối (50047)",
+          "description": "Phần đầu: v2pin đặt và hủy ngay. Phần sau: v3late có lượt đặt từ 6 phút trước (test_v3_setup.sql), hủy bị từ chối; cuối cùng mở và lấy đồ để trả ngăn.",
+          "item": [
+            {
+              "name": "Heartbeat",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "pm.test('v2 reply', () => pm.expect(pm.response.json().interval_sec).to.eql(3));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v2pin",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_pin}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_pin'), () => pm.expect(me.username).to.eql(pm.environment.get('user_pin')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Chọn ngăn trống cỡ S trên CANT-A",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const map = pm.response.json();",
+                      "const bank = map.banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
+                      "// v3: prices depend on the size; the scenarios expect the S price, so they take an S slot",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE' && (s.size_code || s.size) === 'S');",
+                      "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "pm.environment.set('slot_id', slot.slot_id);",
+                      "pm.environment.set('slot_code', slot.slot_code);",
+                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "const plan = map.plans.find(p => p.duration_min === 120);",
+                      "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
+                      "pm.environment.set('plan_id', plan.plan_id);",
+                      "pm.environment.set('plan_price', plan.prices.S.PIN);",
+                      "const size = map.sizes.find(z => z.code === 'S');",
+                      "pm.environment.set('hour_rate', size.hour_rate);",
+                      "pm.environment.set('booking_buffer', map.rules.booking_buffer);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đặt tủ: PIN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "reserve"
+                    },
+                    {
+                      "key": "slotId",
+                      "value": "{{slot_id}}"
+                    },
+                    {
+                      "key": "planId",
+                      "value": "{{plan_id}}"
+                    },
+                    {
+                      "key": "openMethod",
+                      "value": "PIN"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt vừa đặt",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "pm.test('booking RESERVED with PIN', () => {",
+                      "    pm.expect(b).to.be.an('object');",
+                      "    pm.expect(b.status).to.eql('RESERVED');",
+                      "    pm.expect(b.open_method).to.eql('PIN');",
+                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
+                      "});",
+                      "pm.environment.set('deposit_id', b.deposit_id);",
+                      "pm.environment.set('slot_id', b.slot_id);",
+                      "pm.environment.set('slot_code', b.slot_code);",
+                      "pm.environment.set('pin', b.pin_code || '');",
+                      "pm.environment.set('paid_before', b.paid_amount);",
+                      "pm.environment.set('balance_before', me.balance);",
+                      "pm.test('price taken', () => pm.expect(b.paid_amount).to.eql(Number(pm.environment.get('plan_price'))));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Hủy ngay (trong 5 phút)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));",
+                      "pm.test('flash: everything refunded', () => pm.expect(pm.response.text()).to.include('Đã hủy lượt đặt. Toàn bộ số tiền đã trả được hoàn vào ví.'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "cancel"
+                    },
+                    {
+                      "key": "depositId",
+                      "value": "{{deposit_id}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: hoàn 100%",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "pm.test('no open booking', () => pm.expect(me.booking).to.be.null);",
+                      "pm.test('last booking CANCELLED', () => pm.expect(me.history[0].status).to.eql('CANCELLED'));",
+                      "pm.test('wallet back to before booking', () => pm.expect(me.balance).to.eql(pm.environment.get('balance_before') + pm.environment.get('paid_before')));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Sơ đồ: ngăn AVAILABLE",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const slot = bank.slots.find(s => s.slot_id === pm.environment.get('slot_id'));",
+                      "pm.test('slot is AVAILABLE', () => pm.expect(slot.status).to.eql('AVAILABLE'));",
+                      "pm.test('slot not locked', () => pm.expect(slot.locked).to.not.be.true);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v3late",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_late}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_late'), () => pm.expect(me.username).to.eql(pm.environment.get('user_late')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt đặt 6 phút trước (test_v3_setup.sql)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "pm.test('booking RESERVED with PIN', () => {",
+                      "    pm.expect(b).to.be.an('object');",
+                      "    pm.expect(b.status).to.eql('RESERVED');",
+                      "    pm.expect(b.open_method).to.eql('PIN');",
+                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
+                      "});",
+                      "pm.environment.set('deposit_id', b.deposit_id);",
+                      "pm.environment.set('slot_id', b.slot_id);",
+                      "pm.environment.set('slot_code', b.slot_code);",
+                      "pm.environment.set('pin', b.pin_code || '');",
+                      "pm.environment.set('paid_before', b.paid_amount);",
+                      "pm.environment.set('balance_before', me.balance);",
+                      "const utc = s => new Date(String(s).replace(' ', 'T') + 'Z');   // the API prints UTC without a zone",
+                      "pm.test('booked more than cancel_min minutes ago', () => pm.expect(Date.now() - utc(b.reserved_at).getTime()).to.be.above(me.cancel_min * 60 * 1000));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Hủy sau 5 phút -> lỗi 50047",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));",
+                      "pm.test('flash shows the 50047 text', () => pm.expect(pm.response.text()).to.include('Đã quá 5 phút kể từ lúc đặt nên không hủy được nữa.'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "cancel"
+                    },
+                    {
+                      "key": "depositId",
+                      "value": "{{deposit_id}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt vẫn giữ, không hoàn",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "pm.test('booking still RESERVED', () => { pm.expect(me.booking.status).to.eql('RESERVED'); pm.expect(me.booking.deposit_id).to.eql(pm.environment.get('deposit_id')); });",
+                      "pm.test('wallet unchanged', () => pm.expect(me.balance).to.eql(pm.environment.get('balance_before')));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Heartbeat",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "pm.test('v2 reply', () => pm.expect(pm.response.json().interval_sec).to.eql(3));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Dọn: auth PIN -> CHECK_IN",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK CHECK_IN', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('CHECK_IN');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Dọn: auth PIN -> PICKUP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK PICKUP', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('PICKUP');",
+                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
+                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
+                      "});",
+                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
+                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
+                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/device/auth",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "device",
+                    "auth"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "14. Đặt khi số dư dưới mức đệm 10.000 đ (50046)",
+          "description": "v3poor: 12.000 đ (test_v2_setup.sql). Giá S 2 giờ 5.000 đ, sau khi đặt còn 7.000 đ < 10.000 đ.",
+          "item": [
+            {
+              "name": "Heartbeat",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "pm.test('v2 reply', () => pm.expect(pm.response.json().interval_sec).to.eql(3));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-API-Key",
+                    "value": "{{api_key}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "health"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v3poor",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_poor}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_poor'), () => pm.expect(me.username).to.eql(pm.environment.get('user_poor')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Chọn ngăn trống cỡ S trên CANT-A",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const map = pm.response.json();",
+                      "const bank = map.banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
+                      "// v3: prices depend on the size; the scenarios expect the S price, so they take an S slot",
+                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE' && (s.size_code || s.size) === 'S');",
+                      "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
+                      "pm.environment.set('slot_id', slot.slot_id);",
+                      "pm.environment.set('slot_code', slot.slot_code);",
+                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "const plan = map.plans.find(p => p.duration_min === 120);",
+                      "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
+                      "pm.environment.set('plan_id', plan.plan_id);",
+                      "pm.environment.set('plan_price', plan.prices.S.PIN);",
+                      "const size = map.sizes.find(z => z.code === 'S');",
+                      "pm.environment.set('hour_rate', size.hour_rate);",
+                      "pm.environment.set('booking_buffer', map.rules.booking_buffer);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: số dư 12.000 đ",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "pm.test('no open booking, 12,000 VND', () => { pm.expect(me.booking).to.be.null; pm.expect(me.balance).to.eql(12000); });",
+                      "pm.test('enough for the price, not for price + buffer', () => {",
+                      "    const price = Number(pm.environment.get('plan_price'));",
+                      "    pm.expect(me.balance).to.be.at.least(price);",
+                      "    pm.expect(me.balance - price).to.be.below(Number(pm.environment.get('booking_buffer')));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đặt tủ: PIN -> lỗi 50046",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));",
+                      "pm.test('flash shows the 50046 text', () => pm.expect(pm.response.text()).to.include('Sau khi đặt, ví phải còn ít nhất 10.000 đ'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/BookingController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "BookingController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "action",
+                      "value": "reserve"
+                    },
+                    {
+                      "key": "slotId",
+                      "value": "{{slot_id}}"
+                    },
+                    {
+                      "key": "planId",
+                      "value": "{{plan_id}}"
+                    },
+                    {
+                      "key": "openMethod",
+                      "value": "PIN"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: không có lượt, không trừ tiền",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "pm.test('no booking, wallet unchanged', () => { pm.expect(me.booking).to.be.null; pm.expect(me.balance).to.eql(12000); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Sơ đồ: ngăn AVAILABLE",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const bank = pm.response.json().banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
+                      "const slot = bank.slots.find(s => s.slot_id === pm.environment.get('slot_id'));",
+                      "pm.test('slot is AVAILABLE', () => pm.expect(slot.status).to.eql('AVAILABLE'));",
+                      "pm.test('slot not locked', () => pm.expect(slot.locked).to.not.be.true);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/locker-map?area=CANT",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "locker-map"
+                  ],
+                  "query": [
+                    {
+                      "key": "area",
+                      "value": "CANT"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "15. Chuyển xử lý sau 48 giờ: escalated, cảnh báo OVERDUE_ESCALATED, audit OVERDUE_ESCALATE",
+          "description": "sql/test_v3_setup.sql: v3esc có lượt ACTIVE quá hạn 49 giờ. LockerMonitor (15 giây) khóa, thu phụ phí, gọi Deposit_Escalate.",
+          "item": [
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập v3esc",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{user_esc}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: phiên đăng nhập",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "pm.test('signed in as ' + pm.environment.get('user_esc'), () => pm.expect(me.username).to.eql(pm.environment.get('user_esc')));",
+                      "pm.environment.set('balance_before', me.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tủ của tôi: lượt đã chuyển xử lý (chờ LockerMonitor)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// test_v3_setup.sql moved due_at 49 hours back; LockerMonitor locks, charges and escalates within 15 s",
+                      "const tries = pm.environment.get('esc_tries') || 0;",
+                      "if (tries > 0) { setTimeout(() => {}, 5000); }"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const me = pm.response.json();",
+                      "const b = me.booking;",
+                      "const tries = (pm.environment.get('esc_tries') || 0) + 1;",
+                      "if (b && !b.escalated && tries < 8) {",
+                      "    pm.environment.set('esc_tries', tries);",
+                      "    postman.setNextRequest(pm.info.requestName);   // not escalated yet, ask again in 5 s",
+                      "} else {",
+                      "    pm.environment.unset('esc_tries');",
+                      "    pm.test('booking escalated (escalated_at set) and locked', () => {",
+                      "        pm.expect(b.status).to.eql('ACTIVE');",
+                      "        pm.expect(b.escalated).to.be.true;",
+                      "        pm.expect(b.locked).to.be.true;",
+                      "    });",
+                      "    pm.test('late fee for 49 started hours at least', () => {",
+                      "        pm.expect(b.overdue_hours).to.be.at.least(49);",
+                      "        pm.expect(b.overdue_fee).to.eql(b.overdue_hours * b.overdue_rate);",
+                      "    });",
+                      "    pm.test('the debt shows on the wallet', () => pm.expect(me.debt).to.eql(me.balance < 0 ? -me.balance : 0));",
+                      "    pm.environment.set('esc_deposit_id', b.deposit_id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng xuất",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LogoutController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LogoutController"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Đăng nhập nhân viên (admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/LoginController",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "LoginController"
+                  ]
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "username",
+                      "value": "{{staff_user}}"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Cảnh báo: danh sách OVERDUE_ESCALATED đang mở",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const ids = [...pm.response.text().matchAll(/AlertController\\?id=(\\d+)/g)].map(m => Number(m[1]));",
+                      "pm.test('an open OVERDUE_ESCALATED alert exists', () => pm.expect(ids.length).to.be.above(0));",
+                      "pm.environment.set('alert_id', Math.max(...ids));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/AlertController?status=OPEN&label=OVERDUE_ESCALATED",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "AlertController"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "OPEN"
+                    },
+                    {
+                      "key": "label",
+                      "value": "OVERDUE_ESCALATED"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Cảnh báo: chi tiết có lượt, người dùng, số nợ",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const html = pm.response.text();",
+                      "pm.test('label OVERDUE_ESCALATED', () => pm.expect(html).to.include('OVERDUE_ESCALATED'));",
+                      "pm.test('evidence: this booking and its owner', () => {",
+                      "    pm.expect(html).to.include('#' + pm.environment.get('esc_deposit_id'));",
+                      "    pm.expect(html).to.include(pm.environment.get('user_esc'));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/AlertController?id={{alert_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "AlertController"
+                  ],
+                  "query": [
+                    {
+                      "key": "id",
+                      "value": "{{alert_id}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Nhật ký: OVERDUE_ESCALATE của lượt này",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const html = pm.response.text();",
+                      "pm.test('audit row for the booking', () => pm.expect(html).to.include('<td class=\"num\">' + pm.environment.get('esc_deposit_id') + '</td>'));",
+                      "pm.test('audit row names the alert', () => {",
+                      "    const id = pm.environment.get('alert_id');",
+                      "    pm.expect(html.includes('alert_id&#034;:' + id) || html.includes('\"alert_id\":' + id)).to.be.true;",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/AuditController?act=OVERDUE_ESCALATE",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "AuditController"
+                  ],
+                  "query": [
+                    {
+                      "key": "act",
+                      "value": "OVERDUE_ESCALATE"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

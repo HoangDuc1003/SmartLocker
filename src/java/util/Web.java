@@ -41,6 +41,25 @@ public class Web {
         }
     }
 
+    /** True when the caller is the page script (fetch) and wants JSON instead of a redirect or a page. */
+    public static boolean wantsJson(HttpServletRequest req) {
+        String accept = req.getHeader("Accept");
+        return accept != null && accept.contains("application/json");
+    }
+
+    /** {"ok":true} or {"ok":false,"error":"..."} for the login and sign-up popup. */
+    public static void writeJson(javax.servlet.http.HttpServletResponse res, int status, String error) throws java.io.IOException {
+        res.setStatus(status);
+        res.setContentType("application/json;charset=UTF-8");
+        res.setHeader("Cache-Control", "no-store");
+        com.google.gson.JsonObject o = new com.google.gson.JsonObject();
+        o.addProperty("ok", error == null);
+        if (error != null) {
+            o.addProperty("error", error);
+        }
+        res.getWriter().write(o.toString());
+    }
+
     /** The signed-in user, or null. */
     public static User currentUser(HttpServletRequest req) {
         HttpSession session = req.getSession(false);
@@ -82,6 +101,11 @@ public class Web {
             {"Could not create a unique code, try again", "Không tạo được mã, hãy thử lại"},
             {"This booking has nothing to enroll", "Lượt đặt này không cần đăng ký thẻ hoặc vân tay"},
             {"Fingerprint not found or not yours", "Không tìm thấy vân tay hoặc vân tay không phải của bạn"},
+            // v3 (sql/09_v3.sql)
+            {"After booking at least 10,000 VND must stay in the wallet", "Sau khi đặt, ví phải còn ít nhất 10.000 đ để dự phòng phụ phí quá hạn. Hãy nạp thêm tiền."},
+            {"The 5 minutes to cancel are over", "Đã quá 5 phút kể từ lúc đặt nên không hủy được nữa."},
+            {"The booking is overdue and locked, it cannot be extended", "Lượt gửi đã quá hạn và tủ đang bị khóa nên không gia hạn được. Hãy nạp tiền và tới lấy đồ."},
+            {"Insufficient balance to extend", "Số dư không đủ để gia hạn. Hãy nạp thêm tiền."},
         };
         for (String[] p : pairs) {
             SQL_MESSAGES.put(p[0], p[1]);
@@ -92,6 +116,12 @@ public class Web {
         String text = e.getMessage() == null ? "" : e.getMessage().trim();
         String vi = SQL_MESSAGES.get(text);
         return vi != null ? vi : text;
+    }
+
+    /** v3: an optional e-mail address: empty, or one plain address of at most 150 characters. */
+    public static boolean isEmail(String email) {
+        return email != null && email.length() <= 150
+                && email.matches("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}");
     }
 
     /** Number of pages for a total, at least 1. */

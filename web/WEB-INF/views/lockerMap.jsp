@@ -9,6 +9,7 @@
     <title>Sơ đồ tủ · Smart Locker</title>
     <script src="${pageContext.request.contextPath}/js/theme.js"></script>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/js/vendor/leaflet/leaflet.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/locker-map.css">
 </head>
 <body>
@@ -19,8 +20,9 @@
 <div id="main">
 <main id="lockerApp"
       data-api="${ctx}/api/locker-map"
-      data-role="<c:out value='${not empty me ? me.roleName : \"END_USER\"}'/>"
+      data-role="<c:out value='${not empty me ? me.roleName : \"GUEST\"}'/>"
       data-balance="${not empty me and not empty me.balance ? me.balance : 0}"
+      data-login-url="${ctx}/LoginController"
       data-booking-url="${ctx}/BookingController"
       data-mylocker-url="${ctx}/MyLockerController"
       data-topup-url="${ctx}/TopupController"
@@ -34,6 +36,9 @@
 </div>
 
 <script src="${ctx}/js/app.js"></script>
+<script src="${ctx}/js/auth-modal.js"></script>
+<script src="${ctx}/js/vendor/leaflet/leaflet.js"></script>
+<script src="${ctx}/js/area-map.js"></script>
 <script src="${ctx}/js/locker-map.js"></script>
 </body>
 </html>

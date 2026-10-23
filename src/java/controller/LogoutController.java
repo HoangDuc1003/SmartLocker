@@ -17,6 +17,6 @@ public class LogoutController extends HttpServlet {
         if (session != null) {
             session.invalidate();   // drops the login state
         }
-        res.sendRedirect(req.getContextPath() + "/LoginController");
+        res.sendRedirect(req.getContextPath() + "/LockerMapController");
     }
 }

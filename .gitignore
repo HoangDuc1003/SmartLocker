@@ -8,3 +8,5 @@ test-output/
 
 # secret device keys (scripts/set-device-key.ps1)
 config/*.local.properties
+__pycache__/
+*.pyc

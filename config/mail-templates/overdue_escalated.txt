@@ -1,0 +1,11 @@
+Subject: Smart Locker: lượt gửi ở ngăn {{slot_code}} đã chuyển cho nhân viên xử lý
+
+Chào {{name}},
+
+Lượt gửi đồ của bạn ở ngăn {{slot_code}} (dãy {{bank_code}}, {{area_name}}) đã quá hạn từ {{due_at}}, tức khoảng {{overdue_hours}} giờ, nên đã được chuyển cho nhân viên khu vực {{area_name}} xử lý.
+
+Phụ phí trễ hạn đã tính: {{overdue_fee}}. Số dư ví hiện tại: {{balance}}.
+
+Hãy liên hệ nhân viên vận hành của khu vực này càng sớm càng tốt để nhận lại đồ.
+
+?Tủ của tôi: {{my_locker_url}}

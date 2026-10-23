@@ -161,13 +161,4 @@ public class AlertDao {
             return a;
         }
     }
-
-    /** Number of OPEN alerts, the red dot in the menu and a card of the dashboard. */
-    public int countOpen() throws SQLException {
-        try (Connection conn = DbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM Alert WHERE status = 'OPEN'");
-             ResultSet rs = ps.executeQuery()) {
-            return rs.next() ? rs.getInt(1) : 0;
-        }
-    }
 }

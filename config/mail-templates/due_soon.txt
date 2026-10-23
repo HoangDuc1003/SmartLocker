@@ -1,0 +1,10 @@
+Subject: Smart Locker: ngăn {{slot_code}} sắp hết hạn lúc {{due_at}}
+
+Chào {{name}},
+
+Lượt gửi đồ của bạn ở ngăn {{slot_code}} (dãy {{bank_code}}, {{area_name}}) sẽ hết hạn lúc {{due_at}}.
+
+Hãy tới lấy đồ hoặc gia hạn trên trang Tủ của tôi trước giờ đó.
+Nếu quá hạn và hết thời gian ân hạn, tủ sẽ bị khóa và mỗi giờ trễ bị tính phụ phí {{overdue_rate}}. Khi số dư ví âm, bạn cần nạp tiền rồi mới mở được tủ.
+
+?Tủ của tôi: {{my_locker_url}}

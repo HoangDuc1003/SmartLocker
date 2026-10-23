@@ -102,6 +102,91 @@ public class DashboardDao {
         public Integer getLastSeenSec() { return lastSeenSec; }
     }
 
+
+    // ─── Usage statistics for the charts (served by api.DashboardStatsApi, cached there) ──────────
+
+    /** Booking counts per hour and weekday, revenue per day and open alerts per type. Times are Vietnam time (UTC+7). */
+    public static class UsageStats {
+        public int[]   hourlyToday     = new int[24];
+        public int[]   hourlyYesterday = new int[24];
+        public int[][] heat            = new int[7][24];   // [Monday..Sunday][hour], the last 28 days
+        public List<Map<String, Object>> revenue = new ArrayList<>();      // {date, amount}, the last 7 days
+        public List<Map<String, Object>> alertsOpen = new ArrayList<>();   // {label, count}
+        public int bookingsToday;
+        public int bookingsYesterday;
+    }
+
+    private static final java.time.ZoneOffset VN = java.time.ZoneOffset.ofHours(7);
+
+    /** Three small aggregations plus the open alerts; the caller caches the result for a minute. */
+    public UsageStats fetchUsageStats() throws SQLException {
+        final String vn = "DATEADD(hour, 7, reserved_at)";
+        final String sqlHourly =
+            "SELECT CAST(" + vn + " AS date) AS d, DATEPART(hour, " + vn + ") AS h, COUNT(*) AS n " +
+            "FROM Deposit WHERE reserved_at >= DATEADD(day, -3, SYSUTCDATETIME()) " +
+            "GROUP BY CAST(" + vn + " AS date), DATEPART(hour, " + vn + ")";
+        // 1900-01-01 was a Monday, so the remainder is 0 for Monday; it does not depend on SET DATEFIRST
+        final String sqlHeat =
+            "SELECT DATEDIFF(day, '19000101', CAST(" + vn + " AS date)) % 7 AS dow, " +
+            "  DATEPART(hour, " + vn + ") AS h, COUNT(*) AS n " +
+            "FROM Deposit WHERE reserved_at >= DATEADD(day, -28, SYSUTCDATETIME()) " +
+            "GROUP BY DATEDIFF(day, '19000101', CAST(" + vn + " AS date)) % 7, DATEPART(hour, " + vn + ")";
+        final String sqlRevenue =
+            "SELECT CAST(DATEADD(hour, 7, started_at) AS date) AS d, SUM(paid_amount + overdue_fee) AS amount " +
+            "FROM Deposit WHERE status IN ('ACTIVE', 'COMPLETED') AND started_at >= DATEADD(day, -8, SYSUTCDATETIME()) " +
+            "GROUP BY CAST(DATEADD(hour, 7, started_at) AS date)";
+        final String sqlAlerts =
+            "SELECT ISNULL(label, N'UNKNOWN') AS label, COUNT(*) AS n FROM Alert WHERE status = 'OPEN' " +
+            "GROUP BY label ORDER BY COUNT(*) DESC";
+
+        UsageStats st = new UsageStats();
+        java.time.LocalDate today = java.time.LocalDate.now(VN);
+        java.time.LocalDate yesterday = today.minusDays(1);
+        try (Connection conn = DbContext.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(sqlHourly); ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    java.time.LocalDate d = rs.getDate("d").toLocalDate();
+                    int h = rs.getInt("h");
+                    int n = rs.getInt("n");
+                    if (d.equals(today)) {
+                        st.hourlyToday[h] += n;
+                        st.bookingsToday += n;
+                    } else if (d.equals(yesterday)) {
+                        st.hourlyYesterday[h] += n;
+                        st.bookingsYesterday += n;
+                    }
+                }
+            }
+            try (PreparedStatement ps = conn.prepareStatement(sqlHeat); ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    st.heat[rs.getInt("dow")][rs.getInt("h")] = rs.getInt("n");
+                }
+            }
+            Map<java.time.LocalDate, Long> byDay = new LinkedHashMap<>();
+            try (PreparedStatement ps = conn.prepareStatement(sqlRevenue); ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    byDay.put(rs.getDate("d").toLocalDate(), rs.getLong("amount"));
+                }
+            }
+            for (int back = 6; back >= 0; back--) {   // always seven bars, a day without income is 0
+                java.time.LocalDate d = today.minusDays(back);
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("date", d.toString());
+                row.put("amount", byDay.containsKey(d) ? byDay.get(d) : 0L);
+                st.revenue.add(row);
+            }
+            try (PreparedStatement ps = conn.prepareStatement(sqlAlerts); ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("label", rs.getString("label"));
+                    row.put("count", rs.getInt("n"));
+                    st.alertsOpen.add(row);
+                }
+            }
+        }
+        return st;
+    }
+
     // ─── Queries ──────────────────────────────────────────────────────────────
 
     /**

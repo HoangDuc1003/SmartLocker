@@ -1,0 +1,18 @@
+Subject: Smart Locker: ngăn {{slot_code}} đã quá hạn và đang bị khóa
+
+Chào {{name}},
+
+Lượt gửi đồ của bạn ở ngăn {{slot_code}} (dãy {{bank_code}}, {{area_name}}) đã hết hạn lúc {{due_at}} và tủ hiện đang bị khóa. Đồ của bạn vẫn nằm yên trong ngăn.
+
+Phụ phí trễ hạn: {{overdue_rate}} mỗi giờ.
+Đã tính: {{overdue_hours}} giờ, tổng {{overdue_fee}}, được trừ vào ví.
+Số dư ví hiện tại: {{balance}}.
+
+Để mở lại tủ:
+1. Nạp tiền để số dư ví từ 0 đ trở lên.
+2. Mở tủ như thường lệ (mật mã, thẻ hoặc vân tay) và lấy đồ.
+
+Nếu quá hạn kéo dài khoảng {{escalate_hours}} giờ, lượt gửi sẽ được chuyển cho nhân viên xử lý.
+
+?Nạp tiền: {{topup_url}}
+?Tủ của tôi: {{my_locker_url}}

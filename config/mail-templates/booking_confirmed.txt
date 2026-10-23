@@ -1,0 +1,14 @@
+Subject: Smart Locker: đã đặt ngăn {{slot_code}}
+
+Chào {{name}},
+
+Bạn đã đặt thành công ngăn {{slot_code}} (dãy {{bank_code}}, {{area_name}}).
+
+- Gói gửi: {{plan_name}}
+- Cách mở tủ: {{open_method}}
+- Đã thanh toán: {{amount}}
+- Giữ chỗ đến: {{hold_until}}
+
+Hãy tới tủ và gửi đồ trước {{hold_until}}. Quá giờ này mà chưa gửi, lượt đặt sẽ bị hủy và ngăn được trả lại cho người khác.
+
+?Xem cách mở tủ: {{my_locker_url}}

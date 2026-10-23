@@ -96,6 +96,10 @@ public class LockerMonitor implements ServletContextListener {
     // ─── Lifecycle ────────────────────────────────────────────────────────────
 
     private ScheduledExecutorService scheduler;
+    private ScheduledExecutorService mailer;
+
+    /** How often the due reminder e-mails are looked for (seconds). */
+    private static final int MAIL_INTERVAL_SEC = 30;
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -124,10 +128,30 @@ public class LockerMonitor implements ServletContextListener {
                         + "WHERE p.device_id = d.device_id AND p.params_json LIKE '%\"demo\":true%')");
                 runProcedure("{call Device_MarkOffline(90)}");   // demo devices get a heartbeat above, a silent one is OFFLINE after 90 s
                 runProcedure("{call Deposit_ExpireNoShow}");
-                runProcedure("{call Deposit_ExpireOverdue}");
+                runProcedure("{call Deposit_ExpireOverdue}");    // v3: locks and charges the late fee, never frees the slot
+                runProcedure("{call Deposit_Escalate}");         // v3: 48 hours late, an alert for the staff
                 runProcedure("{call RemoteCommand_Expire}");
             }
         }, PROCEDURE_INTERVAL_SEC, PROCEDURE_INTERVAL_SEC, TimeUnit.SECONDS);
+
+        // 3. v3: due reminder e-mails on their own thread, so a slow SMTP server never delays the jobs above
+        mailer = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "LockerMonitor-mail");
+            t.setDaemon(true);
+            return t;
+        });
+        MailService mail = MailService.of(sce.getServletContext());
+        if (mail.isEnabled()) {
+            LOG.info("Due reminder e-mails on, settings from " + mail.source());
+        }
+        DueReminder reminder = new DueReminder(mail);
+        mailer.scheduleWithFixedDelay(() -> {
+            try {
+                reminder.run();
+            } catch (RuntimeException e) {
+                LOG.log(Level.WARNING, "Due reminder failed: " + e.getMessage());   // keep the schedule alive
+            }
+        }, MAIL_INTERVAL_SEC, MAIL_INTERVAL_SEC, TimeUnit.SECONDS);
     }
 
     @Override
@@ -135,6 +159,9 @@ public class LockerMonitor implements ServletContextListener {
         // Stop immediately on undeploy / redeploy to prevent thread leaks
         if (scheduler != null) {
             scheduler.shutdownNow();
+        }
+        if (mailer != null) {
+            mailer.shutdownNow();
         }
         CACHE.set(null);
     }

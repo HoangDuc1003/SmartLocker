@@ -1,2 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Context path="/SmartLocker"/>
+<!-- SameSite=Lax on JSESSIONID: a form on another site cannot POST with the user's session (v3 security review).
+     When conf/Catalina/localhost/SmartLocker.xml exists Tomcat ignores this file, so that file sets the same. -->
+<Context path="/SmartLocker">
+    <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor" sameSiteCookies="lax"/>
+</Context>

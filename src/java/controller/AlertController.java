@@ -118,6 +118,44 @@ public class AlertController extends HttpServlet {
             return;
         }
 
+        // This is the short path from the locker map.  It is deliberately
+        // limited to ADMIN: only an administrator may manually acknowledge
+        // that an offline controller is back online.
+        if ("activate_device_from_map".equals(action)) {
+            if (!"ADMIN".equals(me.getRoleName())) {
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, "Administrator permission required");
+                return;
+            }
+            int deviceId = Web.intParam(req, "deviceId", 0);
+            String area = Web.trimmed(req, "area");
+            int slot = Web.intParam(req, "slot", 0);
+            try {
+                model.Device oldDev = new dao.DeviceDao().findById(deviceId);
+                if (oldDev == null) {
+                    Web.flash(req.getSession(), "Không tìm thấy thiết bị cần cập nhật.", true);
+                } else if ("ACTIVE".equals(oldDev.getStatus())) {
+                    Web.flash(req.getSession(), "Thiết bị " + oldDev.getDeviceCode() + " đang trực tuyến.", false);
+                } else if (new dao.DeviceDao().setStatus(deviceId, "ACTIVE")) {
+                    new dao.AuditDao().append(me.getUserId(), "DEVICE_STATUS", "DEVICE", deviceId,
+                            oldDev.getDeviceCode() + ": " + oldDev.getStatus() + " -> ACTIVE (locker map)");
+                    Web.flash(req.getSession(), "Đã chuyển thiết bị " + oldDev.getDeviceCode() + " sang trực tuyến.", false);
+                } else {
+                    Web.flash(req.getSession(), "Không cập nhật được trạng thái thiết bị.", true);
+                }
+            } catch (SQLException e) {
+                throw new ServletException(e);
+            }
+            String target = "LockerMapController";
+            if (!area.isEmpty()) {
+                target += "?area=" + java.net.URLEncoder.encode(area, "UTF-8");
+                if (slot > 0) {
+                    target += "&slot=" + slot;
+                }
+            }
+            res.sendRedirect(target);
+            return;
+        }
+
         res.sendRedirect("AlertController");
     }
 }

@@ -53,7 +53,28 @@ public class LockerAreaController extends HttpServlet {
         util.Csv.send(res, "areas.csv", new String[]{"area_id", "area_code", "name", "location", "slots", "users", "status"}, rows);
     }
 
+    /** Empty means "not placed on the map"; a comma is accepted as the decimal mark. */
+    private static Double parseCoord(String text) {
+        if (text.isEmpty()) {
+            return null;
+        }
+        double v = Double.parseDouble(text.replace(',', '.'));
+        if (Double.isNaN(v) || Double.isInfinite(v)) {
+            throw new NumberFormatException(text);
+        }
+        return v;
+    }
+
     private String validate(model.LockerArea a) throws SQLException {
+        if ((a.getLatitude() == null) != (a.getLongitude() == null)) {
+            return "Nhập cả vĩ độ và kinh độ, hoặc để trống cả hai";
+        }
+        if (a.getLatitude() != null && (a.getLatitude() < -90 || a.getLatitude() > 90)) {
+            return "Vĩ độ nằm trong khoảng -90 đến 90";
+        }
+        if (a.getLongitude() != null && (a.getLongitude() < -180 || a.getLongitude() > 180)) {
+            return "Kinh độ nằm trong khoảng -180 đến 180";
+        }
         if (!AREA_CODE.matcher(a.getAreaCode()).matches()) {
             return "Mã khu vực gồm 2 đến 16 chữ cái hoặc chữ số";
         }
@@ -121,6 +142,14 @@ public class LockerAreaController extends HttpServlet {
             a.setAreaCode(util.Web.trimmed(req, "areaCode").toUpperCase());
             a.setName(util.Web.trimmed(req, "name"));
             a.setLocation(util.Web.trimmed(req, "location"));
+            try {
+                a.setLatitude(parseCoord(util.Web.trimmed(req, "latitude")));
+                a.setLongitude(parseCoord(util.Web.trimmed(req, "longitude")));
+            } catch (NumberFormatException e) {
+                req.setAttribute("error", "Vĩ độ và kinh độ phải là số, ví dụ 10.8411 và 106.8099");
+                showForm(req, res, a, a.getAreaId() == 0);
+                return;
+            }
             a.setActive("on".equals(req.getParameter("active")) || "true".equalsIgnoreCase(req.getParameter("active")) || "1".equals(req.getParameter("active")));
 
             String error = validate(a);

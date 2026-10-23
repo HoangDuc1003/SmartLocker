@@ -25,6 +25,15 @@ public class Deposit {
     private String enrollCode;   // 6 digits while a card or finger still has to be enrolled at the box
     private java.sql.Timestamp enrollExpires;
     private String deviceCode;   // joined: the box of the slot
+    // v3 (sql/09_v3.sql)
+    private String sizeCode;     // joined: S, M or L
+    private String sizeCm;       // joined: 20x20x20 ...
+    private int graceMin;        // joined from the plan: the slot locks after due_at + grace
+    private Long overdueRate;    // late fee of one hour, fixed at booking time
+    private int overdueHours;    // late hours already charged
+    private long overdueFee;     // late fee already charged
+    private java.sql.Timestamp lockedAt;     // past due_at + grace: opening needs a balance of 0 or more
+    private java.sql.Timestamp escalatedAt;  // 48 hours late: handed to the staff
 
     public long getDepositId() { return depositId; }
     public void setDepositId(long depositId) { this.depositId = depositId; }
@@ -70,4 +79,21 @@ public class Deposit {
     public void setEnrollExpires(java.sql.Timestamp enrollExpires) { this.enrollExpires = enrollExpires; }
     public String getDeviceCode() { return deviceCode; }
     public void setDeviceCode(String deviceCode) { this.deviceCode = deviceCode; }
+    public String getSizeCode() { return sizeCode; }
+    public void setSizeCode(String sizeCode) { this.sizeCode = sizeCode; }
+    public String getSizeCm() { return sizeCm; }
+    public void setSizeCm(String sizeCm) { this.sizeCm = sizeCm; }
+    public int getGraceMin() { return graceMin; }
+    public void setGraceMin(int graceMin) { this.graceMin = graceMin; }
+    public Long getOverdueRate() { return overdueRate; }
+    public void setOverdueRate(Long overdueRate) { this.overdueRate = overdueRate; }
+    public int getOverdueHours() { return overdueHours; }
+    public void setOverdueHours(int overdueHours) { this.overdueHours = overdueHours; }
+    public long getOverdueFee() { return overdueFee; }
+    public void setOverdueFee(long overdueFee) { this.overdueFee = overdueFee; }
+    public java.sql.Timestamp getLockedAt() { return lockedAt; }
+    public void setLockedAt(java.sql.Timestamp lockedAt) { this.lockedAt = lockedAt; }
+    public java.sql.Timestamp getEscalatedAt() { return escalatedAt; }
+    public void setEscalatedAt(java.sql.Timestamp escalatedAt) { this.escalatedAt = escalatedAt; }
+    public boolean isLocked() { return lockedAt != null; }
 }

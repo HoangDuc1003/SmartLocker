@@ -75,10 +75,10 @@ public class UserDao {
         return null;
     }
 
-    /** Self registration: a new END_USER. Returns the new user_id; username taken = SQLException 2627. */
-    public int register(String username, String password, String fullName) throws SQLException {
+    /** v3: with the optional e-mail that receives the due reminders; an e-mail in use = 2601 on UX_Users_email. */
+    public int register(String username, String password, String fullName, String email) throws SQLException {
         // one transaction: INSERT Users, then INSERT UserRole for END_USER
-        String insertUser = "INSERT INTO Users (username, password_hash, full_name) VALUES (?, ?, ?)";
+        String insertUser = "INSERT INTO Users (username, password_hash, full_name, email) VALUES (?, ?, ?, ?)";
         String insertRole = "INSERT INTO UserRole (user_id, role_id) SELECT ?, role_id FROM Roles WHERE role_name = N'END_USER'";
         try (Connection conn = DbContext.getConnection()) {
             conn.setAutoCommit(false);
@@ -88,6 +88,7 @@ public class UserDao {
                     ps.setString(1, username);
                     ps.setString(2, SecurityUtils.hashPassword(password));
                     ps.setString(3, fullName);
+                    ps.setString(4, email == null || email.isEmpty() ? null : email);
                     ps.executeUpdate();
                     try (ResultSet keys = ps.getGeneratedKeys()) {
                         keys.next();
@@ -107,20 +108,31 @@ public class UserDao {
         }
     }
 
-    public User findById(int userId) throws SQLException {
-        String sql = "SELECT " + COLUMNS + FROM + "WHERE u.user_id = ?";
-        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+    /** v3: the user's own e-mail for the due reminders, saved as typed; empty removes it. 2601 when another account has it. */
+    public void setEmail(int userId, String email) throws SQLException {
+        try (Connection conn = DbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement("UPDATE Users SET email = ? WHERE user_id = ?")) {
+            ps.setString(1, email == null || email.isEmpty() ? null : email);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        }
+    }
+
+    /** v3: the e-mail of a user, or null. */
+    public String getEmail(int userId) throws SQLException {
+        try (Connection conn = DbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT email FROM Users WHERE user_id = ?")) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? map(rs) : null;
+                return rs.next() ? rs.getString(1) : null;
             }
         }
     }
 
-    public User findByUsername(String username) throws SQLException {
-        String sql = "SELECT " + COLUMNS + FROM + "WHERE u.username = ?";
+    public User findById(int userId) throws SQLException {
+        String sql = "SELECT " + COLUMNS + FROM + "WHERE u.user_id = ?";
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, username);
+            ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? map(rs) : null;
             }
@@ -330,16 +342,6 @@ public class UserDao {
         return map;
     }
 
-    public int countByStatus(String status) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM Users WHERE status = ? AND username <> N'system'";
-        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, status);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getInt(1) : 0;
-            }
-        }
-    }
-
     public long getBalance(int userId) throws SQLException {
         String sql = "SELECT balance FROM Users WHERE user_id = ?";
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -368,13 +370,4 @@ public class UserDao {
         }
     }
 
-    public boolean deductBalance(int userId, long amount) throws SQLException {
-        String sql = "UPDATE Users SET balance = balance - ? WHERE user_id = ? AND balance >= ?";
-        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setLong(1, amount);
-            ps.setInt(2, userId);
-            ps.setLong(3, amount);
-            return ps.executeUpdate() > 0;
-        }
-    }
 }

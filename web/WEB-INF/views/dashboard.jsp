@@ -13,30 +13,10 @@
     <title>Tổng quan · Smart Locker</title>
     <script src="${pageContext.request.contextPath}/js/theme.js"></script>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
-    <style>
-        .sync { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-        .sync__state { font-size: 13px; color: var(--text-muted); }
-        .sync__state::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px;
-                               border-radius: 50%; background: var(--border-strong); vertical-align: 1px; }
-        .sync__state[data-state="live"]::before { background: var(--success); }
-        .sync__state[data-state="warn"]::before { background: var(--danger); }
-        .chart-box { position: relative; height: 220px; }
-        .chart-box canvas { width: 100%; height: 100%; }
-        .chart-tip { position: absolute; z-index: 5; padding: 6px 10px; border-radius: var(--radius); pointer-events: none;
-                     background: var(--text); color: var(--surface); font-size: 12px; white-space: nowrap;
-                     transform: translate(-50%, calc(-100% - 10px)); }
-        .chart-empty { display: grid; place-items: center; height: 100%; color: var(--text-muted); font-size: 14px; }
-        .bar-row { display: grid; grid-template-columns: 120px 1fr 40px; align-items: center; gap: 10px; padding: 5px 0; font-size: 14px; }
-        .bar-row__track { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
-        .bar-row__fill { height: 100%; background: var(--primary); }
-        .panel .tablewrap { border: none; border-radius: 0; margin: 0 -18px -18px; }
-        .panel .tablewrap table.grid th:first-child, .panel .tablewrap table.grid td:first-child { padding-left: 18px; }
-        @media (max-width: 640px) { .panel .tablewrap { margin: 0; } }
-    </style>
 </head>
 <body>
 <%@ include file="common/nav.jspf" %>
-<main id="main" class="wrap" data-api="${ctx}/api/dashboard" data-alert-url="${ctx}/AlertController">
+<main id="main" class="wrap" data-api="${ctx}/api/dashboard" data-stats-api="${ctx}/api/dashboard/stats" data-alert-url="${ctx}/AlertController">
 
     <div class="page-head">
         <div>
@@ -95,6 +75,68 @@
         </div>
     </section>
 
+    <%-- ===== Charts: js/dash-charts.js fills the .chart-body boxes from /api/dashboard and /api/dashboard/stats ===== --%>
+    <section class="chart-grid" aria-label="Biểu đồ vận hành">
+        <article class="chart-card">
+            <h3>Tình trạng ngăn tủ</h3>
+            <p class="sub">Toàn hệ thống, theo thời gian thực.</p>
+            <div class="chart-body" id="ch-slots"><p class="chart-empty">Đang tải…</p></div>
+        </article>
+        <article class="chart-card chart-card--8">
+            <h3>Mức dùng theo khu vực</h3>
+            <p class="sub">Bấm tên khu để mở sơ đồ tủ của khu đó.</p>
+            <div class="chart-body" id="ch-areas"><p class="chart-empty">Đang tải…</p></div>
+        </article>
+        <article class="chart-card">
+            <h3>Thiết bị</h3>
+            <p class="sub">Theo nhịp tim gần nhất của từng hộp.</p>
+            <div class="chart-body" id="ch-devices"><p class="chart-empty">Đang tải…</p></div>
+        </article>
+        <article class="chart-card">
+            <h3>Cảnh báo chưa xử lý</h3>
+            <p class="sub">Chia theo loại. <a href="${ctx}/AlertController?status=OPEN">Xem danh sách</a></p>
+            <div class="chart-body" id="ch-alerts"><p class="chart-empty">Đang tải…</p></div>
+        </article>
+        <article class="chart-card" id="card-revenue" hidden>
+            <h3>Doanh thu gửi đồ</h3>
+            <p class="sub" id="ch-revenue-meta">7 ngày gần nhất.</p>
+            <div class="chart-body" id="ch-revenue"><p class="chart-empty">Đang tải…</p></div>
+        </article>
+        <article class="chart-card chart-card--6">
+            <h3>Lượt đặt theo giờ</h3>
+            <p class="sub" id="ch-hourly-meta">Giờ Việt Nam, hôm nay so với hôm qua.</p>
+            <div class="chart-body" id="ch-hourly"><p class="chart-empty">Đang tải…</p></div>
+        </article>
+        <article class="chart-card chart-card--6">
+            <h3>Khung giờ đông nhất</h3>
+            <p class="sub">Lượt đặt theo thứ và giờ trong 4 tuần gần nhất.</p>
+            <div class="chart-body" id="ch-heat"><p class="chart-empty">Đang tải…</p></div>
+        </article>
+    <section class="chart-card chart-card--12">
+        <div class="panel-head">
+            <h3>Cảm biến theo thiết bị</h3>
+            <label class="visually-hidden" for="db-device">Thiết bị</label>
+            <select id="db-device">
+                <c:forEach var="d" items="${devices}">
+                    <option value="${d.deviceId}"><c:out value="${d.deviceCode}"/></option>
+                </c:forEach>
+            </select>
+        </div>
+        <div class="seg" role="group" aria-label="Chỉ số hiển thị" style="margin-bottom:10px">
+            <button type="button" data-mode="a" aria-pressed="true">Thời gian mở cửa (giây)</button>
+            <button type="button" data-mode="b" aria-pressed="false">Thay đổi khối lượng (g)</button>
+        </div>
+        <div class="chart-box">
+            <canvas id="db-chart" role="img" aria-label="Biểu đồ 50 phiên mở tủ gần nhất của thiết bị đã chọn"></canvas>
+            <div class="chart-tip" id="db-tip" hidden></div>
+        </div>
+        <p class="hint" id="db-chart-meta" style="margin-top:8px"></p>
+    </section>
+    </section>
+
+    <%-- ===== The tables, folded: the charts above answer the usual questions ===== --%>
+    <details class="fold">
+        <summary>Bảng chi tiết: khu vực, thiết bị, cảnh báo và phiên mở tủ</summary>
     <div class="grid-2">
         <section class="panel">
             <div class="panel-head">
@@ -116,7 +158,7 @@
             </div>
             <div class="tablewrap">
                 <table class="grid">
-                    <thead><tr><th>Thiết bị</th><th>Vị trí</th><th>Tình trạng</th><th class="r">Heartbeat</th></tr></thead>
+                    <thead><tr><th>Thiết bị</th><th>Vị trí</th><th>Tình trạng</th><th class="r">Lần cuối kết nối</th></tr></thead>
                     <tbody id="db-devices">
                         <c:forEach var="d" items="${devices}">
                             <tr><td><b><c:out value="${d.deviceCode}"/></b></td><td><c:out value="${d.location}"/></td>
@@ -128,6 +170,7 @@
             </div>
         </section>
     </div>
+
 
     <div class="grid-2" style="margin-top:16px">
         <section class="panel">
@@ -141,27 +184,6 @@
                     <tbody id="db-alerts"><tr><td colspan="4" class="empty">Đang tải…</td></tr></tbody>
                 </table>
             </div>
-        </section>
-
-        <section class="panel">
-            <div class="panel-head">
-                <h3>Cảm biến theo thiết bị</h3>
-                <label class="visually-hidden" for="db-device">Thiết bị</label>
-                <select id="db-device">
-                    <c:forEach var="d" items="${devices}">
-                        <option value="${d.deviceId}"><c:out value="${d.deviceCode}"/></option>
-                    </c:forEach>
-                </select>
-            </div>
-            <div class="seg" role="group" aria-label="Chỉ số hiển thị" style="margin-bottom:10px">
-                <button type="button" data-mode="a" aria-pressed="true">Thời gian mở cửa (giây)</button>
-                <button type="button" data-mode="b" aria-pressed="false">Thay đổi khối lượng (g)</button>
-            </div>
-            <div class="chart-box">
-                <canvas id="db-chart" role="img" aria-label="Biểu đồ 50 phiên mở tủ gần nhất của thiết bị đã chọn"></canvas>
-                <div class="chart-tip" id="db-tip" hidden></div>
-            </div>
-            <p class="hint" id="db-chart-meta" style="margin-top:8px"></p>
         </section>
     </div>
 
@@ -197,6 +219,8 @@
         </div>
     </section>
 
+    </details>
+
     <c:if test="${not empty roleLabels}">
         <section class="panel" style="margin-top:16px">
             <h3>Người dùng theo vai trò</h3>
@@ -214,6 +238,7 @@
 </main>
 
 <script src="${ctx}/js/app.js"></script>
+<script src="${ctx}/js/dash-charts.js"></script>
 <script src="${ctx}/js/dashboard.js"></script>
 </body>
 </html>

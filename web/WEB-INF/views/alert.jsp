@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
 <c:set var="activeNav" value="alerts"/>
 <!DOCTYPE html>
@@ -72,6 +73,38 @@
             </section>
         </c:if>
     </div>
+
+    <%-- v3 D5: a booking past due for ESCALATE_HOURS, opened by Deposit_Escalate with its evidence --%>
+    <c:if test="${alert.label == 'OVERDUE_ESCALATED'}">
+        <c:forEach var="ev" items="${alert.evidence}">
+            <c:choose>
+                <c:when test="${ev[0] == 'deposit_id'}"><c:set var="escDeposit" value="${ev[1]}"/></c:when>
+                <c:when test="${ev[0] == 'user'}"><c:set var="escUser" value="${ev[1]}"/></c:when>
+                <c:when test="${ev[0] == 'slot'}"><c:set var="escSlot" value="${ev[1]}"/></c:when>
+                <c:when test="${ev[0] == 'due_at_utc'}"><c:set var="escDue" value="${ev[1]}"/></c:when>
+                <c:when test="${ev[0] == 'hours_late'}"><c:set var="escHours" value="${ev[1]}"/></c:when>
+                <c:when test="${ev[0] == 'overdue_fee'}"><c:set var="escFee" value="${ev[1]}"/></c:when>
+                <c:when test="${ev[0] == 'balance'}"><c:set var="escBalance" value="${ev[1]}"/></c:when>
+            </c:choose>
+        </c:forEach>
+        <section class="panel esc-panel">
+            <h3>Lượt gửi quá hạn đã chuyển xử lý</h3>
+            <p class="hint">Đồ vẫn nằm trong ngăn, tủ đang khóa. Liên hệ người dùng; việc báo cơ quan chức năng (nếu cần) làm ngoài hệ thống.</p>
+            <%-- the UTC text is read as a wall clock in the JVM zone, the same frame as JDBC timestamps, so ui:dt prints it in Vietnam time --%>
+            <c:if test="${not empty escDue}"><c:catch var="escDueBad"><fmt:parseDate var="escDueAt" value="${escDue}" pattern="yyyy-MM-dd HH:mm:ss"/></c:catch></c:if>
+            <dl class="kv">
+                <dt>Lượt gửi</dt><dd><c:out value="#${escDeposit}"/>
+                    <c:if test="${perms.contains('DEPOSIT:READ')}"><c:url var="escLink" value="/DepositController"><c:param name="q" value="${escUser}"/></c:url><a href="<c:out value='${escLink}'/>">Xem lượt gửi</a></c:if></dd>
+                <dt>Người dùng</dt><dd><b><c:out value="${escUser}"/></b></dd>
+                <dt>Ngăn</dt><dd><c:out value="${escSlot}"/></dd>
+                <dt>Hạn trả</dt><dd><ui:dt value="${escDueAt}"/></dd>
+                <dt>Số giờ trễ</dt><dd class="num"><c:out value="${escHours}"/> giờ</dd>
+                <dt>Phụ phí đã thu</dt><dd><span class="money"><fmt:formatNumber value="${escFee}" groupingUsed="true"/> đ</span></dd>
+                <dt>Số tiền đang nợ</dt><dd><span class="money ${escBalance lt 0 ? 'text-danger' : ''}"><fmt:formatNumber value="${escBalance lt 0 ? -escBalance : 0}" groupingUsed="true"/> đ</span>
+                    <span class="muted">(số dư lúc chuyển: <fmt:formatNumber value="${escBalance}" groupingUsed="true"/> đ)</span></dd>
+            </dl>
+        </section>
+    </c:if>
 
     <h3>Bằng chứng</h3>
     <div class="tablewrap">

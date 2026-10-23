@@ -104,6 +104,12 @@ public class TopupController extends HttpServlet {
                     return;
                 }
                 int reqId = Web.intParam(req, "id", 0);
+                TopupRequest own = topupDao.findById(reqId);
+                if (own != null && own.getUserId() == me.getUserId()) {
+                    Web.flash(req.getSession(), "Không tự duyệt yêu cầu nạp tiền của chính mình; nhờ nhân viên khác duyệt.", true);
+                    res.sendRedirect(reviewPage(req));
+                    return;
+                }
                 boolean ok = topupDao.approve(reqId, me.getUserId());
                 if (ok) {
                     TopupRequest tr = topupDao.findById(reqId);

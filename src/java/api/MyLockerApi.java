@@ -49,6 +49,19 @@ public class MyLockerApi extends HttpServlet {
         b.add("started_at", ApiJson.GSON.toJsonTree(d.getStartedAt()));
         b.add("due_at", ApiJson.GSON.toJsonTree(d.getDueAt()));
         b.add("ended_at", ApiJson.GSON.toJsonTree(d.getEndedAt()));
+        // v3: size, the overdue lock and the late fee
+        b.addProperty("size_code", d.getSizeCode());
+        b.addProperty("size_cm", d.getSizeCm());
+        b.addProperty("extend_count", d.getExtendCount());
+        b.addProperty("locked", d.isLocked());
+        b.addProperty("escalated", d.getEscalatedAt() != null);
+        b.addProperty("overdue_hours", d.getOverdueHours());
+        b.addProperty("overdue_fee", d.getOverdueFee());
+        if (d.getOverdueRate() == null) {
+            b.add("overdue_rate", com.google.gson.JsonNull.INSTANCE);
+        } else {
+            b.addProperty("overdue_rate", d.getOverdueRate());
+        }
         return b;
     }
 
@@ -62,14 +75,20 @@ public class MyLockerApi extends HttpServlet {
             JsonObject reply = new JsonObject();
             reply.addProperty("user_id", me.getUserId());
             reply.addProperty("username", me.getUsername());
-            reply.addProperty("balance", new UserDao().getBalance(me.getUserId()));
+            long balance = new UserDao().getBalance(me.getUserId());
+            reply.addProperty("balance", balance);
+            reply.addProperty("debt", balance < 0 ? -balance : 0);   // v3: a late fee may put the wallet below zero
             reply.addProperty("card_deposit_due", !hasCard);
-            reply.addProperty("card_deposit", Pricing.CARD_DEPOSIT);
+            dao.AppConfigDao config = new dao.AppConfigDao();
+            reply.addProperty("card_deposit", config.get("CARD_DEPOSIT", Pricing.CARD_DEPOSIT));
+            reply.addProperty("cancel_min", config.getInt("CANCEL_FREE_MIN", Pricing.CANCEL_FREE_MIN));
+            reply.addProperty("hold_min", config.getInt("HOLD_MIN", Pricing.HOLD_MIN));
             Deposit open = deposits.findOpenByUser(me.getUserId());
             reply.add("booking", open == null ? com.google.gson.JsonNull.INSTANCE : booking(open));
             reply.add("cards", ApiJson.GSON.toJsonTree(auth.cardsOf(me.getUserId())));
             reply.add("fingerprints", ApiJson.GSON.toJsonTree(auth.fingerprintsOf(me.getUserId())));
             JsonArray plans = new JsonArray();
+            java.util.List<dao.AppConfigDao.SlotSize> sizes = config.sizes();
             for (StoragePlan p : new StoragePlanDao().listAll(true)) {
                 JsonObject o = new JsonObject();
                 o.addProperty("plan_id", p.getPlanId());
@@ -78,17 +97,28 @@ public class MyLockerApi extends HttpServlet {
                 o.addProperty("price_pin", Pricing.priceFor(p.getPrice(), "PIN"));
                 o.addProperty("price_card", Pricing.priceFor(p.getPrice(), "CARD"));
                 o.addProperty("price_fingerprint", Pricing.priceFor(p.getPrice(), "FINGERPRINT"));
+                JsonObject prices = new JsonObject();                     // v3: by size, then by open method
+                for (dao.AppConfigDao.SlotSize z : sizes) {
+                    JsonObject byMethod = new JsonObject();
+                    for (String m : DepositDao.OPEN_METHODS) {
+                        byMethod.addProperty(m, Pricing.slotPrice(p.getPrice(), z.pricePct, m));
+                    }
+                    prices.add(z.code, byMethod);
+                }
+                o.add("prices", prices);
                 plans.add(o);
             }
             reply.add("plans", plans);
             JsonArray history = new JsonArray();
             List<Deposit> all = deposits.listByUser(me.getUserId());
+            java.util.Map<Long, Long> refunds = deposits.noShowRefunds(me.getUserId());
             for (int i = 0; i < all.size() && history.size() < 10; i++) {
                 JsonObject h = booking(all.get(i));
                 h.remove("pin_code");                       // a finished booking does not show its code again
                 h.remove("enroll_code");
                 if ("NO_SHOW".equals(all.get(i).getStatus())) {
-                    h.addProperty("refund", Pricing.noShowRefund(all.get(i).getPaidAmount()));
+                    Long refund = refunds.get(all.get(i).getDepositId());
+                    h.addProperty("refund", refund == null ? 0 : refund);
                 }
                 history.add(h);
             }

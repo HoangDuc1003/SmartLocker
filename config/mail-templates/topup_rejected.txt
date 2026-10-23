@@ -1,0 +1,10 @@
+Subject: Smart Locker: yêu cầu nạp {{amount}} chưa được duyệt
+
+Chào {{name}},
+
+Yêu cầu nạp tiền {{amount}} của bạn chưa được duyệt.
+Lý do: {{reason}}
+
+Bạn có thể kiểm tra lại nội dung chuyển khoản rồi tạo yêu cầu mới.
+
+?Nạp tiền: {{topup_url}}

@@ -131,10 +131,10 @@
 
     <div class="tablewrap">
     <table class="grid">
-        <tr><th>#</th><th>Người dùng</th><th>Dãy tủ</th><th>Ngăn</th><th>Gói</th><th>Trạng thái</th><th>Đặt lúc</th><th>Hạn trả</th><th>Thao tác</th></tr>
+        <tr><th>#</th><th>Người dùng</th><th>Dãy tủ</th><th>Ngăn</th><th>Gói</th><th>Trạng thái</th><th>Đặt lúc</th><th>Hạn trả</th><th>Khóa quá hạn</th><th>Chuyển xử lý</th><th>Thao tác</th></tr>
         <c:forEach var="d" items="${items}">
         <c:set var="isOverdue" value="${d.status == 'ACTIVE' and not empty d.dueAt and d.dueAt.time lt now.time}"/>
-        <tr class="${isOverdue ? 'locked' : ''}">
+        <tr class="${isOverdue or (d.locked and d.status == 'ACTIVE') ? 'locked' : ''}">
             <td class="num">${d.depositId}</td>
             <td><c:out value="${d.username}"/></td>
             <td><c:out value="${d.bankCode}"/></td>
@@ -146,6 +146,22 @@
             </td>
             <td><ui:dt value="${d.reservedAt}"/></td>
             <td><ui:dt value="${d.dueAt}"/></td>
+            <%-- v3 D5: locked past due_at + grace (late fee charged so far), handed to the staff after 48 h --%>
+            <td>
+                <c:choose>
+                    <c:when test="${d.locked}">
+                        <ui:dt value="${d.lockedAt}"/>
+                        <span class="muted">${d.overdueHours} giờ, <fmt:formatNumber value="${d.overdueFee}" groupingUsed="true"/> đ</span>
+                    </c:when>
+                    <c:otherwise><span class="muted">–</span></c:otherwise>
+                </c:choose>
+            </td>
+            <td>
+                <c:choose>
+                    <c:when test="${not empty d.escalatedAt}"><span class="tag bad">Đã chuyển</span> <ui:dt value="${d.escalatedAt}"/></c:when>
+                    <c:otherwise><span class="muted">–</span></c:otherwise>
+                </c:choose>
+            </td>
             <td class="ops">
                 <c:if test="${perms.contains('DEPOSIT:WRITE')}">
                     <a href="${ctx}/DepositController?action=edit&amp;id=${d.depositId}">Sửa</a>
@@ -160,7 +176,7 @@
             </td>
         </tr>
         </c:forEach>
-        <c:if test="${empty items}"><tr><td colspan="9" class="empty">Không có lượt gửi nào khớp bộ lọc.</td></tr></c:if>
+        <c:if test="${empty items}"><tr><td colspan="11" class="empty">Không có lượt gửi nào khớp bộ lọc.</td></tr></c:if>
     </table>
     </div>
 

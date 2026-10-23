@@ -130,14 +130,39 @@ public class LockerSlotDao {
         }
     }
 
-    /** Administrator override: changes slot status and cleans up any open bookings if setting to AVAILABLE or MAINTENANCE. */
+    /**
+     * Administrator override: may also free a slot held by a RESERVED booking (the hold is cancelled). A slot with
+     * an ACTIVE booking still holds the user's things, overdue or not, so it is refused (false) like updateStatus.
+     */
     public boolean updateStatusAdmin(int slotId, String status) throws SQLException {
         try (Connection conn = DbContext.getConnection()) {
             conn.setAutoCommit(false);
             try {
+                // lock every open booking of the slot, so a check-in cannot turn the hold ACTIVE between the
+                // refund and the cancel below
+                boolean active = false;
+                try (PreparedStatement ps = conn.prepareStatement("SELECT status FROM Deposit WITH (UPDLOCK, HOLDLOCK) "
+                        + "WHERE slot_id = ? AND status IN ('RESERVED', 'ACTIVE')")) {
+                    ps.setInt(1, slotId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            active |= "ACTIVE".equals(rs.getString(1));
+                        }
+                        if (active != "OCCUPIED".equals(status)) {   // OCCUPIED only with an ACTIVE booking
+                            conn.rollback();
+                            return false;
+                        }
+                    }
+                }
                 if ("AVAILABLE".equals(status) || "MAINTENANCE".equals(status)) {
+                    // the hold is cancelled by staff, not by the user: the money goes back like Deposit_Cancel
+                    try (PreparedStatement ps = conn.prepareStatement("UPDATE u SET u.balance = u.balance + ISNULL(d.paid_amount, 0) "
+                            + "FROM Users u JOIN Deposit d ON d.user_id = u.user_id WHERE d.slot_id = ? AND d.status = 'RESERVED'")) {
+                        ps.setInt(1, slotId);
+                        ps.executeUpdate();
+                    }
                     String cancelSql = "UPDATE Deposit SET status = 'CANCELLED', ended_at = SYSUTCDATETIME() "
-                            + "WHERE slot_id = ? AND status IN ('RESERVED', 'ACTIVE')";
+                            + "WHERE slot_id = ? AND status = 'RESERVED'";
                     try (PreparedStatement ps = conn.prepareStatement(cancelSql)) {
                         ps.setInt(1, slotId);
                         ps.executeUpdate();

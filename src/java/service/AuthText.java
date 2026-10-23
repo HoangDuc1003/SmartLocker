@@ -18,6 +18,16 @@ public final class AuthText {
         return v instanceof Number ? ((Number) v).intValue() : 0;
     }
 
+    private static long lng(Map<String, Object> row, String key) {
+        Object v = row.get(key);
+        return v instanceof Number ? ((Number) v).longValue() : 0;
+    }
+
+    /** 14700 -> "14.700 đ" */
+    public static String vnd(long amount) {
+        return String.format(java.util.Locale.ROOT, "%,d", amount).replace(',', '.') + " đ";
+    }
+
     private static String str(Map<String, Object> row, String key) {
         Object v = row.get(key);
         return v == null ? "" : v.toString();
@@ -49,6 +59,8 @@ public final class AuthText {
                 return "Luot dat\nda het han";
             case "ACCOUNT_LOCKED":
                 return "Tai khoan\ndang bi khoa";
+            case "OVERDUE_UNPAID":
+                return "Qua han tra tu\nNap tien de mo";
             default:
                 return "Tu choi";
         }
@@ -84,6 +96,9 @@ public final class AuthText {
                 return "Lượt đặt đã quá thời gian giữ chỗ.";
             case "ACCOUNT_LOCKED":
                 return "Tài khoản đang bị khóa.";
+            case "OVERDUE_UNPAID":
+                return "Tủ đã quá hạn và đang bị khóa. Bạn còn nợ " + vnd(lng(row, "debt"))
+                        + ". Hãy nạp tiền vào ví rồi mở lại.";
             case "DEVICE_OFFLINE":
                 return "Hộp đang mất kết nối nên chưa mở được. Hãy nhập mật mã trên bàn phím của hộp.";
             case "METHOD_MISMATCH":

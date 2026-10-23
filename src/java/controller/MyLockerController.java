@@ -1,7 +1,9 @@
 package controller;
 
+import dao.AppConfigDao;
 import dao.DepositDao;
 import dao.DeviceAuthDao;
+import dao.UserDao;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -36,15 +38,13 @@ public class MyLockerController extends HttpServlet {
             DeviceAuthDao auth = new DeviceAuthDao();
             List<Deposit> open = new ArrayList<>();
             List<Deposit> history = new ArrayList<>();
-            Map<Long, Long> refunds = new HashMap<>();          // NO_SHOW rows: what came back to the wallet (90%)
-            for (Deposit d : new DepositDao().listByUser(me.getUserId())) {
+            DepositDao deposits = new DepositDao();
+            Map<Long, Long> refunds = deposits.noShowRefunds(me.getUserId());   // NO_SHOW rows: what came back
+            for (Deposit d : deposits.listByUser(me.getUserId())) {
                 if ("RESERVED".equals(d.getStatus()) || "ACTIVE".equals(d.getStatus())) {
                     open.add(d);
                 } else if (history.size() < HISTORY_MAX) {
                     history.add(d);
-                    if ("NO_SHOW".equals(d.getStatus())) {
-                        refunds.put(d.getDepositId(), Pricing.noShowRefund(d.getPaidAmount()));
-                    }
                 }
             }
             req.setAttribute("open", open);
@@ -53,7 +53,22 @@ public class MyLockerController extends HttpServlet {
             req.setAttribute("cards", auth.cardsOf(me.getUserId()));
             req.setAttribute("fingerprints", auth.fingerprintsOf(me.getUserId()));
             req.setAttribute("cardDepositDue", !auth.hasRegisteredCard(me.getUserId()));
-            req.setAttribute("cardDeposit", Pricing.CARD_DEPOSIT);
+            // v3: the rules the page counts down (cancel 5 minutes, hold 15), the wallet that may be in debt,
+            // and the size of the open booking (measures, late fee of one hour)
+            AppConfigDao config = new AppConfigDao();
+            req.setAttribute("cardDeposit", config.get("CARD_DEPOSIT", Pricing.CARD_DEPOSIT));
+            req.setAttribute("cancelMin", config.getInt("CANCEL_FREE_MIN", Pricing.CANCEL_FREE_MIN));
+            req.setAttribute("holdMin", config.getInt("HOLD_MIN", Pricing.HOLD_MIN));
+            req.setAttribute("escalateHours", config.getInt("ESCALATE_HOURS", Pricing.ESCALATE_HOURS));
+            UserDao users = new UserDao();
+            req.setAttribute("balance", users.getBalance(me.getUserId()));
+            req.setAttribute("email", users.getEmail(me.getUserId()));
+            req.setAttribute("mailEnabled", service.MailService.of(getServletContext()).isEnabled());
+            Map<String, AppConfigDao.SlotSize> sizes = new HashMap<>();
+            for (AppConfigDao.SlotSize z : config.sizes()) {
+                sizes.put(z.code, z);
+            }
+            req.setAttribute("sizes", sizes);
             req.getRequestDispatcher(VIEW).forward(req, res);
         } catch (SQLException e) {
             throw new ServletException(e);
@@ -73,6 +88,24 @@ public class MyLockerController extends HttpServlet {
                 new DeviceAuthDao().deleteFingerprint(Web.intParam(req, "fpId", 0), me.getUserId());
                 Web.flash(req.getSession(), "Đã xóa vân tay. Hộp sẽ xóa mẫu trong lần kết nối tới.", false);
                 anchor = "#fingerprints";
+            } else if ("setEmail".equals(action)) {
+                // v3: the address for the due reminders, saved as typed (the user's choice); empty turns them off
+                String email = Web.trimmed(req, "email");
+                anchor = "#reminder";
+                if (!email.isEmpty() && !Web.isEmail(email)) {
+                    Web.flash(req.getSession(), "Email không hợp lệ", true);
+                } else {
+                    try {
+                        new UserDao().setEmail(me.getUserId(), email);
+                        Web.flash(req.getSession(), email.isEmpty() ? "Đã tắt email nhắc hạn."
+                                : "Đã lưu email nhận nhắc hạn: " + email, false);
+                    } catch (SQLException dup) {
+                        if (dup.getErrorCode() != 2601 && dup.getErrorCode() != 2627) {
+                            throw dup;
+                        }
+                        Web.flash(req.getSession(), "Email này đã được một tài khoản khác dùng", true);
+                    }
+                }
             } else {
                 Web.flash(req.getSession(), "Thao tác không hợp lệ", true);
             }

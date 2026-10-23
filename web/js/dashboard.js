@@ -114,7 +114,11 @@
 
     function renderSessions(list) {
         var tb = $('db-sessions');
-        if (!list || !list.length) return;
+        if (!list || !list.length) {
+            tb.innerHTML = '<tr><td colspan="' + (tb.closest('table').querySelectorAll('thead th').length || 1) +
+                '" class="muted">Chưa có lượt mở tủ nào.</td></tr>';
+            return;
+        }
         tb.innerHTML = list.map(function (s) {
             var door = Number(s.door_open_sec) || 0;
             var w = Number(s.weight_delta_g) || 0;
@@ -241,6 +245,7 @@
                 if (d.deviceHealth) renderDevices(d.deviceHealth);
                 if (d.recentAlerts) renderAlerts(d.recentAlerts);
                 if (d.recentSessions) renderSessions(d.recentSessions);
+                if (window.DashCharts) window.DashCharts.snapshot(d);
                 setState('live', 'Đã kết nối');
                 setText('db-time', 'Cập nhật lúc ' + new Date().toLocaleTimeString('vi-VN') + '.');
             })

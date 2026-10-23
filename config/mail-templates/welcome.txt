@@ -1,0 +1,11 @@
+Subject: Chào mừng {{name}} đến với Smart Locker
+
+Chào {{name}},
+
+Tài khoản {{username}} của bạn đã được tạo. Từ giờ bạn có thể:
+- Xem các tủ trống gần bạn trên bản đồ, đặt ngăn theo giờ.
+- Mở tủ bằng mật mã, thẻ hoặc vân tay.
+- Nhận email nhắc 15 phút trước khi hết hạn gửi đồ (nếu bạn đã lưu email).
+
+?Xem bản đồ tủ: {{map_url}}
+?Tủ của tôi: {{my_locker_url}}

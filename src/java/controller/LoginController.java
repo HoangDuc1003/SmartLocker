@@ -47,6 +47,10 @@ public class LoginController extends HttpServlet {
                 error = "Tài khoản này không thể đăng nhập";
             }
             if (error != null) {
+                if (Web.wantsJson(req)) {
+                    Web.writeJson(res, HttpServletResponse.SC_UNAUTHORIZED, error);
+                    return;
+                }
                 req.setAttribute("error", error);
                 req.setAttribute("username", username);
                 req.getRequestDispatcher(VIEW).forward(req, res);
@@ -57,6 +61,10 @@ public class LoginController extends HttpServlet {
             req.getSession().setAttribute(Web.LOGIN_USER, user);
             new AuditDao().append(user.getUserId(), "LOGIN", "USER", user.getUserId(), null);
 
+            if (Web.wantsJson(req)) {   // the popup on the map page stays where it is
+                Web.writeJson(res, HttpServletResponse.SC_OK, null);
+                return;
+            }
             Set<String> keys = new PermissionDao().loadKeys(user.getUserId());
             String home = keys.contains("ALERT:READ") ? "/DashboardController" : "/LockerMapController";
             res.sendRedirect(req.getContextPath() + home);

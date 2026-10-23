@@ -27,7 +27,9 @@ $scripts = @(
     "04_wallet_booking.sql",
     "05_fix_reviewer_feedback.sql",
     "06_demo_v2.sql",
-    "07_vietnamese_data.sql"
+    "07_vietnamese_data.sql",
+    "09_v3.sql",
+    "10_campus_vnu.sql"
 )
 
 foreach ($s in $scripts) {
@@ -37,7 +39,7 @@ foreach ($s in $scripts) {
         exit 1
     }
     Write-Host "`n--> Executing $s ..." -ForegroundColor Green
-    & sqlcmd -S $Server -U $User -P $Password -f 65001 -b -i "$filePath"
+    & sqlcmd -S $Server -U $User -P $Password -I -f 65001 -b -i "$filePath"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Error executing $s! Aborting." -ForegroundColor Red
         exit $LASTEXITCODE

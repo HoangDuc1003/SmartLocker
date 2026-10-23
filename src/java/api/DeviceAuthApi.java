@@ -17,6 +17,7 @@ import service.AuthText;
  * Request: {"method":"PIN","pin":"482913"} | {"method":"CARD","card_uid":"04A1B2C3"} | {"method":"FINGERPRINT","sensor_slot":7}
  * Reply:   {"result":"UNLOCK","phase":"CHECK_IN","deposit_id":120,"slot_code":"A04","open_sec":8,"message":"Moi cat do\nNgan A04"}
  *          {"result":"DENY","reason":"WRONG_CODE","attempts_left":3,"retry_after_sec":0,"message":"Sai ma\nCon 3 lan"}
+ *          v3: {"result":"DENY","reason":"OVERDUE_UNPAID","deposit_id":120,"debt":9700,"overdue_fee":14700,...}
  * HTTP 200 for every decision, 400 for a bad body, 401 for a bad key (SecurityFilter), 500 when the database failed.
  */
 @WebServlet(name = "DeviceAuthApi", urlPatterns = {"/api/device/auth"})
@@ -35,10 +36,18 @@ public class DeviceAuthApi extends HttpServlet {
             ApiJson.copyInt(row, "deposit_id", reply);
             reply.addProperty("slot_code", (String) row.get("slot_code"));
             reply.addProperty("open_sec", AuthText.OPEN_SEC);
+            if ("PICKUP".equals(row.get("phase"))) {
+                ApiJson.copyInt(row, "overdue_fee", reply);     // v3: the late fee of the booking, 0 when on time
+            }
         } else {
             reply.addProperty("reason", (String) row.get("reason"));
             ApiJson.copyInt(row, "attempts_left", reply);
             ApiJson.copyInt(row, "retry_after_sec", reply);
+            if ("OVERDUE_UNPAID".equals(row.get("reason"))) {  // v3: what the owner still owes
+                ApiJson.copyInt(row, "deposit_id", reply);
+                ApiJson.copyInt(row, "debt", reply);
+                ApiJson.copyInt(row, "overdue_fee", reply);
+            }
         }
         reply.addProperty("message", message);
         return reply;

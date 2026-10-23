@@ -112,7 +112,8 @@
             <td><ui:status value="${s.status}"/></td>
             <td class="ops">
                 <c:if test="${perms.contains('SLOTSTATUS:WRITE')}">
-                    <form method="post" action="${ctx}/LockerSlotController">
+                    <form method="post" action="${ctx}/LockerSlotController" data-confirm-danger
+                          data-confirm="Đổi trạng thái ngăn <c:out value="${s.slotCode}"/>? Thao tác được ghi vào nhật ký.">
                         <input type="hidden" name="action" value="status">
                         <input type="hidden" name="id" value="${s.slotId}">
                         <select name="status" aria-label="Trạng thái mới của ngăn <c:out value="${s.slotCode}"/>" required>

@@ -8,6 +8,8 @@ public class LockerArea {
     private String name;
     private String location;
     private boolean active;
+    private Double latitude;    // null = not placed on the map yet
+    private Double longitude;
     private int slotCount;   // computed
     private int userCount;   // computed
 
@@ -21,6 +23,10 @@ public class LockerArea {
     public void setLocation(String location) { this.location = location; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
     public int getSlotCount() { return slotCount; }
     public void setSlotCount(int slotCount) { this.slotCount = slotCount; }
     public int getUserCount() { return userCount; }

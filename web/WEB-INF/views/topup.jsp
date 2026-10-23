@@ -11,17 +11,6 @@
     <title>Nạp tiền · Smart Locker</title>
     <script src="${pageContext.request.contextPath}/js/theme.js"></script>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
-    <style>
-        .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
-        .presets .btn[aria-pressed="true"] { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
-        .qr-img { display: block; width: 100%; max-width: 280px; margin: 8px auto 16px; border-radius: var(--radius);
-                  border: 1px solid var(--border); background: #fff; }
-        .qr-empty { display: grid; place-items: center; min-height: 260px; text-align: center; color: var(--text-muted);
-                    border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); padding: 24px; }
-        .qr-empty-title { margin: 0 0 6px; font-weight: 600; color: var(--text); }
-        .qr-empty-text { margin: 0; }
-        .transfer-code { font-size: 15px; font-weight: 700; color: var(--danger); background: var(--danger-soft); }
-    </style>
 </head>
 <body>
 <%@ include file="common/nav.jspf" %>

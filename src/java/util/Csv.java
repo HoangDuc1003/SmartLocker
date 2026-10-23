@@ -8,12 +8,19 @@ import javax.servlet.http.HttpServletResponse;
 /** Writes a list of rows as a CSV download. Excel opens it correctly because of the BOM. */
 public class Csv {
 
-    /** Quotes a value when it holds a comma, a quote or a line break. */
+    /**
+     * Quotes a value when it holds a comma, a quote or a line break. Text that Excel would run as a formula
+     * (starts with =, +, -, @, tab or CR and is not a plain number, e.g. a full name typed by a user) gets a
+     * leading apostrophe.
+     */
     public static String cell(Object value) {
         if (value == null) {
             return "";
         }
         String s = String.valueOf(value);
+        if (!s.isEmpty() && "=+-@\t\r".indexOf(s.charAt(0)) >= 0 && !s.matches("-?\\d+([.,]\\d+)?")) {
+            s = "'" + s;
+        }
         if (s.indexOf(',') < 0 && s.indexOf('"') < 0 && s.indexOf('\n') < 0 && s.indexOf('\r') < 0) {
             return s;
         }

@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import model.Deposit;
 import model.StoragePlan;
 import model.User;
+import service.AuthText;
 import util.Csv;
 import util.Web;
 
@@ -90,7 +91,7 @@ public class DepositController extends HttpServlet {
                 blank.setStatus("ACTIVE");
                 showForm(req, res, blank, true);
             } else if ("edit".equals(action)) {
-                long id = Web.intParam(req, "id", 0);
+                long id = Web.longParam(req, "id", 0);
                 Deposit item = dao.findById(id);
                 if (item == null) {
                     Web.flash(req.getSession(), "Không tìm thấy lượt gửi", true);
@@ -114,7 +115,7 @@ public class DepositController extends HttpServlet {
         String action = Web.trimmed(req, "action");
         try {
             if ("delete".equals(action)) {
-                long id = Web.intParam(req, "id", 0);
+                long id = Web.longParam(req, "id", 0);
                 Deposit old = dao.findById(id);
                 String reason = dao.delete(id);
                 if (reason == null && old != null) {
@@ -154,15 +155,18 @@ public class DepositController extends HttpServlet {
                     new AuditDao().append(me.getUserId(), "CREATE", "DEPOSIT", newId, "Walk-in deposit");
                     Web.flash(req.getSession(), "Đã tạo lượt gửi #" + newId, false);
                 } catch (SQLException e) {
-                    if (e.getErrorCode() < 50000) {
+                    boolean openBooking = (e.getErrorCode() == 2601 || e.getErrorCode() == 2627)
+                            && String.valueOf(e.getMessage()).contains("UX_Deposit_user_open");
+                    if (e.getErrorCode() < 50000 && !openBooking) {
                         throw e;   // not a business rule: the outer handler turns it into a server error
                     }
-                    req.setAttribute("error", Web.sqlMessage(e));
+                    req.setAttribute("error", openBooking
+                            ? "Người dùng này đang có một lượt gửi chưa kết thúc." : Web.sqlMessage(e));
                     showForm(req, res, d, true);
                     return;
                 }
             } else if ("update".equals(action)) {
-                long id = Web.intParam(req, "id", 0);
+                long id = Web.longParam(req, "id", 0);
                 int planId = Web.intParam(req, "planId", 0);
                 String status = Web.trimmed(req, "status");
                 Deposit d = dao.findById(id);
@@ -189,9 +193,26 @@ public class DepositController extends HttpServlet {
                         return;
                     }
                 }
-                dao.update(d);
-                new AuditDao().append(me.getUserId(), "UPDATE", "DEPOSIT", id, "Status: " + status);
-                Web.flash(req.getSession(), "Đã cập nhật lượt gửi #" + id, false);
+                if (!DepositDao.STATUSES.contains(status)) {
+                    Web.flash(req.getSession(), "Trạng thái không hợp lệ", true);
+                    res.sendRedirect("DepositController?action=edit&id=" + id);
+                    return;
+                }
+                long refund;
+                try {
+                    refund = dao.update(d);
+                } catch (SQLException e) {
+                    if (e.getErrorCode() < 50000) {
+                        throw e;
+                    }
+                    Web.flash(req.getSession(), Web.sqlMessage(e), true);
+                    res.sendRedirect("DepositController?action=edit&id=" + id);
+                    return;
+                }
+                new AuditDao().append(me.getUserId(), "UPDATE", "DEPOSIT", id,
+                        "Status: " + status + (refund > 0 ? ", refund " + refund : ""));
+                Web.flash(req.getSession(), "Đã cập nhật lượt gửi #" + id
+                        + (refund > 0 ? ", hoàn " + AuthText.vnd(refund) + " vào ví người dùng" : ""), false);
             } else {
                 Web.flash(req.getSession(), "Thao tác không hợp lệ", true);
             }

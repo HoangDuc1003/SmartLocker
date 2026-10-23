@@ -1,0 +1,13 @@
+# Copy to config/mail.local.properties (git ignores *.local.properties) and fill in.
+# Gmail: turn on 2-step verification, then create an app password at https://myaccount.google.com/apppasswords
+mail.host=smtp.gmail.com
+# 465 = SSL, 587 = STARTTLS
+mail.port=465
+mail.user=your.account@gmail.com
+# the 16 letters of the app password, without spaces
+mail.password=abcdabcdabcdabcd
+mail.from=your.account@gmail.com
+mail.from_name=Smart Locker
+# public address of the app for the link in the message: the tunnel address + /SmartLocker
+# (the GitHub Pages link only redirects to the home page, it does not serve /MyLockerController); may be empty
+app.base_url=https://<tunnel>.trycloudflare.com/SmartLocker

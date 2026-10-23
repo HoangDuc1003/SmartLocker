@@ -227,7 +227,15 @@
                 </div>
             </c:when>
             <c:otherwise>
-                <a class="btn btn--block" href="${ctx}/LoginController">Đăng nhập</a>
+                <%-- a visitor on the open map page: the buttons open the popup of js/auth-modal.js, the links work without it --%>
+                <a class="btn btn--block" href="${ctx}/LoginController" data-auth-open="login">Đăng nhập</a>
+                <div class="side-actions">
+                    <a class="btn ghost btn--sm" href="${ctx}/RegisterController" data-auth-open="register">Đăng ký</a>
+                    <button type="button" class="icon-btn theme-toggle" aria-label="Đổi nền sáng / tối" title="Đổi nền sáng / tối">
+                        <svg class="ico ico-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+                        <svg class="ico ico-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+                    </button>
+                </div>
             </c:otherwise>
         </c:choose>
     </div>

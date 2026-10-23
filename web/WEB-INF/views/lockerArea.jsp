@@ -43,6 +43,23 @@
         <input type="text" id="location" name="location" value="<c:out value='${item.location}'/>"
                maxlength="120" placeholder="Ví dụ: Tòa A, tầng 1">
 
+        <fieldset class="field-group">
+            <legend>Vị trí trên bản đồ</legend>
+            <div class="form-row">
+                <div>
+                    <label for="latitude">Vĩ độ</label>
+                    <input type="text" id="latitude" name="latitude" inputmode="decimal" autocomplete="off"
+                           value="<c:out value='${item.latitude}'/>" placeholder="10.841100" aria-describedby="coordHint">
+                </div>
+                <div>
+                    <label for="longitude">Kinh độ</label>
+                    <input type="text" id="longitude" name="longitude" inputmode="decimal" autocomplete="off"
+                           value="<c:out value='${item.longitude}'/>" placeholder="106.809900" aria-describedby="coordHint">
+                </div>
+            </div>
+            <p class="hint" id="coordHint">Mở Google Maps, bấm chuột phải đúng chỗ đặt tủ rồi bấm dòng số đầu tiên để chép "vĩ độ, kinh độ". Để trống nếu chưa muốn hiện khu này trên bản đồ.</p>
+        </fieldset>
+
         <label class="check">
             <input type="checkbox" name="active" value="true" ${item.active or isNew ? 'checked' : ''}>
             Đang hoạt động (cho phép đặt tủ và gắn dãy tủ)

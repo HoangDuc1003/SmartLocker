@@ -37,23 +37,20 @@ public class LockerMapDao {
         // four queries: areas, plans, banks of the area, slots of the area; the JSON matches the frontend
         JsonObject root = new JsonObject();
         try (Connection conn = DbContext.getConnection()) {
-            // Ensure any expired reservations or overdue bookings are freed before rendering
+            // Expired reservations are freed before rendering. Overdue bookings are never freed (v3):
+            // LockerMonitor locks and charges them, the slot stays OCCUPIED until the owner picks up.
             try (java.sql.CallableStatement cs = conn.prepareCall("{call Deposit_ExpireNoShow}")) {
-                cs.execute();
-            } catch (SQLException ignored) {}
-            try (java.sql.CallableStatement cs = conn.prepareCall("{call Deposit_ExpireOverdue}")) {
                 cs.execute();
             } catch (SQLException ignored) {}
 
             // the menu: one row per area that has slots
             JsonArray areas = new JsonArray();
             String chosen = null;
-            String areaSql = "SELECT a.area_code, a.name, a.location, COUNT(m.slot_id) AS slot_count, "
+            String areaSql = "SELECT a.area_code, a.name, a.location, a.latitude, a.longitude, COUNT(m.slot_id) AS slot_count, "
                     + "SUM(CASE WHEN m.display_status = N'AVAILABLE' THEN 1 ELSE 0 END) AS available, "
-                    + "SUM(CASE WHEN m.display_status = N'ALERT' THEN 1 ELSE 0 END) AS alerts, "
-                    + "MAX(CASE WHEN m.device_id IS NOT NULL THEN 1 ELSE 0 END) AS live "
+                    + "SUM(CASE WHEN m.display_status = N'ALERT' THEN 1 ELSE 0 END) AS alerts "
                     + "FROM LockerArea a LEFT JOIN v_LockerSlotMap m ON m.area_id = a.area_id "
-                    + "WHERE a.is_active = 1 GROUP BY a.area_code, a.name, a.location "
+                    + "WHERE a.is_active = 1 GROUP BY a.area_code, a.name, a.location, a.latitude, a.longitude "
                     + "HAVING COUNT(m.slot_id) > 0 ORDER BY a.area_code";
             try (PreparedStatement ps = conn.prepareStatement(areaSql); ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -61,10 +58,19 @@ public class LockerMapDao {
                     a.addProperty("area_code", rs.getString("area_code"));
                     a.addProperty("name", rs.getString("name"));
                     put(a, "location", rs.getString("location"));
+                    // v3: fake coordinates until the real ones are entered (sql/09_v3.sql); null when unknown
+                    java.math.BigDecimal lat = rs.getBigDecimal("latitude");
+                    java.math.BigDecimal lng = rs.getBigDecimal("longitude");
+                    if (lat != null && lng != null) {
+                        a.addProperty("latitude", lat.doubleValue());
+                        a.addProperty("longitude", lng.doubleValue());
+                    } else {
+                        a.add("latitude", com.google.gson.JsonNull.INSTANCE);
+                        a.add("longitude", com.google.gson.JsonNull.INSTANCE);
+                    }
                     a.addProperty("slot_count", rs.getInt("slot_count"));
                     a.addProperty("available", rs.getInt("available"));
                     a.addProperty("alert", staff ? rs.getInt("alerts") : 0);
-                    a.addProperty("live", true);
                     areas.add(a);
                     String code = rs.getString("area_code");
                     if (chosen == null || code.equalsIgnoreCase(areaCode)) {
@@ -88,7 +94,8 @@ public class LockerMapDao {
                 }
             }
 
-            // the booking form needs the plans
+            // the booking form needs the plans, priced for every size (v3: size factor, then the card 5% off)
+            java.util.List<AppConfigDao.SlotSize> sizes = new AppConfigDao().sizes();
             JsonArray plans = new JsonArray();
             try (PreparedStatement ps = conn.prepareStatement(
                     "SELECT plan_id, plan_name, duration_min, price FROM StoragePlan WHERE is_active = 1 ORDER BY duration_min");
@@ -100,6 +107,15 @@ public class LockerMapDao {
                     p.addProperty("duration_min", rs.getInt(3));
                     p.addProperty("price", rs.getInt(4));
                     p.addProperty("price_card", util.Pricing.priceFor(rs.getInt(4), "CARD"));   // v2: card 5% off
+                    JsonObject prices = new JsonObject();
+                    for (AppConfigDao.SlotSize z : sizes) {
+                        JsonObject byMethod = new JsonObject();
+                        for (String m : DepositDao.OPEN_METHODS) {
+                            byMethod.addProperty(m, util.Pricing.slotPrice(rs.getInt(4), z.pricePct, m));
+                        }
+                        prices.add(z.code, byMethod);
+                    }
+                    p.add("prices", prices);
                     plans.add(p);
                 }
             }
@@ -119,9 +135,14 @@ public class LockerMapDao {
                         b.addProperty("bank_id", rs.getInt("bank_id"));
                         b.addProperty("bank_code", rs.getString("bank_code"));
                         b.addProperty("name", rs.getString("name"));
-                        b.addProperty("live", true);
+                        int deviceId = rs.getInt("device_id");
+                        if (rs.wasNull() || !staff) {          // an internal id, only the ADMIN reconnect form needs it
+                            b.add("device_id", com.google.gson.JsonNull.INSTANCE);
+                        } else {
+                            b.addProperty("device_id", deviceId);
+                        }
                         String devStatus = rs.getString("device_status");
-                        put(b, "device_status", devStatus != null ? devStatus : "ACTIVE");
+                        put(b, "device_status", devStatus != null ? devStatus : "NONE");   // NONE: no box fitted yet
                         b.addProperty("rows", rs.getInt("door_rows"));
                         put(b, "device_code", rs.getString("device_code"));
                         JsonArray slots = new JsonArray();
@@ -135,6 +156,8 @@ public class LockerMapDao {
 
             // the slots: status from the view, the booking on it, the open alert and ticket
             String slotSql = "SELECT m.slot_id, m.slot_code, m.size_code, m.size_cm, m.bank_id, m.display_status, "
+                    + "m.is_locked, m.is_escalated, d.overdue_fee, d.overdue_hours, "
+                    + "CONVERT(VARCHAR(27), d.reserved_at, 121) AS reserved_at, "
                     + "d.deposit_id, d.user_id, u.username, CONVERT(VARCHAR(27), d.hold_until, 121) AS hold_until, "
                     + "CONVERT(VARCHAR(27), d.due_at, 121) AS due_at, al.alert_id, al.label AS alert_label, tk.ticket_id "
                     + "FROM v_LockerSlotMap m "
@@ -174,6 +197,14 @@ public class LockerMapDao {
                             s.add("deposit_id", com.google.gson.JsonNull.INSTANCE);
                         }
                         put(s, "hold_until", iso(rs.getString("hold_until")));
+                        // v3: the overdue lock is public (the door is closed for everyone); the money only for owner and staff
+                        s.addProperty("locked", rs.getInt("is_locked") == 1);
+                        s.addProperty("escalated", staff && rs.getInt("is_escalated") == 1);
+                        if (hasDeposit && (mine || staff)) {
+                            put(s, "reserved_at", iso(rs.getString("reserved_at")));
+                            s.addProperty("overdue_fee", rs.getLong("overdue_fee"));
+                            s.addProperty("overdue_hours", rs.getInt("overdue_hours"));
+                        }
                         put(s, "due_at", iso(rs.getString("due_at")));
                         int alertId = rs.getInt("alert_id");
                         if (staff && !rs.wasNull()) {

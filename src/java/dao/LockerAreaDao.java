@@ -14,7 +14,7 @@ public class LockerAreaDao {
 
     /** Every area with its slot count and user count, ordered by code. The list page and the drop-downs use it. */
     public List<LockerArea> listAll() throws SQLException {
-        String sql = "SELECT a.area_id, a.area_code, a.name, a.location, a.is_active, "
+        String sql = "SELECT a.area_id, a.area_code, a.name, a.location, a.is_active, a.latitude, a.longitude, "
                 + "(SELECT COUNT(*) FROM LockerBank b JOIN LockerSlot s ON s.bank_id = b.bank_id WHERE b.area_id = a.area_id) AS slot_count, "
                 + "(SELECT COUNT(*) FROM Users u WHERE u.area_id = a.area_id) AS user_count "
                 + "FROM LockerArea a ORDER BY a.area_code";
@@ -29,6 +29,8 @@ public class LockerAreaDao {
                 a.setName(rs.getString("name"));
                 a.setLocation(rs.getString("location"));
                 a.setActive(rs.getBoolean("is_active"));
+                a.setLatitude(coord(rs, "latitude"));
+                a.setLongitude(coord(rs, "longitude"));
                 a.setSlotCount(rs.getInt("slot_count"));
                 a.setUserCount(rs.getInt("user_count"));
                 list.add(a);
@@ -37,8 +39,21 @@ public class LockerAreaDao {
         return list;
     }
 
+    private static Double coord(ResultSet rs, String column) throws SQLException {
+        java.math.BigDecimal v = rs.getBigDecimal(column);
+        return v == null ? null : v.doubleValue();
+    }
+
+    private static void bindCoord(PreparedStatement ps, int idx, Double value) throws SQLException {
+        if (value == null) {
+            ps.setNull(idx, java.sql.Types.DECIMAL);
+        } else {
+            ps.setBigDecimal(idx, java.math.BigDecimal.valueOf(value).setScale(6, java.math.RoundingMode.HALF_UP));
+        }
+    }
+
     public List<LockerArea> search(String keyword, int page, int size) throws SQLException {
-        String sql = "SELECT a.area_id, a.area_code, a.name, a.location, a.is_active, "
+        String sql = "SELECT a.area_id, a.area_code, a.name, a.location, a.is_active, a.latitude, a.longitude, "
                 + "(SELECT COUNT(*) FROM LockerBank b JOIN LockerSlot s ON s.bank_id = b.bank_id WHERE b.area_id = a.area_id) AS slot_count, "
                 + "(SELECT COUNT(*) FROM Users u WHERE u.area_id = a.area_id) AS user_count "
                 + "FROM LockerArea a ";
@@ -66,6 +81,8 @@ public class LockerAreaDao {
                     a.setName(rs.getString("name"));
                     a.setLocation(rs.getString("location"));
                     a.setActive(rs.getBoolean("is_active"));
+                a.setLatitude(coord(rs, "latitude"));
+                a.setLongitude(coord(rs, "longitude"));
                     a.setSlotCount(rs.getInt("slot_count"));
                     a.setUserCount(rs.getInt("user_count"));
                     list.add(a);
@@ -95,7 +112,7 @@ public class LockerAreaDao {
     }
 
     public LockerArea findById(int areaId) throws SQLException {
-        String sql = "SELECT a.area_id, a.area_code, a.name, a.location, a.is_active, "
+        String sql = "SELECT a.area_id, a.area_code, a.name, a.location, a.is_active, a.latitude, a.longitude, "
                 + "(SELECT COUNT(*) FROM LockerBank b JOIN LockerSlot s ON s.bank_id = b.bank_id WHERE b.area_id = a.area_id) AS slot_count, "
                 + "(SELECT COUNT(*) FROM Users u WHERE u.area_id = a.area_id) AS user_count "
                 + "FROM LockerArea a WHERE a.area_id = ?";
@@ -109,6 +126,8 @@ public class LockerAreaDao {
                     a.setName(rs.getString("name"));
                     a.setLocation(rs.getString("location"));
                     a.setActive(rs.getBoolean("is_active"));
+                a.setLatitude(coord(rs, "latitude"));
+                a.setLongitude(coord(rs, "longitude"));
                     a.setSlotCount(rs.getInt("slot_count"));
                     a.setUserCount(rs.getInt("user_count"));
                     return a;
@@ -119,13 +138,15 @@ public class LockerAreaDao {
     }
 
     public int insert(LockerArea a) throws SQLException {
-        String sql = "INSERT INTO LockerArea (area_code, name, location, is_active) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO LockerArea (area_code, name, location, is_active, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, a.getAreaCode());
             ps.setString(2, a.getName());
             ps.setString(3, a.getLocation());
             ps.setBoolean(4, a.isActive());
+            bindCoord(ps, 5, a.getLatitude());
+            bindCoord(ps, 6, a.getLongitude());
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 return keys.next() ? keys.getInt(1) : -1;
@@ -134,13 +155,15 @@ public class LockerAreaDao {
     }
 
     public boolean update(LockerArea a) throws SQLException {
-        String sql = "UPDATE LockerArea SET area_code = ?, name = ?, location = ?, is_active = ? WHERE area_id = ?";
+        String sql = "UPDATE LockerArea SET area_code = ?, name = ?, location = ?, is_active = ?, latitude = ?, longitude = ? WHERE area_id = ?";
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, a.getAreaCode());
             ps.setString(2, a.getName());
             ps.setString(3, a.getLocation());
             ps.setBoolean(4, a.isActive());
-            ps.setInt(5, a.getAreaId());
+            bindCoord(ps, 5, a.getLatitude());
+            bindCoord(ps, 6, a.getLongitude());
+            ps.setInt(7, a.getAreaId());
             return ps.executeUpdate() == 1;
         }
     }

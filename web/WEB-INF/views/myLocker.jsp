@@ -24,6 +24,8 @@
             <p class="sub">Lượt đặt đang mở, cách mở tủ, thẻ từ, vân tay và lịch sử gửi đồ.</p>
         </div>
         <div class="ml-actions">
+            <span class="ml-wallet ${balance lt 0 ? 'is-debt' : ''}">Số dư ví
+                <b class="money"><fmt:formatNumber value="${balance}" groupingUsed="true"/> đ</b></span>
             <a class="btn ghost" href="${ctx}/LockerMapController">Đặt ngăn mới</a>
             <a class="btn ghost" href="${ctx}/TopupController">Nạp tiền</a>
         </div>
@@ -40,25 +42,66 @@
             </c:choose>
             <c:set var="isOverdue" value="${d.status == 'ACTIVE' and not empty d.dueAt and d.dueAt.time lt now.time}"/>
             <c:set var="enrollExpired" value="${not empty d.enrollExpires and d.enrollExpires.time lt now.time}"/>
+            <%-- v3: size of the slot, one-hour price (extension) and late fee; the fee fixed at booking time wins --%>
+            <c:set var="sz" value="${sizes[d.sizeCode]}"/>
+            <c:set var="lateRate" value="${not empty d.overdueRate ? d.overdueRate : (not empty sz ? sz.overdueRate : 0)}"/>
+            <c:set var="canCancel" value="${d.status == 'RESERVED' and not empty d.reservedAt and d.reservedAt.time + cancelMin * 60000 gt now.time}"/>
             <article class="panel ml-booking" aria-labelledby="bk${d.depositId}">
                 <div class="ml-booking__head">
                     <h3 id="bk${d.depositId}">Ngăn <c:out value="${d.slotCode}"/> <span class="muted"><c:out value="${d.bankCode}"/></span></h3>
                     <span>
                         <ui:status value="${d.status}" kind="deposit"/>
                         <c:if test="${isOverdue}"><ui:status value="OVERDUE"/></c:if>
+                        <c:if test="${d.locked}"><span class="tag bad">Đang khóa</span></c:if>
                     </span>
                 </div>
+
+                <%-- v3 D5: overdue lock, late fee, debt and the way out --%>
+                <c:if test="${d.locked}">
+                    <div class="ml-overdue" role="status">
+                        <p class="ml-overdue__title">
+                            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
+                            Đã quá hạn, tủ đang khóa</p>
+                        <dl class="kv">
+                            <dt>Khóa lúc</dt><dd><ui:dt value="${d.lockedAt}"/></dd>
+                            <dt>Giờ trễ đã tính</dt><dd class="num">${d.overdueHours} giờ</dd>
+                            <dt>Phụ phí đã thu</dt><dd><span class="money"><fmt:formatNumber value="${d.overdueFee}" groupingUsed="true"/> đ</span></dd>
+                            <dt>Phụ phí mỗi giờ</dt><dd><span class="money"><fmt:formatNumber value="${lateRate}" groupingUsed="true"/> đ</span></dd>
+                            <dt>Số tiền đang nợ</dt><dd><span class="money ${balance lt 0 ? 'text-danger' : ''}"><fmt:formatNumber value="${balance lt 0 ? -balance : 0}" groupingUsed="true"/> đ</span></dd>
+                        </dl>
+                        <p class="hint">
+                            <c:choose>
+                                <c:when test="${balance lt 0}">Hãy nạp tiền để số dư từ 0 đ trở lên, rồi mở tủ để lấy đồ. Mỗi giờ trễ thêm vẫn bị tính phụ phí.</c:when>
+                                <c:otherwise>Số dư đã đủ: mở tủ để lấy đồ ngay. Mỗi giờ trễ thêm vẫn bị tính phụ phí.</c:otherwise>
+                            </c:choose>
+                            Không gia hạn được khi tủ đã khóa.</p>
+                        <c:if test="${not empty d.escalatedAt}">
+                            <p class="ml-overdue__escalated">Lượt gửi đã quá hạn hơn ${escalateHours} giờ nên đã được chuyển cho nhân viên xử lý
+                                (lúc <ui:dt value="${d.escalatedAt}"/>). Hãy liên hệ quầy để nhận lại đồ.</p>
+                        </c:if>
+                        <div><a class="btn ${balance lt 0 ? '' : 'ghost'}" href="${ctx}/TopupController">Nạp tiền</a></div>
+                    </div>
+                </c:if>
+                <c:if test="${isOverdue and not d.locked}">
+                    <p class="notice">Đã quá hạn trả. Tủ sẽ khóa sau thời gian ân hạn ${d.graceMin} phút; khi đó mỗi giờ trễ
+                        tính phụ phí <fmt:formatNumber value="${lateRate}" groupingUsed="true"/> đ, kể từ hạn trả.</p>
+                </c:if>
 
                 <c:if test="${d.status == 'RESERVED' and not empty d.holdUntil}">
                     <div>
                         <div class="muted">Giữ chỗ đến <ui:dt value="${d.holdUntil}"/></div>
                         <div class="countdown-big" data-countdown="<c:out value='${d.holdUntil}'/>" data-late-text="Đã hết thời gian giữ chỗ" aria-live="off">&nbsp;</div>
-                        <p class="hint">Không đến trong thời gian giữ chỗ sẽ mất 10% (hoàn 90% vào ví).</p>
+                        <p class="hint">Giữ chỗ ${holdMin} phút từ lúc đặt. Không đến trong thời gian này sẽ mất toàn bộ số tiền đã trả.</p>
                     </div>
                 </c:if>
 
                 <dl class="kv">
                     <dt>Hộp tủ</dt><dd><code><c:out value="${empty d.deviceCode ? '–' : d.deviceCode}"/></code></dd>
+                    <dt>Cỡ ngăn</dt><dd><c:out value="${d.sizeCode}"/>
+                        <c:if test="${not empty d.sizeCm}"><span class="muted"><c:out value="${d.sizeCm}"/> cm</span></c:if></dd>
+                    <c:if test="${lateRate gt 0}">
+                        <dt>Phụ phí trễ hạn</dt><dd><span class="money"><fmt:formatNumber value="${lateRate}" groupingUsed="true"/> đ</span> <span class="muted">mỗi giờ</span></dd>
+                    </c:if>
                     <dt>Gói gửi</dt><dd><c:out value="${d.planName}"/></dd>
                     <dt>Đã trả</dt><dd><span class="money"><fmt:formatNumber value="${d.paidAmount}" groupingUsed="true"/> đ</span></dd>
                     <dt>Cách mở</dt><dd><c:out value="${methodLabel}"/></dd>
@@ -131,23 +174,36 @@
 
                 <div class="ml-actions">
                     <c:choose>
-                        <c:when test="${d.status == 'RESERVED'}">
-                            <form method="post" action="${ctx}/BookingController" data-confirm="Hủy lượt đặt ngăn <c:out value='${d.slotCode}'/>? Số tiền đã trả được hoàn vào ví." data-confirm-ok="Hủy đặt" data-confirm-danger>
+                        <c:when test="${d.status == 'RESERVED' and canCancel}">
+                            <%-- v3 D4: free cancel only in the first minutes; my-locker.js removes the form when the time is up --%>
+                            <form method="post" action="${ctx}/BookingController" data-cancel-from="<c:out value='${d.reservedAt}'/>" data-cancel-min="${cancelMin}"
+                                  data-confirm="Hủy lượt đặt ngăn <c:out value='${d.slotCode}'/>? Số tiền đã trả được hoàn đủ vào ví." data-confirm-ok="Hủy đặt" data-confirm-danger>
                                 <input type="hidden" name="action" value="cancel">
                                 <input type="hidden" name="depositId" value="${d.depositId}">
                                 <input type="hidden" name="back" value="list">
                                 <button type="submit" class="ghost">Hủy đặt</button>
+                                <span class="muted">Còn hủy được: <b class="num" data-cancel-left>&nbsp;</b></span>
                             </form>
                         </c:when>
-                        <c:when test="${d.extendCount < 3}">
-                            <form method="post" action="${ctx}/BookingController">
+                        <c:when test="${d.status == 'RESERVED'}">
+                            <span class="muted">Đã quá ${cancelMin} phút kể từ lúc đặt nên không hủy được nữa.</span>
+                        </c:when>
+                        <c:when test="${d.locked}">
+                            <span class="muted">Không gia hạn được khi tủ đã khóa vì quá hạn.</span>
+                        </c:when>
+                        <c:when test="${d.extendCount < 3 and not empty sz}">
+                            <%-- v3 D10: CEILING(minutes / 60) x the hour price of the size, taken at once; my-locker.js keeps
+                                 data-confirm in step with the chosen option --%>
+                            <form method="post" action="${ctx}/BookingController" data-extend-form
+                                  data-confirm="Gia hạn thêm 1 giờ? Ví bị trừ ngay <fmt:formatNumber value="${sz.hourRate}" groupingUsed="true"/> đ." data-confirm-ok="Gia hạn">
                                 <input type="hidden" name="action" value="extend">
                                 <input type="hidden" name="depositId" value="${d.depositId}">
                                 <input type="hidden" name="back" value="list">
                                 <select name="minutes" aria-label="Thời gian gia hạn">
-                                    <option value="30">+30 phút</option>
-                                    <option value="60" selected>+60 phút</option>
-                                    <option value="120">+120 phút</option>
+                                    <option value="30" data-price="${sz.hourRate}">+30 phút · <fmt:formatNumber value="${sz.hourRate}" groupingUsed="true"/> đ</option>
+                                    <option value="60" data-price="${sz.hourRate}" selected>+1 giờ · <fmt:formatNumber value="${sz.hourRate}" groupingUsed="true"/> đ</option>
+                                    <option value="120" data-price="${sz.hourRate * 2}">+2 giờ · <fmt:formatNumber value="${sz.hourRate * 2}" groupingUsed="true"/> đ</option>
+                                    <option value="240" data-price="${sz.hourRate * 4}">+4 giờ · <fmt:formatNumber value="${sz.hourRate * 4}" groupingUsed="true"/> đ</option>
                                 </select>
                                 <button type="submit" class="ghost">Gia hạn (${d.extendCount}/3)</button>
                             </form>
@@ -160,6 +216,41 @@
         <c:if test="${empty open}">
             <div class="panel"><p class="ml-empty">Bạn chưa có lượt đặt nào đang mở. Mở <a href="${ctx}/LockerMapController">sơ đồ tủ</a> để chọn một ngăn trống.</p></div>
         </c:if>
+    </section>
+
+    <%-- v3 D8: e-mail for the due reminder, saved as typed (also set at registration). --%>
+    <section class="ml-section" id="reminder" aria-labelledby="hReminder">
+        <h3 id="hReminder">Email nhắc hạn</h3>
+        <div class="panel ml-reminder">
+            <p class="hint">Trước khi tới hạn trả 15 phút, hệ thống gửi một email nhắc kèm ngăn, khu và phụ phí mỗi giờ nếu trễ.</p>
+            <c:if test="${not mailEnabled}">
+                <p class="notice">Máy chủ chưa được cấu hình gửi email nên tạm thời chưa gửi được nhắc hạn. Bạn vẫn lưu được địa chỉ.</p>
+            </c:if>
+            <p class="ml-reminder__now">
+                <c:choose>
+                    <c:when test="${not empty email}">Đang nhận nhắc hạn tại <b><c:out value="${email}"/></b>.</c:when>
+                    <c:otherwise>Bạn chưa đăng ký email nhắc hạn.</c:otherwise>
+                </c:choose>
+            </p>
+            <div class="ml-reminder__forms">
+                <form method="post" action="${ctx}/MyLockerController" class="ml-inline-form">
+                    <input type="hidden" name="action" value="setEmail">
+                    <label for="reminderEmail"><c:out value="${empty email ? 'Email nhận nhắc hạn' : 'Đổi sang email khác'}"/></label>
+                    <div class="ml-inline-form__row">
+                        <input type="email" id="reminderEmail" name="email" required maxlength="150" autocomplete="email"
+                               value="<c:out value='${email}'/>">
+                        <button type="submit">Lưu email</button>
+                    </div>
+                </form>
+                <c:if test="${not empty email}">
+                    <form method="post" action="${ctx}/MyLockerController" data-confirm="Tắt email nhắc hạn? Bạn sẽ không nhận thư nhắc trước hạn trả nữa." data-confirm-ok="Tắt nhắc hạn">
+                        <input type="hidden" name="action" value="setEmail">
+                        <input type="hidden" name="email" value="">
+                        <button type="submit" class="link">Tắt email nhắc hạn</button>
+                    </form>
+                </c:if>
+            </div>
+        </div>
     </section>
 
     <%-- 2. cards --%>
@@ -238,7 +329,12 @@
                         <c:when test="${d.paidAmount == 0}"><span class="tag">Miễn phí</span></c:when>
                         <c:when test="${d.status == 'NO_SHOW'}">
                             <span class="money"><fmt:formatNumber value="${d.paidAmount}" groupingUsed="true"/> đ</span>
-                            <span class="muted">hoàn <fmt:formatNumber value="${refunds[d.depositId]}" groupingUsed="true"/> đ (giữ 10%)</span>
+                            <c:set var="refund" value="${refunds[d.depositId]}"/>
+                            <c:choose>
+                                <c:when test="${empty refund}"></c:when>
+                                <c:when test="${refund == 0}"><span class="muted">không đến, không hoàn</span></c:when>
+                                <c:otherwise><span class="muted">đã hoàn <fmt:formatNumber value="${refund}" groupingUsed="true"/> đ</span></c:otherwise>
+                            </c:choose>
                         </c:when>
                         <c:when test="${d.status == 'CANCELLED'}">
                             <span class="muted">Đã hoàn <span class="money"><fmt:formatNumber value="${d.paidAmount}" groupingUsed="true"/> đ</span></span>

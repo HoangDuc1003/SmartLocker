@@ -1,5 +1,6 @@
 package controller;
 
+import dao.AppConfigDao;
 import dao.AuditDao;
 import dao.StoragePlanDao;
 import java.io.IOException;
@@ -122,6 +123,7 @@ public class StoragePlanController extends HttpServlet {
                 int id = Web.intParam(req, "id", 0);
                 StoragePlan old = dao.findById(id);
                 String reason = dao.delete(id);
+                AppConfigDao.clear();   // the hour and late-fee rates come from the shortest plan
                 if (reason == null && old != null) {
                     new AuditDao().append(me.getUserId(), "DELETE", "STORAGEPLAN", id, old.getPlanName());
                     Web.flash(req.getSession(), "Đã xóa gói " + old.getPlanName(), false);
@@ -149,6 +151,7 @@ public class StoragePlanController extends HttpServlet {
                 new AuditDao().append(me.getUserId(), "UPDATE", "STORAGEPLAN", p.getPlanId(), p.getPlanName());
                 Web.flash(req.getSession(), "Đã lưu gói " + p.getPlanName(), false);
             }
+            AppConfigDao.clear();
             res.sendRedirect("StoragePlanController");
         } catch (SQLException e) {
             throw new ServletException(e);
