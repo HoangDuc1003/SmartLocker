@@ -25,7 +25,7 @@ public class Deposit {
     private String enrollCode;   // 6 digits while a card or finger still has to be enrolled at the box
     private java.sql.Timestamp enrollExpires;
     private String deviceCode;   // joined: the box of the slot
-    // v3 (sql/09_v3.sql)
+    // v3 (sql/03_v2_v3.sql)
     private String sizeCode;     // joined: S, M or L
     private String sizeCm;       // joined: 20x20x20 ...
     private int graceMin;        // joined from the plan: the slot locks after due_at + grace

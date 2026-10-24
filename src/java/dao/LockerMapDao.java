@@ -58,7 +58,7 @@ public class LockerMapDao {
                     a.addProperty("area_code", rs.getString("area_code"));
                     a.addProperty("name", rs.getString("name"));
                     put(a, "location", rs.getString("location"));
-                    // v3: fake coordinates until the real ones are entered (sql/09_v3.sql); null when unknown
+                    // v3: fake coordinates until the real ones are entered (sql/03_v2_v3.sql); null when unknown
                     java.math.BigDecimal lat = rs.getBigDecimal("latitude");
                     java.math.BigDecimal lng = rs.getBigDecimal("longitude");
                     if (lat != null && lng != null) {

@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "4f0a8f0d-8ff5-5422-b1d4-8824242352f7",
     "name": "SmartLocker v2",
-    "description": "API thiết bị v2 (docs/spec/smart-locker-v2.md, mục 4 và 6) và thư mục v3 (docs/spec/smart-locker-v3.md, mục 7.3). Trước khi chạy: sql/test_v2_setup.sql rồi sql/test_v3_setup.sql. Postman Runner: chạy cả collection theo thứ tự. Newman: newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<khóa LOCKER-01>. Khóa LOCKER-01 nằm trong config/device-keys.local.properties (scripts/set-device-key.ps1).",
+    "description": "API thiết bị v2 (docs/spec/smart-locker-v2.md, mục 4 và 6) và thư mục v3 (docs/spec/smart-locker-v3.md, mục 7.3). Trước khi chạy: sql/test_setup.sql. Postman Runner: chạy cả collection theo thứ tự. Newman: newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<khóa LOCKER-01>. Khóa LOCKER-01 nằm trong config/device-keys.local.properties (scripts/set-device-key.ps1).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -656,7 +656,7 @@
                       "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
                       "pm.environment.set('slot_code', slot.slot_code);",
-                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "// plans are looked up by duration_min, not by name (03_v2_v3.sql renames them)",
                       "const plan = map.plans.find(p => p.duration_min === 120);",
                       "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
                       "pm.environment.set('plan_id', plan.plan_id);",
@@ -1182,7 +1182,7 @@
                       "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
                       "pm.environment.set('slot_code', slot.slot_code);",
-                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "// plans are looked up by duration_min, not by name (03_v2_v3.sql renames them)",
                       "const plan = map.plans.find(p => p.duration_min === 120);",
                       "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
                       "pm.environment.set('plan_id', plan.plan_id);",
@@ -2077,7 +2077,7 @@
                     "exec": [
                       "const me = pm.response.json();",
                       "pm.test('card deposit due', () => pm.expect(me.card_deposit_due).to.be.true);",
-                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "// plans are looked up by duration_min, not by name (03_v2_v3.sql renames them)",
                       "const plan = me.plans.find(p => p.duration_min === 120);",
                       "pm.environment.set('plan_id', plan.plan_id);",
                       "pm.test('card price 5% off rounded up to 100 VND', () => pm.expect(plan.price_card).to.eql(Math.ceil(plan.price_pin * 0.95 / 100) * 100));",
@@ -2119,7 +2119,7 @@
                       "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
                       "pm.environment.set('slot_code', slot.slot_code);",
-                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "// plans are looked up by duration_min, not by name (03_v2_v3.sql renames them)",
                       "const plan = map.plans.find(p => p.duration_min === 120);",
                       "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
                       "pm.environment.set('plan_id', plan.plan_id);",
@@ -2683,7 +2683,7 @@
                       "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
                       "pm.environment.set('slot_code', slot.slot_code);",
-                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "// plans are looked up by duration_min, not by name (03_v2_v3.sql renames them)",
                       "const plan = map.plans.find(p => p.duration_min === 120);",
                       "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
                       "pm.environment.set('plan_id', plan.plan_id);",
@@ -3342,7 +3342,7 @@
                       "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
                       "pm.environment.set('slot_code', slot.slot_code);",
-                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "// plans are looked up by duration_min, not by name (03_v2_v3.sql renames them)",
                       "const plan = map.plans.find(p => p.duration_min === 120);",
                       "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
                       "pm.environment.set('plan_id', plan.plan_id);",
@@ -3698,7 +3698,7 @@
                       "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
                       "pm.environment.set('slot_code', slot.slot_code);",
-                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "// plans are looked up by duration_min, not by name (03_v2_v3.sql renames them)",
                       "const plan = map.plans.find(p => p.duration_min === 120);",
                       "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
                       "pm.environment.set('plan_id', plan.plan_id);",
@@ -4048,7 +4048,7 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "// sql/test_v2_setup.sql made a booking whose hold time is over; LockerMonitor expires it within 15 s",
+                      "// sql/test_setup.sql made a booking whose hold time is over; LockerMonitor expires it within 15 s",
                       "const tries = pm.environment.get('noshow_tries') || 0;",
                       "if (tries > 0) { setTimeout(() => {}, 5000); }"
                     ]
@@ -4073,7 +4073,7 @@
                       "        pm.expect(h.status).to.eql('NO_SHOW');",
                       "        pm.expect(h.refund).to.eql(0);",
                       "    });",
-                      "    // test_v2_setup.sql: 200,000 VND, then the booking price (A15 is size M since 09_v3.sql: 6,500 VND)",
+                      "    // test_setup.sql: 200,000 VND, then the booking price (A15 is size M since 03_v2_v3.sql: 6,500 VND)",
                       "    pm.test('wallet: 200,000 - price, no refund', () => pm.expect(me.balance).to.eql(200000 - h.paid_amount));",
                       "}"
                     ]
@@ -5018,7 +5018,7 @@
                       "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
                       "pm.environment.set('slot_code', slot.slot_code);",
-                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "// plans are looked up by duration_min, not by name (03_v2_v3.sql renames them)",
                       "const plan = map.plans.find(p => p.duration_min === 120);",
                       "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
                       "pm.environment.set('plan_id', plan.plan_id);",
@@ -5309,15 +5309,15 @@
           ]
         }
       ],
-      "description": "Spec 6.2. Chạy sql/test_v2_setup.sql ngay trước mỗi lần chạy. Thứ tự: 9 cần thẻ của 3, 8 báo mất thẻ đó; 5 chạy gần cuối vì khóa hộp 2 phút (có bước chờ 122 giây); 7 dùng mật mã đã kết thúc của 1."
+      "description": "Spec 6.2. Chạy sql/test_setup.sql ngay trước mỗi lần chạy. Thứ tự: 9 cần thẻ của 3, 8 báo mất thẻ đó; 5 chạy gần cuối vì khóa hộp 2 phút (có bước chờ 122 giây); 7 dùng mật mã đã kết thúc của 1."
     },
     {
       "name": "v3",
-      "description": "Kịch bản 11–17 của docs/spec/smart-locker-v3.md mục 7.3. Trước khi chạy: sql/test_v2_setup.sql rồi sql/test_v3_setup.sql. Thứ tự chạy 11, 16, 17, 12, 13, 14, 15 (16 và 17 dùng lượt bị khóa của 11 trước khi 12 nạp tiền và lấy đồ). Không có bước đoán sai mã.",
+      "description": "Kịch bản 11–17 của docs/spec/smart-locker-v3.md mục 7.3. Trước khi chạy: sql/test_setup.sql. Thứ tự chạy 11, 16, 17, 12, 13, 14, 15 (16 và 17 dùng lượt bị khóa của 11 trước khi 12 nạp tiền và lấy đồ). Không có bước đoán sai mã.",
       "item": [
         {
           "name": "11. Quá hạn: hộp từ chối OVERDUE_UNPAID, có số nợ",
-          "description": "sql/test_v3_setup.sql: v3overdue có lượt ACTIVE quá hạn 130 phút, ví 5.000 đ. Device_Authorize tự khóa và tính phụ phí khi nhập mã.",
+          "description": "sql/test_setup.sql: v3overdue có lượt ACTIVE quá hạn 130 phút, ví 5.000 đ. Device_Authorize tự khóa và tính phụ phí khi nhập mã.",
           "item": [
             {
               "name": "Heartbeat",
@@ -5465,7 +5465,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt ACTIVE đã quá hạn (test_v3_setup.sql)",
+              "name": "Tủ của tôi: lượt ACTIVE đã quá hạn (test_setup.sql)",
               "event": [
                 {
                   "listen": "test",
@@ -5530,8 +5530,8 @@
                       "    pm.expect(r.overdue_fee % rate).to.eql(0);",
                       "    pm.expect(r.overdue_fee / rate).to.be.at.least(3);",
                       "});",
-                      "// test_v3_setup.sql set the wallet to 5,000 VND; LockerMonitor may already have charged it before this request",
-                      "pm.test('debt = fee - the 5,000 VND wallet of test_v3_setup.sql', () => pm.expect(r.debt).to.eql(r.overdue_fee - 5000));",
+                      "// test_setup.sql set the wallet to 5,000 VND; LockerMonitor may already have charged it before this request",
+                      "pm.test('debt = fee - the 5,000 VND wallet of test_setup.sql', () => pm.expect(r.debt).to.eql(r.overdue_fee - 5000));",
                       "pm.test('OLED text of the spec', () => pm.expect(r.message).to.eql('Qua han tra tu\\nNap tien de mo'));",
                       "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
                       "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
@@ -6066,7 +6066,7 @@
                       "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
                       "pm.environment.set('slot_code', slot.slot_code);",
-                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "// plans are looked up by duration_min, not by name (03_v2_v3.sql renames them)",
                       "const plan = map.plans.find(p => p.duration_min === 120);",
                       "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
                       "pm.environment.set('plan_id', plan.plan_id);",
@@ -7055,7 +7055,7 @@
         },
         {
           "name": "13. Hủy trong 5 phút hoàn đủ, sau 5 phút bị từ chối (50047)",
-          "description": "Phần đầu: v2pin đặt và hủy ngay. Phần sau: v3late có lượt đặt từ 6 phút trước (test_v3_setup.sql), hủy bị từ chối; cuối cùng mở và lấy đồ để trả ngăn.",
+          "description": "Phần đầu: v2pin đặt và hủy ngay. Phần sau: v3late có lượt đặt từ 6 phút trước (test_setup.sql), hủy bị từ chối; cuối cùng mở và lấy đồ để trả ngăn.",
           "item": [
             {
               "name": "Heartbeat",
@@ -7219,7 +7219,7 @@
                       "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
                       "pm.environment.set('slot_code', slot.slot_code);",
-                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "// plans are looked up by duration_min, not by name (03_v2_v3.sql renames them)",
                       "const plan = map.plans.find(p => p.duration_min === 120);",
                       "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
                       "pm.environment.set('plan_id', plan.plan_id);",
@@ -7552,7 +7552,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đặt 6 phút trước (test_v3_setup.sql)",
+              "name": "Tủ của tôi: lượt đặt 6 phút trước (test_setup.sql)",
               "event": [
                 {
                   "listen": "test",
@@ -7833,7 +7833,7 @@
         },
         {
           "name": "14. Đặt khi số dư dưới mức đệm 10.000 đ (50046)",
-          "description": "v3poor: 12.000 đ (test_v2_setup.sql). Giá S 2 giờ 5.000 đ, sau khi đặt còn 7.000 đ < 10.000 đ.",
+          "description": "v3poor: 12.000 đ (test_setup.sql). Giá S 2 giờ 5.000 đ, sau khi đặt còn 7.000 đ < 10.000 đ.",
           "item": [
             {
               "name": "Heartbeat",
@@ -7997,7 +7997,7 @@
                       "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
                       "pm.environment.set('slot_id', slot.slot_id);",
                       "pm.environment.set('slot_code', slot.slot_code);",
-                      "// plans are looked up by duration_min, not by name (07_vietnamese_data.sql renames them)",
+                      "// plans are looked up by duration_min, not by name (03_v2_v3.sql renames them)",
                       "const plan = map.plans.find(p => p.duration_min === 120);",
                       "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S.PIN).to.be.a('number'));",
                       "pm.environment.set('plan_id', plan.plan_id);",
@@ -8184,7 +8184,7 @@
         },
         {
           "name": "15. Chuyển xử lý sau 48 giờ: escalated, cảnh báo OVERDUE_ESCALATED, audit OVERDUE_ESCALATE",
-          "description": "sql/test_v3_setup.sql: v3esc có lượt ACTIVE quá hạn 49 giờ. LockerMonitor (15 giây) khóa, thu phụ phí, gọi Deposit_Escalate.",
+          "description": "sql/test_setup.sql: v3esc có lượt ACTIVE quá hạn 49 giờ. LockerMonitor (15 giây) khóa, thu phụ phí, gọi Deposit_Escalate.",
           "item": [
             {
               "name": "Đăng xuất",
@@ -8292,7 +8292,7 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "// test_v3_setup.sql moved due_at 49 hours back; LockerMonitor locks, charges and escalates within 15 s",
+                      "// test_setup.sql moved due_at 49 hours back; LockerMonitor locks, charges and escalates within 15 s",
                       "const tries = pm.environment.get('esc_tries') || 0;",
                       "if (tries > 0) { setTimeout(() => {}, 5000); }"
                     ]

@@ -2,7 +2,7 @@ package util;
 
 /**
  * The v3 money rules, for showing them and for the unit tests. The database applies the same formulas
- * (dbo.fn_SizePrice, fn_SlotPrice, fn_HourRate, fn_OverdueRate, Deposit_* procedures, sql/09_v3.sql);
+ * (dbo.fn_SizePrice, fn_SlotPrice, fn_HourRate, fn_OverdueRate, Deposit_* procedures, sql/03_v2_v3.sql);
  * PricingDatabaseIntegrationTest compares the two. The numbers themselves (5 minutes, 10,000 VND...) live in
  * the AppConfig table; the constants below are only the defaults the tests use.
  *

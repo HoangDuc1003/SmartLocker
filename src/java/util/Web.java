@@ -95,13 +95,13 @@ public class Web {
             {"The storage plan has an invalid price", "Gói gửi đồ có giá không hợp lệ"},
             {"Ticket not found or already closed", "Không tìm thấy phiếu hoặc phiếu đã đóng"},
             {"Alert not found or already resolved", "Không tìm thấy cảnh báo hoặc cảnh báo đã xử lý"},
-            // v2 (sql/06_demo_v2.sql)
+            // v2 (sql/03_v2_v3.sql)
             {"Insufficient balance for the price and the 30,000 VND card deposit", "Số dư không đủ cho giá gói và tiền cọc thẻ 30.000 đ. Hãy nạp thêm tiền."},
             {"Choose how to open the locker: PIN, card or fingerprint", "Hãy chọn cách mở tủ: mật mã, thẻ từ hoặc vân tay"},
             {"Could not create a unique code, try again", "Không tạo được mã, hãy thử lại"},
             {"This booking has nothing to enroll", "Lượt đặt này không cần đăng ký thẻ hoặc vân tay"},
             {"Fingerprint not found or not yours", "Không tìm thấy vân tay hoặc vân tay không phải của bạn"},
-            // v3 (sql/09_v3.sql)
+            // v3 (sql/03_v2_v3.sql)
             {"After booking at least 10,000 VND must stay in the wallet", "Sau khi đặt, ví phải còn ít nhất 10.000 đ để dự phòng phụ phí quá hạn. Hãy nạp thêm tiền."},
             {"The 5 minutes to cancel are over", "Đã quá 5 phút kể từ lúc đặt nên không hủy được nữa."},
             {"The booking is overdue and locked, it cannot be extended", "Lượt gửi đã quá hạn và tủ đang bị khóa nên không gia hạn được. Hãy nạp tiền và tới lấy đồ."},

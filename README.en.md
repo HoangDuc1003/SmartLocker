@@ -90,7 +90,7 @@ SmartLocker/
 ├── firmware/               # Arduino sketch for the ESP32 box
 ├── lib/                    # JDBC, Gson, jBCrypt, Weka (packaged); TestNG (tests only)
 ├── scripts/                # build-dev.sh, test.sh, set-device-key.ps1, update-tunnel-link.ps1
-├── sql/                    # 01..07, 09_v3, 10_campus_vnu, and test setup scripts
+├── sql/                    # 01_schema, 02_data_v1, 03_v2_v3 and the test_* scripts
 ├── src/java/
 │   ├── api/                # JSON APIs: devices, phone, dashboard, locker map, My Locker
 │   ├── controller/         # MVC2 servlets, one per page
@@ -168,7 +168,7 @@ cd SmartLocker
 
 Requirements: JDK 8, Apache Tomcat 9, SQL Server 2019/2022 with `sqlcmd`, NetBeans (Ant web project).
 
-The quick way runs every script in the right order (`01` to `07`, then `09` and `10`; `01` drops and recreates the database):
+The quick way runs the three scripts in order (`01_schema.sql` drops and recreates the database):
 
 ```powershell
 .\run_demo_db.bat
@@ -178,6 +178,8 @@ Or one file at a time (always with `-I`):
 
 ```powershell
 sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\01_schema.sql
+sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\02_data_v1.sql
+sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\03_v2_v3.sql
 ```
 
 Then give the real box its own secret key (kept in `config/device-keys.local.properties`, which is not committed):
@@ -210,8 +212,7 @@ sh scripts/test.sh
 End-to-end API tests with Postman and newman. Reset the test accounts first, because every wrong guess at a box counts toward its lockout:
 
 ```bash
-sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql/test_v2_setup.sql
-sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql/test_v3_setup.sql
+sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql/test_setup.sql
 newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<LOCKER-01 key>
 ```
 

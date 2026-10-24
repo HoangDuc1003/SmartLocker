@@ -116,7 +116,7 @@ SmartLocker/
 ├── firmware/               # Mã Arduino cho hộp ESP32
 ├── lib/                    # JDBC, Gson, jBCrypt, Weka (đóng gói vào WAR); TestNG, JCommander, SLF4J (chỉ để test)
 ├── scripts/                # build-dev.sh, test.sh, mail-preview.sh, set-device-key.ps1, update-tunnel-link.ps1
-├── sql/                    # 01..07, 09_v3, 10_campus_vnu và các script dựng dữ liệu test
+├── sql/                    # 01_schema, 02_data_v1, 03_v2_v3 và các script test_*
 ├── src/java/
 │   ├── api/                # API JSON: thiết bị, điện thoại, dashboard, sơ đồ tủ, Tủ của tôi
 │   ├── controller/         # Servlet MVC2, mỗi trang một controller
@@ -202,27 +202,26 @@ Cách nhanh: chạy `run_demo_db.bat` (gọi `run_demo_db.ps1`, chạy 01 → 07
 .\run_demo_db.bat
 ```
 
-Hoặc từng file theo **đúng thứ tự** (luôn có `-I`):
+Hoặc chạy 3 file theo **đúng thứ tự** (luôn có `-I`):
 
 ```powershell
 sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\01_schema.sql
+sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\02_data_v1.sql
+sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\03_v2_v3.sql
 ```
 
 | File | Nội dung |
 |---|---|
 | `sql/01_schema.sql` | Database, bảng, view, trigger, `Audit_Append`, quyền cơ bản |
-| `sql/02_sample_data.sql` | Dữ liệu mẫu: tài khoản, khu, dãy, ngăn, lịch sử |
-| `sql/03_scenarios.sql` | Procedure của các tình huống (hộp mất kết nối, mở từ xa, mất thẻ, đặt tủ...) |
-| `sql/04_wallet_booking.sql` | Ví, nạp tiền, quyền TOPUP và SLOTSTATUS |
-| `sql/05_fix_reviewer_feedback.sql` | Sửa quyền TECHNICIAN |
-| `sql/06_demo_v2.sql` | v2: cách mở, mật mã, vân tay, khóa nhập sai, `Device_Authorize`, `Enroll_*` |
-| `sql/07_vietnamese_data.sql` | Đổi tên gói, khu, dãy, vị trí hộp trong dữ liệu mẫu sang tiếng Việt |
-| `sql/09_v3.sql` | v3: `AppConfig` (mọi con số), `SlotSize` (cỡ S/M/L), cột quá hạn của `Deposit`, procedure giá theo cỡ, hủy 5 phút, quá hạn, chuyển xử lý, email nhắc hạn |
-| `sql/10_campus_vnu.sql` | Các khu trong khuôn viên ĐHQG-HCM và quanh FPTU HCM (toạ độ **gần đúng**, sửa trong trang Khu vực), thêm khu `DOMB` (KTX khu B, chưa gắn hộp) |
+| `sql/02_data_v1.sql` | Dữ liệu mẫu (tài khoản, khu, dãy, ngăn, lịch sử), procedure của các tình huống (hộp mất kết nối, mở từ xa, mất thẻ, đặt tủ...), ví và nạp tiền, sửa quyền TECHNICIAN |
+| `sql/03_v2_v3.sql` | v2 (cách mở, mật mã, vân tay, khóa nhập sai, `Device_Authorize`, `Enroll_*`), tên tiếng Việt cho dữ liệu mẫu, v3 (`AppConfig`, cỡ S/M/L, giá theo cỡ, hủy 5 phút, quá hạn, email nhắc hạn), các khu trong ĐHQG-HCM (toạ độ **gần đúng**, sửa trong trang Khu vực) và khu `DOMB` |
+| `sql/test_setup.sql` | Tài khoản và lượt gửi dựng sẵn cho Postman (không phải dữ liệu demo) |
+| `sql/test_cleanup.sql` | Dọn các lượt gửi và cảnh báo do Postman để lại trên hộp thật |
+| `sql/test_overdue.sql` | Dời hạn trả của một lượt về quá khứ để demo khóa quá hạn và phụ phí |
 
-Chạy lại `03` hoặc `05` đưa các procedure đặt tủ về bản cũ, nên khi đó phải chạy lại `06`, `07`, `09`. Chạy lại `06` thì cũng phải chạy lại `09`.
+Chạy lại `02_data_v1.sql` đưa các procedure đặt tủ về bản cũ, nên khi đó phải chạy lại `03_v2_v3.sql`.
 
-Sau `06_demo_v2.sql`, khóa của `LOCKER-01` trở về khóa mẫu công khai. Tạo khóa bí mật riêng (lưu trong `config/device-keys.local.properties`, không commit) và ghi SHA-256 của nó vào DB:
+Sau `03_v2_v3.sql`, khóa của `LOCKER-01` trở về khóa mẫu công khai. Tạo khóa bí mật riêng (lưu trong `config/device-keys.local.properties`, không commit) và ghi SHA-256 của nó vào DB:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\set-device-key.ps1
@@ -249,15 +248,14 @@ Unit test và integration test (các lớp `*DatabaseIntegrationTest` cần SQL 
 sh scripts/test.sh
 ```
 
-Postman + newman. Chạy hai script dựng dữ liệu trước, vì mỗi lần đoán sai ở hộp đều tính vào khóa 5 lần:
+Postman + newman. Chạy script dựng dữ liệu trước, vì mỗi lần đoán sai ở hộp đều tính vào khóa 5 lần:
 
 ```bash
-sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql/test_v2_setup.sql
-sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql/test_v3_setup.sql
+sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql/test_setup.sql
 newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<khóa LOCKER-01>
 ```
 
-Chạy xong, `sql/test_v3_cleanup.sql` dọn các lượt gửi và cảnh báo do test để lại. Hướng dẫn chi tiết: [docs/postman/README.md](./docs/postman/README.md). `sql/test_overdue.sql` dời hạn trả của một lượt về quá khứ để demo khóa quá hạn và phụ phí.
+Chạy xong, `sql/test_cleanup.sql` dọn các lượt gửi và cảnh báo do test để lại. Hướng dẫn chi tiết: [docs/postman/README.md](./docs/postman/README.md). `sql/test_overdue.sql` dời hạn trả của một lượt về quá khứ để demo khóa quá hạn và phụ phí.
 
 ### 5. Tài khoản demo
 
@@ -270,7 +268,7 @@ Mật khẩu chung: `123456`.
 | TECHNICIAN | `tech1` ... `tech22` | `tech20` bị khóa, `tech22` bị vô hiệu hóa |
 | AUDITOR | `auditor1` ... `auditor16` | `auditor15` bị khóa, `auditor16` bị vô hiệu hóa |
 | END_USER | `student1` ... `student28`, `user1` | `locked1`, `student28` bị khóa; `student27` bị vô hiệu hóa |
-| END_USER (Postman) | `v2pin`, `v2card`, `v2fp`, `v2noshow`, `v3overdue`, `v3poor`, `v3late`, `v3esc` | Tạo bởi `sql/test_v2_setup.sql` và `sql/test_v3_setup.sql` |
+| END_USER (Postman) | `v2pin`, `v2card`, `v2fp`, `v2noshow`, `v3overdue`, `v3poor`, `v3late`, `v3esc` | Tạo bởi `sql/test_setup.sql` |
 
 Chỉ `LOCKER-01` (dãy CANT-A) là hộp thật; các hộp còn lại là hộp minh họa (`"demo":true`) và `LockerMonitor` giả heartbeat cho riêng chúng. Hộp thật không gửi heartbeat sẽ chuyển OFFLINE sau 90 giây, nên khi test trên trình duyệt hãy đặt ở dãy CANT-B.
 

@@ -1,10 +1,10 @@
 ﻿-- ============================================================
--- test_v3_cleanup.sql  Clears what the Postman test setups leave on the real box, before a live demo.
--- test_v2_setup.sql / test_v3_setup.sql prepare bookings on CANT-A (LOCKER-01) for Postman: after a run, the
+-- test_cleanup.sql  Clears what the Postman test setups leave on the real box, before a live demo.
+-- test_setup.sql / test_setup.sql prepare bookings on CANT-A (LOCKER-01) for Postman: after a run, the
 -- slots of v2noshow, v3overdue, v3late and v3esc can stay reserved, locked or escalated, with an open
 -- OVERDUE_ESCALATED alert. This closes the open bookings of the test accounts only, frees their slots and
 -- resolves their escalation alerts. Demo accounts and real bookings are not touched. Safe to run again.
---   sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\test_v3_cleanup.sql
+--   sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\test_cleanup.sql
 -- ============================================================
 USE PRJ301_LOCKER;
 GO
@@ -37,7 +37,7 @@ WHERE a.label = N'OVERDUE_ESCALATED' AND a.status = N'OPEN'
               WHERE e.alert_id = a.alert_id AND e.item = N'user');
 
 DECLARE @n INT = (SELECT COUNT(*) FROM @open), @m INT = (SELECT COUNT(*) FROM @alerts);
-DECLARE @note NVARCHAR(100) = CONCAT(N'test_v3_cleanup.sql: ', @n, N' test bookings closed, ', @m, N' alerts resolved');
+DECLARE @note NVARCHAR(100) = CONCAT(N'test_cleanup.sql: ', @n, N' test bookings closed, ', @m, N' alerts resolved');
 IF @n > 0 OR @m > 0
     EXEC Audit_Append @sys, N'TEST_CLEANUP', N'DEPOSIT', 0, @note;
 COMMIT;

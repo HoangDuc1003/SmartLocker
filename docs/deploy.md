@@ -155,13 +155,12 @@ Không truyền `-TunnelUrl` hay `-LogFile` thì script hỏi địa chỉ.
 
 Phương án deploy không đổi. Chỉ thêm ba điểm:
 
-- **Database**: `run_demo_db.ps1` (qua `run_demo_db.bat`) chạy 01 → 07, `09_v3.sql` rồi `10_campus_vnu.sql`. Đã có database v2 thì chỉ cần chạy
-  thêm `sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\09_v3.sql` (chạy lại được; luôn có `-I`). Chạy lại `06`
-  thì phải chạy lại `09`, vì 06 ghi đè các procedure đặt tủ và `Device_Authorize` bằng bản v2.
+- **Database**: `run_demo_db.ps1` (qua `run_demo_db.bat`) chạy `01_schema.sql`, `02_data_v1.sql` rồi `03_v2_v3.sql`. Đã có
+  database thì chỉ cần chạy lại `sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\03_v2_v3.sql` (chạy lại được; luôn có `-I`).
 - **Định vị "Tìm tủ gần tôi" cần HTTPS**: trình duyệt chỉ cho `navigator.geolocation` trên trang HTTPS (hoặc `localhost`).
   Khi demo trên điện thoại, mở **link tunnel** (`https://hoangduc1003.github.io/SmartLocker/` chuyển tới
   `https://<tên>.trycloudflare.com/SmartLocker/`), không mở `http://<IP laptop>:8080`, nếu không trang chỉ báo "cần HTTPS" và
-  giữ danh sách khu như cũ. Toạ độ các khu trong `10_campus_vnu.sql` là **gần đúng** (ĐHQG-HCM, FPTU HCM; `09_v3.sql` còn toạ độ giả quanh Hòa Lạc, file 10 thay thế), sửa cột `LockerArea.latitude/longitude`
+  giữ danh sách khu như cũ. Toạ độ các khu trong `03_v2_v3.sql` là **gần đúng** (ĐHQG-HCM, FPTU HCM), sửa cột `LockerArea.latitude/longitude`
   nếu cần khoảng cách thật. Vị trí không được gửi lên máy chủ.
 - **Email nhắc hạn**: chép `config/mail.local.properties.example` thành `config/mail.local.properties` trên laptop chạy Tomcat
   (không commit), điền tài khoản Gmail và **mật khẩu ứng dụng** (bật xác minh 2 bước rồi tạo ở

@@ -15,7 +15,7 @@ import org.testng.annotations.Test;
 import util.Pricing;
 
 /**
- * util.Pricing must give the same numbers as the SQL of sql/09_v3.sql. Runs against PRJ301_LOCKER and is skipped
+ * util.Pricing must give the same numbers as the SQL of sql/03_v2_v3.sql. Runs against PRJ301_LOCKER and is skipped
  * when the database (or the v3 script) is not there. Every change is made in one transaction and rolled back.
  */
 public class PricingDatabaseIntegrationTest {
@@ -28,7 +28,7 @@ public class PricingDatabaseIntegrationTest {
                 rs.next();
                 if (rs.getObject(1) == null || rs.getObject(2) == null) {
                     conn.close();
-                    throw new SkipException("sql/09_v3.sql has not been run");
+                    throw new SkipException("sql/03_v2_v3.sql has not been run");
                 }
             }
             return conn;
@@ -99,7 +99,7 @@ public class PricingDatabaseIntegrationTest {
                         + "AND size_code = 'M' ORDER BY locker_slot_id");
                 Integer plan = scalarInt(conn, "SELECT TOP 1 plan_id FROM StoragePlan WHERE duration_min = 120 ORDER BY plan_id");
                 if (user == null || slot == null || plan == null) {
-                    throw new SkipException("Run sql/test_v2_setup.sql first (needs v2pin without an open booking)");
+                    throw new SkipException("Run sql/test_setup.sql first (needs v2pin without an open booking)");
                 }
                 exec(conn, "UPDATE Users SET balance = 5000 WHERE user_id = " + user);
                 exec(conn, "UPDATE LockerSlot SET status = N'OCCUPIED' WHERE locker_slot_id = " + slot);

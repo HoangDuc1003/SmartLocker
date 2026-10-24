@@ -7,15 +7,14 @@ Các file:
 - `SmartLocker-tunnel.postman_environment.json`: thay `REPLACE-ME` bằng địa chỉ Cloudflare tunnel hiện tại.
 
 ## Trước mỗi lần chạy
-1. Tomcat và SQL Server đang chạy, đã chạy `sql/06_demo_v2.sql`, `sql/07_vietnamese_data.sql` và `sql/09_v3.sql`.
-2. Chạy **theo thứ tự** hai script, ngay trước khi chạy collection:
+1. Tomcat và SQL Server đang chạy, đã chạy `sql/03_v2_v3.sql`.
+2. Chạy script dựng dữ liệu, ngay trước khi chạy collection:
    ```
-   sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\test_v2_setup.sql
-   sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\test_v3_setup.sql
+   sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\test_setup.sql
    ```
-   - `test_v2_setup.sql`: tạo hoặc đặt lại `v2pin`, `v2card`, `v2fp`, `v2noshow`, `v3overdue`, `v3poor` (mật khẩu `123456`),
+   - Phần 1: tạo hoặc đặt lại `v2pin`, `v2card`, `v2fp`, `v2noshow`, `v3overdue`, `v3poor` (mật khẩu `123456`),
      đặt lại bộ đếm sai mã của LOCKER-01, và tạo lượt đặt đã hết giờ giữ chỗ của `v2noshow` (kịch bản 6).
-   - `test_v3_setup.sql` (chạy sau, vì script v2 đặt lại `v3overdue`): Postman không chạy được SQL, nên các bước cần "tua thời
+   - Phần 2 (chạy sau, vì phần 1 đặt lại `v3overdue`): Postman không chạy được SQL, nên các bước cần "tua thời
      gian" bắt đầu từ lượt gửi đã ở sẵn trạng thái cần. Script chỉ dời mốc thời gian; khóa, phụ phí và chuyển xử lý do chính
      hệ thống làm (`Device_Authorize` tính ngay khi nhập mã, `LockerMonitor` 15 giây một lần).
 
@@ -24,7 +23,7 @@ Các file:
      | `v3overdue` | `ACTIVE` (đã mở lần 1), `due_at` cách đây 130 phút, ví 5.000 đ | 11, 16, 17, 12 |
      | `v3late` | `RESERVED`, đặt từ 6 phút trước (giữ chỗ kéo dài tới 30 phút để không thành `NO_SHOW` giữa chừng) | 13 |
      | `v3esc` | `ACTIVE`, `due_at` cách đây 49 giờ | 15 |
-     | `v3poor` | không có lượt, ví 12.000 đ (từ `test_v2_setup.sql`) | 14 |
+     | `v3poor` | không có lượt, ví 12.000 đ (từ `test_setup.sql`) | 14 |
 
      Các lượt chuẩn bị lấy ngăn cỡ L rồi M của CANT-A, để các ngăn cỡ S còn trống cho những kịch bản đặt mới.
 3. Biến `api_key` là khóa LOCKER-01 trong `config/device-keys.local.properties`.
@@ -64,11 +63,11 @@ và lấy đồ.
 
 ## Lưu ý
 
-- **Sau khi chạy Postman, trước buổi demo**: chạy `sql/test_v3_cleanup.sql`. Các script setup để lại lượt đặt của tài khoản kiểm thử trên CANT-A (hộp thật LOCKER-01): ngăn đang giữ chỗ, ngăn khóa quá hạn, ngăn đã chuyển xử lý và một cảnh báo `OVERDUE_ESCALATED` đang mở. Script cleanup đóng các lượt đó, trả ngăn về trống và xử lý cảnh báo; không đụng tài khoản demo.
+- **Sau khi chạy Postman, trước buổi demo**: chạy `sql/test_cleanup.sql`. Các script setup để lại lượt đặt của tài khoản kiểm thử trên CANT-A (hộp thật LOCKER-01): ngăn đang giữ chỗ, ngăn khóa quá hạn, ngăn đã chuyển xử lý và một cảnh báo `OVERDUE_ESCALATED` đang mở. Script cleanup đóng các lượt đó, trả ngăn về trống và xử lý cảnh báo; không đụng tài khoản demo.
 - Mọi lần đoán sai (sai mật mã, thẻ hoặc vân tay chưa đăng ký, mã đăng ký sai) đều tính vào giới hạn 5 lần trong 5 phút
-  của hộp. Kịch bản 5 cần bộ đếm bằng 0, nên phải chạy `test_v2_setup.sql` ngay trước. Thư mục v3 không có bước đoán sai;
+  của hộp. Kịch bản 5 cần bộ đếm bằng 0, nên phải chạy `test_setup.sql` ngay trước. Thư mục v3 không có bước đoán sai;
   `OVERDUE_UNPAID` không tính là lần sai.
 - Kịch bản 3 tạo một UID thẻ ngẫu nhiên mỗi lần chạy; kịch bản 8 báo mất chính thẻ đó.
 - Kịch bản 6 (v3): không đến thì không hoàn tiền; ví còn 200.000 đ trừ giá lượt đặt.
-- Phụ phí của `v3overdue` tính theo giờ bắt đầu kể từ `due_at`: chạy collection quá 50 phút sau `test_v3_setup.sql` thì
+- Phụ phí của `v3overdue` tính theo giờ bắt đầu kể từ `due_at`: chạy collection quá 50 phút sau `test_setup.sql` thì
   số giờ trễ thành 4 (các kiểm tra vẫn đúng vì tính theo số giờ API trả), nhưng nên chạy lại script ngay trước mỗi lần chạy.

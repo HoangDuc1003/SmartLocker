@@ -12,7 +12,7 @@ import java.util.Map;
 import util.Pricing;
 
 /**
- * v3: the business numbers (AppConfig) and the slot sizes (SlotSize) of sql/09_v3.sql, read for display.
+ * v3: the business numbers (AppConfig) and the slot sizes (SlotSize) of sql/03_v2_v3.sql, read for display.
  * The procedures read the same tables, so the page always shows the rule the database applies.
  * Both are kept for 60 seconds: they change only when an admin edits the tables.
  */

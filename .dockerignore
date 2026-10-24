@@ -1,0 +1,10 @@
+.git
+build
+dist
+nbproject/private
+test-output
+firmware
+docs
+sql
+test
+config/*.local.properties

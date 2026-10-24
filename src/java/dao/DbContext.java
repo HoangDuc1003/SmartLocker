@@ -7,11 +7,17 @@ import java.sql.SQLException;
 /** The only place that opens a database connection. No pool: every DAO call opens one and closes it with try-with-resources. */
 public class DbContext {
 
-    // change the host here when the machine or the network changes
-    private static final String URL =
-            "jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false";
-    private static final String USER = "sa";
-    private static final String PASSWORD = "12345";   // local SQL Server sa account (demo machine)
+    // DB_URL / DB_USER / DB_PASSWORD come from the environment on a hosted server (docs/deploy-render.md);
+    // without them the local demo machine is used
+    private static final String URL = env("DB_URL",
+            "jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false");
+    private static final String USER = env("DB_USER", "sa");
+    private static final String PASSWORD = env("DB_PASSWORD", "12345");   // local SQL Server sa account (demo machine)
+
+    private static String env(String name, String fallback) {
+        String value = System.getenv(name);
+        return value == null || value.trim().isEmpty() ? fallback : value.trim();
+    }
 
     public static Connection getConnection() throws SQLException {
         try {
