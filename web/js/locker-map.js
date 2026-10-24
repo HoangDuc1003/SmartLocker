@@ -268,7 +268,8 @@
       return { key: 'none', label: 'Chưa có ngăn' };
     }
     if (!a.available) {
-      return { key: 'full', label: 'Hết chỗ' };
+      // every slot behind a silent (or missing) box is not "full": nothing can open it
+      return a.offline >= a.slot_count ? { key: 'full', label: 'Mất kết nối' } : { key: 'full', label: 'Hết chỗ' };
     }
     return a.available / a.slot_count < 0.25 ? { key: 'low', label: 'Sắp hết' } : { key: 'ok', label: 'Còn nhiều' };
   }

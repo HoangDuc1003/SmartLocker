@@ -48,7 +48,8 @@ public class LockerMapDao {
             String chosen = null;
             String areaSql = "SELECT a.area_code, a.name, a.location, a.latitude, a.longitude, COUNT(m.slot_id) AS slot_count, "
                     + "SUM(CASE WHEN m.display_status = N'AVAILABLE' THEN 1 ELSE 0 END) AS available, "
-                    + "SUM(CASE WHEN m.display_status = N'ALERT' THEN 1 ELSE 0 END) AS alerts "
+                    + "SUM(CASE WHEN m.display_status = N'ALERT' THEN 1 ELSE 0 END) AS alerts, "
+                    + "SUM(CASE WHEN m.display_status = N'OFFLINE' THEN 1 ELSE 0 END) AS offline "
                     + "FROM LockerArea a LEFT JOIN v_LockerSlotMap m ON m.area_id = a.area_id "
                     + "WHERE a.is_active = 1 GROUP BY a.area_code, a.name, a.location, a.latitude, a.longitude "
                     + "HAVING COUNT(m.slot_id) > 0 ORDER BY a.area_code";
@@ -70,6 +71,7 @@ public class LockerMapDao {
                     }
                     a.addProperty("slot_count", rs.getInt("slot_count"));
                     a.addProperty("available", rs.getInt("available"));
+                    a.addProperty("offline", rs.getInt("offline"));
                     a.addProperty("alert", staff ? rs.getInt("alerts") : 0);
                     areas.add(a);
                     String code = rs.getString("area_code");

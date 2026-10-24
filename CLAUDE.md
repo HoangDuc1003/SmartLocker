@@ -55,9 +55,10 @@ Dev server: Tomcat at `E:/apache-tomcat-9.0.113`, app at `http://localhost:8080/
 - Aggregate numbers for charts (per hour, per day, revenue) go to `/api/dashboard/stats` (cached 60 s), never into `/api/dashboard`; send revenue to ADMIN and OPERATOR only.
 - A donut drawn with `r` + half the stroke wider than the viewBox is clipped; keep `r + stroke/2 <= viewBox/2`.
 - The map page and `/api/locker-map` are open to visitors (GET only, `SecurityFilter.GUEST_PATHS`, perms = `MAP:READ`, role `GUEST` in the page); every POST and every other page stays behind the login. The login/sign-up popup asks for JSON (`Accept: application/json`) and the page swaps the menu without a reload.
-- A bank without a device (`device_id NULL`, e.g. DOMB) is OFFLINE in `v_LockerSlotMap` and `Deposit_Reserve` refuses it; the map JSON sends `device_status: "NONE"`, never a default `ACTIVE`.
+- A bank without a device (`device_id NULL`) is OFFLINE in `v_LockerSlotMap` and `Deposit_Reserve` refuses it; the map JSON sends `device_status: "NONE"`, never a default `ACTIVE`.
 - Staff edits of a booking (`DepositDao.update/insert`) must keep the slot consistent: walk-ins only on an AVAILABLE slot, closing frees the slot, a closed booking is never reopened; an admin slot override never cancels an ACTIVE booking.
 - `SecurityFilter` reloads the session user on every request (status, role, balance); a LOCKED account is signed out at once.
 - Browser autofill pre-fills the login popup with `admin`: select the field (triple-click) before typing in E2E tests.
 - Run the TestNG suite with `sh scripts/test.sh`; `testng`/`jcommander`/`slf4j` are test-only and stay out of `WEB-INF/lib`.
 - Python `open(path, 'w')` on some repo files fails with `Errno 22` (OneDrive); write in place with `open(path, 'r+')` + `truncate()`.
+- A demo area needs a `"demo":true` device on every bank (DOMB had none: 28 slots OFFLINE, shown as "Hết chỗ"). `LOCKER-01` (CANT-A) is the only non-demo box and the repo firmware has no network, so CANT-A is OFFLINE unless `ScenarioSender`/a real box sends `/api/health`.

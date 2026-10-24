@@ -1711,6 +1711,40 @@ FROM dbo.LockerSlot s JOIN dbo.SlotSize z ON z.size_code = s.size_code
 WHERE ISNULL(s.size_cm, N'') <> z.size_cm;
 GO
 
+-- A2. DOMB gets demo boxes like DOMA: a bank with no device is OFFLINE in v_LockerSlotMap, so all 28 slots were unusable.
+--     LockerMonitor fakes the heartbeat of "demo":true boxes only; the keys are the public sample pattern of 02_data_v1.sql.
+DECLARE @now DATETIME2 = SYSUTCDATETIME();
+DECLARE @admin INT = (SELECT user_id FROM dbo.Users WHERE username = N'admin');
+DECLARE @weight INT = (SELECT sensor_type_id FROM dbo.SensorType WHERE name = N'WEIGHT');
+DECLARE @domb TABLE (n INT, code NVARCHAR(30), bank NVARCHAR(30));
+INSERT INTO @domb VALUES (9, N'LOCKER-09', N'DOMB-A'), (10, N'LOCKER-10', N'DOMB-B');
+
+INSERT INTO dbo.Device (device_code, location, firmware, status, last_seen, api_key_hash)
+SELECT v.code, a.location, N'1.2-enterprise', N'ACTIVE', @now,
+       LOWER(CONVERT(CHAR(64), HASHBYTES('SHA2_256', 'device-' + CONVERT(VARCHAR(2), v.n) + '-api-key'), 2))
+FROM @domb v
+JOIN dbo.LockerBank b ON b.bank_code = v.bank AND b.device_id IS NULL
+JOIN dbo.LockerArea a ON a.area_id = b.area_id
+WHERE NOT EXISTS (SELECT 1 FROM dbo.Device d WHERE d.device_code = v.code);
+
+UPDATE b SET b.device_id = d.device_id
+FROM dbo.LockerBank b
+JOIN @domb v ON v.bank = b.bank_code
+JOIN dbo.Device d ON d.device_code = v.code
+WHERE b.device_id IS NULL;
+
+INSERT INTO dbo.OperatingProfile (device_id, params_json, updated_by, updated_at)
+SELECT d.device_id, N'{"demo":true,"heartbeat_sec":10,"offline_timeout_sec":90,"item_left_g":50}', @admin, @now
+FROM dbo.Device d JOIN @domb v ON v.code = d.device_code
+WHERE NOT EXISTS (SELECT 1 FROM dbo.OperatingProfile p WHERE p.device_id = d.device_id);
+
+INSERT INTO dbo.Calibration (device_id, sensor_type_id, offset_val, scale_val, version, valid_until, created_by)
+SELECT d.device_id, @weight, 0, 1, 1, DATEADD(MONTH, 6, CAST(@now AS DATE)), @admin
+FROM dbo.Device d JOIN @domb v ON v.code = d.device_code
+WHERE @weight IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM dbo.Calibration c WHERE c.device_id = d.device_id AND c.sensor_type_id = @weight);
+GO
+
 -- B. Names and places (only the seed texts are replaced)
 UPDATE a SET a.name = v.new_name
 FROM dbo.LockerArea a
