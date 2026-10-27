@@ -94,7 +94,7 @@
 
 <%-- one message after a POST: Web.flash(session, text, bad) --%>
 <c:if test="${not empty sessionScope.flash}">
-    <div class="flash flash--float ${sessionScope.flashBad ? 'bad' : ''}" role="${sessionScope.flashBad ? 'alert' : 'status'}" data-flash>
+    <div class="flash flash--float glass glass--dense ${sessionScope.flashBad ? 'bad' : ''}" role="${sessionScope.flashBad ? 'alert' : 'status'}" data-flash>
         <span class="flash__text"><c:out value="${sessionScope.flash}"/></span>
         <button type="button" class="round-btn" data-flash-close aria-label="Đóng thông báo">
             <svg class="ico" aria-hidden="true"><use href="#i-close"/></svg></button>

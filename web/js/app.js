@@ -58,9 +58,11 @@
         if (!window.HTMLDialogElement || !document.createElement('dialog').showModal) {
             return Promise.resolve(window.confirm(opts.text || opts.title || ''));
         }
+        // the users' map (body.map-page) draws it in liquid glass like its other popups (css/locker-map.css)
+        var glass = document.body.classList.contains('map-page');
         if (!dlg) {
             dlg = document.createElement('dialog');
-            dlg.className = 'dlg';
+            dlg.className = 'dlg' + (glass ? ' glass glass--sheet glass--dense' : '');
             dlg.setAttribute('aria-labelledby', 'dlgTitle');
             dlg.setAttribute('aria-describedby', 'dlgBody');
             dlg.innerHTML = '<form method="dialog" class="dlg__form">' +
@@ -74,8 +76,10 @@
         dlg.querySelector('#dlgBody').innerHTML = opts.html || ('<p>' + esc(opts.text || '') + '</p>');
         var ok = dlg.querySelector('[data-dlg-ok]');
         ok.textContent = opts.okText || 'Đồng ý';
-        ok.className = opts.danger ? 'btn--danger' : '';
-        dlg.querySelector('[data-dlg-cancel]').textContent = opts.cancelText || 'Quay lại';
+        ok.className = (opts.danger ? 'btn--danger' : '') + (glass ? ' btn--pill lg-hover' : '');
+        var cancel = dlg.querySelector('[data-dlg-cancel]');
+        cancel.textContent = opts.cancelText || 'Quay lại';
+        cancel.className = 'ghost' + (glass ? ' btn--pill lg-hover' : '');
         dlg.returnValue = '';
         return new Promise(function (resolve) {
             dlg.addEventListener('close', function onClose() {
@@ -84,7 +88,8 @@
                 resolve(dlg.returnValue === 'ok');
             });
             dlg.showModal();
-            (opts.danger ? dlg.querySelector('[data-dlg-cancel]') : ok).focus();
+            if (glass && window.SmartLockerMotion) window.SmartLockerMotion.pop(dlg);   // js/glass-motion.js
+            (opts.danger ? cancel : ok).focus();
         });
     }
 

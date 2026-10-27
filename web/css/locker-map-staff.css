@@ -1368,8 +1368,7 @@ body.sheet-open {
   font-size: 13px;
 }
 
-.area-map__empty,
-.area-map__fallback {
+.area-map__empty {
   margin: 0;
   padding: 20px 16px;
   border-top: 1px solid var(--border);

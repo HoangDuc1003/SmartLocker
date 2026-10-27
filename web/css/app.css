@@ -241,10 +241,10 @@ table.grid tr.current td { background: var(--success-soft); }
 table.grid tr.group td { background: var(--surface-2); font-weight: 600; }
 
 /* ---------- Status tags ---------- */
-.tag, .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600;
-               line-height: 20px; white-space: nowrap; background: var(--surface-2); color: var(--text-muted); }
+.tag { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600;
+        line-height: 20px; white-space: nowrap; background: var(--surface-2); color: var(--text-muted); }
 .tag.ok { background: var(--success-soft); color: var(--success); }
-.tag.bad, .badge.danger { background: var(--danger-soft); color: var(--danger); }
+.tag.bad { background: var(--danger-soft); color: var(--danger); }
 .tag.warn { background: var(--warning-soft); color: var(--warning); }
 .tag.info { background: var(--primary-soft); color: var(--primary); }
 .money { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -364,21 +364,6 @@ canvas { display: block; max-width: 100%; }
   .dlg__body dl.kv { grid-template-columns: max-content 1fr; gap: 6px 14px; }
   .dlg__body dl.kv dd { margin-bottom: 0; }
 }
-
-/* ---------- Open method picker (locker map slot panel) ---------- */
-.method-pick { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 0; border: none; }
-.method-pick legend { padding: 0; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
-.method-opt { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 10px;
-              padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius);
-              background: var(--surface); cursor: pointer; font-weight: 400; }
-.method-opt:hover { background: var(--surface-2); }
-.method-opt:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); }
-.method-opt:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
-.method-opt input { width: 18px; height: 18px; margin: 0; accent-color: var(--primary); }
-.method-opt__name { display: block; font-weight: 600; }
-.method-opt__desc { display: block; font-size: 12px; color: var(--text-muted); }
-.method-opt__price { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
-.method-opt__price s { display: block; font-weight: 400; font-size: 12px; color: var(--text-muted); }
 
 /* ---------- "Tủ của tôi" ---------- */
 .ml-booking { display: grid; gap: 14px; }

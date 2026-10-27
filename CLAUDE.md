@@ -24,7 +24,7 @@ Dev server: Tomcat at `E:/apache-tomcat-9.0.113`, app at `http://localhost:8080/
 
 ## Lessons — mistakes agents made here (one line each, add new ones at the bottom)
 - A form must post exactly the parameter names its controller reads (the emergency modal sent `deviceCode`, the controller reads `slotId`).
-- Always close JDBC connections with try-with-resources; `DbContext` has no pool (`HealthApi.doGet` leaked one per poll).
+- Always close JDBC connections with try-with-resources: `DbContext` pools them and `close()` returns one to the pool (a leak keeps it forever; `HealthApi.doGet` leaked one per poll).
 - Never fake device heartbeats for all devices in `LockerMonitor`; it disables offline detection.
 - SQL seed files with Vietnamese text must keep the UTF-8 BOM (SSMS reads them as ANSI otherwise).
 - Do not query the DB inside `/api/dashboard`; it is served from the `LockerMonitor` snapshot cache.
@@ -67,3 +67,8 @@ Dev server: Tomcat at `E:/apache-tomcat-9.0.113`, app at `http://localhost:8080/
 - There is no login, sign-up or landing page: `/`, GET `/LoginController`, GET `/RegisterController` and any page that needs a sign-in redirect to `/LockerMapController?login=1` (`register=1`, `next=<page>`), which opens the popup; a plain form post that fails comes back there with a flash. Build such links with `Web.signInUrl`.
 - v5: every open method costs the same (no 5% card discount; `fn_SlotPrice`/`fn_OpenPrice` are dropped, prices are `fn_SizePrice` / `Pricing.sizePrice`, the APIs send `prices: {S, M, L}`); the card deposit is `AppConfig.CARD_DEPOSIT` = 10,000.
 - Do not re-run all of `sql/03_v2_v3.sql` on a live DB to apply one change: it resets the LOCKER-01 key. Run only the changed objects (CREATE OR ALTER blocks, UPDATE of AppConfig) from a scratchpad script.
+- Never animate or rewrite a style variable on a `backdrop-filter` island every frame (the hover light on `--gx` made the sheet re-blur: ~26 fps); move a child layer with `transform` (`.glass__glare`).
+- `/api/locker-map` answers 304 to its ETag and the page then draws nothing; a field that changes every call (a server clock) would defeat it. Keep the ETag weak: Tomcat does not gzip a strong one.
+- `scripts/build-dev.sh` copies `web/` with `cp -u`; an unchanged `web.xml` copied again reloads the context and signs everyone out.
+- Do not drag on the map in E2E tests where the slot card is: the drag started on "Đặt ngăn" and opened the booking confirm.
+- On the users' map the glass panel is a `<dialog>` opened with `show()`, so `dialog[open]` always matches while it is open; test the confirm popup with `dialog.dlg[open]`. Page scripts loaded on the map (`user-pages.js`) work only inside `[data-panel-body]`, the slot card ticks its own countdowns.

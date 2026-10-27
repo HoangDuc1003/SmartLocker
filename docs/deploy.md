@@ -30,6 +30,12 @@ Trang chuyển tiếp là HTML tĩnh, không dùng CDN. Trang chuyển bằng Ja
    - Không dùng trang tạo QR "rút gọn link" hoặc "QR động": những trang đó chèn link trung gian, có thể hết hạn.
 4. **(Tùy chọn) Cho cloudflared ghi log ra file** để script tự đọc địa chỉ:
    `cloudflared tunnel --url http://localhost:8080 --logfile C:\temp\cloudflared.log`
+5. **(Nên làm) Bật nén gzip trong Tomcat** để trang tải nhanh hơn qua cloudflared/4G: Leaflet và Motion khoảng 300 KB, nén còn khoảng 90 KB. Mở `E:\apache-tomcat-9.0.113\conf\server.xml`, thêm 3 thuộc tính vào thẻ `<Connector port="8080" ...>` rồi khởi động lại Tomcat (image Docker đã tự bật):
+   ```xml
+   <Connector port="8080" protocol="HTTP/1.1" connectionTimeout="20000" redirectPort="8443" maxParameterCount="1000"
+              compression="on" compressionMinSize="1024"
+              compressibleMimeType="text/html,text/css,text/javascript,application/javascript,application/json,image/svg+xml"/>
+   ```
 
 ---
 

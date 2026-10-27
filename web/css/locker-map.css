@@ -101,28 +101,48 @@
   }
 }
 
-/* while the map pans or zooms every island re-filters each frame: the refraction waits until it stops */
+/* while the map pans or zooms every island re-filters each frame: a lighter blur without the colour boost and
+   without the refraction until it stops (6 to 8 islands over moving tiles dropped about 1 frame in 20) */
+.map-moving .glass,
 .map-moving .glass--refract {
-  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
-/* Liquid glass hover (pointer devices): a soft light follows the pointer over an island (--gx, --gy set by
-   js/locker-map.js) and over the button under it (--mx, --my). The lift and the squeeze of the buttons are springs
+/* Liquid glass hover (pointer devices): a soft light follows the pointer over an island and over the button under it.
+   The light of an island is its own layer (.glass__glare, added by js/locker-map.js) moved with a transform, so the
+   blur of the island is not drawn again on every pointer move. The lift and the squeeze of the buttons are springs
    of js/glass-motion.js (Motion), not CSS transitions. */
-@property --glass-glare {
-  syntax: "<number>";
-  inherits: false;
-  initial-value: 0;
+.glass__glare {
+  position: absolute;
+  inset: 0;
+  z-index: -1;               /* above the glass (a backdrop-filter makes a stacking context), under the content */
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.glass__glare.is-on { opacity: 1; }
+.balance-pill,
+.ctl-stack {
+  position: relative;        /* holds the light; the other islands are fixed or relative already */
+}
+.glass__glare > i {
+  position: absolute;
+  left: -260px;
+  top: -260px;
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, var(--glass-glint)), transparent 70%);
+  will-change: transform;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .glass {
-    background-image: radial-gradient(260px circle at var(--gx, 50%) var(--gy, 0%),
-      rgba(255, 255, 255, calc(var(--glass-glint) * var(--glass-glare))), transparent 70%);
-    transition: --glass-glare 0.35s ease, border-color 0.35s ease;
+    transition: border-color 0.35s ease;
   }
   .glass:hover {
-    --glass-glare: 1;
     border-color: var(--glass-hi);
   }
   .lg-hover {
@@ -151,6 +171,11 @@
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     color: var(--text);
+  }
+  .map-moving .glass,
+  .map-moving .glass--refract {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
@@ -1544,8 +1569,39 @@ button.btn--pill {
   flex: 1;
 }
 
+.flash--float.glass,
+.flash--float.glass.bad {
+  background: rgba(var(--glass-rgb), var(--glass-tint));   /* glass, the coloured edge tells good from bad */
+  border-left: 4px solid var(--success);
+}
+
+.flash--float.glass.bad {
+  border-left-color: var(--danger);
+}
+
 .map-page .toast-region {
   bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+/* the short messages of js/app.js: small glass pills, the coloured edge tells an error
+   (.toast-region in the selector: app.css darkens the text of the coloured toasts in the dark theme) */
+.map-page .toast-region .toast {
+  border: 1px solid var(--glass-edge);
+  border-left: 4px solid var(--glass-text-2);
+  border-radius: 16px;
+  background: rgba(var(--glass-rgb), 0.78);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--glass-shadow);
+  color: var(--glass-text);
+}
+
+.map-page .toast-region .toast--success {
+  border-left-color: var(--success);
+}
+
+.map-page .toast-region .toast--error {
+  border-left-color: var(--danger);
 }
 
 /* ===== "Tủ của tôi", "Nạp tiền": glass popup over the map (js/glass-panel.js) ===== */
@@ -1625,13 +1681,126 @@ button.btn--pill {
   background: var(--glass-well);
 }
 
+/* fields and buttons inside the popup: the same glass wells and pills as the slot card and the sign-in popup */
+.glass-page input[type=text],
+.glass-page input[type=email],
+.glass-page input[type=number],
+.glass-page input[type=password],
+.glass-page select,
+.glass-page textarea {
+  min-height: 42px;
+  padding: 8px 14px;
+  border: 1px solid var(--glass-fill-edge);
+  border-radius: 14px;
+  background: rgba(var(--glass-rgb), 0.6);
+  color: var(--glass-text);
+}
+
+.glass-page input:focus,
+.glass-page select:focus,
+.glass-page textarea:focus {
+  border-color: var(--focus);
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.glass-page button:not(.link),
+.glass-page .btn {
+  min-height: 38px;
+  padding: 7px 16px;
+  border-radius: 999px;
+}
+
+.glass-page .btn--sm,
+.glass-page button.btn--sm {
+  min-height: 32px;
+  padding: 4px 12px;
+}
+
+.glass-page .btn.ghost,
+.glass-page button.ghost {
+  border-color: var(--glass-fill-edge);
+  background: var(--glass-fill);
+  color: var(--glass-text);
+}
+
+.glass-page .btn.ghost:hover,
+.glass-page button.ghost:hover {
+  background: var(--glass-well);
+  color: var(--glass-text);
+}
+
+.glass-page .presets .btn[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: var(--glass-seg-on);
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(20, 30, 45, 0.14);
+}
+
+.glass-page .ml-code,
+.glass-page .ml-overdue,
+.glass-page .notice {
+  border-radius: 16px;
+}
+
 .glass-page > .flash {
   max-width: none;
   margin: 0 48px 16px 0;
   border-radius: 14px;
 }
 
-/* ===== Sign-in / sign-up popup of js/auth-modal.js, in glass ===== */
+/* ===== Confirm popup of js/app.js (SmartLocker.confirm) and the sign-in popup, in glass ===== */
+
+.map-page .dlg::backdrop {
+  background: rgba(10, 14, 20, 0.28);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+.map-page .dlg__form {
+  padding: 22px 24px 24px;
+}
+
+.map-page .dlg__title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.map-page .dlg__body dl.kv dt,
+.map-page .dlg__body .muted {
+  color: var(--glass-text-2);
+}
+
+.map-page .dlg .rule-list {
+  background: var(--glass-well);
+}
+
+.map-page .dlg__actions {
+  gap: 10px;
+}
+
+.map-page .dlg__actions > button.btn--pill {
+  min-height: 46px;
+  padding: 0 22px;
+  font-size: 15px;
+}
+
+.map-page .dlg button.btn--danger {
+  box-shadow: 0 6px 18px rgba(180, 35, 24, 0.3);
+}
+
+.map-page .dlg button.ghost {
+  border-color: var(--glass-fill-edge);
+  background: var(--glass-fill);
+  color: var(--glass-text);
+  box-shadow: none;
+}
+
+.map-page .dlg button.ghost:hover {
+  background: var(--glass-well);
+}
+
+/* the sign-in / sign-up popup of js/auth-modal.js */
 
 .dlg.auth {
   width: min(420px, calc(100vw - 32px));
@@ -1639,15 +1808,8 @@ button.btn--pill {
   overflow: visible;
 }
 
-.dlg.auth::backdrop {
-  background: rgba(10, 14, 20, 0.28);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
-}
-
 .dlg.auth .dlg__title {
   font-size: 22px;
-  font-weight: 700;
 }
 
 .dlg.auth .auth__why {

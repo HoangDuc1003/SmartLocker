@@ -36,7 +36,13 @@
       var animation = M.animate(nodes, keyframes, options);
       return Promise.resolve(animation.finished || animation).then(function () {
         if (!keep) {
-          clear(nodes, ['transform', 'opacity']);
+          // a frame later: Motion writes the last keyframe inline after its promise settles
+          return new Promise(function (resolve) {
+            window.requestAnimationFrame(function () {
+              clear(nodes, ['transform', 'opacity']);
+              resolve();
+            });
+          });
         }
       }, function () {});
     } catch (e) {
@@ -107,8 +113,9 @@
 
   /* Hover and press of the glass buttons (.lg-hover): a spring lift on hover and a squeeze on press, read by
      delegation so the rows and the cards drawn again every 10 seconds get it too. Buttons inside a stack or a
-     list (.ctl, .area-row, .pop__link) only get the light of css/locker-map.css, not the lift. */
-  var FLAT = '.ctl, .area-row, .pop__link';
+     list (.ctl, .area-row, .pop__link) only get the light of css/locker-map.css, not the lift; nor does a button that
+     is a glass island itself (the wallet pill): moving it would blur the map behind it again on every frame. */
+  var FLAT = '.ctl, .area-row, .pop__link, .glass';
   var hoverOk = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   function liftable(e) {

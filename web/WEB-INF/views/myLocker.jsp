@@ -184,7 +184,7 @@
                 <div class="ml-actions">
                     <c:choose>
                         <c:when test="${d.status == 'RESERVED' and canCancel}">
-                            <%-- v3 D4: free cancel only in the first minutes; my-locker.js removes the form when the time is up --%>
+                            <%-- v3 D4: free cancel only in the first minutes; user-pages.js removes the form when the time is up --%>
                             <form method="post" action="${ctx}/BookingController" data-cancel-from="<c:out value='${d.reservedAt}'/>" data-cancel-min="${cancelMin}"
                                   data-confirm="Hủy lượt đặt ngăn <c:out value='${d.slotCode}'/>? Số tiền đã trả được hoàn đủ vào ví." data-confirm-ok="Hủy đặt" data-confirm-danger>
                                 <input type="hidden" name="action" value="cancel">
@@ -201,7 +201,7 @@
                             <span class="muted">Không gia hạn được khi tủ đã khóa vì quá hạn.</span>
                         </c:when>
                         <c:when test="${d.extendCount < 3 and not empty sz}">
-                            <%-- v3 D10: CEILING(minutes / 60) x the hour price of the size, taken at once; my-locker.js keeps
+                            <%-- v3 D10: CEILING(minutes / 60) x the hour price of the size, taken at once; user-pages.js keeps
                                  data-confirm in step with the chosen option --%>
                             <form method="post" action="${ctx}/BookingController" data-extend-form
                                   data-confirm="Gia hạn thêm 1 giờ? Ví bị trừ ngay <fmt:formatNumber value="${sz.hourRate}" groupingUsed="true"/> đ." data-confirm-ok="Gia hạn">
@@ -366,7 +366,7 @@
 <c:if test="${not panel}">
 </main>
 <script src="${ctx}/js/app.js"></script>
-<script src="${ctx}/js/my-locker.js"></script>
+<script src="${ctx}/js/user-pages.js"></script>
 </body>
 </html>
 </c:if>

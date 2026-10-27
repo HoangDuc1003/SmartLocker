@@ -18,6 +18,29 @@
   var motion = window.SmartLockerMotion;
   var current = null;   // the page shown, "/TopupController?id=7", without panel=1
   var loading = 0;
+  var closing = 0;      // the leave animation that may still close the popup
+  var ahead = {};       // page -> { at, html: Promise }: loaded when the pointer rests on its link, used for 15 s
+  var AHEAD_MS = 15000;
+
+  function panelUrl(page) {
+    return ctx + page + (page.indexOf('?') === -1 ? '?' : '&') + 'panel=1';
+  }
+
+  function fetchPanel(page, prefetch) {
+    var headers = { Accept: 'text/html' };
+    if (prefetch) {
+      headers['X-SL-Prefetch'] = '1';   // common/panel-flash.jspf keeps the flash for the real load
+    }
+    return fetch(panelUrl(page), { credentials: 'same-origin', headers: headers })
+      .then(function (res) { return res.text(); });
+  }
+
+  // the HTML loaded ahead for this page when it is fresh; taken once
+  function takeAhead(page) {
+    var hit = ahead[page];
+    delete ahead[page];
+    return hit && Date.now() - hit.at < AHEAD_MS ? hit.html : null;
+  }
 
   // "/MyLockerController?x" when the URL is one of the two pages of this app, else null
   function pageOf(href) {
@@ -74,22 +97,27 @@
     markTab(page);
     var ticket = ++loading;
     body.setAttribute('aria-busy', 'true');
-    if (!dlg.open) {
+    if (dlg.hasAttribute('data-closing')) {
+      // asked again while it was going away: it stays open (the close of the leave animation is dropped)
+      closing++;
+      dlg.removeAttribute('data-closing');
+      motion.pop(dlg);
+    } else if (!dlg.open) {
       body.innerHTML = '<p class="glass-dlg__loading">Đang tải…</p>';
       dlg.show();          // not modal: the tab bar stays usable to switch page or go back to the map
       motion.pop(dlg);
     }
-    var url = ctx + page + (page.indexOf('?') === -1 ? '?' : '&') + 'panel=1';
-    return fetch(url, { credentials: 'same-origin', headers: { Accept: 'text/html' } })
-      .then(function (res) { return res.text(); })
+    return (takeAhead(page) || fetchPanel(page, false))
       .then(function (html) {
         if (ticket === loading && dlg.open) {   // a newer page was asked for meanwhile, or the popup was closed
           draw(html);
         }
       })
       .catch(function () {
-        body.removeAttribute('aria-busy');
-        body.innerHTML = '<p class="flash bad" role="alert">Không tải được nội dung. Kiểm tra kết nối rồi thử lại.</p>';
+        if (ticket === loading && dlg.open) {
+          body.removeAttribute('aria-busy');
+          body.innerHTML = '<p class="flash bad" role="alert">Không tải được nội dung. Kiểm tra kết nối rồi thử lại.</p>';
+        }
       });
   }
 
@@ -98,7 +126,11 @@
       return;
     }
     dlg.setAttribute('data-closing', '');
+    var mine = ++closing;
     motion.leave(dlg).then(function () {
+      if (mine !== closing) {
+        return;   // opened again meanwhile
+      }
       dlg.removeAttribute('data-closing');
       dlg.close();
       dlg.style.removeProperty('transform');
@@ -151,6 +183,7 @@
       return;
     }
     e.preventDefault();
+    ahead = {};   // what was loaded ahead is old now
     var data = new URLSearchParams(new FormData(form));
     if (e.submitter && e.submitter.name) {
       data.append(e.submitter.name, e.submitter.value);
@@ -166,12 +199,33 @@
     }).catch(function () {
       // the panel drawn next tells what happened
     }).then(function () {
+      ahead = {};   // a copy loaded ahead while the POST was on its way shows the page before it
       // a new top-up shows its own QR: the page without ?id= shows the newest request still waiting
       var page = current && current.indexOf(PAGES.topup) === 0 ? PAGES.topup : current;
       return show(page || PAGES.mylocker);
     }).then(function () {
       document.dispatchEvent(new CustomEvent('sl-data-changed'));   // the map reads the wallet and the slots again
     });
+  });
+
+  // the pointer rests on a link to one of the two pages: load it now, so the popup opens with its content
+  // (not for a visitor: the server answers with the sign-in page)
+  if (app.getAttribute('data-role') !== 'GUEST' && window.matchMedia && window.matchMedia('(hover: hover)').matches) {
+    document.addEventListener('pointerover', function (e) {
+      var link = e.target.closest ? e.target.closest('a[href]') : null;
+      var page = link && pageOf(link.href);
+      if (!page || page === current || (ahead[page] && Date.now() - ahead[page].at < AHEAD_MS)) {
+        return;
+      }
+      var html = fetchPanel(page, true);
+      ahead[page] = { at: Date.now(), html: html };
+      html.catch(function () {
+        delete ahead[page];
+      });
+    });
+  }
+  document.addEventListener('sl-data-changed', function () {
+    ahead = {};
   });
 
   // ?panel= on the map: open it at load (the map script then cleans the address)

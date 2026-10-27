@@ -164,6 +164,7 @@ public class LockerMonitor implements ServletContextListener {
             mailer.shutdownNow();
         }
         CACHE.set(null);
+        DbContext.shutdown();
     }
 
     // ─── Internals ────────────────────────────────────────────────────────────

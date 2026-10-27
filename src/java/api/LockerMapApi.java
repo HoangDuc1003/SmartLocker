@@ -69,12 +69,32 @@ public class LockerMapApi extends HttpServlet {
                 map.add("fp_devices", fp);
             }
             String json = map.toString();
+            // the page polls every 10 seconds and sends back the ETag it has: nothing changed, nothing sent or drawn again
+            String etag = etagOf(json);
+            res.setHeader("Cache-Control", "private, no-cache");
+            res.setHeader("ETag", etag);
+            if (etag.equals(req.getHeader("If-None-Match"))) {
+                res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+                return;
+            }
             res.setContentType("application/json;charset=UTF-8");
-            res.setHeader("Cache-Control", "no-store");
             res.getWriter().write(json);
         } catch (SQLException e) {
             log("Locker map failed", e);
             res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    // SHA-1 of the JSON (it differs per user, so the response is private). Weak (W/): Tomcat does not gzip a
+    // response with a strong ETag (noCompressionStrongETag)
+    static String etagOf(String json) {
+        String hash;
+        try {
+            byte[] bytes = java.security.MessageDigest.getInstance("SHA-1").digest(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            hash = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            hash = Integer.toHexString(json.hashCode());   // every JVM has SHA-1
+        }
+        return "W/\"" + hash + '"';
     }
 }

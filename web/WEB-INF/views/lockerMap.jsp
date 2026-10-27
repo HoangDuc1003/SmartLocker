@@ -158,8 +158,7 @@
 <script src="${ctx}/js/auth-modal.js"></script>
 <script src="${ctx}/js/vendor/leaflet/leaflet.js"></script>
 <script src="${ctx}/js/area-map.js"></script>
-<script src="${ctx}/js/my-locker.js"></script>
-<script src="${ctx}/js/topup.js"></script>
+<script src="${ctx}/js/user-pages.js"></script>
 <script src="${ctx}/js/glass-panel.js"></script>
 <script src="${ctx}/js/locker-map.js"></script>
 </body>

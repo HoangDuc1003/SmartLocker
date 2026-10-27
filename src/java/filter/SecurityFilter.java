@@ -106,8 +106,11 @@ public class SecurityFilter implements Filter {
         req.setCharacterEncoding("UTF-8");
         res.setCharacterEncoding("UTF-8");
         String path = req.getServletPath();
-        // the browser revalidates css/js on each load (a 304 when unchanged), so a redeploy is never hidden by a stale copy
-        if (path.endsWith(".css") || path.endsWith(".js")) {
+        // the browser revalidates css/js on each load (a 304 when unchanged), so a redeploy is never hidden by a stale copy;
+        // the vendored libraries (Leaflet, Motion: about 300 KB) only change with an upgrade, so they are kept a day
+        if (path.startsWith("/js/vendor/")) {
+            res.setHeader("Cache-Control", "public, max-age=86400");
+        } else if (path.endsWith(".css") || path.endsWith(".js")) {
             res.setHeader("Cache-Control", "no-cache");
         }
 

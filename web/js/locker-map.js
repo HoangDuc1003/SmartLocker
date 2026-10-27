@@ -68,6 +68,9 @@
     panelDirty: false,
     panelSig: null,           // what the slot card shows; a refresh with the same slot does not redraw it
     popupOpen: false,
+    stale: false,             // an answer came while a popup was open and is not drawn yet
+    etag: null,               // ETag of the last answer and the URL it belongs to (304 = nothing to draw)
+    etagUrl: null,
     userChoseArea: false,     // the map flies to the nearest area by itself only until the visitor picks one
     placed: -1,               // pins on the map (-1 before the first answer)
     returnFocus: null
@@ -1352,6 +1355,7 @@
       state.slotId = null;
       state.filters = {};
       state.animateBanks = true;
+      state.etag = null;   // the banks are emptied: the next answer must come in full, not as a 304
       if (state.data) {
         state.data.banks = [];
       }
@@ -1419,16 +1423,38 @@
       state.area = data.area.area_code;
     }
     if (state.popupOpen) {
-      return;   // a fetch that started before the popup opened: draw it after the popup (next refresh)
+      state.stale = true;   // a fetch that started before the popup opened: draw it after the popup (next refresh)
+      return;
     }
+    state.stale = false;
     renderAll();
+  }
+
+  // nothing changed since the last answer (304): only the "updated" time moves, nothing is drawn again
+  function onSame() {
+    state.error = null;
+    state.loadedAt = Date.now();
+    if (state.stale && !state.popupOpen) {
+      state.stale = false;
+      renderAll();
+    } else {
+      renderSync();
+    }
   }
 
   function load() {
     var asked = state.area;
     var url = cfg.api + (cfg.api.indexOf('?') === -1 ? '?' : '&') + 'area=' + encodeURIComponent(asked || '');
-    fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+    var headers = { Accept: 'application/json' };
+    if (state.etag && state.etagUrl === url) {
+      headers['If-None-Match'] = state.etag;   // LockerMapApi answers 304 when the JSON is the same
+    }
+    // no-store: the browser cache stays out of it, so a 304 reaches this code and the old data is kept
+    fetch(url, { credentials: 'same-origin', cache: 'no-store', headers: headers })
       .then(function (res) {
+        if (res.status === 304) {
+          return null;
+        }
         var type = res.headers.get('Content-Type') || '';
         if (type.indexOf('json') === -1) {
           // SecurityFilter answered with the login page: the session has expired
@@ -1437,13 +1463,21 @@
         if (!res.ok) {
           throw new Error('HTTP ' + res.status);
         }
-        return res.json();
+        return res.json().then(function (data) {
+          return { data: data, etag: res.headers.get('ETag') };
+        });
       })
-      .then(function (data) {
+      .then(function (answer) {
         if (asked && asked !== state.area) {
           return;   // the user picked another area while this answer was on its way
         }
-        onData(data);
+        if (answer === null) {
+          onSame();
+        } else {
+          state.etag = answer.etag;   // only an answer that is drawn: a 304 later means "what is on screen"
+          state.etagUrl = url;
+          onData(answer.data);
+        }
       })
       .catch(function (err) {
         var first = !state.error;
@@ -1649,37 +1683,87 @@
     bindGlassHover();
   }
 
-  // liquid glass hover (css/locker-map.css): the light of an island and of the button under the pointer follows it
+  // liquid glass hover (css/locker-map.css): the light of an island and of the button under the pointer follows it.
+  // The island's light is a child layer moved with a transform: writing a variable on the blurred island itself made
+  // the browser blur it again on every move (about 26 frames a second over the sheet).
   function bindGlassHover() {
     if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
       return;
     }
     var last = null;
     var queued = false;
-    function place(node, xName, yName) {
-      var r = node.getBoundingClientRect();
-      node.style.setProperty(xName, Math.round(last.clientX - r.left) + 'px');
-      node.style.setProperty(yName, Math.round(last.clientY - r.top) + 'px');
+    var litGlare = null;
+    var lastButton = null;
+    var bx = -1;
+    var by = -1;
+
+    // null for an island that cannot hold the light: a list (a <span> is not list content), one laid out static
+    // (css/locker-map.css makes the static islands relative), or one drawn without blur (reduced transparency)
+    function glareOf(island) {
+      var glare = island.firstElementChild;
+      if (glare && glare.classList.contains('glass__glare')) {
+        return glare;
+      }
+      var css = window.getComputedStyle(island);
+      if (island.tagName === 'UL' || island.tagName === 'OL' || css.position === 'static' ||
+          (css.backdropFilter || css.webkitBackdropFilter || 'none') === 'none') {
+        return null;
+      }
+      glare = document.createElement('span');
+      glare.className = 'glass__glare';
+      glare.setAttribute('aria-hidden', 'true');
+      glare.appendChild(document.createElement('i'));
+      island.insertBefore(glare, island.firstChild);
+      return glare;
     }
+
+    function frame() {
+      queued = false;
+      var target = last.target && last.target.closest ? last.target : null;
+      var island = target && target.closest('.glass');
+      var glare = island ? glareOf(island) : null;
+      if (glare !== litGlare) {
+        if (litGlare) {
+          litGlare.classList.remove('is-on');
+        }
+        if (glare) {
+          glare.classList.add('is-on');
+        }
+        litGlare = glare;
+      }
+      if (glare) {
+        var r = island.getBoundingClientRect();
+        glare.firstChild.style.transform = 'translate(' + Math.round(last.clientX - r.left) + 'px,' + Math.round(last.clientY - r.top) + 'px)';
+      }
+      var button = target && target.closest('.lg-hover');
+      if (button) {
+        var br = button.getBoundingClientRect();
+        var x = Math.round(last.clientX - br.left);
+        var y = Math.round(last.clientY - br.top);
+        // a button is small: a move of a few pixels does not show, so it is not drawn again for it
+        if (button !== lastButton || Math.abs(x - bx) > 3 || Math.abs(y - by) > 3) {
+          button.style.setProperty('--mx', x + 'px');
+          button.style.setProperty('--my', y + 'px');
+          lastButton = button;
+          bx = x;
+          by = y;
+        }
+      }
+    }
+
     document.addEventListener('pointermove', function (e) {
       last = e;
-      if (queued) {
-        return;
+      if (!queued) {
+        queued = true;
+        window.requestAnimationFrame(frame);
       }
-      queued = true;
-      window.requestAnimationFrame(function () {
-        queued = false;
-        var target = last.target && last.target.closest ? last.target : null;
-        var island = target && target.closest('.glass');
-        var button = target && target.closest('.lg-hover');
-        if (island) {
-          place(island, '--gx', '--gy');
-        }
-        if (button) {
-          place(button, '--mx', '--my');
-        }
-      });
     }, { passive: true });
+    document.addEventListener('pointerleave', function () {
+      if (litGlare) {
+        litGlare.classList.remove('is-on');
+        litGlare = null;
+      }
+    });
   }
 
   function tick() {

@@ -1,8 +1,9 @@
 <%-- The message after a POST, for a page drawn as a glass popup of the map (?panel=1, js/glass-panel.js):
-     the same flash as common/nav.jspf, shown once at the top of the popup. --%>
+     the same flash as common/nav.jspf, shown once at the top of the popup. A copy loaded ahead on hover
+     (header X-SL-Prefetch) leaves the flash in the session for the page that really shows it. --%>
 <%@ page pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<c:if test="${not empty sessionScope.flash}">
+<c:if test="${not empty sessionScope.flash and empty header['X-SL-Prefetch']}">
     <div class="flash ${sessionScope.flashBad ? 'bad' : ''}" role="${sessionScope.flashBad ? 'alert' : 'status'}"><c:out value="${sessionScope.flash}"/></div>
     <c:remove var="flash" scope="session"/>
     <c:remove var="flashBad" scope="session"/>

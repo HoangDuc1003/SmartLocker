@@ -170,7 +170,7 @@
 </main>
 
 <script src="${ctx}/js/app.js"></script>
-<script src="${ctx}/js/topup.js"></script>
+<script src="${ctx}/js/user-pages.js"></script>
 </body>
 </html>
 </c:if>

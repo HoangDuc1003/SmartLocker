@@ -1,5 +1,5 @@
 /* Area map: the full-screen Leaflet map of the locker page (vendored in js/vendor/leaflet, no CDN), one pin per area:
-   a ring of free slots and a glass label with the name. The street tiles come from CARTO / OpenStreetMap and are kept
+   a ring of free slots and a glass label with the name. The street tiles come from OpenStreetMap (or a mirror) and are kept
    in Cache Storage, so a tile seen (or prefetched) once also draws offline. With no tile at all the pins stay on the
    right places over a plain grid and a note says so, so the page still works offline.
    Usage (js/locker-map.js):  var map = AreaMap.create(element, { esc, tone, onSelect, padding, notice });
@@ -89,8 +89,24 @@
       });
     }
 
-    // saves the tiles it does not have yet, four at a time; resolves true when every tile is saved
-    function prefetch(urls) {
+    // waits until the browser is idle and busy() is false (the map moving, the tab hidden): the visible tiles first
+    function whenIdle(busy) {
+      return new Promise(function (resolve) {
+        (function wait() {
+          if (busy && busy()) {
+            setTimeout(wait, 600);
+          } else if (window.requestIdleCallback) {
+            window.requestIdleCallback(function () { resolve(); }, { timeout: 2000 });
+          } else {
+            setTimeout(resolve, 50);
+          }
+        })();
+      });
+    }
+
+    // saves the tiles it does not have yet, two at a time and only while the page is idle; resolves true when every
+    // tile is saved
+    function prefetch(urls, busy) {
       if (!enabled) {
         return Promise.resolve(false);
       }
@@ -98,6 +114,12 @@
         var i = 0;
         var ok = true;
         function next() {
+          if (i >= urls.length) {
+            return Promise.resolve();
+          }
+          return whenIdle(busy).then(step);
+        }
+        function step() {
           if (i >= urls.length) {
             return Promise.resolve();
           }
@@ -113,7 +135,7 @@
             ok = false;
           }).then(next);
         }
-        return Promise.all([next(), next(), next(), next()]).then(function () {
+        return Promise.all([next(), next()]).then(function () {
           return ok;
         });
       }).catch(function () {
@@ -312,7 +334,9 @@
         if (areaBox) {
           tileRange(areaBox, 12, 16, template, urls);
         }
-        TileStore.prefetch(urls).then(function (ok) {
+        TileStore.prefetch(urls, function () {
+          return document.hidden || document.body.classList.contains('map-moving');
+        }).then(function (ok) {
           if (ok) {
             try {
               window.localStorage.setItem(key, PREFETCH_VERSION);

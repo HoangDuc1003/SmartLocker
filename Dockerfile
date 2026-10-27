@@ -15,6 +15,8 @@ RUN mkdir -p out/WEB-INF/classes out/WEB-INF/lib \
 FROM tomcat:9.0-jre8-temurin
 RUN rm -rf "$CATALINA_HOME/webapps/"*
 COPY --from=build /src/out "$CATALINA_HOME/webapps/SmartLocker"
+# gzip text answers (HTML, CSS, JS, JSON): Leaflet and Motion are about 300 KB, about 90 KB compressed
+RUN sed -i 's|<Connector port="8080" protocol="HTTP/1.1"|<Connector port="8080" protocol="HTTP/1.1" compression="on" compressionMinSize="1024" compressibleMimeType="text/html,text/css,text/javascript,application/javascript,application/json,image/svg+xml"|' "$CATALINA_HOME/conf/server.xml"  && grep -q 'compression="on"' "$CATALINA_HOME/conf/server.xml"
 # the bare address opens the app
 RUN mkdir "$CATALINA_HOME/webapps/ROOT" \
  && printf '<%% response.sendRedirect("/SmartLocker/"); %%>' > "$CATALINA_HOME/webapps/ROOT/index.jsp"
