@@ -10,6 +10,10 @@
  *          B  enroll a card     C  enroll a finger   (then the 6-digit enroll code from "Tu cua toi", #)
  *          D  door closed: show IP / server status;  door open: lock now
  *
+ * One box serves every slot of the banks it manages, but only one compartment has the servos: an UNLOCK with
+ * "physical":false (another slot, see sql/demo_box.sql) only shows "Ngan A07 OK" on the LCD. A reply without
+ * "physical" (an older server) means every slot is the real one.
+ *
  * After an unlock the bolt servo releases, the door servo opens, and the door locks again once the
  * "open_sec" hold has passed and the SRF05 has seen nobody within DOORWAY_CM for AUTO_CLOSE_MS.
  *
@@ -35,7 +39,7 @@
 #error "Copy secrets.example.h to secrets.h and fill in Wi-Fi, server and API key"
 #endif
 
-static const char FIRMWARE[] = "3.1-esp32";
+static const char FIRMWARE[] = "3.2-esp32";
 
 // ---- Pin map of the box ----
 // RC522 on its own SPI pins; RST is tied to 3V3, so the chip is reset in software.
@@ -237,6 +241,13 @@ void openDoor(int seconds, const String& message) {
   lastDoorDraw = 0;
 }
 
+// A slot without a servo: the server already moved the booking on, the LCD only confirms it.
+void showSlotOk(const String& slotCode, const String& second) {
+  wake();
+  show("Ngan " + slotCode + " OK\n" + second, 3000);
+  Serial.printf("Slot %s OK (no servo)\n", slotCode.c_str());
+}
+
 void closeDoor() {
   servoWrite(SERVO_DOOR_PIN, DOOR_CLOSED_DEG);     // door first, then the bolt
   delay(1500);
@@ -352,12 +363,15 @@ void runCommands(JsonArray commands) {
   for (JsonObject cmd : commands) {
     String action = cmd["action"] | "";
     Serial.printf("Command %ld: %s\n", (long) (cmd["command_id"] | 0L), action.c_str());
-    if (action == "UNLOCK" && !doorOpen) {
+    bool physical = cmd["physical"] | true;           // an old server sends no flag: every slot is the real one
+    if (action == "UNLOCK" && (!doorOpen || !physical)) {
       // server text is "Mo tu\n(dien thoai)": line 1 gets the slot, line 2 keeps the source
       String m = cmd["message"] | "Mo tu";
       int nl = m.indexOf('\n');
       String second = nl >= 0 ? m.substring(nl + 1) : "";
-      openDoor(cmd["open_sec"] | 8, "Mo tu ngan " + String(cmd["slot_code"] | "") + "\n" + second);
+      String slot = cmd["slot_code"] | "";
+      if (physical) openDoor(cmd["open_sec"] | 8, "Mo tu ngan " + slot + "\n" + second);
+      else showSlotOk(slot, second);
     } else if (action == "DELETE_FP" && fingerOk) {
       int slot = cmd["sensor_slot"] | 0;
       if (slot > 0) Serial.printf("Delete finger %d -> %d\n", slot, finger.deleteModel(slot));
@@ -417,7 +431,11 @@ void authorize(const JsonDocument& body) {
   }
   String message = reply["message"] | "";
   if (String(reply["result"] | "") == "UNLOCK") {
-    openDoor(reply["open_sec"] | 8, message);
+    if (reply["physical"] | true) {
+      openDoor(reply["open_sec"] | 8, message);
+    } else {   // the booking moved on at the server; this slot has no servo
+      showSlotOk(reply["slot_code"] | "", String(reply["phase"] | "") == "PICKUP" ? "Da lay do" : "Da gui do");
+    }
   } else {
     Serial.print(F("DENY ")); Serial.println(reply["reason"] | "");
     show(message, 3000);

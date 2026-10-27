@@ -86,6 +86,97 @@ public class PricingDatabaseIntegrationTest {
         }
     }
 
+    /** "Tự chọn": fn_CustomPrice and Pricing.customPrice agree for S/M/L, 1..23 hours, 1..7 days and refused minutes. */
+    @Test
+    public void customPricesMatchForEverySizeHoursAndDays() throws SQLException {
+        try (Connection conn = open()) {
+            if (scalarInt(conn, "SELECT 1 WHERE OBJECT_ID('dbo.fn_CustomPrice') IS NOT NULL") == null) {
+                throw new SkipException("fn_CustomPrice is missing: run the custom duration part of sql/03_v2_v3.sql");
+            }
+            long dayPrice = scalarLong(conn, "SELECT TOP 1 price FROM StoragePlan "
+                    + "WHERE is_active = 1 AND price > 0 AND duration_min = 1440 ORDER BY plan_id");
+            if (dayPrice <= 0) {
+                throw new SkipException("No day pass on sale");
+            }
+            int maxHours = (int) scalarLong(conn, "SELECT ISNULL(dbo.fn_Config(N'CUSTOM_MAX_HOURS'), 23)");
+            int maxDays = (int) scalarLong(conn, "SELECT ISNULL(dbo.fn_Config(N'CUSTOM_MAX_DAYS'), 7)");
+            int multiPct = (int) scalarLong(conn, "SELECT ISNULL(dbo.fn_Config(N'CUSTOM_MULTI_DAY_PCT'), 90)");
+            int weekPct = (int) scalarLong(conn, "SELECT ISNULL(dbo.fn_Config(N'CUSTOM_WEEK_PCT'), 80)");
+            java.util.List<Integer> minutes = new java.util.ArrayList<>();
+            for (int h = 1; h <= 23; h++) {
+                minutes.add(h * 60);
+            }
+            for (int d = 1; d <= 7; d++) {
+                minutes.add(d * 1440);
+            }
+            minutes.add(90);            // not whole hours
+            minutes.add(1440 * 8);      // longer than CUSTOM_MAX_DAYS
+            int rows = 0;
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "SELECT size_code, price_pct, dbo.fn_HourRate(price_pct), dbo.fn_CustomPrice(price_pct, ?) FROM SlotSize")) {
+                for (int m : minutes) {
+                    ps.setInt(1, m);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            long sql = rs.getLong(4);
+                            if (rs.wasNull()) {
+                                sql = -1;
+                            }
+                            long java = Pricing.customPrice(rs.getLong(3), dayPrice, rs.getInt(2), m,
+                                    maxHours, maxDays, multiPct, weekPct);
+                            assertEquals(sql, java, rs.getString(1) + " " + m + " min");
+                            rows++;
+                        }
+                    }
+                }
+            }
+            if (rows == 0) {
+                throw new SkipException("No sizes");
+            }
+        }
+    }
+
+    /** A custom booking of 3 days: priced by fn_CustomPrice, keeps the day pass and its minutes, old calls still work. */
+    @Test
+    public void customReserveChargesTheCustomPriceAndKeepsTheMinutes() throws SQLException {
+        try (Connection conn = open()) {
+            conn.setAutoCommit(false);
+            try {
+                Integer user = scalarInt(conn, "SELECT user_id FROM Users WHERE username = N'v2pin' AND NOT EXISTS "
+                        + "(SELECT 1 FROM Deposit d WHERE d.user_id = Users.user_id AND d.status IN (N'RESERVED', N'ACTIVE'))");
+                Integer slot = scalarInt(conn, "SELECT TOP 1 m.slot_id FROM v_LockerSlotMap m JOIN LockerSlot s "
+                        + "ON s.locker_slot_id = m.slot_id WHERE s.status = N'AVAILABLE' AND m.display_status = N'AVAILABLE' "
+                        + "AND m.size_code = 'L' ORDER BY m.slot_id");
+                Integer dayPlan = scalarInt(conn, "SELECT TOP 1 plan_id FROM StoragePlan WHERE is_active = 1 AND price > 0 "
+                        + "AND duration_min = 1440 ORDER BY plan_id");
+                if (user == null || slot == null || dayPlan == null || scalarInt(conn,
+                        "SELECT 1 WHERE OBJECT_ID('dbo.fn_CustomPrice') IS NOT NULL") == null) {
+                    throw new SkipException("Run sql/test_setup.sql first (needs v2pin without an open booking, a free L slot)");
+                }
+                exec(conn, "UPDATE Users SET balance = 1000000 WHERE user_id = " + user);
+                long expected = scalarLong(conn, "SELECT dbo.fn_CustomPrice(price_pct, 4320) FROM SlotSize WHERE size_code = 'L'");
+                long id;
+                try (CallableStatement cs = conn.prepareCall("{call Deposit_Reserve(?, ?, ?, ?, ?, ?)}")) {
+                    cs.setInt(1, user);
+                    cs.setInt(2, slot);
+                    cs.setInt(3, 0);
+                    cs.registerOutParameter(4, java.sql.Types.BIGINT);
+                    cs.setString(5, "PIN");
+                    cs.setInt(6, 4320);
+                    cs.execute();
+                    id = cs.getLong(4);
+                }
+                assertEquals(scalarLong(conn, "SELECT paid_amount FROM Deposit WHERE deposit_id = " + id), expected);
+                assertEquals(scalarLong(conn, "SELECT custom_min FROM Deposit WHERE deposit_id = " + id), 4320L);
+                assertEquals(scalarLong(conn, "SELECT plan_id FROM Deposit WHERE deposit_id = " + id), (long) dayPlan);
+                assertEquals(scalarLong(conn, "SELECT balance FROM Users WHERE user_id = " + user), 1000000 - expected);
+            } finally {
+                conn.rollback();
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+
     /** A booking 2 h 10 min late: charged 3 hours once, the wallet may go below zero, a second run adds nothing. */
     @Test
     public void lateFeeIsChargedOnceAndMayMakeADebt() throws SQLException {

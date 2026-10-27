@@ -132,6 +132,9 @@ public class Web {
             {"The 5 minutes to cancel are over", "Đã quá 5 phút kể từ lúc đặt nên không hủy được nữa."},
             {"The booking is overdue and locked, it cannot be extended", "Lượt gửi đã quá hạn và tủ đang bị khóa nên không gia hạn được. Hãy nạp tiền và tới lấy đồ."},
             {"Insufficient balance to extend", "Số dư không đủ để gia hạn. Hãy nạp thêm tiền."},
+            // "Tự chọn" (custom duration)
+            {"Choose whole hours or whole days within the limits", "Thời gian tự chọn không hợp lệ: chọn số giờ hoặc số ngày trong giới hạn cho phép."},
+            {"Custom duration is not available now", "Hiện chưa đặt được thời gian tự chọn (chưa có gói trọn ngày). Hãy chọn một gói có sẵn."},
         };
         for (String[] p : pairs) {
             SQL_MESSAGES.put(p[0], p[1]);

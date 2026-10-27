@@ -1283,6 +1283,61 @@ a.quick__go span {
   font-variant-numeric: tabular-nums;
 }
 
+/* "Tự chọn": hours/days switch, stepper and range under the plan segments */
+.custom-pick {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.custom-pick[hidden] {
+  display: none;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stepper__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--glass-hair);
+  border-radius: 50%;
+  background: var(--glass-well);
+  color: var(--glass-text);
+  cursor: pointer;
+}
+
+.stepper__btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.stepper__value {
+  flex: 1;
+  color: var(--glass-text);
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.custom-range {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
 .pay-now {
   display: flex;
   align-items: baseline;

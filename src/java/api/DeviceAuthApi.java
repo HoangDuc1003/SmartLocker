@@ -2,6 +2,7 @@ package api;
 
 import com.google.gson.JsonObject;
 import dao.DeviceAuthDao;
+import dao.DeviceDao;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
@@ -15,7 +16,8 @@ import service.AuthText;
  * v2, spec 4.2: a code, a card or a finger at the box. The server decides "open" or "not open"; the box has one latch.
  *
  * Request: {"method":"PIN","pin":"482913"} | {"method":"CARD","card_uid":"04A1B2C3"} | {"method":"FINGERPRINT","sensor_slot":7}
- * Reply:   {"result":"UNLOCK","phase":"CHECK_IN","deposit_id":120,"slot_code":"A04","open_sec":8,"message":"Moi cat do\nNgan A04"}
+ * Reply:   {"result":"UNLOCK","phase":"CHECK_IN","deposit_id":120,"slot_code":"A04","open_sec":8,"message":"Moi cat do\nNgan A04",
+ *           "physical":true}   (false: the slot has no servo, the box only shows OK; see sql/demo_box.sql)
  *          {"result":"DENY","reason":"WRONG_CODE","attempts_left":3,"retry_after_sec":0,"message":"Sai ma\nCon 3 lan"}
  *          v3: {"result":"DENY","reason":"OVERDUE_UNPAID","deposit_id":120,"debt":9700,"overdue_fee":14700,...}
  * HTTP 200 for every decision, 400 for a bad body, 401 for a bad key (SecurityFilter), 500 when the database failed.
@@ -86,7 +88,19 @@ public class DeviceAuthApi extends HttpServlet {
         }
         try {
             Map<String, Object> row = new DeviceAuthDao().authorize(deviceId, method, pin, uid, sensorSlot, "DEVICE");
-            ApiJson.write(res, 200, reply(row, AuthText.oled(row)));
+            JsonObject reply = reply(row, AuthText.oled(row));
+            if ("UNLOCK".equals(row.get("result")) && row.get("deposit_id") != null) {
+                // one box serves many slots, only the configured one has a servo (sql/demo_box.sql)
+                long depositId = ((Number) row.get("deposit_id")).longValue();
+                boolean physical = false;   // the decision is already committed; on a failure keep the servo shut
+                try {
+                    physical = new DeviceDao().isPhysicalDeposit(deviceId, depositId);
+                } catch (SQLException e) {
+                    log("Physical slot check failed for deposit " + depositId, e);
+                }
+                reply.addProperty("physical", physical);
+            }
+            ApiJson.write(res, 200, reply);
         } catch (SQLException e) {
             log("Device auth failed for device " + deviceId, e);
             ApiJson.error(res, 500, "SERVER_ERROR", "Loi may chu");

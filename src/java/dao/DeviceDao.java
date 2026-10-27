@@ -36,6 +36,37 @@ public class DeviceDao {
         }
     }
 
+    /** The configured physical slot of a device ("physical_slot_id" in OperatingProfile, set by sql/demo_box.sql). */
+    private static final String PHYSICAL_SLOT = "OUTER APPLY (SELECT TOP 1 TRY_CAST(JSON_VALUE(p.params_json, '$.physical_slot_id') AS INT) AS slot_id "
+            + "FROM OperatingProfile p WHERE p.device_id = ? ORDER BY p.profile_id DESC) ps ";
+
+    /** True when the booking's slot is the one with the servo, or when the device has none configured (every slot is). */
+    public boolean isPhysicalDeposit(int deviceId, long depositId) throws SQLException {
+        return isPhysical("SELECT x.slot_id, ps.slot_id AS physical FROM Deposit x " + PHYSICAL_SLOT
+                + "WHERE x.deposit_id = ?", deviceId, depositId);
+    }
+
+    /** Same as isPhysicalDeposit, for the slot of a queued UNLOCK command. */
+    public boolean isPhysicalCommand(int deviceId, long commandId) throws SQLException {
+        return isPhysical("SELECT x.slot_id, ps.slot_id AS physical FROM RemoteCommand x " + PHYSICAL_SLOT
+                + "WHERE x.command_id = ?", deviceId, commandId);
+    }
+
+    private static boolean isPhysical(String sql, int deviceId, long id) throws SQLException {
+        // no row or no setting: true, so an old setup keeps moving the servo for every slot
+        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, deviceId);
+            ps.setLong(2, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return true;
+                }
+                int physical = rs.getInt("physical");
+                return rs.wasNull() || physical == rs.getInt("slot_id");
+            }
+        }
+    }
+
     /** v2 heartbeat: the box reports its firmware version (at most 20 characters are kept). */
     public void setFirmware(int deviceId, String firmware) throws SQLException {
         String sql = "UPDATE Device SET firmware = ? WHERE device_id = ? AND ISNULL(firmware, '') <> ?";

@@ -29,6 +29,7 @@ public class Deposit {
     private String sizeCode;     // joined: S, M or L
     private String sizeCm;       // joined: 20x20x20 ...
     private int graceMin;        // joined from the plan: the slot locks after due_at + grace
+    private Integer customMin;   // "Tự chọn": booked minutes; null = the plan's duration
     private Long overdueRate;    // late fee of one hour, fixed at booking time
     private int overdueHours;    // late hours already charged
     private long overdueFee;     // late fee already charged
@@ -84,6 +85,8 @@ public class Deposit {
     public String getSizeCm() { return sizeCm; }
     public void setSizeCm(String sizeCm) { this.sizeCm = sizeCm; }
     public int getGraceMin() { return graceMin; }
+    public Integer getCustomMin() { return customMin; }
+    public void setCustomMin(Integer customMin) { this.customMin = customMin; }
     public void setGraceMin(int graceMin) { this.graceMin = graceMin; }
     public Long getOverdueRate() { return overdueRate; }
     public void setOverdueRate(Long overdueRate) { this.overdueRate = overdueRate; }

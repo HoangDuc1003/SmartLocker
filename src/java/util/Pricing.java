@@ -48,6 +48,34 @@ public final class Pricing {
         return ceilDiv(sizePrice(basePrice, sizePct) * 60 * feePct, baseMinutes * 10000L) * 100;
     }
 
+    /**
+     * "Tự chọn" (dbo.fn_CustomPrice): N whole hours = min(hour x N, sized day pass); N whole days = day pass x N x
+     * (100% for 1 day, multiDayPct for 2-6, weekPct from WEEK_DAYS), by size, rounded up once to 100 VND.
+     * Returns -1 when the minutes are not allowed or there is no day pass (dayPrice <= 0).
+     */
+    public static long customPrice(long hourRate, long dayPrice, int sizePct, int minutes,
+                                   int maxHours, int maxDays, int multiDayPct, int weekPct) {
+        if (dayPrice <= 0 || minutes <= 0) {
+            return -1;
+        }
+        if (minutes % 1440 == 0 && minutes / 1440 <= maxDays) {
+            int days = minutes / 1440;
+            int pct = days == 1 ? 100 : days >= WEEK_DAYS ? weekPct : multiDayPct;
+            return ceilDiv(dayPrice * sizePct * days * pct, 1_000_000) * 100;
+        }
+        if (minutes % 60 == 0 && minutes < 1440 && minutes / 60 <= maxHours) {
+            return Math.min(hourRate * (minutes / 60), sizePrice(dayPrice, sizePct));
+        }
+        return -1;
+    }
+
+    /** From this many custom days on, a day costs CUSTOM_WEEK_PCT of the day pass. */
+    public static final int WEEK_DAYS = 7;
+    public static final int CUSTOM_MAX_HOURS = 23;
+    public static final int CUSTOM_MAX_DAYS = 7;
+    public static final int CUSTOM_MULTI_DAY_PCT = 90;
+    public static final int CUSTOM_WEEK_PCT = 80;
+
     /** Late hours to pay: every started hour after due_at (0 when not late). */
     public static long overdueHours(long secondsLate) {
         return secondsLate <= 0 ? 0 : ceilDiv(secondsLate, 3600);

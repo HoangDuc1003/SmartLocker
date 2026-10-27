@@ -17,10 +17,12 @@ Dev server: Tomcat at `E:/apache-tomcat-9.0.113`, app at `http://localhost:8080/
 - Code comments in English; UI text and submitted docs (README, SYSTEM_FLOWS) in Vietnamese.
 
 ## Working process
-- Test end-to-end in the user's browser (claude-in-chrome): every button, component and backend API it calls; loop fix → retest until it passes.
+- Test end-to-end in a browser (load the `built-in-browser` skill; claude-in-chrome if the pane is unavailable): every button,
+  component and backend API it calls; loop fix → retest until it passes. Save screenshots the README uses in `docs/images/`.
 - After a change, other agents cross-review it and feed findings back; loop until the reviews pass.
-- When about 50k tokens of context are left, each agent writes a handoff to `docs/handoff/<agent>.md`
-  (goal, done, open items, files touched, how to verify) and the orchestrator starts one new session per handoff.
+- Each agent has a budget of 200k-300k tokens. Once it has used about 200k, it writes a handoff to `docs/handoff/<agent>.md`
+  (goal, done, open items, files touched, how to verify) and stops; the orchestrator starts one new session from that handoff.
+- Sessions working in the same checkout touch only the files of their own task, commit nothing, and leave README to the README task.
 
 ## Lessons — mistakes agents made here (one line each, add new ones at the bottom)
 - A form must post exactly the parameter names its controller reads (the emergency modal sent `deviceCode`, the controller reads `slotId`).

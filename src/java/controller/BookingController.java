@@ -42,7 +42,10 @@ public class BookingController extends HttpServlet {
                 if (!DepositDao.OPEN_METHODS.contains(method)) {
                     Web.flash(req.getSession(), "Cách mở tủ không hợp lệ", true);
                 } else {
-                    long id = dao.reserve(me.getUserId(), Web.intParam(req, "slotId", 0), Web.intParam(req, "planId", 0), method);
+                    // "Tự chọn": customMin (whole hours or days) replaces planId; the procedure prices it, never the page
+                    int customMin = Web.intParam(req, "customMin", 0);
+                    long id = dao.reserve(me.getUserId(), Web.intParam(req, "slotId", 0), Web.intParam(req, "planId", 0), method,
+                            customMin > 0 ? Integer.valueOf(customMin) : null);
                     int hold = new dao.AppConfigDao().getInt("HOLD_MIN", util.Pricing.HOLD_MIN);
                     Web.flash(req.getSession(), reservedMessage(dao.findById(id), hold), false);
                 }

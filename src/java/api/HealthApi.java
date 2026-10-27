@@ -22,7 +22,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * Request:  {"firmware":"2.0","uptime_sec":1234}
  * Reply:    {"interval_sec":3,
- *            "commands":[{"command_id":15,"action":"UNLOCK","slot_code":"A04","open_sec":8,"message":"Mo tu\n(dien thoai)"},
+ *            "commands":[{"command_id":15,"action":"UNLOCK","slot_code":"A04","open_sec":8,"message":"Mo tu\n(dien thoai)","physical":true},
  *                        {"command_id":16,"action":"DELETE_FP","sensor_slot":7}],
  *            "server_time":"2026-10-17 07:03:00",
  *            "blocked_cards":["04A1B2C3"], "reserved":[{"slot_code":"A02","card_uid":"0499AABB"}]}   (v1 keys, kept for ScenarioSender)
@@ -74,6 +74,14 @@ public class HealthApi extends HttpServlet {
                     c.addProperty("slot_code", (String) cmd.get("slot_code"));
                     c.addProperty("open_sec", AuthText.OPEN_SEC);
                     c.addProperty("message", "PHONE".equals(cmd.get("source")) ? "Mo tu\n(dien thoai)" : "Mo tu\n(tu xa)");
+                    // the commands are already SENT and the bookings moved on: a failed check keeps the servo shut, never a 500
+                    boolean physical = false;
+                    try {
+                        physical = devices.isPhysicalCommand(deviceId, (Long) cmd.get("command_id"));
+                    } catch (SQLException e) {
+                        log("Physical slot check failed for command " + cmd.get("command_id"), e);
+                    }
+                    c.addProperty("physical", physical);
                 } else if ("DELETE_FP".equals(action)) {
                     c.addProperty("sensor_slot", (Integer) cmd.get("sensor_slot"));
                 }

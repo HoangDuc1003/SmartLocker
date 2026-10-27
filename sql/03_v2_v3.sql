@@ -822,7 +822,11 @@ FROM (VALUES
     (N'OVERDUE_FEE_PCT',    150,   N'Phụ phí một giờ trễ, phần trăm của giá một giờ'),
     (N'ESCALATE_HOURS',     48,    N'Quá hạn chừng này giờ thì chuyển nhân viên xử lý'),
     (N'DUE_REMINDER_MIN',   15,    N'Gửi email nhắc trước hạn trả chừng này phút'),
-    (N'CARD_DEPOSIT',       10000, N'Tiền cọc thẻ từ, thu một lần khi đăng ký thẻ tại hộp')) v(k, v, n)
+    (N'CARD_DEPOSIT',       10000, N'Tiền cọc thẻ từ, thu một lần khi đăng ký thẻ tại hộp'),
+    (N'CUSTOM_MAX_HOURS',   23,    N'Tự chọn theo giờ: tối đa chừng này giờ'),
+    (N'CUSTOM_MAX_DAYS',    7,     N'Tự chọn theo ngày: tối đa chừng này ngày'),
+    (N'CUSTOM_MULTI_DAY_PCT', 90,  N'Tự chọn 2 đến 6 ngày: mỗi ngày bằng chừng này phần trăm giá gói trọn ngày'),
+    (N'CUSTOM_WEEK_PCT',    80,    N'Tự chọn từ 7 ngày: mỗi ngày bằng chừng này phần trăm giá gói trọn ngày')) v(k, v, n)
 WHERE NOT EXISTS (SELECT 1 FROM dbo.AppConfig c WHERE c.config_key = v.k);
 -- v5: the card deposit is 10,000 VND; a database made before still has the first default, 30,000
 UPDATE dbo.AppConfig SET int_value = 10000 WHERE config_key = N'CARD_DEPOSIT' AND int_value = 30000;
@@ -863,6 +867,8 @@ IF COL_LENGTH('dbo.Deposit', 'escalated_at') IS NULL
     ALTER TABLE dbo.Deposit ADD escalated_at DATETIME2 NULL;             -- handed to the staff after 48 hours
 IF COL_LENGTH('dbo.Deposit', 'due_reminder_at') IS NULL
     ALTER TABLE dbo.Deposit ADD due_reminder_at DATETIME2 NULL;          -- the due reminder e-mail was sent
+IF COL_LENGTH('dbo.Deposit', 'custom_min') IS NULL
+    ALTER TABLE dbo.Deposit ADD custom_min INT NULL;                     -- "Tự chọn": booked minutes (NULL = the plan's)
 GO
 
 IF COL_LENGTH('dbo.LockerArea', 'latitude') IS NULL
@@ -989,6 +995,36 @@ BEGIN
 END;
 GO
 
+-- "Tự chọn" (custom duration): N whole hours (1..CUSTOM_MAX_HOURS) or N whole days (1..CUSTOM_MAX_DAYS).
+-- Hours: min(hour of the size x N, sized day pass). Days: day pass x N x (100% for 1 day, CUSTOM_MULTI_DAY_PCT
+-- for 2-6, CUSTOM_WEEK_PCT from 7), by size, rounded up once to 100 VND. The day pass is the active plan of
+-- 1440 minutes. NULL when the minutes are not allowed or there is no day pass.
+CREATE OR ALTER FUNCTION dbo.fn_CustomPrice (@pct INT, @minutes INT)
+RETURNS BIGINT
+AS
+BEGIN
+    DECLARE @day BIGINT = (SELECT TOP 1 price FROM dbo.StoragePlan
+                           WHERE is_active = 1 AND price > 0 AND duration_min = 1440 ORDER BY plan_id);
+    IF @day IS NULL OR @minutes IS NULL OR @minutes <= 0 RETURN NULL;
+    DECLARE @max_h INT = ISNULL(dbo.fn_Config(N'CUSTOM_MAX_HOURS'), 23),
+            @max_d INT = ISNULL(dbo.fn_Config(N'CUSTOM_MAX_DAYS'), 7);
+    IF @minutes % 1440 = 0 AND @minutes / 1440 <= @max_d
+    BEGIN
+        DECLARE @days INT = @minutes / 1440;
+        DECLARE @f INT = CASE WHEN @days = 1 THEN 100
+                              WHEN @days >= 7 THEN ISNULL(dbo.fn_Config(N'CUSTOM_WEEK_PCT'), 80)
+                              ELSE ISNULL(dbo.fn_Config(N'CUSTOM_MULTI_DAY_PCT'), 90) END;
+        RETURN CAST(CEILING(@day * ISNULL(@pct, 100) * @days * @f / 1000000.0) AS BIGINT) * 100;
+    END
+    IF @minutes % 60 = 0 AND @minutes < 1440 AND @minutes / 60 <= @max_h
+    BEGIN
+        DECLARE @by_hour BIGINT = dbo.fn_HourRate(@pct) * (@minutes / 60), @cap BIGINT = dbo.fn_SizePrice(@day, @pct);
+        RETURN CASE WHEN @by_hour < @cap THEN @by_hour ELSE @cap END;
+    END
+    RETURN NULL;
+END;
+GO
+
 -- the colour of every door on the map; v3 adds the overdue lock and the escalation flags
 CREATE OR ALTER VIEW dbo.v_LockerSlotMap AS
 SELECT s.locker_slot_id AS slot_id, s.slot_code, s.size_code, s.size_cm,
@@ -1017,13 +1053,21 @@ GO
 
 -- v3: price by size and open method; after paying, BOOKING_BUFFER (10,000 VND) must stay in the wallet
 -- (with the card deposit of a first card on top). The late fee of the size is fixed now.
+-- "Tự chọn": @custom_min (whole hours or whole days, priced by fn_CustomPrice) replaces @plan_id; the booking
+-- keeps the longest active plan not longer than it (the day pass for days) for its grace time, and its minutes.
 CREATE OR ALTER PROCEDURE Deposit_Reserve
-    @user_id INT, @slot_id INT, @plan_id INT, @new_id BIGINT OUTPUT, @open_method NVARCHAR(12) = N'PIN'
+    @user_id INT, @slot_id INT, @plan_id INT, @new_id BIGINT OUTPUT, @open_method NVARCHAR(12) = N'PIN',
+    @custom_min INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
     IF @open_method IS NULL OR @open_method NOT IN (N'PIN', N'CARD', N'FINGERPRINT')
         THROW 50042, N'Choose how to open the locker: PIN, card or fingerprint', 1;
+    IF @custom_min IS NOT NULL AND NOT (
+           (@custom_min % 60 = 0 AND @custom_min < 1440
+            AND @custom_min BETWEEN 60 AND 60 * ISNULL(dbo.fn_Config(N'CUSTOM_MAX_HOURS'), 23))
+        OR (@custom_min % 1440 = 0 AND @custom_min BETWEEN 1440 AND 1440 * ISNULL(dbo.fn_Config(N'CUSTOM_MAX_DAYS'), 7)))
+        THROW 50050, N'Choose whole hours or whole days within the limits', 1;
     IF (SELECT COUNT(*) FROM Deposit WHERE user_id = @user_id AND status = N'NO_SHOW'
         AND reserved_at > DATEADD(DAY, -7, SYSUTCDATETIME())) >= 3
         THROW 50031, N'Booking is blocked: 3 no-shows in the last 7 days', 1;
@@ -1050,11 +1094,31 @@ BEGIN
     BEGIN TRY
         BEGIN TRAN;
         DECLARE @price BIGINT;
-        SELECT @price = price FROM StoragePlan WITH (UPDLOCK, HOLDLOCK)
-        WHERE plan_id = @plan_id AND is_active = 1;
-        IF @price IS NULL THROW 50034, N'This storage plan is not available', 1;
-        IF @price < 0 THROW 50040, N'The storage plan has an invalid price', 1;
-        SET @price = dbo.fn_SizePrice(@price, @pct);
+        IF @custom_min IS NULL
+        BEGIN
+            SELECT @price = price FROM StoragePlan WITH (UPDLOCK, HOLDLOCK)
+            WHERE plan_id = @plan_id AND is_active = 1;
+            IF @price IS NULL THROW 50034, N'This storage plan is not available', 1;
+            IF @price < 0 THROW 50040, N'The storage plan has an invalid price', 1;
+            SET @price = dbo.fn_SizePrice(@price, @pct);
+        END
+        ELSE
+        BEGIN
+            -- the price reads the shortest plan and the day pass: lock those rows (and the kept plan) until COMMIT
+            DECLARE @locked_plans INT;
+            SELECT @locked_plans = COUNT(*) FROM StoragePlan WITH (UPDLOCK, HOLDLOCK)
+            WHERE plan_id IN (SELECT TOP 1 plan_id FROM StoragePlan WHERE is_active = 1 AND price > 0 AND duration_min > 0
+                              ORDER BY duration_min, plan_id)
+               OR (is_active = 1 AND duration_min = 1440);
+            SET @plan_id = NULL;
+            SELECT TOP 1 @plan_id = plan_id FROM StoragePlan WITH (UPDLOCK, HOLDLOCK)
+            WHERE is_active = 1 AND price > 0 AND duration_min > 0
+            ORDER BY CASE WHEN duration_min <= @custom_min THEN 0 ELSE 1 END,
+                     CASE WHEN duration_min <= @custom_min THEN -duration_min ELSE duration_min END, plan_id;
+            SET @price = dbo.fn_CustomPrice(@pct, @custom_min);
+            IF @plan_id IS NULL OR @price IS NULL OR @price <= 0
+                THROW 50051, N'Custom duration is not available now', 1;
+        END
 
         -- The conditional update prevents spending the same balance twice.
         UPDATE Users SET balance = balance - @price
@@ -1079,13 +1143,14 @@ BEGIN
             EXEC Code_NewSix @enroll OUTPUT;
 
         INSERT INTO Deposit (user_id, slot_id, plan_id, card_id, paid_amount, status, hold_until,
-                             open_method, pin_code, enroll_code, enroll_expires, size_pct, overdue_rate)
+                             open_method, pin_code, enroll_code, enroll_expires, size_pct, overdue_rate, custom_min)
         VALUES (@user_id, @slot_id, @plan_id, CASE WHEN @open_method = N'CARD' THEN @card_id END, @price, N'RESERVED',
                 DATEADD(MINUTE, @hold, SYSUTCDATETIME()), @open_method, @pin, @enroll,
                 CASE WHEN @enroll IS NOT NULL THEN DATEADD(MINUTE, 10, SYSUTCDATETIME()) END,
-                @pct, dbo.fn_OverdueRate(@pct));
+                @pct, dbo.fn_OverdueRate(@pct), @custom_min);
         SET @new_id = SCOPE_IDENTITY();
-        DECLARE @diff NVARCHAR(200) = CONCAT(N'{"price":', @price, N',"method":"', @open_method, N'","size_pct":', @pct, N'}');
+        DECLARE @diff NVARCHAR(200) = CONCAT(N'{"price":', @price, N',"method":"', @open_method, N'","size_pct":', @pct,
+                                             CASE WHEN @custom_min IS NOT NULL THEN CONCAT(N',"custom_min":', @custom_min) END, N'}');
         EXEC Audit_Append @user_id, N'RESERVE', N'DEPOSIT', @new_id, @diff;
         COMMIT;
     END TRY
@@ -1093,6 +1158,38 @@ BEGIN
         IF @@TRANCOUNT > 0 ROLLBACK;
         THROW;
     END CATCH;
+END;
+GO
+
+-- the first open starts the clock: due = now + the booked minutes ("Tự chọn") or the plan's
+CREATE OR ALTER PROCEDURE Deposit_CheckIn @device_id INT, @slot_code NVARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON; SET XACT_ABORT ON;
+    DECLARE @sys INT = (SELECT user_id FROM Users WHERE username = N'system');
+    DECLARE @id BIGINT, @slot_id INT, @minutes INT;
+    BEGIN TRAN;
+    -- read and change the booking under one lock: a cancel or the no-show job at the same moment must not be undone
+    SELECT TOP 1 @id = d.deposit_id, @slot_id = d.slot_id, @minutes = ISNULL(d.custom_min, p.duration_min)
+    FROM Deposit d WITH (UPDLOCK, HOLDLOCK)
+    JOIN LockerSlot s ON s.locker_slot_id = d.slot_id
+    JOIN LockerBank b ON b.bank_id = s.bank_id
+    JOIN StoragePlan p ON p.plan_id = d.plan_id
+    WHERE d.status = N'RESERVED' AND s.slot_code = @slot_code AND b.device_id = @device_id;
+    IF @id IS NULL                                    -- nothing reserved here
+    BEGIN
+        COMMIT;
+        RETURN;
+    END
+    UPDATE Deposit
+    SET status = N'ACTIVE', started_at = SYSUTCDATETIME(), due_at = DATEADD(MINUTE, @minutes, SYSUTCDATETIME())
+    WHERE deposit_id = @id AND status = N'RESERVED';
+    IF @@ROWCOUNT = 1
+    BEGIN
+        UPDATE LockerSlot SET status = N'OCCUPIED' WHERE locker_slot_id = @slot_id;
+        EXEC Audit_Append @sys, N'CHECK_IN', N'DEPOSIT', @id, NULL;
+    END
+    COMMIT;
 END;
 GO
 

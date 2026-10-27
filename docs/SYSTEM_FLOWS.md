@@ -45,7 +45,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     Start(["Đăng ký / đăng nhập"]) --> Map["Sơ đồ tủ: chọn ngăn trống"]
-    Map --> Form["Chọn gói và cách mở: mật mã, thẻ từ, vân tay; giá theo cỡ S / M / L"]
+    Map --> Form["Chọn gói (2 giờ, 4 giờ, Trọn ngày hoặc Tự chọn 1-23 giờ / 1-7 ngày) và cách mở; giá theo cỡ S / M / L"]
     Form --> Confirm["Popup xác nhận: số tiền trừ ngay, cọc thẻ trừ sau, số dư còn lại, luật hủy và phụ phí"]
     Confirm --> Reserve{"Deposit_Reserve"}
     Reserve -- "50030 / 50041 thiếu tiền" --> Err["Thông báo lỗi tiếng Việt (Web.sqlMessage)"]
@@ -54,10 +54,11 @@ flowchart TD
     Reserve -- "50032 đang có lượt gửi" --> Err
     Reserve -- "50033 ngăn vừa bị đặt" --> Err
     Reserve -- "50035 hộp mất kết nối" --> Err
+    Reserve -- "50050 / 50051 thời gian tự chọn không hợp lệ hoặc chưa có gói trọn ngày" --> Err
     Reserve -- "Thành công" --> Held["RESERVED, giữ chỗ 15 phút, đã trừ tiền"]
     Held --> Mine["Tủ của tôi: mật mã hoặc mã đăng ký thẻ/vân tay"]
     Mine --> Open1{"Mở lần 1 tại hộp (auth) hoặc điện thoại (/k/LOCKER-01)"}
-    Open1 -- "CHECK_IN" --> Active["ACTIVE, ngăn OCCUPIED, đếm tới due_at"]
+    Open1 -- "CHECK_IN" --> Active["ACTIVE, ngăn OCCUPIED, due_at = lúc mở + thời gian của gói (hoặc custom_min)"]
     Held -- "Hủy trong 5 phút đầu" --> Cancel["CANCELLED, hoàn 100%"]
     Held -- "Hủy sau 5 phút" --> Err2["50047: không hủy được"]
     Held -- "Hết 15 phút" --> NoShow["NO_SHOW, không hoàn (0%)"]
@@ -72,6 +73,25 @@ flowchart TD
     Locked -- "Quá due_at 48 giờ" --> Esc["Chuyển xử lý: escalated_at, cảnh báo OVERDUE_ESCALATED"]
     Esc -- "Nạp tiền rồi lấy đồ (nhân viên mở từ xa chỉ mở chốt; kết thúc lượt ở trang Lượt gửi)" --> Done
 ```
+
+**Tự chọn** (`Deposit_Reserve` nhận thêm `@custom_min`, giá do `dbo.fn_CustomPrice` tính lại ở server, trang chỉ hiển thị):
+số giờ nguyên 1–23 (`CUSTOM_MAX_HOURS`) hoặc số ngày nguyên 1–7 (`CUSTOM_MAX_DAYS`).
+Theo giờ: `min(giá 1 giờ của cỡ × N, giá trọn ngày của cỡ)`. Theo ngày: `giá trọn ngày × N × hệ số × cỡ`, hệ số 100% cho 1 ngày,
+90% cho 2–6 ngày (`CUSTOM_MULTI_DAY_PCT`), 80% từ 7 ngày (`CUSTOM_WEEK_PCT`), làm tròn lên 100 đ một lần.
+Lượt tự chọn lưu số phút ở `Deposit.custom_min` và giữ `plan_id` của gói dài nhất không vượt quá nó (trọn ngày khi đặt theo ngày) để lấy ân hạn;
+"Tủ của tôi" hiện "Tự chọn · N giờ/ngày". Gia hạn và phụ phí trễ giữ nguyên luật (giá 1 giờ của cỡ).
+
+| Tự chọn | S | M | L |
+|---|---|---|---|
+| 1 giờ | 2.500 | 3.300 | 4.300 |
+| 3 giờ | 7.500 | 9.900 | 12.900 |
+| 9 giờ | 22.500 | 29.700 | 38.700 |
+| 10–23 giờ (chạm giá trọn ngày) | 25.000 | 32.500 | 42.300 |
+| 1 ngày | 25.000 | 32.500 | 42.300 |
+| 2 ngày (90%) | 45.000 | 58.500 | 76.100 |
+| 3 ngày (90%) | 67.500 | 87.800 | 114.100 |
+| 6 ngày (90%) | 135.000 | 175.500 | 228.200 |
+| 7 ngày (80%) | 140.000 | 182.000 | 236.600 |
 
 Ngăn không bao giờ tự giải phóng khi quá hạn (bỏ `AUTO_RELEASE_OVERDUE` của v1/v2): đồ của người dùng vẫn ở trong ngăn.
 Lượt bị khóa vẫn là `ACTIVE` (trạng thái "khóa" là `locked_at IS NOT NULL`), nên ngăn vẫn `OCCUPIED` và không ai đặt được.
@@ -98,6 +118,25 @@ sequenceDiagram
 - Điện thoại (`/api/kiosk/unlock`) không mở trực tiếp: máy chủ xếp lệnh `UNLOCK`, hộp nhận lệnh ở heartbeat kế tiếp,
   và lúc đó lượt gửi mới chuyển CHECK_IN hoặc PICKUP. Hộp không thấy heartbeat trong 10 giây thì trả `DEVICE_OFFLINE`.
 
+**Hộp chính và ngăn vật lý.** Chỉ có một hộp ESP32 thật (mặc định `LOCKER-01`) và một ngăn có servo khóa. Hộp này quản lý
+mọi ngăn của các dãy được gắn với nó: người dùng đặt ngăn nào cũng được, xác thực tại hộp thì lượt gửi vẫn chuyển
+CHECK_IN / PICKUP như thường. Câu trả lời `UNLOCK` (của `/api/device/auth` và lệnh `UNLOCK` trong heartbeat `/api/health`)
+có thêm `"physical"`: `true` khi đó là ngăn vật lý (hoặc chưa cấu hình ngăn nào), thì servo mở cửa; `false` thì hộp không
+động servo, màn LCD chỉ báo `Ngan A07 OK` / `Da gui do` (hoặc `Da lay do`). Lệnh mở từ xa của nhân viên cũng theo cờ này.
+Firmware cũ (không đọc cờ) vẫn mở servo như trước. Trang **Dãy tủ** của nhân viên ghi hộp nào là hộp thật và ngăn nào có khóa thật.
+
+Đổi hộp, dãy hoặc ngăn vật lý: sửa ba dòng đầu của `sql/demo_box.sql` (`@device_code`, `@banks` dạng `N'CANT-A,CANT-B'`,
+`@physical_bank` + `@physical_slot`; để cả hai `NULL` thì mọi ngăn đều mở servo) rồi chạy:
+
+```
+sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_box.sql
+```
+
+Script chạy lại được nhiều lần: gắn các dãy vào hộp, dãy bị hộp bỏ ra được giao cho một thiết bị `"demo":true` (để không
+thành OFFLINE trên bản đồ), giữ `"demo":false` cho hộp thật, lưu `physical_slot_id` trong `OperatingProfile` của hộp,
+không đổi khóa API, ghi nhật ký `DEMO_BOX` và in bảng dãy → hộp → ngăn vật lý. Các dãy cùng một hộp phải có mã ngăn khác
+nhau (ví dụ `CANT-A` A01–A15 và `CANT-B` B01–B12), vì hộp nhận lượt gửi theo mã ngăn; script từ chối nếu trùng.
+
 ### 2.3 Thẻ từ và vân tay
 - Mọi cách mở (mật mã, thẻ RFID, vân tay) cùng một giá. Đặt bằng thẻ lần đầu: cần đủ tiền cho giá gói và cọc thẻ 10.000 đ (`AppConfig.CARD_DEPOSIT`); cọc chỉ bị trừ khi đăng ký thẻ xong (`enroll/finish`).
 - Đăng ký tại hộp: bấm B/C, nhập mã đăng ký 6 số (hết hạn sau 10 phút, lấy mã mới ở "Tủ của tôi").
@@ -109,6 +148,8 @@ sequenceDiagram
 | Tình huống | Điều kiện | Hệ thống làm gì | Kết quả |
 |---|---|---|---|
 | Đặt thành công | Đủ tiền, ngăn trống, hộp hoạt động | Trừ giá theo cỡ, giữ chỗ 15 phút, ghi audit `RESERVE` | Lượt `RESERVED`, ngăn `RESERVED` |
+| Đặt tự chọn | Gói "Tự chọn": số giờ nguyên 1–23 hoặc số ngày nguyên 1–7 | `fn_CustomPrice` tính giá theo cỡ, lưu `custom_min`, audit `RESERVE` ghi `custom_min` | Như đặt thành công; hạn trả = lúc mở lần đầu + `custom_min` |
+| Tự chọn sai | Số phút không phải giờ/ngày nguyên trong giới hạn; không còn gói trọn ngày | `THROW 50050` / `50051`, không đổi gì | Báo lỗi |
 | Thiếu tiền | Số dư nhỏ hơn giá (và cọc thẻ nếu có) | `THROW 50030` / `50041`, không đổi gì | Báo lỗi |
 | Dưới mức đệm | Đủ giá nhưng sau khi đặt còn dưới 10.000 đ | `THROW 50046`, không đổi gì | Báo lỗi |
 | Đang có lượt gửi | Đã có lượt `RESERVED` hoặc `ACTIVE` | `THROW 50032` | Báo lỗi |

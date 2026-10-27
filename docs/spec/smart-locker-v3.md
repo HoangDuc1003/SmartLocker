@@ -161,6 +161,14 @@ Gói gốc là gói đang bán có `duration_min` nhỏ nhất (hiện là 2 gi�
 - Hủy trong 5 phút đầu: hoàn 100% số đã trả. Sau 5 phút: không có nút, DB từ chối.
 - Không đến trước `hold_until`: hoàn 0 đ, ngăn trống lại. `Pricing.noShowRefund(x) = 0`.
 
+### 3.4b Tự chọn thời gian (bổ sung sau v5)
+- Ngoài 3 gói cố định, người dùng chọn **N giờ** (1–`CUSTOM_MAX_HOURS` = 23) hoặc **N ngày** (1–`CUSTOM_MAX_DAYS` = 7).
+- Theo giờ: `min(giá_1_giờ(cỡ) × N, giá_cỡ(trọn ngày))`. Theo ngày: `CEILING(giá_trọn_ngày × hệ_số_cỡ × N × k / 1.000.000) × 100`,
+  `k` = 100 (1 ngày), `CUSTOM_MULTI_DAY_PCT` = 90 (2–6 ngày), `CUSTOM_WEEK_PCT` = 80 (từ 7 ngày).
+- SQL `dbo.fn_CustomPrice(@pct, @minutes)`, Java `Pricing.customPrice`; `PricingDatabaseIntegrationTest` so S/M/L với 1–23 giờ và 1–7 ngày.
+- `Deposit_Reserve(..., @custom_min)`: giá luôn tính ở server; lượt giữ `plan_id` của gói dài nhất không vượt `custom_min` (ân hạn), `Deposit.custom_min` cho hạn trả.
+- Không thêm gói 1 giờ vào `StoragePlan`: `fn_HourRate` lấy giờ từ gói ngắn nhất, thêm gói sẽ đổi giá gia hạn và phụ phí.
+
 ### 3.5 Gia hạn (đã chốt Q5)
 - Chỉ khi lượt `ACTIVE` và chưa bị khóa. Vẫn tối đa 3 lần, mỗi lần 15–240 phút.
 - Thu `CEILING(phút / 60) × giá_1_giờ(cỡ)` ngay khi gia hạn, không cho số dư âm. Ví dụ cỡ M thêm 90 phút: 2 × 3.300 = 6.600 đ.
@@ -187,6 +195,7 @@ Lý do mới `OVERDUE_UNPAID`:
 - `plans[i].prices`: `{"S":{"PIN":5000,"CARD":4800},"M":{...},"L":{...}}`; `sizes[i].hour_rate` và `sizes[i].overdue_rate`.
 - `areas[i].latitude`, `longitude` (có thể `null`).
 - `rules`: `hold_min`, `cancel_min`, `booking_buffer`, `card_deposit`.
+- `custom` (khi có gói trọn ngày): `max_hours`, `max_days`, `hours.{S,M,L}[1..23 giờ]`, `days.{S,M,L}[1..7 ngày]`, `hour_rate`, `day_price` (chỉ để hiển thị).
 - Ngăn của mình: `cancel_until`, `hold_until`, `due_at`, `locked`, `debt`, `overdue_fee`.
 
 Không thêm API mới cho khu vực: toạ độ đi kèm danh sách khu sẵn có.

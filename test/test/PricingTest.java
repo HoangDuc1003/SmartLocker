@@ -133,4 +133,26 @@ public class PricingTest {
         assertFalse(Pricing.reminderDue(now + 15 * 60_000L + 1, 15, now));
         assertFalse(Pricing.reminderDue(now, 15, now));            // already due: too late for a reminder
     }
+
+    /** "Tự chọn": hours capped by the day pass, days at 100% / 90% / 80% of it, by size (the agreed table). */
+    @Test
+    public void customDurationTable() {
+        long[] hour = {2500, 3300, 4300};
+        int[] pct = {S, M, L};
+        long[][] expected = {          // 1 h, 9 h, 10 h, 23 h, 1 day, 2 days, 6 days, 7 days
+            {2500, 22500, 25000, 25000, 25000, 45000, 135000, 140000},
+            {3300, 29700, 32500, 32500, 32500, 58500, 175500, 182000},
+            {4300, 38700, 42300, 42300, 42300, 76100, 228200, 236600},
+        };
+        int[] minutes = {60, 540, 600, 1380, 1440, 2880, 8640, 10080};
+        for (int z = 0; z < 3; z++) {
+            for (int i = 0; i < minutes.length; i++) {
+                assertEquals(Pricing.customPrice(hour[z], 25000, pct[z], minutes[i], 23, 7, 90, 80), expected[z][i],
+                        "size " + z + " " + minutes[i] + " min");
+            }
+        }
+        assertEquals(Pricing.customPrice(2500, 25000, S, 90, 23, 7, 90, 80), -1);        // not whole hours
+        assertEquals(Pricing.customPrice(2500, 25000, S, 8 * 1440, 23, 7, 90, 80), -1);  // over 7 days
+        assertEquals(Pricing.customPrice(2500, 0, S, 60, 23, 7, 90, 80), -1);            // no day pass
+    }
 }

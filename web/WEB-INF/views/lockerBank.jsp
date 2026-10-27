@@ -53,7 +53,8 @@
                 <option value="${d.deviceId}" ${item.deviceId == d.deviceId ? 'selected' : ''}><c:out value="${d.deviceCode}"/> (<c:out value="${d.location}"/>)</option>
             </c:forEach>
         </select>
-        <p class="hint" id="deviceHint">Dãy tủ không có bộ điều khiển chỉ được vẽ trên sơ đồ, không mở khóa được.</p>
+        <p class="hint" id="deviceHint">Dãy tủ không có bộ điều khiển chỉ được vẽ trên sơ đồ, không mở khóa được.
+            Hộp thật, các dãy nó quản lý và ngăn có khóa thật được đặt bằng <code>sql/demo_box.sql</code>.</p>
 
         <label for="doorRows">Số hàng cửa (1–8) <span class="req">*</span></label>
         <input type="number" id="doorRows" name="doorRows" value="${item.doorRows > 0 ? item.doorRows : 4}" required min="1" max="8">
@@ -110,7 +111,19 @@
                 <td><c:out value="${x.areaCode}"/></td>
                 <td>
                     <c:choose>
-                        <c:when test="${x.deviceId != null}">Thiết bị #${x.deviceId}</c:when>
+                        <c:when test="${x.deviceId != null && x.demoDevice}">
+                            <c:out value="${x.deviceCode}"/> <span class="tag">Mô phỏng</span>
+                        </c:when>
+                        <c:when test="${x.deviceId != null}">
+                            <c:out value="${x.deviceCode}"/> <span class="tag info">Hộp thật</span>
+                            <div class="hint">
+                                <c:choose>
+                                    <c:when test="${empty x.physicalSlot}">Mọi ngăn mở khóa thật</c:when>
+                                    <c:when test="${x.physicalBank == x.bankCode}">Ngăn có khóa thật: <b><c:out value="${x.physicalSlot}"/></b>, ngăn khác chỉ báo OK</c:when>
+                                    <c:otherwise>Ngăn có khóa thật ở dãy <c:out value="${x.physicalBank}"/> (<c:out value="${x.physicalSlot}"/>), ngăn ở đây chỉ báo OK</c:otherwise>
+                                </c:choose>
+                            </div>
+                        </c:when>
                         <c:otherwise><span class="tag">Chỉ minh họa</span></c:otherwise>
                     </c:choose>
                 </td>

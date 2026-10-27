@@ -76,6 +76,9 @@
                         </option>
                     </c:forEach>
                 </select>
+                <c:if test="${item.customMin != null}">
+                    <p class="hint">Lượt đặt <c:out value="${item.planName}"/>: hạn trả tính theo thời gian tự chọn; gói ở trên chỉ dùng cho thời gian ân hạn.</p>
+                </c:if>
 
                 <label for="status">Trạng thái <span class="req">*</span></label>
                 <select id="status" name="status" required>

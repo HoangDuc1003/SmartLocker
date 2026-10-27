@@ -100,9 +100,11 @@ public class DeviceAuthDao {
 
     /** device_id, device_code, location, status of a box by its code (the /k/{device_code} page), or null. */
     public Map<String, Object> findDeviceByCode(String deviceCode) throws SQLException {
-        String sql = "SELECT v.device_id, v.device_code, v.location, v.status, b.bank_code, a.name AS area_name "
-                + "FROM Device v LEFT JOIN LockerBank b ON b.device_id = v.device_id "
-                + "LEFT JOIN LockerArea a ON a.area_id = b.area_id WHERE v.device_code = ?";
+        // one box may manage several banks (sql/demo_box.sql): list them all, the area of the first
+        String sql = "SELECT v.device_id, v.device_code, v.location, v.status, bk.bank_code, bk.area_name "
+                + "FROM Device v OUTER APPLY (SELECT STRING_AGG(b.bank_code, ', ') WITHIN GROUP (ORDER BY b.bank_code) AS bank_code, "
+                + "MIN(a.name) AS area_name FROM LockerBank b JOIN LockerArea a ON a.area_id = b.area_id "
+                + "WHERE b.device_id = v.device_id) bk WHERE v.device_code = ?";
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, deviceCode);
             try (ResultSet rs = ps.executeQuery()) {

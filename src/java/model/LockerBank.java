@@ -31,4 +31,19 @@ public class LockerBank {
     public void setStatus(String status) { this.status = status; }
     public int getSlotCount() { return slotCount; }
     public void setSlotCount(int slotCount) { this.slotCount = slotCount; }
+
+    // the box of the bank (sql/demo_box.sql): its code, demo or real, and the one slot with the servo
+    private String deviceCode;
+    private boolean demoDevice;
+    private String physicalSlot;   // slot code, null = none configured (every slot of the box is real)
+    private String physicalBank;   // bank of that slot, may be another bank of the same box
+
+    public String getDeviceCode() { return deviceCode; }
+    public void setDeviceCode(String deviceCode) { this.deviceCode = deviceCode; }
+    public boolean isDemoDevice() { return demoDevice; }
+    public void setDemoDevice(boolean demoDevice) { this.demoDevice = demoDevice; }
+    public String getPhysicalSlot() { return physicalSlot; }
+    public void setPhysicalSlot(String physicalSlot) { this.physicalSlot = physicalSlot; }
+    public String getPhysicalBank() { return physicalBank; }
+    public void setPhysicalBank(String physicalBank) { this.physicalBank = physicalBank; }
 }

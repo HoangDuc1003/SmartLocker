@@ -31,6 +31,8 @@
     bookmark: '<path d="M7 4h10v16l-5-3.5L7 20z"/>',
     lock: '<rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
     clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    minus: '<path d="M5 12h14"/>',
     alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.5v.01"/>',
     wrench: '<path d="M14.5 5.5a4 4 0 0 0-5 5L4 16l4 4 5.5-5.5a4 4 0 0 0 5-5l-2.5 2.5-2.5-.5-.5-2.5z"/>',
     wifiOff: '<path d="M3 3l18 18"/><path d="M8.5 16.5a5 5 0 0 1 7 0M5 12.5a10 10 0 0 1 4-2.3M19 12.5a10 10 0 0 0-2.6-1.8M12 19.5v.01"/>',
@@ -590,6 +592,42 @@
     return METHODS[code].desc;
   }
 
+  // "Tự chọn": price tables of the map API (util.Pricing, the same formula as dbo.fn_CustomPrice).
+  // Display only: the form posts customMin and Deposit_Reserve prices the booking again.
+  function customCfg() {
+    var c = state.data && state.data.custom;
+    return c && (Number(c.max_hours) > 0 || Number(c.max_days) > 0) ? c : null;
+  }
+
+  // 0 when that unit is switched off in AppConfig
+  function customMax(unit) {
+    var c = customCfg();
+    return c ? Math.max(Number(unit === 'day' ? c.max_days : c.max_hours) || 0, 0) : 0;
+  }
+
+  function customPrice(unit, count, size) {
+    var c = customCfg();
+    var list = c && (unit === 'day' ? c.days : c.hours);
+    var bySize = list && list[size];
+    return bySize && bySize[count - 1] !== undefined ? Number(bySize[count - 1]) || 0 : 0;
+  }
+
+  function durationText(unit, count) {
+    return count + (unit === 'day' ? ' ngày' : ' giờ');
+  }
+
+  // the unit and the count picked in the "Tự chọn" block, kept inside the limits
+  function customPick(form) {
+    var unitInput = form.querySelector('input[name="customUnit"]:checked');
+    var unit = unitInput && unitInput.value === 'day' ? 'day' : 'hour';
+    if (customMax(unit) < 1) {
+      unit = unit === 'day' ? 'hour' : 'day';
+    }
+    var range = form.querySelector('[data-custom-count]');
+    var count = Math.min(Math.max(toInt(range ? range.value : 1) || 1, 1), customMax(unit));
+    return { unit: unit, count: count, minutes: count * (unit === 'day' ? 1440 : 60) };
+  }
+
   // what the user is choosing: plan, open method, price taken now, and the card deposit taken later at the box
   function reserveChoice(slot) {
     var form = el.panel.querySelector('form[data-reserve]');
@@ -604,15 +642,66 @@
         plan = plans[i];
       }
     }
+    var wantsCustom = !!pickedPlan && pickedPlan.value === 'custom';
+    var custom = wantsCustom && customCfg() ? customPick(form) : null;
     var checked = form.querySelector('input[name="openMethod"]:checked');
     var method = checked ? checked.value : 'PIN';
-    var price = planPrice(plan, slot.size);
+    var price = custom ? customPrice(custom.unit, custom.count, slot.size) : planPrice(plan, slot.size);
+    if (custom) {
+      plan = { plan_name: 'Tự chọn · ' + durationText(custom.unit, custom.count), duration_min: custom.minutes };
+    }
+    // "Tự chọn" picked but no longer offered (a refresh dropped it) or not priced: never show it as free
+    var unavailable = wantsCustom && (!custom || price <= 0);
     var deposit = method === 'CARD' && cardDepositDue() ? cardDeposit() : 0;
     var balance = Number(cfg.balance) || 0;
     // Deposit_Reserve: balance - price (- first card deposit) must stay >= BOOKING_BUFFER
     var enough = balance - price - deposit >= bookingBuffer();
-    return { plan: plan, method: method, price: price, deposit: deposit, size: slot.size, balance: balance,
-             after: balance - price, enough: enough };
+    return { plan: plan, custom: unavailable ? null : custom, unavailable: unavailable, method: method, price: price,
+             deposit: deposit, size: slot.size, balance: balance, after: balance - price, enough: enough };
+  }
+
+  // "21/10 14:30": the due time if the slot is opened now (the clock starts at the first open)
+  function dueIfOpenedNow(minutes) {
+    var d = new Date(Date.now() + minutes * 60000);
+    var two = function (n) { return (n < 10 ? '0' : '') + n; };
+    return two(d.getDate()) + '/' + two(d.getMonth() + 1) + ' ' + two(d.getHours()) + ':' + two(d.getMinutes());
+  }
+
+  // the saving of a custom choice: hours capped by the day pass, days below the price of single days
+  function customNote(choice) {
+    var c = customCfg();
+    var cu = choice.custom;
+    var size = choice.size;
+    var parts = [];
+    if (cu.unit === 'hour') {
+      var rate = Number(c.hour_rate && c.hour_rate[size]) || 0;
+      var byHour = rate * cu.count;
+      if (choice.price < byHour) {
+        // capped by the day pass: the day pass costs the same and lasts 24 hours
+        parts.push('Tính bằng giá trọn ngày, tiết kiệm ' + money(byHour - choice.price) + ' so với ' + money(rate) +
+          '/giờ. Gói Trọn ngày cùng giá và gửi được 24 giờ.');
+      } else {
+        parts.push(money(rate) + ' mỗi giờ (cỡ ' + size + '), không quá giá trọn ngày ' + money(c.day_price && c.day_price[size]) + '.');
+      }
+      var plans = (state.data && state.data.plans) || [];
+      for (var i = 0; i < plans.length; i++) {
+        var p = planPrice(plans[i], size);
+        if (Number(plans[i].duration_min) === cu.minutes && p < choice.price) {
+          parts.push('Gói “' + plans[i].plan_name + '” có sẵn rẻ hơn: ' + money(p) + '.');
+        }
+      }
+    } else {
+      var day = Number(c.day_price && c.day_price[size]) || 0;
+      var full = day * cu.count;
+      if (cu.count > 1 && choice.price < full) {
+        parts.push('Khoảng ' + money(Math.round(choice.price / cu.count / 100) * 100) + '/ngày, tiết kiệm ' +
+          money(full - choice.price) + ' so với ' + cu.count + ' ngày lẻ.');
+      } else {
+        parts.push(money(day) + ' mỗi ngày (cỡ ' + size + '); đặt từ 2 ngày được giảm giá.');
+      }
+    }
+    parts.push('Tính giờ từ lần mở tủ đầu tiên; mở ngay thì hạn trả lúc ' + dueIfOpenedNow(cu.minutes) + '.');
+    return parts.join(' ');
   }
 
   function rulesHint() {
@@ -639,11 +728,36 @@
       return segOption('planId', 'pl-' + slot.slot_id + '-' + p.plan_id, p.plan_id, i === 0,
         '<span>' + esc(p.plan_name) + '</span><span class="seg-opt__sub">' + esc(price ? money(price) : 'Miễn phí') + '</span>');
     }).join('');
+    var customBlock = '';
+    if (customCfg()) {
+      var sid = slot.slot_id;
+      planOpts += segOption('planId', 'pl-' + sid + '-custom', 'custom', false,
+        '<span>Tự chọn</span><span class="seg-opt__sub">Giờ / ngày</span>');
+      // disabled while hidden, so a plan booking posts no customMin
+      customBlock = '<fieldset class="custom-pick" data-custom hidden disabled>' +
+        '<div class="seg-track">' +
+          (customMax('hour') >= 1 ? segOption('customUnit', 'cu-' + sid + '-hour', 'hour', true,
+            '<span>Theo giờ</span><span class="seg-opt__sub">1–' + esc(customMax('hour')) + ' giờ</span>') : '') +
+          (customMax('day') >= 1 ? segOption('customUnit', 'cu-' + sid + '-day', 'day', customMax('hour') < 1,
+            '<span>Theo ngày</span><span class="seg-opt__sub">1–' + esc(customMax('day')) + ' ngày</span>') : '') +
+        '</div>' +
+        '<div class="stepper">' +
+          '<button type="button" class="stepper__btn lg-hover" data-custom-step="-1" aria-label="Bớt một">' + icon('minus') + '</button>' +
+          '<output class="stepper__value" data-custom-value aria-live="polite"></output>' +
+          '<button type="button" class="stepper__btn lg-hover" data-custom-step="1" aria-label="Thêm một">' + icon('plus') + '</button>' +
+        '</div>' +
+        '<input type="range" class="custom-range" name="customCount" min="1" max="' + esc(customMax('hour')) + '" value="3" ' +
+          'data-custom-count aria-label="Thời gian gửi">' +
+        '<input type="hidden" name="customMin" value="" data-custom-min>' +
+        '<p class="hint" data-custom-note></p>' +
+      '</fieldset>';
+    }
     var methodOpts = METHOD_ORDER.map(function (code, i) {
       return segOption('openMethod', 'om-' + slot.slot_id + '-' + code, code, i === 0, '<span>' + esc(METHODS[code].label) + '</span>');
     }).join('');
     return formStart(cfg.bookingUrl, 'reserve', slot, null, ' data-reserve') +
       '<fieldset class="seg-pick"><legend>Gói gửi</legend><div class="seg-track">' + planOpts + '</div></fieldset>' +
+      customBlock +
       '<fieldset class="seg-pick"><legend>Cách mở tủ</legend><div class="seg-track">' + methodOpts + '</div></fieldset>' +
       '<p class="hint" data-method-desc></p>' +
       '<div class="pay-now"><span>Trừ ngay</span><strong data-pay-now></strong></div>' +
@@ -661,13 +775,29 @@
     if (!choice) {
       return;
     }
+    var customBox = el.panel.querySelector('[data-custom]');
+    if (customBox) {
+      customBox.hidden = !choice.custom;
+      customBox.disabled = !choice.custom;
+      if (choice.custom) {
+        var range = customBox.querySelector('[data-custom-count]');
+        range.max = String(customMax(choice.custom.unit));
+        range.value = String(choice.custom.count);
+        customBox.querySelector('[data-custom-min]').value = String(choice.custom.minutes);
+        customBox.querySelector('[data-custom-value]').textContent = durationText(choice.custom.unit, choice.custom.count);
+        customBox.querySelector('[data-custom-note]').textContent = customNote(choice);
+      }
+    }
     el.panel.querySelector('[data-method-desc]').textContent = methodDesc(choice.method, found.bank);
-    el.panel.querySelector('[data-pay-now]').textContent = choice.price ? money(choice.price) : 'Miễn phí';
+    el.panel.querySelector('[data-pay-now]').textContent = choice.unavailable ? '—' : choice.price ? money(choice.price) : 'Miễn phí';
+    if (choice.unavailable) {
+      el.panel.querySelector('[data-method-desc]').textContent = 'Hiện chưa đặt được thời gian tự chọn. Hãy chọn một gói có sẵn.';
+    }
     var balanceNode = el.panel.querySelector('[data-account-balance]');
     balanceNode.textContent = money(choice.balance);
     balanceNode.classList.toggle('text-danger', choice.balance < 0);
     var insufficient = !!state.loadedAt && !choice.enough;
-    el.panel.querySelector('[data-reserve-button]').disabled = insufficient;
+    el.panel.querySelector('[data-reserve-button]').disabled = insufficient || choice.unavailable;
     el.panel.querySelector('[data-balance-warning]').hidden = !insufficient;
   }
 
@@ -683,10 +813,16 @@
     var rows = [
       ['Ngăn', esc(slot.slot_code) + ' <span class="muted">' + esc(bank.bank_code) + '</span>'],
       ['Cỡ', esc(choice.size) + (z.size_cm ? ' <span class="muted">' + esc(z.size_cm) + ' cm</span>' : '')],
-      ['Gói gửi', esc(choice.plan.plan_name)],
+      ['Gói gửi', esc(choice.plan.plan_name)]
+    ];
+    if (choice.custom) {
+      rows.push(['Thời gian gửi', esc(durationText(choice.custom.unit, choice.custom.count)) +
+        ' <span class="muted">từ lần mở tủ đầu tiên · mở ngay thì hạn trả lúc ' + esc(dueIfOpenedNow(choice.custom.minutes)) + '</span>']);
+    }
+    rows = rows.concat([
       ['Cách mở', esc(METHODS[choice.method].label)],
       ['Trừ ngay', '<strong class="dlg__total money">' + (choice.price ? esc(money(choice.price)) : 'Miễn phí') + '</strong>']
-    ];
+    ]);
     if (choice.deposit) {
       rows.push(['Cọc thẻ', esc(money(choice.deposit)) + ' <span class="muted">(trừ khi đăng ký thẻ tại hộp, không trừ bây giờ)</span>']);
     }
@@ -904,7 +1040,8 @@
     return plans.map(function (p) {
       var price = planPrice(p, slot.size);
       return '<span class="price-row"><span>' + esc(p.plan_name) + '</span><strong>' + (price ? esc(money(price)) : 'Miễn phí') + '</strong></span>';
-    }).join('');
+    }).join('') + (customCfg() ? '<span class="price-row"><span>Tự chọn ' + esc(customMax('day')) + ' ngày</span><strong>' +
+      esc(money(customPrice('day', customMax('day'), slot.size))) + '</strong></span>' : '');
   }
 
   // a slot that is not free and not the user's only shows why; the user's own slot and a visitor's free slot show facts
@@ -1621,12 +1758,31 @@
   function bindEvents() {
     root.addEventListener('click', onClick);
     root.addEventListener('submit', onSubmit);
-    el.panel.addEventListener('input', function () {
+    el.panel.addEventListener('input', function (e) {
       state.panelDirty = true;
+      if (e.target.hasAttribute('data-custom-count')) {
+        updateReserveForm();
+      }
+    });
+    el.panel.addEventListener('click', function (e) {
+      var step = e.target.closest ? e.target.closest('[data-custom-step]') : null;
+      var range = step ? el.panel.querySelector('[data-custom-count]') : null;
+      if (range) {
+        state.panelDirty = true;
+        range.value = String(Math.min(Math.max((toInt(range.value) || 1) + toInt(step.getAttribute('data-custom-step')), 1),
+          toInt(range.max) || 1));
+        updateReserveForm();
+      }
     });
     el.panel.addEventListener('change', function (e) {
-      if (e.target.name === 'planId' || e.target.name === 'openMethod') {
+      if (e.target.name === 'planId' || e.target.name === 'openMethod' || e.target.name === 'customUnit') {
         state.panelDirty = true;
+        if (e.target.name === 'customUnit') {
+          // a new unit starts from a sensible count: 3 hours (no fixed plan) or 2 days (the first discount)
+          var count = el.panel.querySelector('[data-custom-count]');
+          count.max = String(customMax(e.target.value));
+          count.value = e.target.value === 'day' ? '2' : '3';
+        }
         updateReserveForm();
       }
       if (e.target.hasAttribute('data-extend-minutes')) {

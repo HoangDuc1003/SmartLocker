@@ -20,13 +20,18 @@ public class DepositDao {
             + "d.plan_id, p.plan_name, d.card_id, d.paid_amount, d.status, d.reserved_at, d.hold_until, "
             + "d.started_at, d.due_at, d.ended_at, d.extend_count, "
             + "d.open_method, d.pin_code, d.enroll_code, d.enroll_expires, v.device_code, "
-            + "s.size_code, s.size_cm, p.grace_min, d.overdue_rate, d.overdue_hours, d.overdue_fee, d.locked_at, d.escalated_at "
+            + "s.size_code, s.size_cm, p.grace_min, d.overdue_rate, d.overdue_hours, d.overdue_fee, d.locked_at, d.escalated_at, d.custom_min "
             + "FROM Deposit d "
             + "JOIN Users u ON u.user_id = d.user_id "
             + "JOIN LockerSlot s ON s.locker_slot_id = d.slot_id "
             + "JOIN LockerBank b ON b.bank_id = s.bank_id "
             + "JOIN StoragePlan p ON p.plan_id = d.plan_id "
             + "LEFT JOIN Device v ON v.device_id = b.device_id";
+
+    /** "Tự chọn · 3 giờ" / "Tự chọn · 2 ngày" for a custom booking of that many minutes. */
+    public static String customLabel(int minutes) {
+        return minutes % 1440 == 0 ? "Tự chọn · " + (minutes / 1440) + " ngày" : "Tự chọn · " + (minutes / 60) + " giờ";
+    }
 
     private static Deposit map(ResultSet rs) throws SQLException {
         Deposit d = new Deposit();
@@ -37,7 +42,10 @@ public class DepositDao {
         d.setSlotCode(rs.getString("slot_code"));
         d.setBankCode(rs.getString("bank_code"));
         d.setPlanId(rs.getInt("plan_id"));
-        d.setPlanName(rs.getString("plan_name"));
+        int customMin = rs.getInt("custom_min");
+        d.setCustomMin(rs.wasNull() ? null : customMin);
+        // a custom booking shows what was booked ("Tự chọn · 3 giờ"), not the plan it keeps for the grace time
+        d.setPlanName(rs.wasNull() ? rs.getString("plan_name") : customLabel(customMin));
         int cardId = rs.getInt("card_id");
         d.setCardId(rs.wasNull() ? null : cardId);
         d.setPaidAmount(rs.getLong("paid_amount"));
@@ -91,13 +99,23 @@ public class DepositDao {
 
     /** v2: the open method decides the code (a PIN or an enroll code); the price depends on the plan and the size only. */
     public long reserve(int userId, int slotId, int planId, String openMethod) throws SQLException {
+        return reserve(userId, slotId, planId, openMethod, null);
+    }
+
+    /** customMin != null: "Tự chọn" (whole hours or days); the procedure checks it, prices it and picks the plan. */
+    public long reserve(int userId, int slotId, int planId, String openMethod, Integer customMin) throws SQLException {
         try (Connection conn = DbContext.getConnection();
-             CallableStatement cs = conn.prepareCall("{call Deposit_Reserve(?, ?, ?, ?, ?)}")) {
+             CallableStatement cs = conn.prepareCall("{call Deposit_Reserve(?, ?, ?, ?, ?, ?)}")) {
             cs.setInt(1, userId);
             cs.setInt(2, slotId);
             cs.setInt(3, planId);
             cs.registerOutParameter(4, Types.BIGINT);
             cs.setString(5, openMethod);
+            if (customMin == null) {
+                cs.setNull(6, Types.INTEGER);
+            } else {
+                cs.setInt(6, customMin);
+            }
             cs.execute();
             return cs.getLong(4);
         }

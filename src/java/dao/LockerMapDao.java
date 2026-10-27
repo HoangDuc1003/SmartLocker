@@ -99,8 +99,9 @@ public class LockerMapDao {
             // the booking form needs the plans, priced for every size; every open method costs the same
             java.util.List<AppConfigDao.SlotSize> sizes = new AppConfigDao().sizes();
             JsonArray plans = new JsonArray();
+            long dayPrice = 0;                                                // the day pass, base of "Tự chọn"
             try (PreparedStatement ps = conn.prepareStatement(
-                    "SELECT plan_id, plan_name, duration_min, price FROM StoragePlan WHERE is_active = 1 ORDER BY duration_min");
+                    "SELECT plan_id, plan_name, duration_min, price FROM StoragePlan WHERE is_active = 1 ORDER BY duration_min, plan_id");
                  ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     JsonObject p = new JsonObject();
@@ -114,9 +115,16 @@ public class LockerMapDao {
                     }
                     p.add("prices", prices);
                     plans.add(p);
+                    if (dayPrice == 0 && rs.getInt(3) == 1440 && rs.getLong(4) > 0) {
+                        dayPrice = rs.getLong(4);
+                    }
                 }
             }
             root.add("plans", plans);
+            JsonObject custom = customPrices(sizes, dayPrice);
+            if (custom != null) {
+                root.add("custom", custom);
+            }
 
             // the banks of the chosen area
             JsonArray banks = new JsonArray();
@@ -224,5 +232,43 @@ public class LockerMapDao {
             }
         }
         return root;
+    }
+    /**
+     * "Tự chọn" price tables for the booking card, from util.Pricing (which mirrors dbo.fn_CustomPrice):
+     * {"max_hours":23,"max_days":7,"hours":{"S":[1 h .. 23 h]},"days":{"S":[1 d .. 7 d]},"hour_rate":{"S":2500},
+     * "day_price":{"S":25000}}. Display only: Deposit_Reserve prices the booking again. Null without a day pass.
+     */
+    private static JsonObject customPrices(java.util.List<AppConfigDao.SlotSize> sizes, long dayPrice) throws SQLException {
+        if (dayPrice <= 0) {
+            return null;
+        }
+        AppConfigDao cfg = new AppConfigDao();
+        int maxHours = Math.min(cfg.getInt("CUSTOM_MAX_HOURS", util.Pricing.CUSTOM_MAX_HOURS), 23);   // 24 h is a day
+        int maxDays = cfg.getInt("CUSTOM_MAX_DAYS", util.Pricing.CUSTOM_MAX_DAYS);
+        int multiPct = cfg.getInt("CUSTOM_MULTI_DAY_PCT", util.Pricing.CUSTOM_MULTI_DAY_PCT);
+        int weekPct = cfg.getInt("CUSTOM_WEEK_PCT", util.Pricing.CUSTOM_WEEK_PCT);
+        JsonObject c = new JsonObject();
+        c.addProperty("max_hours", Math.max(maxHours, 0));
+        c.addProperty("max_days", maxDays);
+        JsonObject hours = new JsonObject(), days = new JsonObject(), hourRate = new JsonObject(), dayOfSize = new JsonObject();
+        for (AppConfigDao.SlotSize z : sizes) {
+            JsonArray h = new JsonArray();
+            for (int n = 1; n <= maxHours; n++) {
+                h.add(util.Pricing.customPrice(z.hourRate, dayPrice, z.pricePct, n * 60, maxHours, maxDays, multiPct, weekPct));
+            }
+            JsonArray d = new JsonArray();
+            for (int n = 1; n <= maxDays; n++) {
+                d.add(util.Pricing.customPrice(z.hourRate, dayPrice, z.pricePct, n * 1440, maxHours, maxDays, multiPct, weekPct));
+            }
+            hours.add(z.code, h);
+            days.add(z.code, d);
+            hourRate.addProperty(z.code, z.hourRate);
+            dayOfSize.addProperty(z.code, util.Pricing.sizePrice(dayPrice, z.pricePct));
+        }
+        c.add("hours", hours);
+        c.add("days", days);
+        c.add("hour_rate", hourRate);
+        c.add("day_price", dayOfSize);
+        return c;
     }
 }

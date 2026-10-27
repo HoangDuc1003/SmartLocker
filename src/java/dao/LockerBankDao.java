@@ -38,6 +38,14 @@ public class LockerBankDao {
         return items;
     }
 
+    /** The box of a bank: demo or real, and its physical slot ("physical_slot_id" in OperatingProfile, sql/demo_box.sql). */
+    private static final String BOX_COLUMNS = ", v.device_code, bx.demo, ps.slot_code AS physical_slot, pb.bank_code AS physical_bank ";
+    private static final String BOX_JOIN = " LEFT JOIN Device v ON v.device_id = b.device_id "
+            + "OUTER APPLY (SELECT TOP 1 CASE WHEN p.params_json LIKE '%\"demo\":true%' THEN 1 ELSE 0 END AS demo, "
+            + "TRY_CAST(JSON_VALUE(p.params_json, '$.physical_slot_id') AS INT) AS slot_id "
+            + "FROM OperatingProfile p WHERE p.device_id = b.device_id ORDER BY p.profile_id DESC) bx "
+            + "LEFT JOIN LockerSlot ps ON ps.locker_slot_id = bx.slot_id LEFT JOIN LockerBank pb ON pb.bank_id = ps.bank_id";
+
     private static LockerBank map(ResultSet rs) throws SQLException {
         LockerBank b = new LockerBank();
         b.setBankId(rs.getInt("bank_id"));
@@ -50,6 +58,10 @@ public class LockerBankDao {
         b.setDoorRows(rs.getInt("door_rows"));
         b.setStatus(rs.getString("status"));
         b.setSlotCount(rs.getInt("slot_count"));
+        b.setDeviceCode(rs.getString("device_code"));
+        b.setDemoDevice(rs.getInt("demo") == 1);
+        b.setPhysicalSlot(rs.getString("physical_slot"));
+        b.setPhysicalBank(rs.getString("physical_bank"));
         return b;
     }
 
@@ -74,8 +86,8 @@ public class LockerBankDao {
     public List<LockerBank> search(String keyword, Integer areaId, int page, int size) throws SQLException {
         List<Object> params = new ArrayList<>();
         String sql = "SELECT b.bank_id, b.bank_code, b.name, b.area_id, a.area_code, b.device_id, b.door_rows, b.status, "
-                + "(SELECT COUNT(*) FROM LockerSlot s WHERE s.bank_id = b.bank_id) AS slot_count "
-                + "FROM LockerBank b JOIN LockerArea a ON a.area_id = b.area_id"
+                + "(SELECT COUNT(*) FROM LockerSlot s WHERE s.bank_id = b.bank_id) AS slot_count " + BOX_COLUMNS
+                + "FROM LockerBank b JOIN LockerArea a ON a.area_id = b.area_id" + BOX_JOIN
                 + where(keyword, areaId, params)
                 + " ORDER BY b.bank_code OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
         params.add((page - 1) * size);
@@ -109,8 +121,8 @@ public class LockerBankDao {
 
     public LockerBank findById(int bankId) throws SQLException {
         String sql = "SELECT b.bank_id, b.bank_code, b.name, b.area_id, a.area_code, b.device_id, b.door_rows, b.status, "
-                + "(SELECT COUNT(*) FROM LockerSlot s WHERE s.bank_id = b.bank_id) AS slot_count "
-                + "FROM LockerBank b JOIN LockerArea a ON a.area_id = b.area_id WHERE b.bank_id = ?";
+                + "(SELECT COUNT(*) FROM LockerSlot s WHERE s.bank_id = b.bank_id) AS slot_count " + BOX_COLUMNS
+                + "FROM LockerBank b JOIN LockerArea a ON a.area_id = b.area_id" + BOX_JOIN + " WHERE b.bank_id = ?";
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, bankId);
             try (ResultSet rs = ps.executeQuery()) {
