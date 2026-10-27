@@ -3,6 +3,10 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
 <c:set var="activeNav" value="topup"/>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<%-- ?panel=1: only the content, drawn by js/glass-panel.js as a glass popup over the users' map --%>
+<c:set var="panel" value="${param.panel == '1'}"/>
+<c:if test="${not panel}">
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -15,6 +19,11 @@
 <body>
 <%@ include file="common/nav.jspf" %>
 <main id="main" class="wrap">
+</c:if>
+<c:if test="${panel}">
+<div class="glass-page">
+<%@ include file="common/panel-flash.jspf" %>
+</c:if>
 
 <c:if test="${isStaff and not empty param.status}">
     <%-- Staff review of account top-ups: TopupController?status=... from the menu "Duyệt nạp tiền". --%>
@@ -74,7 +83,7 @@
 <c:if test="${not (isStaff and not empty param.status)}">
     <div class="page-head">
         <div>
-            <h2>Nạp tiền vào ví</h2>
+            <h2 id="pageTitle">Nạp tiền vào ví</h2>
             <p class="sub">Quét mã VietQR để chuyển khoản. Số dư được cộng sau khi nhân viên xác nhận.</p>
         </div>
         <c:if test="${isStaff}"><a class="btn ghost" href="${ctx}/TopupController?status=PENDING">Duyệt nạp tiền</a></c:if>
@@ -154,27 +163,14 @@
         </table>
     </div>
 </c:if>
+<c:if test="${panel}">
+</div>
+</c:if>
+<c:if test="${not panel}">
 </main>
 
 <script src="${ctx}/js/app.js"></script>
-<script>
-(function () {
-    var amount = document.getElementById('amount');
-    if (!amount) return;
-    var presets = document.querySelectorAll('.presets [data-amt]');
-    function sync() {
-        for (var i = 0; i < presets.length; i++) {
-            presets[i].setAttribute('aria-pressed', Number(presets[i].getAttribute('data-amt')) === Number(amount.value) ? 'true' : 'false');
-        }
-    }
-    for (var i = 0; i < presets.length; i++) {
-        presets[i].addEventListener('click', function () {
-            amount.value = this.getAttribute('data-amt');
-            sync();
-        });
-    }
-    amount.addEventListener('input', sync);
-})();
-</script>
+<script src="${ctx}/js/topup.js"></script>
 </body>
 </html>
+</c:if>

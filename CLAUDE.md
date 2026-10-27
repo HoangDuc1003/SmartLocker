@@ -8,7 +8,8 @@ Dev server: Tomcat at `E:/apache-tomcat-9.0.113`, app at `http://localhost:8080/
 - One stylesheet: `web/css/app.css` (light + dark tokens). Pages must work offline: no CDN scripts
   (Tailwind, Google Fonts...) and no inline color styles; use the classes/tokens in `app.css`.
 - Every page includes `js/theme.js` in `<head>` (sets the theme before paint) and `common/nav.jspf`
-  right after `<body>`.
+  right after `<body>`. Exception: the full-screen map (`lockerMap.jsp`) includes `common/nav-floating.jspf`
+  (glass tab bar); both share the icon sprite `common/icons.jspf`. Glass tokens (`--glass-*`) live in `app.css`.
 - All visible text is Vietnamese; technical codes (slot code, RFID UID, status enum) stay as is.
 - No emoji as icons; inline SVG only. No fake "LIVE"/status indicators that are not backed by data.
 - Confirm before a POST with `data-confirm="..."` (on the form, or on one submit button) handled by `js/app.js`; never `confirm()`.
@@ -62,3 +63,7 @@ Dev server: Tomcat at `E:/apache-tomcat-9.0.113`, app at `http://localhost:8080/
 - Run the TestNG suite with `sh scripts/test.sh`; `testng`/`jcommander`/`slf4j` are test-only and stay out of `WEB-INF/lib`.
 - Python `open(path, 'w')` on some repo files fails with `Errno 22` (OneDrive); write in place with `open(path, 'r+')` + `truncate()`.
 - A demo area needs a `"demo":true` device on every bank (DOMB had none: 28 slots OFFLINE, shown as "Hết chỗ"). `LOCKER-01` (CANT-A) is the only non-demo box and the repo firmware has no network, so CANT-A is OFFLINE unless `ScenarioSender`/a real box sends `/api/health`.
+- Some home routers (VNPT "iGate") do not resolve `tile.openstreetmap.org`, and CARTO basemaps answer every tile with an "API KEY REQUIRED" picture (HTTP 200); `area-map.js` falls back OSM → OSM.de → OSM.fr, remembers the host that worked and keeps tiles in Cache Storage (`sl-map-tiles-v*`: bump the name to drop bad tiles).
+- There is no login, sign-up or landing page: `/`, GET `/LoginController`, GET `/RegisterController` and any page that needs a sign-in redirect to `/LockerMapController?login=1` (`register=1`, `next=<page>`), which opens the popup; a plain form post that fails comes back there with a flash. Build such links with `Web.signInUrl`.
+- v5: every open method costs the same (no 5% card discount; `fn_SlotPrice`/`fn_OpenPrice` are dropped, prices are `fn_SizePrice` / `Pricing.sizePrice`, the APIs send `prices: {S, M, L}`); the card deposit is `AppConfig.CARD_DEPOSIT` = 10,000.
+- Do not re-run all of `sql/03_v2_v3.sql` on a live DB to apply one change: it resets the LOCKER-01 key. Run only the changed objects (CREATE OR ALTER blocks, UPDATE of AppConfig) from a scratchpad script.

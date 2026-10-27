@@ -96,7 +96,7 @@ public class LockerMapDao {
                 }
             }
 
-            // the booking form needs the plans, priced for every size (v3: size factor, then the card 5% off)
+            // the booking form needs the plans, priced for every size; every open method costs the same
             java.util.List<AppConfigDao.SlotSize> sizes = new AppConfigDao().sizes();
             JsonArray plans = new JsonArray();
             try (PreparedStatement ps = conn.prepareStatement(
@@ -108,14 +108,9 @@ public class LockerMapDao {
                     p.addProperty("plan_name", rs.getString(2));
                     p.addProperty("duration_min", rs.getInt(3));
                     p.addProperty("price", rs.getInt(4));
-                    p.addProperty("price_card", util.Pricing.priceFor(rs.getInt(4), "CARD"));   // v2: card 5% off
-                    JsonObject prices = new JsonObject();
+                    JsonObject prices = new JsonObject();                     // {"S": 5000, "M": 6500, "L": 8500}
                     for (AppConfigDao.SlotSize z : sizes) {
-                        JsonObject byMethod = new JsonObject();
-                        for (String m : DepositDao.OPEN_METHODS) {
-                            byMethod.addProperty(m, util.Pricing.slotPrice(rs.getInt(4), z.pricePct, m));
-                        }
-                        prices.add(z.code, byMethod);
+                        prices.addProperty(z.code, util.Pricing.sizePrice(rs.getInt(4), z.pricePct));
                     }
                     p.add("prices", prices);
                     plans.add(p);

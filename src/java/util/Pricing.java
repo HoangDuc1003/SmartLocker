@@ -2,15 +2,16 @@ package util;
 
 /**
  * The v3 money rules, for showing them and for the unit tests. The database applies the same formulas
- * (dbo.fn_SizePrice, fn_SlotPrice, fn_HourRate, fn_OverdueRate, Deposit_* procedures, sql/03_v2_v3.sql);
+ * (dbo.fn_SizePrice, fn_HourRate, fn_OverdueRate, Deposit_* procedures, sql/03_v2_v3.sql);
  * PricingDatabaseIntegrationTest compares the two. The numbers themselves (5 minutes, 10,000 VND...) live in
  * the AppConfig table; the constants below are only the defaults the tests use.
  *
- * Order of a price: plan price -> size factor (rounded up to 100 VND) -> card 5% off (rounded up to 100 VND).
+ * Price of a booking: plan price x size factor, rounded up to 100 VND. Every open method (PIN, card, finger)
+ * costs the same; a first card only adds the one-time deposit, taken at the box.
  */
 public final class Pricing {
 
-    public static final long CARD_DEPOSIT = 30000;     // once per card, taken when the card is enrolled at the box
+    public static final long CARD_DEPOSIT = 10000;     // once per card, taken when the card is enrolled at the box
     public static final int HOLD_MIN = 15;             // a reservation waits this long after booking
     public static final int CANCEL_FREE_MIN = 5;       // cancel with a full refund only this soon after booking
     public static final int NO_SHOW_REFUND_PCT = 0;    // a no-show loses everything
@@ -29,17 +30,6 @@ public final class Pricing {
     /** Plan price times the size factor in percent, rounded up to 100 VND (5,000 x 169% = 8,450 -> 8,500). */
     public static long sizePrice(long planPrice, int sizePct) {
         return ceilDiv(planPrice * sizePct, 10000) * 100;
-    }
-
-    /** Price of a slot for an open method: size first, then the card 5% off (8,500 -> 8,075 -> 8,100). */
-    public static long slotPrice(long planPrice, int sizePct, String openMethod) {
-        long sized = sizePrice(planPrice, sizePct);
-        return "CARD".equals(openMethod) ? ceilDiv(sized * 95, 10000) * 100 : sized;
-    }
-
-    /** v2 price, size factor 100 (5,000 -> 4,800 with the card). */
-    public static long priceFor(long planPrice, String openMethod) {
-        return slotPrice(planPrice, 100, openMethod);
     }
 
     /** One hour of a size, from the shortest plan on sale: CEILING(sized x 60 / minutes / 100) x 100. */

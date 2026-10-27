@@ -1,0 +1,141 @@
+<%-- Floating glass menu of the full-screen map page (lockerMap.jsp), the variant of common/nav.jspf:
+     a tab bar at the bottom centre instead of the sidebar. Same data: "perms" from SecurityFilter and the session user.
+     Up to 4 entries are tabs; with more, the first 3 stay and the rest go under "Thêm".
+     It also sets ctx, me and roleLabel for the page. Styles: css/locker-map.css (.tabbar, .pop, .flash--float). --%>
+<%@ page pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<c:set var="me" value="${sessionScope.LOGIN_USER}"/>
+<c:choose>
+    <c:when test="${me.roleName == 'ADMIN'}"><c:set var="roleLabel" value="Quản trị viên"/></c:when>
+    <c:when test="${me.roleName == 'OPERATOR'}"><c:set var="roleLabel" value="Nhân viên vận hành"/></c:when>
+    <c:when test="${me.roleName == 'TECHNICIAN'}"><c:set var="roleLabel" value="Kỹ thuật viên"/></c:when>
+    <c:when test="${me.roleName == 'AUDITOR'}"><c:set var="roleLabel" value="Kiểm toán viên"/></c:when>
+    <c:otherwise><c:set var="roleLabel" value="Người dùng"/></c:otherwise>
+</c:choose>
+<%
+    // the entries this user may open, in the order of common/nav.jspf: { activeNav key, path, icon, label }
+    @SuppressWarnings("unchecked")
+    java.util.Set<String> navPerms = (java.util.Set<String>) request.getAttribute("perms");
+    if (navPerms == null) {
+        navPerms = java.util.Collections.emptySet();
+    }
+    model.User navUser = (model.User) session.getAttribute("LOGIN_USER");
+    String navRole = navUser == null ? "" : navUser.getRoleName();
+    String[][] navAll = {
+        {"ALERT:READ", "dashboard", "DashboardController", "i-dashboard", "Tổng quan"},
+        {"MAP:READ", "map", "LockerMapController", "i-fold-map", "Sơ đồ tủ"},
+        {"ALERT:READ", "alerts", "AlertController", "i-bell", "Cảnh báo"},
+        {"BOOKING:READ", "mylocker", "MyLockerController", "i-box", "Tủ của tôi"},
+        {"TOPUP:READ", "topup", "TopupController", "i-wallet", "Nạp tiền"},
+        {"AREA:READ", "areas", "LockerAreaController", "i-pin", "Khu vực"},
+        {"LOCKERBANK:READ", "banks", "LockerBankController", "i-bank", "Dãy tủ"},
+        {"LOCKERSLOT:READ", "slots", "LockerSlotController", "i-slot", "Ngăn tủ"},
+        {"STORAGEPLAN:READ", "plans", "StoragePlanController", "i-clock", "Gói gửi đồ"},
+        {"USERCARD:READ", "cards", "UserCardController", "i-card", "Thẻ RFID"},
+        {"DEPOSIT:READ", "deposits", "DepositController", "i-box", "Lượt gửi đồ"},
+        {"COMMAND:READ", "commands", "RemoteCommandController", "i-unlock", "Mở khóa từ xa"},
+        {"CALIBRATION:READ", "calibration", "CalibrationController", "i-sliders", "Hiệu chuẩn"},
+        {"MAINTENANCE:READ", "maintenance", "MaintenanceController", "i-wrench", "Bảo trì"},
+        {"TOPUP:REVIEW", "topupReview", "TopupController?status=PENDING", "i-check", "Duyệt nạp tiền"},
+        {"USER:READ", "users", "UserController", "i-users", "Người dùng"},
+        {"ROLE:READ", "roles", "RoleController", "i-shield", "Vai trò & quyền"},
+        {"AUDIT:READ", "audit", "AuditController", "i-file", "Nhật ký kiểm toán"}
+    };
+    java.util.List<String[]> navItems = new java.util.ArrayList<>();
+    for (String[] item : navAll) {
+        // reviewing top-ups is for the roles TopupController treats as staff, as in common/nav.jspf
+        boolean allowed = "TOPUP:REVIEW".equals(item[0])
+                ? "ADMIN".equals(navRole) || "OPERATOR".equals(navRole)
+                : navPerms.contains(item[0]);
+        if (allowed) {
+            navItems.add(new String[] {item[1], item[2], item[3], item[4]});
+        }
+    }
+    request.setAttribute("navItems", navItems);
+%>
+<c:set var="navCount" value="${fn:length(navItems)}"/>
+<c:set var="navLimit" value="${navCount > 4 ? 3 : 4}"/>
+
+<%@ include file="icons.jspf" %>
+
+<a class="skip-link" href="#main">Bỏ qua menu</a>
+
+<nav class="tabbar glass glass--pill glass--refract" id="glassTabs" aria-label="Menu chính">
+    <c:forEach var="it" items="${navItems}" varStatus="s">
+        <c:if test="${s.index < navLimit}">
+            <a class="tab lg-hover ${activeNav == it[0] ? 'on' : ''}" href="${ctx}/${it[1]}" ${activeNav == it[0] ? 'aria-current="page"' : ''}>
+                <svg class="ico" aria-hidden="true"><use href="#${it[2]}"/></svg><span><c:out value="${it[3]}"/></span></a>
+        </c:if>
+    </c:forEach>
+    <c:if test="${navCount > navLimit}">
+        <div class="pop-wrap">
+            <button type="button" class="tab lg-hover" data-pop aria-expanded="false" aria-controls="navMore">
+                <svg class="ico" aria-hidden="true"><use href="#i-more"/></svg><span>Thêm</span></button>
+            <div class="pop pop--up glass glass--stack" id="navMore" hidden>
+                <c:forEach var="it" items="${navItems}" varStatus="s">
+                    <c:if test="${s.index >= navLimit}">
+                        <a class="pop__link lg-hover" href="${ctx}/${it[1]}">
+                            <svg class="ico" aria-hidden="true"><use href="#${it[2]}"/></svg><c:out value="${it[3]}"/></a>
+                    </c:if>
+                </c:forEach>
+            </div>
+        </div>
+    </c:if>
+    <c:if test="${empty me}">
+        <%-- a visitor: the links open the popup of js/auth-modal.js and still work without it --%>
+        <a class="tab lg-hover" href="${ctx}/LoginController" data-auth-open="login">
+            <svg class="ico" aria-hidden="true"><use href="#i-login"/></svg><span>Đăng nhập</span></a>
+        <a class="tab lg-hover" href="${ctx}/RegisterController" data-auth-open="register">
+            <svg class="ico" aria-hidden="true"><use href="#i-user"/></svg><span>Đăng ký</span></a>
+    </c:if>
+</nav>
+
+<%-- one message after a POST: Web.flash(session, text, bad) --%>
+<c:if test="${not empty sessionScope.flash}">
+    <div class="flash flash--float ${sessionScope.flashBad ? 'bad' : ''}" role="${sessionScope.flashBad ? 'alert' : 'status'}" data-flash>
+        <span class="flash__text"><c:out value="${sessionScope.flash}"/></span>
+        <button type="button" class="round-btn" data-flash-close aria-label="Đóng thông báo">
+            <svg class="ico" aria-hidden="true"><use href="#i-close"/></svg></button>
+    </div>
+    <c:remove var="flash" scope="session"/>
+    <c:remove var="flashBad" scope="session"/>
+</c:if>
+
+<script>
+(function () {
+    // [data-pop] buttons open the element named by aria-controls; a click outside or Esc closes it
+    function closeAll(except) {
+        var open = document.querySelectorAll('[data-pop][aria-expanded="true"]');
+        for (var i = 0; i < open.length; i++) {
+            if (open[i] === except) continue;
+            open[i].setAttribute('aria-expanded', 'false');
+            var pop = document.getElementById(open[i].getAttribute('aria-controls'));
+            if (pop) pop.hidden = true;
+        }
+    }
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest ? e.target.closest('[data-pop]') : null;
+        if (btn) {
+            var pop = document.getElementById(btn.getAttribute('aria-controls'));
+            var open = btn.getAttribute('aria-expanded') !== 'true';
+            closeAll(btn);
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (pop) pop.hidden = !open;
+            return;
+        }
+        if (!(e.target.closest && e.target.closest('.pop'))) closeAll(null);
+        var close = e.target.closest ? e.target.closest('[data-flash-close]') : null;
+        if (close) close.parentNode.remove();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        var btn = document.querySelector('[data-pop][aria-expanded="true"]');
+        if (btn) { e.preventDefault(); closeAll(null); btn.focus(); }   // the page's own Esc handler skips a handled key
+    });
+    // a success message goes away by itself; an error stays until it is closed
+    var flash = document.querySelector('[data-flash]:not(.bad)');
+    if (flash) setTimeout(function () { if (flash.parentNode) flash.remove(); }, 8000);
+})();
+</script>

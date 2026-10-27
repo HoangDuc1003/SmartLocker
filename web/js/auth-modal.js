@@ -23,11 +23,11 @@
 
   function build() {
     dlg = document.createElement('dialog');
-    dlg.className = 'dlg auth';
+    dlg.className = 'dlg auth glass glass--sheet glass--dense';   // liquid glass: css/locker-map.css
     dlg.setAttribute('aria-labelledby', 'authTitle');
     dlg.innerHTML =
       '<div class="auth__head"><h2 id="authTitle" class="dlg__title">Đăng nhập để tiếp tục</h2>' +
-        '<button type="button" class="icon-btn" data-auth-close aria-label="Đóng">' +
+        '<button type="button" class="round-btn lg-hover" data-auth-close aria-label="Đóng">' +
           '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
       '<p class="auth__why" id="authWhy"></p>' +
       '<div class="seg auth__tabs" role="tablist" aria-label="Đăng nhập hoặc đăng ký">' +
@@ -37,7 +37,7 @@
         field('authUser', 'Tên đăng nhập', 'text', { name: 'username', attrs: ' autocomplete="username" autocapitalize="none" spellcheck="false" required' }) +
         field('authPass', 'Mật khẩu', 'password', { name: 'password', attrs: ' autocomplete="current-password" required' }) +
         '<p class="auth__error error" role="alert" hidden></p>' +
-        '<button type="submit" class="btn btn--block">Đăng nhập</button></form>' +
+        '<button type="submit" class="btn btn--block btn--pill lg-hover">Đăng nhập</button></form>' +
       '<form class="auth__form" data-auth-form="register" action="' + esc(REGISTER_URL) + '" method="post" novalidate hidden>' +
         field('regUser', 'Tên đăng nhập', 'text', { name: 'username', attrs: ' autocomplete="username" autocapitalize="none" spellcheck="false" required minlength="3" maxlength="50"',
           hint: '3–50 ký tự: chữ không dấu, số, dấu _ và dấu chấm.' }) +
@@ -47,7 +47,7 @@
         field('regPass', 'Mật khẩu', 'password', { name: 'password', attrs: ' autocomplete="new-password" required minlength="6"', hint: 'Tối thiểu 6 ký tự.' }) +
         field('regConfirm', 'Nhập lại mật khẩu', 'password', { name: 'confirm', attrs: ' autocomplete="new-password" required minlength="6"' }) +
         '<p class="auth__error error" role="alert" hidden></p>' +
-        '<button type="submit" class="btn btn--block">Tạo tài khoản và đăng nhập</button></form>';
+        '<button type="submit" class="btn btn--block btn--pill lg-hover">Tạo tài khoản và đăng nhập</button></form>';
     document.body.appendChild(dlg);
 
     dlg.addEventListener('click', function (e) {
@@ -156,7 +156,10 @@
       if (pending) { pending.resolve(false); }
       pending = { resolve: resolve, back: document.activeElement };
       showTab(opts.tab === 'register' ? 'register' : 'login');
-      if (!dlg.open) { dlg.showModal(); }
+      if (!dlg.open) {
+        dlg.showModal();
+        if (window.SmartLockerMotion) { window.SmartLockerMotion.pop(dlg); }   // the spring of js/glass-motion.js
+      }
       var first = dlg.querySelector('[data-auth-form]:not([hidden]) input');
       if (first) { first.focus(); }
     });

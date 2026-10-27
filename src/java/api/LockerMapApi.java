@@ -57,7 +57,7 @@ public class LockerMapApi extends HttpServlet {
             rules.addProperty("no_show_refund_pct", config.getInt("NO_SHOW_REFUND_PCT", util.Pricing.NO_SHOW_REFUND_PCT));
             map.add("rules", rules);
             if (!staff && !guest) {
-                // v2 booking form: "cọc 30.000 đ lần đầu" for the card, and the boxes where the user's finger is enrolled
+                // v2 booking form: the first card deposit (AppConfig CARD_DEPOSIT), and the boxes where the user's finger is enrolled
                 dao.DeviceAuthDao auth = new dao.DeviceAuthDao();
                 map.addProperty("card_deposit_due", !auth.hasRegisteredCard(me.getUserId()));
                 map.addProperty("card_deposit", config.get("CARD_DEPOSIT", util.Pricing.CARD_DEPOSIT));

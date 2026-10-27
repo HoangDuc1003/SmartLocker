@@ -40,9 +40,7 @@
         <session-timeout>45</session-timeout>
     </session-config>
 
-    <welcome-file-list>
-        <welcome-file>index.html</welcome-file>
-    </welcome-file-list>
+    <!-- no welcome file: SecurityFilter sends the address of the app straight to the map (/LockerMapController) -->
 
     <!-- SecurityFilter answers 403 for a role without the permission; an unknown address is 404 -->
     <error-page>

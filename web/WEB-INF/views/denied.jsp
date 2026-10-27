@@ -32,7 +32,7 @@
                     <a class="btn" href="${pageContext.request.contextPath}/LockerMapController">Về sơ đồ tủ</a>
                 </c:when>
                 <c:otherwise>
-                    <a class="btn" href="${pageContext.request.contextPath}/LoginController">Về trang đăng nhập</a>
+                    <a class="btn" href="${pageContext.request.contextPath}/LockerMapController?login=1">Đăng nhập</a>
                 </c:otherwise>
             </c:choose>
         </div>

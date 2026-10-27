@@ -15,7 +15,7 @@ public class PricingTest {
     private static final int BASE_MIN = 120;
     private static final long T0 = 1_800_000_000_000L;
 
-    // ---- price of a booking: plan -> size -> card ----
+    // ---- price of a booking: plan -> size, the same for every open method ----
 
     @Test
     public void sizeFactorRoundsUpTo100() {
@@ -28,32 +28,18 @@ public class PricingTest {
 
     @Test
     public void theTableOfSection31() {
+        // S, M, L for the 2-hour, 4-hour and whole-day plans (v5: the card is no longer 5% off)
         long[][] expected = {
-            // PIN S, CARD S, PIN M, CARD M, PIN L, CARD L
-            {5000, 4800, 6500, 6200, 8500, 8100},
-            {9000, 8600, 11700, 11200, 15300, 14600},
-            {25000, 23800, 32500, 30900, 42300, 40200}};
+            {5000, 6500, 8500},
+            {9000, 11700, 15300},
+            {25000, 32500, 42300}};
         long[] plans = {5000, 9000, 25000};
         int[] sizes = {S, M, L};
         for (int p = 0; p < plans.length; p++) {
             for (int z = 0; z < sizes.length; z++) {
-                assertEquals(Pricing.slotPrice(plans[p], sizes[z], "PIN"), expected[p][z * 2], "PIN " + plans[p] + " " + sizes[z]);
-                assertEquals(Pricing.slotPrice(plans[p], sizes[z], "FINGERPRINT"), expected[p][z * 2]);
-                assertEquals(Pricing.slotPrice(plans[p], sizes[z], "CARD"), expected[p][z * 2 + 1], "CARD " + plans[p] + " " + sizes[z]);
+                assertEquals(Pricing.sizePrice(plans[p], sizes[z]), expected[p][z], plans[p] + " " + sizes[z]);
             }
         }
-    }
-
-    @Test
-    public void sizeComesBeforeTheCardDiscount() {
-        // size first: 8,500 -> 8,075 -> 8,100. Card first would give 4,800 x 1.69 = 8,112 -> 8,200.
-        assertEquals(Pricing.slotPrice(5000, L, "CARD"), 8100);
-    }
-
-    @Test
-    public void v2PriceIsSizeS() {
-        assertEquals(Pricing.priceFor(5000, "CARD"), 4800);
-        assertEquals(Pricing.priceFor(5000, "PIN"), 5000);
     }
 
     // ---- hour prices (Q3: one price per size, from the shortest plan) ----
@@ -112,8 +98,8 @@ public class PricingTest {
     public void tenThousandMustStayAfterBooking() {
         assertTrue(Pricing.canBook(16500, 6500, 0, 10000));
         assertFalse(Pricing.canBook(16499, 6500, 0, 10000));
-        assertTrue(Pricing.canBook(46200, 6200, 30000, 10000));  // a first card also keeps its 30,000 deposit
-        assertFalse(Pricing.canBook(46199, 6200, 30000, 10000));
+        assertTrue(Pricing.canBook(26500, 6500, 10000, 10000));  // a first card also keeps its 10,000 deposit
+        assertFalse(Pricing.canBook(26499, 6500, 10000, 10000));
         assertFalse(Pricing.canBook(-100, 0, 0, 10000));         // a debt blocks every booking
     }
 

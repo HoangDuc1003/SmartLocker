@@ -126,7 +126,7 @@ public final class AuthText {
             case "SENSOR_FULL":
                 return "Bo nho van tay\nda day";
             case "INSUFFICIENT_BALANCE":
-                return "Khong du tien\ncoc 30000d";
+                return "Khong du tien\ncoc the 10000d";
             case "BAD_SLOT":
                 return "Vi tri van tay\nkhong hop le";
             case "BAD_UID":

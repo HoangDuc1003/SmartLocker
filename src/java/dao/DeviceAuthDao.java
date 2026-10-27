@@ -70,7 +70,7 @@ public class DeviceAuthDao {
         }
     }
 
-    /** Stores the finger slot, or the card UID and its one-time 30,000 VND deposit. */
+    /** Stores the finger slot, or the card UID and its one-time card deposit. */
     public Map<String, Object> enrollFinish(int deviceId, String type, String code, Integer sensorSlot, String cardUid)
             throws SQLException {
         try (Connection conn = DbContext.getConnection();
@@ -167,7 +167,7 @@ public class DeviceAuthDao {
         return list;
     }
 
-    /** True when the user has a card enrolled at a box (or marked so by staff): no 30,000 VND deposit is due. */
+    /** True when the user has a card enrolled at a box (or marked so by staff): no card deposit is due. */
     public boolean hasRegisteredCard(int userId) throws SQLException {
         String sql = "SELECT COUNT(*) FROM UserCard WHERE user_id = ? AND status = N'ACTIVE' "
                 + "AND (registered_device_id IS NOT NULL OR deposit_amount > 0)";

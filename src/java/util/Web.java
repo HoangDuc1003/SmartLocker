@@ -66,6 +66,32 @@ public class Web {
         return session == null ? null : (User) session.getAttribute(LOGIN_USER);
     }
 
+    /**
+     * There is no login page: signing in and signing up happen in the popup of the map page (js/auth-modal.js).
+     * This is the map address that opens the popup on the "login" or "register" tab; next is the path to go back
+     * to after a sign-in (null: stay on the map).
+     */
+    public static String signInUrl(HttpServletRequest req, String tab, String next) {
+        StringBuilder url = new StringBuilder(req.getContextPath()).append("/LockerMapController?")
+                .append("register".equals(tab) ? "register" : "login").append("=1");
+        if (next != null && next.startsWith("/") && !next.startsWith("//")) {
+            try {
+                url.append("&next=").append(java.net.URLEncoder.encode(next, "UTF-8"));
+            } catch (java.io.UnsupportedEncodingException e) {
+                throw new IllegalStateException(e);   // UTF-8 is always there
+            }
+        }
+        return url.toString();
+    }
+
+    /**
+     * The glass interface (full-screen map, "Tủ của tôi" and "Nạp tiền" as popups) is for the users and the visitors;
+     * the staff roles keep the pages with the sidebar.
+     */
+    public static boolean isUserView(User me) {
+        return me == null || "END_USER".equals(me.getRoleName());
+    }
+
     /** One message for the next page; common/nav.jspf shows it once and removes it. */
     public static void flash(HttpSession session, String message, boolean bad) {
         session.setAttribute("flash", message);
@@ -96,7 +122,7 @@ public class Web {
             {"Ticket not found or already closed", "Không tìm thấy phiếu hoặc phiếu đã đóng"},
             {"Alert not found or already resolved", "Không tìm thấy cảnh báo hoặc cảnh báo đã xử lý"},
             // v2 (sql/03_v2_v3.sql)
-            {"Insufficient balance for the price and the 30,000 VND card deposit", "Số dư không đủ cho giá gói và tiền cọc thẻ 30.000 đ. Hãy nạp thêm tiền."},
+            {"Insufficient balance for the price and the card deposit", "Số dư không đủ cho giá gói và tiền cọc thẻ. Hãy nạp thêm tiền."},
             {"Choose how to open the locker: PIN, card or fingerprint", "Hãy chọn cách mở tủ: mật mã, thẻ từ hoặc vân tay"},
             {"Could not create a unique code, try again", "Không tạo được mã, hãy thử lại"},
             {"This booking has nothing to enroll", "Lượt đặt này không cần đăng ký thẻ hoặc vân tay"},

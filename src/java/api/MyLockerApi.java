@@ -94,16 +94,10 @@ public class MyLockerApi extends HttpServlet {
                 o.addProperty("plan_id", p.getPlanId());
                 o.addProperty("plan_name", p.getPlanName());
                 o.addProperty("duration_min", p.getDurationMin());
-                o.addProperty("price_pin", Pricing.priceFor(p.getPrice(), "PIN"));
-                o.addProperty("price_card", Pricing.priceFor(p.getPrice(), "CARD"));
-                o.addProperty("price_fingerprint", Pricing.priceFor(p.getPrice(), "FINGERPRINT"));
-                JsonObject prices = new JsonObject();                     // v3: by size, then by open method
+                o.addProperty("price", p.getPrice());
+                JsonObject prices = new JsonObject();                     // by size, the same for every open method
                 for (dao.AppConfigDao.SlotSize z : sizes) {
-                    JsonObject byMethod = new JsonObject();
-                    for (String m : DepositDao.OPEN_METHODS) {
-                        byMethod.addProperty(m, Pricing.slotPrice(p.getPrice(), z.pricePct, m));
-                    }
-                    prices.add(z.code, byMethod);
+                    prices.addProperty(z.code, Pricing.sizePrice(p.getPrice(), z.pricePct));
                 }
                 o.add("prices", prices);
                 plans.add(o);

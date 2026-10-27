@@ -34,6 +34,11 @@ public class MyLockerController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         User me = Web.currentUser(req);
+        if (Web.isUserView(me) && !"1".equals(req.getParameter("panel"))) {
+            // a user sees this page as a glass popup over the map (js/glass-panel.js asks for ?panel=1)
+            res.sendRedirect(req.getContextPath() + "/LockerMapController?panel=mylocker");
+            return;
+        }
         try {
             DeviceAuthDao auth = new DeviceAuthDao();
             List<Deposit> open = new ArrayList<>();

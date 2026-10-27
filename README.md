@@ -23,10 +23,10 @@
 
 ### Người dùng 👤
 
-- **Đăng ký, đăng nhập:** ngay trong popup trên bản đồ tủ công khai. Mật khẩu băm BCrypt có salt.
+- **Đăng ký, đăng nhập:** ngay trong popup trên bản đồ tủ công khai; không có trang đăng nhập riêng, vào địa chỉ của web là tới thẳng sơ đồ tủ. Mật khẩu băm BCrypt có salt.
 - **Sơ đồ tủ:** các khu (Thư viện, Ký túc xá A và B, Căng tin, Nhà văn hóa Sinh viên) trên bản đồ Leaflet chạy được khi mất mạng, làm mới 10 giây một lần. Mỗi dãy vẽ thành một khối tủ, cửa cao theo cỡ ngăn.
 - **Tìm tủ gần tôi:** sắp các khu theo khoảng cách và mở chỉ đường đi bộ trên Google Maps. Vị trí chỉ tính trên trình duyệt, không gửi lên máy chủ.
-- **Ba cỡ ngăn:** S 20x20x20, M 40x40x40, L 60x60x60 cm. Giá = giá gói x 1,00 / 1,30 / 1,69 (tròn lên 100 đ), thẻ từ giảm thêm 5%. Ví dụ gói 2 giờ: S 5.000 đ, M 6.500 đ, L 8.500 đ.
+- **Ba cỡ ngăn:** S 20x20x20, M 40x40x40, L 60x60x60 cm. Giá = giá gói x 1,00 / 1,30 / 1,69 (tròn lên 100 đ), như nhau cho mật mã, thẻ RFID và vân tay. Thẻ RFID chỉ cọc 10.000 đ một lần khi đăng ký thẻ tại hộp. Ví dụ gói 2 giờ: S 5.000 đ, M 6.500 đ, L 8.500 đ.
 - **Đặt ngăn rõ ràng:** chọn gói và cách mở (mật mã, thẻ từ, vân tay); popup xác nhận cho biết số tiền trừ ngay. Giữ chỗ 15 phút, sau khi đặt ví phải còn ít nhất 10.000 đ dự phòng phụ phí.
 - **Hủy trong 5 phút:** hoàn đủ tiền nếu hủy trong 5 phút đầu. Không đến sau 15 phút giữ chỗ thì không hoàn tiền; 3 lần không đến trong 7 ngày bị tạm cấm đặt.
 - **Gia hạn có phí:** tối đa 3 lần, mỗi giờ bắt đầu tính theo giá một giờ của cỡ ngăn (S 2.500 đ, M 3.300 đ, L 4.300 đ).

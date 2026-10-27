@@ -26,7 +26,7 @@
 - **Secure Authentication:** Sign up and log in from a popup on the public map. Passwords are hashed with BCrypt (salted).
 - **Locker Map:** Lockers grouped by area (Library, Dormitory A and B, Canteen, Student Cultural House) on a Leaflet map that works offline, refreshed every 10 seconds. Each bank is drawn as a cabinet whose door height follows the slot size.
 - **Nearest Locker:** "Find lockers near me" sorts the areas by distance and opens walking directions in Google Maps. The position is computed in the browser and is never sent to the server.
-- **Three Slot Sizes:** S 20x20x20 cm, M 40x40x40 cm, L 60x60x60 cm. Price = plan price x 1.00 / 1.30 / 1.69, and an RFID card gives 5% off. Example for a 2-hour plan: S 5,000 / M 6,500 / L 8,500 VND.
+- **Three Slot Sizes:** S 20x20x20 cm, M 40x40x40 cm, L 60x60x60 cm. Price = plan price x 1.00 / 1.30 / 1.69, the same for PIN, RFID card and fingerprint; a first RFID card only adds a one-time 10,000 VND deposit. Example for a 2-hour plan: S 5,000 / M 6,500 / L 8,500 VND.
 - **Booking You Can Trust:** Choose a plan and how to open the box (PIN, card, fingerprint). A confirmation popup shows the amount charged now. The slot is held for 15 minutes.
 - **Cancel in 5 Minutes:** A full refund within the first 5 minutes. A no-show after the 15-minute hold loses the payment, and 3 no-shows in 7 days block booking for a while.
 - **Paid Extensions:** Up to 3 extensions, each priced by the hour rate of the slot size.

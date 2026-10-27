@@ -37,6 +37,11 @@ public class TopupController extends HttpServlet {
         boolean isStaff = "ADMIN".equals(me.getRoleName()) || "OPERATOR".equals(me.getRoleName());
         String status = Web.trimmed(req, "status");
         int viewId = Web.intParam(req, "id", 0);
+        if (Web.isUserView(me) && !"1".equals(req.getParameter("panel"))) {
+            // a user sees this page as a glass popup over the map (js/glass-panel.js asks for ?panel=1)
+            res.sendRedirect(req.getContextPath() + "/LockerMapController?panel=topup" + (viewId > 0 ? "&id=" + viewId : ""));
+            return;
+        }
 
         try {
             if (isStaff) {

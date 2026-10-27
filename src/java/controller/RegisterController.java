@@ -15,12 +15,12 @@ import util.Web;
 @WebServlet(name = "RegisterController", urlPatterns = {"/RegisterController"})
 public class RegisterController extends HttpServlet {
 
-    private static final String VIEW = "/WEB-INF/views/register.jsp";
     private static final Pattern USERNAME = Pattern.compile("^[A-Za-z0-9_.]{3,50}$");
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        req.getRequestDispatcher(VIEW).forward(req, res);
+        // no sign-up page: the map opens the popup on its "Đăng ký" tab
+        res.sendRedirect(Web.signInUrl(req, "register", null));
     }
 
     @Override
@@ -49,11 +49,8 @@ public class RegisterController extends HttpServlet {
                 Web.writeJson(res, HttpServletResponse.SC_BAD_REQUEST, error);
                 return;
             }
-            req.setAttribute("error", error);
-            req.setAttribute("username", username);
-            req.setAttribute("fullName", fullName);
-            req.setAttribute("email", email);
-            req.getRequestDispatcher(VIEW).forward(req, res);
+            Web.flash(req.getSession(), error, true);
+            res.sendRedirect(Web.signInUrl(req, "register", null));
             return;
         }
 
@@ -65,7 +62,7 @@ public class RegisterController extends HttpServlet {
                 return;
             }
             Web.flash(req.getSession(), "Đăng ký thành công. Bạn có thể đăng nhập.", false);
-            res.sendRedirect(req.getContextPath() + "/LoginController");
+            res.sendRedirect(Web.signInUrl(req, "login", null));
         } catch (SQLException e) {
             if (e.getErrorCode() == 2627 || e.getErrorCode() == 2601) {
                 boolean emailTaken = String.valueOf(e.getMessage()).contains("UX_Users_email");
@@ -75,11 +72,8 @@ public class RegisterController extends HttpServlet {
                     Web.writeJson(res, HttpServletResponse.SC_CONFLICT, taken);
                     return;
                 }
-                req.setAttribute("error", taken);
-                req.setAttribute("username", username);
-                req.setAttribute("fullName", fullName);
-                req.setAttribute("email", email);
-                req.getRequestDispatcher(VIEW).forward(req, res);
+                Web.flash(req.getSession(), taken, true);
+                res.sendRedirect(Web.signInUrl(req, "register", null));
             } else {
                 throw new ServletException(e);
             }

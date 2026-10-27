@@ -31,9 +31,14 @@
   --shadow-lg: 0 10px 28px rgba(16, 24, 40, 0.16);
   --sidebar-w: 236px;
   --header-h: 0px;
-  --login-aside-bg: #eaf0f8;
-  --login-cabinet: #dfe5ec;
-  --login-cabinet-edge: #b6c0cc;
+  /* glass islands of the map page (css/locker-map.css .glass): tint over the map, edges, ink */
+  --glass-rgb: 255, 255, 255; --glass-tint: .5; --glass-blur: 22px; --glass-bg: rgba(255, 255, 255, .5);
+  --glass-edge: rgba(255, 255, 255, .75); --glass-hi: rgba(255, 255, 255, .95); --glass-lo: rgba(255, 255, 255, .35);
+  --glass-shadow: 0 10px 36px rgba(20, 30, 45, .18), 0 2px 6px rgba(20, 30, 45, .08);
+  --glass-text: #14181f; --glass-text-2: #4a5260; --glass-hair: rgba(20, 24, 31, .12);
+  --glass-fill: rgba(255, 255, 255, .55); --glass-fill-edge: rgba(255, 255, 255, .8); --glass-well: rgba(20, 24, 31, .07);
+  --glass-on: #ffffff; --glass-on-ink: #1d4f9c; --glass-seg-on: #ffffff; --glass-seg-ink: #1d4f9c;
+  --glass-core: rgba(255, 255, 255, .94); --glass-ring: rgba(20, 24, 31, .14); --glass-glint: .32;
   color-scheme: light;
 }
 
@@ -46,7 +51,13 @@
     --danger: #f08178; --danger-soft: #3a1f1d; --success: #6cc98c; --success-soft: #1a3324;
     --warning: #e3b45c; --warning-soft: #352a14; --focus: #8db2ee;
     --sidebar-bg: #181b20; --row-hover: #22272d;
-    --login-aside-bg: #171c24; --login-cabinet: #262c34; --login-cabinet-edge: #3d4550;
+    --glass-rgb: 28, 32, 37; --glass-tint: .55; --glass-bg: rgba(28, 32, 37, .55);
+    --glass-edge: rgba(255, 255, 255, .12); --glass-hi: rgba(255, 255, 255, .16); --glass-lo: rgba(255, 255, 255, .05);
+    --glass-shadow: 0 10px 36px rgba(0, 0, 0, .45), 0 2px 6px rgba(0, 0, 0, .3);
+    --glass-text: #e4e7eb; --glass-text-2: #b4bcc6; --glass-hair: rgba(255, 255, 255, .12);
+    --glass-fill: rgba(255, 255, 255, .06); --glass-fill-edge: rgba(255, 255, 255, .1); --glass-well: rgba(255, 255, 255, .08);
+    --glass-on: #e9eef5; --glass-on-ink: #1d3f73; --glass-seg-on: #3b434e; --glass-seg-ink: #ffffff;
+    --glass-core: #20252c; --glass-ring: rgba(255, 255, 255, .2); --glass-glint: .1;
     --shadow-sm: none; --shadow: 0 1px 2px rgba(0, 0, 0, 0.4); --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
     color-scheme: dark;
   }
@@ -58,7 +69,13 @@
   --danger: #f08178; --danger-soft: #3a1f1d; --success: #6cc98c; --success-soft: #1a3324;
   --warning: #e3b45c; --warning-soft: #352a14; --focus: #8db2ee;
   --sidebar-bg: #181b20; --row-hover: #22272d;
-  --login-aside-bg: #171c24; --login-cabinet: #262c34; --login-cabinet-edge: #3d4550;
+  --glass-rgb: 28, 32, 37; --glass-tint: .55; --glass-bg: rgba(28, 32, 37, .55);
+  --glass-edge: rgba(255, 255, 255, .12); --glass-hi: rgba(255, 255, 255, .16); --glass-lo: rgba(255, 255, 255, .05);
+  --glass-shadow: 0 10px 36px rgba(0, 0, 0, .45), 0 2px 6px rgba(0, 0, 0, .3);
+  --glass-text: #e4e7eb; --glass-text-2: #b4bcc6; --glass-hair: rgba(255, 255, 255, .12);
+  --glass-fill: rgba(255, 255, 255, .06); --glass-fill-edge: rgba(255, 255, 255, .1); --glass-well: rgba(255, 255, 255, .08);
+  --glass-on: #e9eef5; --glass-on-ink: #1d3f73; --glass-seg-on: #3b434e; --glass-seg-ink: #ffffff;
+  --glass-core: #20252c; --glass-ring: rgba(255, 255, 255, .2); --glass-glint: .1;
   --shadow-sm: none; --shadow: 0 1px 2px rgba(0, 0, 0, 0.4); --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
   color-scheme: dark;
 }
@@ -314,72 +331,6 @@ button.link.danger { color: var(--danger); }
 .tabs a.on { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
 
 canvas { display: block; max-width: 100%; }
-
-/* ---------- Sign in / register ---------- */
-/* v3 D1: split layout. Left: drawing of a bank and three points; right: the form. Under 768 px the left
-   column becomes a band at the top of the page. */
-.login-page { min-height: 100vh; min-height: 100dvh; }
-.login-split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); min-height: 100vh; min-height: 100dvh; }
-.login-aside { display: flex; flex-direction: column; justify-content: center; gap: 28px; padding: 48px clamp(24px, 5vw, 72px);
-               background: var(--login-aside-bg); border-right: 1px solid var(--border); }
-.login-brand { display: flex; align-items: center; gap: 12px; }
-.login-brand .side-brand__mark { width: 40px; height: 40px; }
-.login-brand .side-brand__mark .ico { width: 22px; height: 22px; }
-.login-brand__name { display: block; font-size: 20px; font-weight: 700; line-height: 1.2; }
-.login-brand__sub { display: block; font-size: 14px; color: var(--text-muted); }
-.login-art { width: 100%; max-width: 320px; height: auto; }
-.la-body { fill: var(--login-cabinet); stroke: var(--login-cabinet-edge); stroke-width: 1.5; }
-.la-foot { fill: var(--login-cabinet-edge); }
-.la-door { stroke-width: 1.2; }
-.la-free { fill: var(--success-soft); stroke: var(--success); }
-.la-used { fill: var(--primary-soft); stroke: var(--primary); }
-.la-handle { fill: var(--text-muted); opacity: .55; }
-.la-txt { font: 700 11px "Segoe UI", system-ui, sans-serif; fill: var(--text-muted); }
-.login-points { display: grid; gap: 16px; margin: 0; padding: 0; list-style: none; max-width: 420px; }
-.login-points li { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }
-.login-points b { display: block; font-size: 15px; }
-.login-points li span span { display: block; font-size: 14px; color: var(--text-muted); }
-.login-points__ico { display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--radius);
-                     background: var(--surface); border: 1px solid var(--border); color: var(--primary); }
-.login-points__ico .ico { width: 20px; height: 20px; }
-
-.login-main { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 32px 16px; }
-.login-tools { display: flex; justify-content: flex-end; width: 100%; max-width: 400px; margin-bottom: 10px; }
-.login-box { width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--border);
-             border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow); }
-.login-box h1 { margin: 0; font-size: 24px; line-height: 1.25; }
-.login-box .sub { margin: 4px 0 20px; font-size: 14px; }
-.login-box label { display: block; margin: 14px 0 5px; font-size: 14px; font-weight: 600; }
-.login-box input { width: 100%; min-height: 44px; font-size: 16px; }
-.login-box .hint { margin-top: 4px; }
-.login-box .flash { margin: 0 0 14px; }
-.login-submit { width: 100%; margin-top: 22px; min-height: 46px; font-size: 15px; }
-.login-alt { margin: 16px 0 0; text-align: center; font-size: 14px; color: var(--text-muted); }
-
-/* password field with the show / hide button inside it */
-.pw-field { position: relative; }
-.pw-field input { padding-right: 48px; }
-.pw-toggle { position: absolute; top: 50%; right: 4px; width: 40px; min-height: 36px; height: 36px; padding: 0;
-             transform: translateY(-50%); border: none; background: none; color: var(--text-muted); }
-.pw-toggle:hover { background: var(--surface-2); color: var(--text); border: none; }
-.pw-toggle .ico { width: 20px; height: 20px; }
-.pw-toggle .ico-eye-off, .pw-toggle[aria-pressed="true"] .ico-eye { display: none; }
-.pw-toggle[aria-pressed="true"] .ico-eye-off { display: block; }
-
-@media (max-width: 768px) {
-  .login-split { grid-template-columns: minmax(0, 1fr); }
-  .login-aside { gap: 14px; padding: 20px 16px; border-right: none; border-bottom: 1px solid var(--border);
-                 display: grid; grid-template-columns: 1fr auto; align-items: center; }
-  .login-art { grid-column: 2; grid-row: 1; width: 84px; }
-  .login-brand__name { font-size: 18px; }
-  .login-points { grid-column: 1 / -1; gap: 8px; }
-  .login-points li span span { display: none; }
-  .login-points__ico { width: 28px; height: 28px; }
-  .login-points__ico .ico { width: 16px; height: 16px; }
-  .login-points b { font-size: 14px; font-weight: 600; }
-  .login-main { justify-content: flex-start; padding: 16px 16px 32px; }
-  .login-box { padding: 20px 16px; }
-}
 
 /* ---------- Toast ---------- */
 .ico { width: 1em; height: 1em; flex: none; fill: none; stroke: currentColor;

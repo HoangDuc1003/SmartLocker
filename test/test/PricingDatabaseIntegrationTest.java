@@ -24,7 +24,7 @@ public class PricingDatabaseIntegrationTest {
         try {
             Connection conn = DbContext.getConnection();
             try (Statement st = conn.createStatement();
-                 ResultSet rs = st.executeQuery("SELECT OBJECT_ID('dbo.fn_SlotPrice'), OBJECT_ID('dbo.SlotSize')")) {
+                 ResultSet rs = st.executeQuery("SELECT OBJECT_ID('dbo.fn_SizePrice'), OBJECT_ID('dbo.SlotSize')")) {
                 rs.next();
                 if (rs.getObject(1) == null || rs.getObject(2) == null) {
                     conn.close();
@@ -38,15 +38,14 @@ public class PricingDatabaseIntegrationTest {
     }
 
     @Test
-    public void slotPricesMatchForEveryPlanSizeAndMethod() throws SQLException {
-        String sql = "SELECT p.price, z.size_code, z.price_pct, m.method, dbo.fn_SlotPrice(p.price, z.price_pct, m.method) "
-                + "FROM StoragePlan p CROSS JOIN SlotSize z "
-                + "CROSS JOIN (VALUES (N'PIN'), (N'CARD'), (N'FINGERPRINT')) m(method)";
+    public void slotPricesMatchForEveryPlanAndSize() throws SQLException {
+        String sql = "SELECT p.price, z.size_code, z.price_pct, dbo.fn_SizePrice(p.price, z.price_pct) "
+                + "FROM StoragePlan p CROSS JOIN SlotSize z";
         int rows = 0;
         try (Connection conn = open(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                long expected = Pricing.slotPrice(rs.getLong(1), rs.getInt(3), rs.getString(4));
-                assertEquals(rs.getLong(5), expected, rs.getLong(1) + " " + rs.getString(2) + " " + rs.getString(4));
+                long expected = Pricing.sizePrice(rs.getLong(1), rs.getInt(3));
+                assertEquals(rs.getLong(4), expected, rs.getLong(1) + " " + rs.getString(2));
                 rows++;
             }
         }

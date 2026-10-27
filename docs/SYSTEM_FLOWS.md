@@ -99,7 +99,7 @@ sequenceDiagram
   và lúc đó lượt gửi mới chuyển CHECK_IN hoặc PICKUP. Hộp không thấy heartbeat trong 10 giây thì trả `DEVICE_OFFLINE`.
 
 ### 2.3 Thẻ từ và vân tay
-- Đặt bằng thẻ lần đầu: cần đủ tiền cho giá gói và cọc 30.000 đ; cọc chỉ bị trừ khi đăng ký thẻ xong (`enroll/finish`).
+- Mọi cách mở (mật mã, thẻ RFID, vân tay) cùng một giá. Đặt bằng thẻ lần đầu: cần đủ tiền cho giá gói và cọc thẻ 10.000 đ (`AppConfig.CARD_DEPOSIT`); cọc chỉ bị trừ khi đăng ký thẻ xong (`enroll/finish`).
 - Đăng ký tại hộp: bấm B/C, nhập mã đăng ký 6 số (hết hạn sau 10 phút, lấy mã mới ở "Tủ của tôi").
 - Báo mất thẻ: thẻ chuyển `LOST`, UID nằm trong `blocked_cards` của heartbeat; dùng lại sẽ bị `CARD_BLOCKED`.
 - Xóa vân tay: máy chủ xếp lệnh `DELETE_FP` cho hộp; nếu đang có lượt gửi bằng vân tay trên hộp đó, lượt đó nhận mã đăng ký mới.

@@ -51,7 +51,7 @@ Trang chuyển tiếp là HTML tĩnh, không dùng CDN. Trang chuyển bằng Ja
    - Muốn commit nhưng chưa push: thêm `-NoPush`, lúc nào sẵn sàng thì chạy `git push origin gh-pages`.
 5. **Chờ GitHub Pages cập nhật** (tới khoảng 10 phút). Xem tiến độ ở tab **Actions** của repo (workflow "pages build and deployment"). Mở `https://hoangduc1003.github.io/SmartLocker/config.json` và kiểm tra `base_url` là địa chỉ mới.
 6. **Thử từ mạng khác**: trên điện thoại, **tắt Wi-Fi, dùng 4G**, mở bằng **tab ẩn danh**:
-   - `https://hoangduc1003.github.io/SmartLocker/`: phải tới trang đăng nhập.
+   - `https://hoangduc1003.github.io/SmartLocker/`: phải tới thẳng sơ đồ tủ (đăng nhập bằng popup trên bản đồ).
    - Quét QR trên hộp: phải tới trang nhập mật mã của `LOCKER-01`.
 7. **ESP32**: khởi động lại hộp (hoặc chờ hộp tự đọc lại `config.json`). Trên web, thiết bị `LOCKER-01` phải hiện trực tuyến.
 8. **Trong lúc demo**: không tắt cửa sổ cloudflared, không cho laptop ngủ (Settings → Power → Never sleep khi cắm sạc).

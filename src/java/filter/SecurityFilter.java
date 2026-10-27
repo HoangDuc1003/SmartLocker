@@ -34,7 +34,7 @@ public class SecurityFilter implements Filter {
 
     /** Reachable without signing in. */
     private static final Set<String> PUBLIC_PATHS = new HashSet<>(Arrays.asList(
-            "/", "/index.html", "/favicon.ico", "/LoginController", "/RegisterController", "/LogoutController",
+            "/favicon.ico", "/LoginController", "/RegisterController", "/LogoutController",
             "/k", "/api/kiosk/unlock"));                 // v2 phone page (a /k/* servlet has servlet path "/k"): the PIN is the secret, the box lockout limits guesses
     /** v4: a visitor who is not signed in may open the map (GET only); the booking forms need a login (popup on the page). */
     private static final Set<String> GUEST_PATHS = new HashSet<>(Arrays.asList("/LockerMapController", "/api/locker-map"));
@@ -111,6 +111,12 @@ public class SecurityFilter implements Filter {
             res.setHeader("Cache-Control", "no-cache");
         }
 
+        // 0. the address of the app opens the map at once (no landing page, no login page)
+        if ("/".equals(path) || "/index.html".equals(path)) {
+            res.sendRedirect(req.getContextPath() + "/LockerMapController");
+            return;
+        }
+
         // 1. pages and files anyone may open
         if (isPublic(path)) {
             chain.doFilter(request, response);
@@ -166,7 +172,11 @@ public class SecurityFilter implements Filter {
                     chain.doFilter(request, response);
                     return;
                 }
-                res.sendRedirect(req.getContextPath() + "/LoginController");
+                // the map opens the sign-in popup; a page (not an API answer) asked for with GET is opened after it
+                String query = req.getQueryString();
+                String next = "GET".equalsIgnoreCase(req.getMethod()) && !path.startsWith("/api/")
+                        ? path + (query == null ? "" : "?" + query) : null;
+                res.sendRedirect(Web.signInUrl(req, "login", next));
                 return;
             }
             // the session copy is refreshed on every request: a locked or deleted account is signed out at once,
@@ -174,7 +184,7 @@ public class SecurityFilter implements Filter {
             User fresh = new dao.UserDao().findById(user.getUserId());
             if (fresh == null || !"ACTIVE".equals(fresh.getStatus())) {
                 req.getSession().invalidate();
-                res.sendRedirect(req.getContextPath() + "/LoginController");
+                res.sendRedirect(Web.signInUrl(req, "login", null));
                 return;
             }
             user.setStatus(fresh.getStatus());

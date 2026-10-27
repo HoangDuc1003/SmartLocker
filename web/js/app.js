@@ -112,21 +112,6 @@
         });
     });
 
-    // Show / hide password: <button data-pw-toggle="id1 id2" aria-pressed="false"> switches those inputs.
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest ? e.target.closest('[data-pw-toggle]') : null;
-        if (!btn) return;
-        var show = btn.getAttribute('aria-pressed') !== 'true';
-        btn.getAttribute('data-pw-toggle').split(/\s+/).forEach(function (id) {
-            var input = document.getElementById(id);
-            if (input) input.type = show ? 'text' : 'password';
-        });
-        btn.setAttribute('aria-pressed', show ? 'true' : 'false');
-        var label = show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu';
-        btn.setAttribute('aria-label', label);
-        btn.setAttribute('title', label);
-    });
-
     window.SmartLocker = { toast: toast, labelCells: labelCells, confirm: confirmDialog, esc: esc };
     document.addEventListener('DOMContentLoaded', function () { labelCells(); });
 })();

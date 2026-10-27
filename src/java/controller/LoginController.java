@@ -14,20 +14,21 @@ import javax.servlet.http.HttpServletResponse;
 import model.User;
 import util.Web;
 
-/** Shows the login form and signs the user in. */
+/**
+ * Signs the user in. There is no login page: the popup of the map page (js/auth-modal.js) posts here and asks
+ * for JSON; an old link or a plain form post lands on the map with the popup open.
+ */
 @WebServlet(name = "LoginController", urlPatterns = {"/LoginController"})
 public class LoginController extends HttpServlet {
 
-    private static final String VIEW = "/WEB-INF/views/login.jsp";
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        // a signed-in user goes home, everybody else sees the form
+        // a signed-in user goes to the map, everybody else gets the map with the sign-in popup
         if (Web.currentUser(req) != null) {
             res.sendRedirect(req.getContextPath() + "/LockerMapController");
             return;
         }
-        req.getRequestDispatcher(VIEW).forward(req, res);
+        res.sendRedirect(Web.signInUrl(req, "login", req.getParameter("next")));
     }
 
     @Override
@@ -51,9 +52,8 @@ public class LoginController extends HttpServlet {
                     Web.writeJson(res, HttpServletResponse.SC_UNAUTHORIZED, error);
                     return;
                 }
-                req.setAttribute("error", error);
-                req.setAttribute("username", username);
-                req.getRequestDispatcher(VIEW).forward(req, res);
+                Web.flash(req.getSession(), error, true);
+                res.sendRedirect(Web.signInUrl(req, "login", null));
                 return;
             }
             req.getSession(true);

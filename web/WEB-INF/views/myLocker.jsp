@@ -6,6 +6,10 @@
 <% long nowMs = System.currentTimeMillis();
    pageContext.setAttribute("now", new java.util.Date(nowMs - java.util.TimeZone.getDefault().getOffset(nowMs))); %>
 <c:set var="activeNav" value="mylocker"/>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<%-- ?panel=1: only the content, drawn by js/glass-panel.js as a glass popup over the users' map --%>
+<c:set var="panel" value="${param.panel == '1'}"/>
+<c:if test="${not panel}">
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -18,9 +22,14 @@
 <body>
 <%@ include file="common/nav.jspf" %>
 <main id="main" class="wrap">
+</c:if>
+<c:if test="${panel}">
+<div class="glass-page">
+<%@ include file="common/panel-flash.jspf" %>
+</c:if>
     <div class="page-head">
         <div>
-            <h2>Tủ của tôi</h2>
+            <h2 id="pageTitle">Tủ của tôi</h2>
             <p class="sub">Lượt đặt đang mở, cách mở tủ, thẻ từ, vân tay và lịch sử gửi đồ.</p>
         </div>
         <div class="ml-actions">
@@ -351,8 +360,13 @@
         </table>
         </div>
     </section>
+<c:if test="${panel}">
+</div>
+</c:if>
+<c:if test="${not panel}">
 </main>
 <script src="${ctx}/js/app.js"></script>
 <script src="${ctx}/js/my-locker.js"></script>
 </body>
 </html>
+</c:if>

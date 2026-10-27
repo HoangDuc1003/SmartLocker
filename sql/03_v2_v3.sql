@@ -1,4 +1,4 @@
-﻿-- ============================================================
+﻿﻿-- ============================================================
 -- 03_v2_v3.sql  Smart Locker, PRJ301 FALL2026
 -- v2 (open methods, PIN, fingerprint), Vietnamese seed names, v3 (sizes, prices, overdue) and the VNU-HCM campus.
 -- Run after 02_data_v1.sql. Safe to run again; it resets the LOCKER-01 key to the public seed key (README).
@@ -183,17 +183,6 @@ GO
 
 -- ===== Part C. Procedures =====
 
--- price of a plan for an open method: the card is 5% off, rounded up to 100 VND (5,000 -> 4,750 -> 4,800)
-CREATE OR ALTER FUNCTION dbo.fn_OpenPrice (@price BIGINT, @method NVARCHAR(12))
-RETURNS BIGINT
-AS
-BEGIN
-    RETURN CASE WHEN @method = N'CARD'
-                THEN CAST(CEILING(@price * 95 / 10000.0) AS BIGINT) * 100
-                ELSE @price END;
-END;
-GO
-
 -- a random 6-digit code that no open booking uses as a PIN or as an enroll code
 CREATE OR ALTER PROCEDURE Code_NewSix @code CHAR(6) OUTPUT
 AS
@@ -223,7 +212,7 @@ BEGIN
 END;
 GO
 
--- Case 4 v2: price by open method, PIN or enroll code, and room for the first card deposit
+-- Case 4 v2: PIN or enroll code, and room for the first card deposit (every open method costs the same)
 CREATE OR ALTER PROCEDURE Deposit_Reserve
     @user_id INT, @slot_id INT, @plan_id INT, @new_id BIGINT OUTPUT, @open_method NVARCHAR(12) = N'PIN'
 AS
@@ -246,7 +235,7 @@ BEGIN
                             AND (registered_device_id IS NOT NULL OR deposit_amount > 0) ORDER BY card_id DESC);
     DECLARE @has_finger BIT = CASE WHEN EXISTS (SELECT 1 FROM Fingerprint WHERE user_id = @user_id
                                    AND device_id = @device_id AND status = N'ACTIVE') THEN 1 ELSE 0 END;
-    DECLARE @card_deposit BIGINT = CASE WHEN @open_method = N'CARD' AND @card_id IS NULL THEN 30000 ELSE 0 END;
+    DECLARE @card_deposit BIGINT = CASE WHEN @open_method = N'CARD' AND @card_id IS NULL THEN 10000 ELSE 0 END;
     DECLARE @pin CHAR(6) = NULL, @enroll CHAR(6) = NULL;
 
     BEGIN TRY
@@ -256,15 +245,14 @@ BEGIN
         WHERE plan_id = @plan_id AND is_active = 1;
         IF @price IS NULL THROW 50034, N'This storage plan is not available', 1;
         IF @price < 0 THROW 50040, N'The storage plan has an invalid price', 1;
-        SET @price = dbo.fn_OpenPrice(@price, @open_method);
 
         -- The conditional update prevents spending the same balance twice.
-        -- A first card also needs the 30,000 VND deposit left in the wallet; it is taken at the box.
+        -- A first card also needs the card deposit left in the wallet; it is taken at the box.
         UPDATE Users SET balance = balance - @price
         WHERE user_id = @user_id AND balance >= @price + @card_deposit;
         IF @@ROWCOUNT = 0
         BEGIN
-            IF @card_deposit > 0 THROW 50041, N'Insufficient balance for the price and the 30,000 VND card deposit', 1;
+            IF @card_deposit > 0 THROW 50041, N'Insufficient balance for the price and the card deposit', 1;
             THROW 50030, N'Insufficient balance. Add funds before booking.', 1;
         END
 
@@ -607,7 +595,7 @@ BEGIN
 END;
 GO
 
--- a finger: stores the template slot. A card: stores the UID and takes the one-time 30,000 VND deposit.
+-- a finger: stores the template slot. A card: stores the UID and takes the one-time card deposit.
 CREATE OR ALTER PROCEDURE Enroll_Finish
     @device_id INT, @type NVARCHAR(12), @code NVARCHAR(10), @sensor_slot INT = NULL, @card_uid NVARCHAR(32) = NULL
 AS
@@ -652,7 +640,7 @@ BEGIN
             SET @reason = N'CARD_IN_USE';
         ELSE
         BEGIN
-            UPDATE Users SET balance = balance - 30000 WHERE user_id = @user AND balance >= 30000;
+            UPDATE Users SET balance = balance - 10000 WHERE user_id = @user AND balance >= 10000;
             IF @@ROWCOUNT = 0
                 SET @reason = N'INSUFFICIENT_BALANCE';
             ELSE
@@ -660,14 +648,14 @@ BEGIN
                 IF @card_id IS NULL
                 BEGIN
                     INSERT INTO UserCard (card_uid, user_id, deposit_amount, registered_device_id)
-                    VALUES (@card_uid, @user, 30000, @device_id);
+                    VALUES (@card_uid, @user, 10000, @device_id);
                     SET @card_id = SCOPE_IDENTITY();
                 END
                 ELSE
-                    UPDATE UserCard SET deposit_amount = deposit_amount + 30000, registered_device_id = @device_id
+                    UPDATE UserCard SET deposit_amount = deposit_amount + 10000, registered_device_id = @device_id
                     WHERE card_id = @card_id;
                 UPDATE Deposit SET card_id = @card_id WHERE deposit_id = @deposit;
-                EXEC Audit_Append @user, N'ENROLL_CARD', N'USERCARD', @card_id, 30000;
+                EXEC Audit_Append @user, N'ENROLL_CARD', N'USERCARD', @card_id, 10000;
             END
         END
     END
@@ -834,8 +822,10 @@ FROM (VALUES
     (N'OVERDUE_FEE_PCT',    150,   N'Phụ phí một giờ trễ, phần trăm của giá một giờ'),
     (N'ESCALATE_HOURS',     48,    N'Quá hạn chừng này giờ thì chuyển nhân viên xử lý'),
     (N'DUE_REMINDER_MIN',   15,    N'Gửi email nhắc trước hạn trả chừng này phút'),
-    (N'CARD_DEPOSIT',       30000, N'Tiền cọc thẻ từ, thu một lần khi đăng ký thẻ tại hộp')) v(k, v, n)
+    (N'CARD_DEPOSIT',       10000, N'Tiền cọc thẻ từ, thu một lần khi đăng ký thẻ tại hộp')) v(k, v, n)
 WHERE NOT EXISTS (SELECT 1 FROM dbo.AppConfig c WHERE c.config_key = v.k);
+-- v5: the card deposit is 10,000 VND; a database made before still has the first default, 30,000
+UPDATE dbo.AppConfig SET int_value = 10000 WHERE config_key = N'CARD_DEPOSIT' AND int_value = 30000;
 GO
 
 -- the one place for the size of a slot: measures, price factor and the items that fit (shown to the user)
@@ -968,23 +958,8 @@ BEGIN
 END;
 GO
 
--- size first, then the card 5% off, each rounded up to 100 VND (L 2 hours: 8,500 -> 8,075 -> 8,100)
-CREATE OR ALTER FUNCTION dbo.fn_SlotPrice (@price BIGINT, @pct INT, @method NVARCHAR(12))
-RETURNS BIGINT
-AS
-BEGIN
-    DECLARE @sized BIGINT = dbo.fn_SizePrice(@price, @pct);
-    RETURN CASE WHEN @method = N'CARD' THEN CAST(CEILING(@sized * 95 / 10000.0) AS BIGINT) * 100 ELSE @sized END;
-END;
-GO
-
--- v2 callers: size factor 100
-CREATE OR ALTER FUNCTION dbo.fn_OpenPrice (@price BIGINT, @method NVARCHAR(12))
-RETURNS BIGINT
-AS
-BEGIN
-    RETURN dbo.fn_SlotPrice(@price, 100, @method);
-END;
+-- v5: every open method costs the same (the card is no longer 5% off), so the price of a slot is fn_SizePrice
+DROP FUNCTION IF EXISTS dbo.fn_SlotPrice, dbo.fn_OpenPrice;
 GO
 
 -- One hour of a size, for every plan (spec v3 Q3): the shortest plan on sale gives the hour.
@@ -1079,7 +1054,7 @@ BEGIN
         WHERE plan_id = @plan_id AND is_active = 1;
         IF @price IS NULL THROW 50034, N'This storage plan is not available', 1;
         IF @price < 0 THROW 50040, N'The storage plan has an invalid price', 1;
-        SET @price = dbo.fn_SlotPrice(@price, @pct, @open_method);
+        SET @price = dbo.fn_SizePrice(@price, @pct);
 
         -- The conditional update prevents spending the same balance twice.
         UPDATE Users SET balance = balance - @price
@@ -1089,7 +1064,7 @@ BEGIN
             DECLARE @balance BIGINT = (SELECT balance FROM Users WHERE user_id = @user_id);
             IF @balance >= @price + @card_deposit
                 THROW 50046, N'After booking at least 10,000 VND must stay in the wallet', 1;
-            IF @card_deposit > 0 THROW 50041, N'Insufficient balance for the price and the 30,000 VND card deposit', 1;
+            IF @card_deposit > 0 THROW 50041, N'Insufficient balance for the price and the card deposit', 1;
             THROW 50030, N'Insufficient balance. Add funds before booking.', 1;
         END
 
@@ -1585,14 +1560,14 @@ BEGIN
 END;
 GO
 
--- a finger: stores the template slot. A card: stores the UID and takes the one-time 30,000 VND deposit.
+-- a finger: stores the template slot. A card: stores the UID and takes the one-time card deposit.
 CREATE OR ALTER PROCEDURE Enroll_Finish
     @device_id INT, @type NVARCHAR(12), @code NVARCHAR(10), @sensor_slot INT = NULL, @card_uid NVARCHAR(32) = NULL
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
     DECLARE @deposit BIGINT, @user INT, @reason NVARCHAR(20), @left INT = 5, @retry INT = 0, @card_id INT = NULL;
-    DECLARE @card_dep BIGINT = ISNULL(dbo.fn_Config(N'CARD_DEPOSIT'), 30000);   -- v3: from AppConfig
+    DECLARE @card_dep BIGINT = ISNULL(dbo.fn_Config(N'CARD_DEPOSIT'), 10000);   -- v3: from AppConfig
     DECLARE @lock_name NVARCHAR(40) = CONCAT(N'auth-device-', @device_id);
     BEGIN TRAN;
     EXEC sp_getapplock @Resource = @lock_name, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 10000;
