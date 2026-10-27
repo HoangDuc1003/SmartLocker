@@ -10,3 +10,6 @@ test-output/
 config/*.local.properties
 __pycache__/
 *.pyc
+
+# Wi-Fi password and device key of the ESP32 sketch
+firmware/*/secrets.h
