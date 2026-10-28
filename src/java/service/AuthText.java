@@ -36,9 +36,14 @@ public final class AuthText {
     /** Message of a Device_Authorize row for the OLED. */
     public static String oled(Map<String, Object> row) {
         String reason = str(row, "reason");
+        if ("CHOOSE".equals(str(row, "result"))) {
+            return "A: Mo tu  * huy\nB: Tra tu " + str(row, "slot_code");
+        }
         if ("UNLOCK".equals(str(row, "result"))) {
             String slot = str(row, "slot_code");
-            return ("PICKUP".equals(str(row, "phase")) ? "Moi lay do" : "Moi cat do") + "\nNgan " + slot;
+            String phase = str(row, "phase");
+            String first = "PICKUP".equals(phase) ? "Moi lay do" : "ACCESS".equals(phase) ? "Moi mo tu" : "Moi cat do";
+            return first + "\nNgan " + slot;
         }
         switch (reason) {
             case "WRONG_CODE":
@@ -79,9 +84,17 @@ public final class AuthText {
     /** Message of a Device_Authorize row for the phone page. */
     public static String phone(Map<String, Object> row) {
         String reason = str(row, "reason");
+        if ("CHOOSE".equals(str(row, "result"))) {
+            return "Ngăn " + str(row, "slot_code") + " đang được thuê. Chọn Mở tủ để lấy hoặc cất thêm đồ, "
+                    + "hoặc Trả tủ để lấy hết đồ và kết thúc lượt thuê.";
+        }
         if ("UNLOCK".equals(str(row, "result"))) {
             String slot = str(row, "slot_code");
-            return "PICKUP".equals(str(row, "phase"))
+            String phase = str(row, "phase");
+            if ("ACCESS".equals(phase)) {
+                return "Hộp sẽ mở trong vài giây. Ngăn " + slot + " vẫn là của bạn, đóng cửa lại là lượt thuê tiếp tục.";
+            }
+            return "PICKUP".equals(phase)
                     ? "Hộp sẽ mở trong vài giây. Mời lấy đồ ở ngăn " + slot + ", lượt gửi sẽ kết thúc."
                     : "Hộp sẽ mở trong vài giây. Mời cất đồ vào ngăn " + slot + ".";
         }

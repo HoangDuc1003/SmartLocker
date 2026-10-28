@@ -50,8 +50,13 @@ public class BookingController extends HttpServlet {
                     Web.flash(req.getSession(), reservedMessage(dao.findById(id), hold), false);
                 }
             } else if ("cancel".equals(action)) {
-                dao.cancel(Web.longParam(req, "depositId", 0), me.getUserId());
-                Web.flash(req.getSession(), "Đã hủy lượt đặt. Toàn bộ số tiền đã trả được hoàn vào ví.", false);
+                // v3: 100% back in the first minutes, then a part until the hold ends; the flash says what came back
+                long expected = Web.longParam(req, "expectedRefund", -1);
+                dao.UserDao users = new dao.UserDao();
+                long before = users.getBalance(me.getUserId());
+                dao.cancel(Web.longParam(req, "depositId", 0), me.getUserId(), expected >= 0 ? Long.valueOf(expected) : null);
+                long refund = users.getBalance(me.getUserId()) - before;
+                Web.flash(req.getSession(), "Đã hủy lượt đặt. Đã hoàn " + service.AuthText.vnd(refund) + " vào ví.", false);
             } else if ("extend".equals(action)) {
                 // v3: an extension is paid; the flash says what was taken (the procedure computes the same amount)
                 long depositId = Web.longParam(req, "depositId", 0);

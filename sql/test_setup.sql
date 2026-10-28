@@ -62,6 +62,10 @@ FROM UserCard c JOIN @tests t ON t.user_id = c.user_id WHERE c.status = N'ACTIVE
 UPDATE f SET f.status = N'DELETED' FROM Fingerprint f JOIN @tests t ON t.user_id = f.user_id WHERE f.status = N'ACTIVE';
 UPDATE u SET u.balance = 200000, u.status = N'ACTIVE' FROM Users u JOIN @tests t ON t.user_id = u.user_id;
 UPDATE Users SET balance = 12000 WHERE username = N'v3poor';
+-- no-shows of earlier runs or manual tests leave the 7-day window, so 3 of them never block booking (50031)
+UPDATE d SET d.reserved_at = DATEADD(DAY, -8, d.reserved_at)
+FROM Deposit d JOIN @tests t ON t.user_id = d.user_id
+WHERE d.status = N'NO_SHOW' AND d.reserved_at > DATEADD(DAY, -7, SYSUTCDATETIME());
 -- v3: an escalation alert of an earlier run is closed, so scenario 15 sees its own
 UPDATE a SET a.status = N'RESOLVED' FROM Alert a
 WHERE a.label = N'OVERDUE_ESCALATED' AND a.status = N'OPEN'
@@ -103,7 +107,7 @@ GO
 -- Run AFTER sql/test_setup.sql (it resets v3overdue and v3poor), before each Postman run. Safe to run again.
 --   v3overdue  ACTIVE PIN booking on CANT-A, due 130 minutes ago (3 started hours late), wallet 5,000 VND
 --              -> scenario 11 (box: OVERDUE_UNPAID + debt), 16 (phone), 17 (extension refused 50048), 12 (top-up, PICKUP)
---   v3late     RESERVED PIN booking on CANT-A booked 6 minutes ago -> scenario 13 (cancel refused, 50047)
+--   v3late     RESERVED PIN booking on CANT-A booked 6 minutes ago -> scenario 13 (late cancel: 50052 with a stale amount, then 50% back)
 --   v3esc      ACTIVE PIN booking on CANT-A, due 49 hours ago -> scenario 15 (LockerMonitor locks, charges, escalates)
 --   v3poor     untouched here (test_setup.sql: 12,000 VND) -> scenario 14
 -- Password of every account: 123456.

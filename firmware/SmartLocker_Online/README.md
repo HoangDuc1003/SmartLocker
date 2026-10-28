@@ -6,7 +6,7 @@ Hộp không tự quyết định mở: mọi PIN, thẻ, vân tay đều gửi 
 ```
 ESP32 ──Wi-Fi──► Tomcat /SmartLocker/api   (header X-API-Key = khóa của LOCKER-01)
   POST /api/health              3 giây/lần: giữ LOCKER-01 trực tuyến, nhận lệnh UNLOCK / DELETE_FP
-  POST /api/device/auth         PIN 6 số, UID thẻ, số ô vân tay -> UNLOCK hoặc DENY + câu cho màn LCD
+  POST /api/device/auth         PIN 6 số, UID thẻ, số ô vân tay (+ intent) -> UNLOCK, CHOOSE hoặc DENY + câu cho màn LCD
   POST /api/device/enroll/...   đăng ký thẻ (phím B) / vân tay (phím C) bằng mã 6 số ở "Tủ của tôi"
 ```
 
@@ -62,12 +62,20 @@ Thử nhanh từ điện thoại cùng Wi-Fi: mở `http://<IP laptop>:8080/Smar
 | Đặt ngón tay | Mở bằng vân tay (AS608 tìm số ô, gửi số ô lên web) |
 | `B` + mã đăng ký + `#`, rồi quẹt thẻ | Đăng ký thẻ cho lượt đặt |
 | `C` + mã đăng ký + `#`, rồi đặt ngón tay 2 lần | Đăng ký vân tay (web chọn số ô, hộp lưu mẫu vào ô đó) |
-| `D` | Xem IP của hộp và tình trạng máy chủ |
+| `D` | Cửa đang đóng: xem IP của hộp và tình trạng máy chủ. Cửa đang mở: khóa ngay |
+| `A` / `B` sau `A: Mo tu` / `B: Tra tu` | Lượt đang thuê: `A` mở tủ (lượt vẫn chạy), `B` trả tủ (kết thúc lượt); `*` hoặc 15 giây không bấm thì hủy |
 
-Khi mở: servo chốt nhả trước, rồi servo cửa mở. Cửa tự khóa lại khi đã qua `open_sec` giây (máy chủ gửi, mặc định 8)
-**và** SRF05 không thấy ai trong 30 cm suốt 5 giây; có người đứng ở cửa thì không khóa. Bấm `D` khi cửa mở để khóa ngay.
-Hộp không còn LED xanh/đỏ (GPIO2 nay là servo cửa). Câu trên LCD do máy chủ
-viết (không dấu), ví dụ `Sai ma / Con 3 lan`, `Tam khoa / Cho 120 giay`. SRF05 thấy người trong 50 cm thì bật màn hình.
+**Mở nhiều lần (firmware 3.3).** Mọi lần gửi PIN / thẻ / vân tay đều kèm `"intent":"ASK"`. Lượt `RESERVED` vẫn mở ngay
+(CHECK_IN). Lượt đang thuê thì máy chủ trả `CHOOSE`: hộp giữ PIN / UID thẻ / số ô vân tay vừa đọc, hiện
+`A: Mo tu  * huy` / `B: Tra tu A01`, bấm `A` gửi lại với `"intent":"OPEN"` (UNLOCK phase `ACCESS`: nhả chốt, bấm D để khóa,
+tự khóa như lần cất đồ), bấm `B` gửi lại với `"intent":"CHECKOUT"` (PICKUP). Lượt bị khóa quá hạn không hỏi, chỉ trả tủ
+(ví âm thì từ chối `OVERDUE_UNPAID`). Máy chủ cũ bỏ qua `intent` và trả PICKUP như trước. Lệnh `UNLOCK` trong heartbeat có
+thêm `phase` (in ra Serial); hộp mở như nhau cho mọi phase và vẫn theo cờ `physical`.
+
+Khi mở: servo chốt nhả (và servo cửa mở, nếu `USE_DOOR_SERVO = true`). Người dùng bấm `D` để khóa lại; quên khóa thì
+sau 30 giây (`DOOR_OPEN_MS`) hộp tự khóa. LCD hiện `Bam D de khoa / Tu khoa sau ..s`.
+SRF05 chỉ dùng cho màn hình: có người trong 50 cm thì bật đèn LCD, không có ai và không bấm gì 1 phút (`SCREEN_OFF_MS`)
+thì tắt. Hộp không còn LED xanh/đỏ. Câu trên LCD do máy chủ viết (không dấu), ví dụ `Sai ma / Con 3 lan`, `Tam khoa / Cho 120 giay`.
 
 Hộp thật chỉ có **một cửa** nhưng CANT-A có các ngăn A01–A15: lượt đặt ở ngăn nào của CANT-A cũng mở cùng cửa này.
 Khi demo nên đặt một ngăn (ví dụ A01) và nói rõ cửa đại diện cho ngăn đó.
@@ -75,11 +83,14 @@ Khi demo nên đặt một ngăn (ví dụ A01) và nói rõ cửa đại diện
 ## 4. Kịch bản demo
 
 1. **PIN**: đăng nhập tài khoản sinh viên → bản đồ → khu CANT-A → đặt ngăn, chọn mở bằng PIN → nhập PIN ở hộp →
-   cửa mở, LCD `Moi cat do / Ngan A01` (CHECK_IN). Nhập lại PIN lần 2 → `Moi lay do` (PICKUP), lượt kết thúc.
+   cửa mở, LCD `Moi cat do / Ngan A01` (CHECK_IN). Nhập lại PIN → LCD `A: Mo tu / B: Tra tu`: bấm `A` → `Moi mo tu`
+   (ACCESS, lượt vẫn chạy, "Tủ của tôi" tăng số lần mở; làm lại bao nhiêu lần cũng được); bấm `B` → `Moi lay do` (PICKUP),
+   lượt kết thúc.
 2. **Thẻ**: đặt với cách mở bằng thẻ → "Tủ của tôi" hiện mã đăng ký 6 số → ở hộp bấm `B`, nhập mã, `#`, quẹt thẻ →
    `Dang ky xong` → quẹt thẻ để mở.
 3. **Vân tay**: tương tự với phím `C`.
 4. **Điện thoại**: quét QR `/k/LOCKER-01`, nhập PIN trên điện thoại → hộp mở trong khoảng 3 giây, LCD `Mo tu (dien thoai)`.
+   Lượt đang thuê: trang hiện hai nút "Mở tủ" / "Trả tủ".
 5. **Nhân viên mở từ xa** (operator3 phụ trách CANT): trang quản lý thiết bị → mở từ xa có lý do → hộp mở `Mo tu (tu xa)`.
 6. **Mất kết nối**: rút Wi-Fi/tắt hotspot → LCD `Mat Wi-Fi`; khoảng 90 giây sau web đánh dấu LOCKER-01 OFFLINE và không cho đặt ở CANT-A.
 7. **Sai 5 lần**: nhập PIN sai 5 lần → `Tam khoa / Cho 120 giay` (bộ đếm nằm ở máy chủ).

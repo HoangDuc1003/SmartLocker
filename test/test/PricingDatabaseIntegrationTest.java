@@ -224,6 +224,55 @@ public class PricingDatabaseIntegrationTest {
         }
     }
 
+    /** A cancel 6 minutes after booking, inside the 15-minute hold: CANCEL_LATE_REFUND_PCT back, as Pricing computes it. */
+    @Test
+    public void lateCancelRefundsTheSameAsPricing() throws SQLException {
+        try (Connection conn = open()) {
+            conn.setAutoCommit(false);
+            try {
+                Integer user = scalarInt(conn, "SELECT user_id FROM Users WHERE username = N'v2pin' AND NOT EXISTS "
+                        + "(SELECT 1 FROM Deposit d WHERE d.user_id = Users.user_id AND d.status IN (N'RESERVED', N'ACTIVE'))");
+                Integer slot = scalarInt(conn, "SELECT TOP 1 locker_slot_id FROM LockerSlot WHERE status = N'AVAILABLE' "
+                        + "AND size_code = 'M' ORDER BY locker_slot_id");
+                Integer plan = scalarInt(conn, "SELECT TOP 1 plan_id FROM StoragePlan WHERE duration_min = 120 ORDER BY plan_id");
+                if (user == null || slot == null || plan == null) {
+                    throw new SkipException("Run sql/test_setup.sql first (needs v2pin without an open booking)");
+                }
+                int pct = (int) scalarLong(conn, "SELECT ISNULL(dbo.fn_Config(N'CANCEL_LATE_REFUND_PCT'), 50)");
+                exec(conn, "UPDATE Users SET balance = 100000 WHERE user_id = " + user);
+                exec(conn, "UPDATE LockerSlot SET status = N'RESERVED' WHERE locker_slot_id = " + slot);
+                long id;
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "INSERT INTO Deposit (user_id, slot_id, plan_id, paid_amount, status, reserved_at, hold_until, size_pct) "
+                        + "VALUES (?, ?, ?, 6500, N'RESERVED', DATEADD(MINUTE, -6, SYSUTCDATETIME()), "
+                        + "DATEADD(MINUTE, 9, SYSUTCDATETIME()), 130)",
+                        Statement.RETURN_GENERATED_KEYS)) {
+                    ps.setInt(1, user);
+                    ps.setInt(2, slot);
+                    ps.setInt(3, plan);
+                    ps.executeUpdate();
+                    try (ResultSet keys = ps.getGeneratedKeys()) {
+                        keys.next();
+                        id = keys.getLong(1);
+                    }
+                }
+                try (CallableStatement cs = conn.prepareCall("{call Deposit_Cancel(?, ?, ?)}")) {
+                    cs.setLong(1, id);
+                    cs.setInt(2, user);
+                    cs.setLong(3, Pricing.lateCancelRefund(6500, pct));
+                    cs.execute();
+                }
+                assertEquals(scalarLong(conn, "SELECT balance FROM Users WHERE user_id = " + user),
+                        100000 + Pricing.lateCancelRefund(6500, pct));
+                assertNotNull(scalarInt(conn, "SELECT 1 FROM Deposit WHERE status = N'CANCELLED' AND deposit_id = " + id));
+                assertNotNull(scalarInt(conn, "SELECT 1 FROM LockerSlot WHERE status = N'AVAILABLE' AND locker_slot_id = " + slot));
+            } finally {
+                conn.rollback();
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+
     private static void charge(Connection conn, long id) throws SQLException {
         try (CallableStatement cs = conn.prepareCall("{call Deposit_ChargeOverdue(?)}")) {
             cs.setLong(1, id);

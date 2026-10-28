@@ -74,3 +74,6 @@ Dev server: Tomcat at `E:/apache-tomcat-9.0.113`, app at `http://localhost:8080/
 - `scripts/build-dev.sh` copies `web/` with `cp -u`; an unchanged `web.xml` copied again reloads the context and signs everyone out.
 - Do not drag on the map in E2E tests where the slot card is: the drag started on "Đặt ngăn" and opened the booking confirm.
 - On the users' map the glass panel is a `<dialog>` opened with `show()`, so `dialog[open]` always matches while it is open; test the confirm popup with `dialog.dlg[open]`. Page scripts loaded on the map (`user-pages.js`) work only inside `[data-panel-body]`, the slot card ticks its own countdowns.
+- A cancel that refunds less after a time mark (5 min: 100% -> 50%) posts the amount its popup showed (`expectedRefund`); `Deposit_Cancel` refuses a lower refund (50052). Freeze the countdown while `dialog.dlg[open]`.
+- From Git Bash, give `sqlcmd -i` a Windows path (`cygpath -w`); a `C:/...` path fails with "Access is denied" too.
+- `/api/device/auth` and `/api/kiosk/unlock` take an optional `intent` (ASK/OPEN/CHECKOUT); no intent must stay PICKUP for old firmware and Postman. When the real LOCKER-01 is online it takes phone commands from the heartbeat before a scripted curl heartbeat does (check `Device.firmware`).

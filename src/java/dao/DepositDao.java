@@ -121,13 +121,30 @@ public class DepositDao {
         }
     }
 
-    /** The open booking (RESERVED or ACTIVE) of a user, or null. */
+    /** The open booking (RESERVED or ACTIVE) of a user, or null. v6: with the number of opens during the rental. */
     public Deposit findOpenByUser(int userId) throws SQLException {
         String sql = SELECT + " WHERE d.user_id = ? AND d.status IN ('RESERVED', 'ACTIVE')";
+        Deposit d;
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? map(rs) : null;
+                d = rs.next() ? map(rs) : null;
+            }
+        }
+        if (d != null && "ACTIVE".equals(d.getStatus())) {
+            d.setAccessCount(accessCount(d.getDepositId()));
+        }
+        return d;
+    }
+
+    /** v6: how many times the slot was opened during the rental (one ACCESS audit row per open, the check-in not counted). */
+    public int accessCount(long depositId) throws SQLException {
+        // Device_Authorize (box) and RemoteCommand_TakePending (phone page) write the rows
+        String sql = "SELECT COUNT(*) FROM AuditLog WHERE object_type = N'DEPOSIT' AND object_id = ? AND action = N'ACCESS'";
+        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, depositId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
             }
         }
     }
@@ -195,11 +212,17 @@ public class DepositDao {
         }
     }
 
-    public void cancel(long depositId, int userId) throws SQLException {
+    /** expectedRefund: the amount the confirm popup showed (null: no check); the procedure refuses a lower refund. */
+    public void cancel(long depositId, int userId, Long expectedRefund) throws SQLException {
         try (Connection conn = DbContext.getConnection();
-             CallableStatement cs = conn.prepareCall("{call Deposit_Cancel(?, ?)}")) {
+             CallableStatement cs = conn.prepareCall("{call Deposit_Cancel(?, ?, ?)}")) {
             cs.setLong(1, depositId);
             cs.setInt(2, userId);
+            if (expectedRefund == null) {
+                cs.setNull(3, java.sql.Types.BIGINT);
+            } else {
+                cs.setLong(3, expectedRefund);
+            }
             cs.execute();
         }
     }

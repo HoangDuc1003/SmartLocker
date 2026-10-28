@@ -103,10 +103,13 @@ Request:
 Response:
 ```json
 {"interval_sec":3,
- "commands":[{"command_id":15,"action":"UNLOCK","open_sec":8,"message":"Mo tu (dien thoai)"},
+ "commands":[{"command_id":15,"action":"UNLOCK","slot_code":"A04","open_sec":8,"message":"Mo tu\n(dien thoai)",
+               "phase":"ACCESS","physical":true},
              {"command_id":16,"action":"DELETE_FP","sensor_slot":7}],
  "server_time":"2026-10-17 07:03:00"}
 ```
+- v6: lệnh `UNLOCK` của trang điện thoại có `phase` (`CHECK_IN`, `ACCESS` hoặc `PICKUP`); lệnh mở từ xa của nhân viên
+  không có `phase`. Hộp mở chốt như nhau cho mọi phase và theo cờ `physical`.
 - `action` có 3 giá trị:
   - `UNLOCK`: mở chốt (từ điện thoại hoặc lệnh từ xa);
   - `DELETE_FP`: xóa mẫu vân tay trên AS608;
@@ -126,7 +129,31 @@ Response khi được mở:
 {"result":"UNLOCK","phase":"CHECK_IN","deposit_id":120,"slot_code":"A04",
  "open_sec":8,"message":"Moi cat do\nNgan A04"}
 ```
-- `phase` là `CHECK_IN` (RESERVED → ACTIVE) hoặc `PICKUP` (ACTIVE → COMPLETED, ngăn trở lại trống).
+- `phase` là `CHECK_IN` (RESERVED → ACTIVE), `ACCESS` (v6: mở trong lúc thuê, lượt vẫn ACTIVE) hoặc `PICKUP`
+  (ACTIVE → COMPLETED, ngăn trở lại trống).
+
+**v6: mở nhiều lần trong một lượt thuê.** Request có thêm trường tùy chọn `intent`:
+
+| `intent` | Lượt `ACTIVE` chưa khóa quá hạn |
+|---|---|
+| không gửi | `UNLOCK PICKUP` như trước (firmware cũ, Postman cũ) |
+| `ASK` | `CHOOSE`: không mở, không đổi gì, không tính là đoán sai |
+| `OPEN` | `UNLOCK ACCESS`: lượt vẫn `ACTIVE`, ngăn vẫn `OCCUPIED`, ghi audit `ACCESS` |
+| `CHECKOUT` | `UNLOCK PICKUP` |
+
+Lượt `RESERVED` luôn `CHECK_IN`. Lượt bị khóa quá hạn: ví âm thì `DENY OVERDUE_UNPAID`; ví ≥ 0 thì mọi `intent` đều là
+`PICKUP` (không `CHOOSE`, không `ACCESS`). `intent` khác ba giá trị trên trả `400`.
+
+```json
+{"method":"PIN","pin":"482913","intent":"ASK"}
+{"result":"CHOOSE","deposit_id":120,"slot_code":"A04","choose_sec":15,"options":["OPEN","CHECKOUT"],
+ "message":"A: Mo tu  * huy\nB: Tra tu A04"}
+{"method":"PIN","pin":"482913","intent":"OPEN"}
+{"result":"UNLOCK","phase":"ACCESS","deposit_id":120,"slot_code":"A04","open_sec":8,"message":"Moi mo tu\nNgan A04","physical":true}
+```
+Hộp nhận `CHOOSE` thì giữ PIN / UID thẻ / ô vân tay vừa đọc, hiện hai dòng của `message`, chờ phím `A` (gửi lại với
+`OPEN`) hoặc `B` (gửi lại với `CHECKOUT`); `*` hoặc hết `choose_sec` giây thì hủy. Lần gửi lại là một lần xác thực đầy đủ:
+server không giữ trạng thái giữa hai lần gọi.
 
 Response khi từ chối:
 ```json
@@ -144,7 +171,7 @@ Response khi từ chối:
 | `EXPIRED` | Lượt đặt đã quá `hold_until` (đã chuyển sang NO_SHOW) |
 | `ACCOUNT_LOCKED` | Tài khoản người dùng bị khóa |
 
-Server ghi mọi lần thử vào `AuthAttempt` và ghi `Audit_Append` cho các lần mở (`CHECK_IN`, `COMPLETE`).
+Server ghi mọi lần thử vào `AuthAttempt` và ghi `Audit_Append` cho các lần mở (`CHECK_IN`, `ACCESS`, `COMPLETE`).
 
 ### 4.3 Đăng ký thẻ hoặc vân tay tại hộp
 
@@ -196,7 +223,7 @@ Endpoint này **không** kết thúc lượt gửi nữa, vì việc đó đã l
 | Endpoint | Mô tả |
 |---|---|
 | `GET /k/{device_code}` | Trang nhập mật mã của hộp, giao diện tiếng Việt, tối ưu cho điện thoại. Đây là đích của QR. |
-| `POST /api/kiosk/unlock` | Body `{"device_code":"LOCKER-01","pin":"482913"}`. Server dùng chung logic xác thực và giới hạn sai với mục 4.2. Nếu đúng thì tạo lệnh `UNLOCK` (thiết bị nhận trong vòng 3 giây qua heartbeat). Response giống `auth` nhưng `message` có dấu, kèm `command_id`. |
+| `POST /api/kiosk/unlock` | Body `{"device_code":"LOCKER-01","pin":"482913","intent":"ASK"}`. Server dùng chung logic xác thực và giới hạn sai với mục 4.2 (kể cả `intent`). Nếu đúng thì tạo lệnh `UNLOCK` có `phase` (thiết bị nhận trong vòng 3 giây qua heartbeat). Response giống `auth` nhưng `message` có dấu, kèm `command_id`. v6: `CHOOSE` thì trang hiện hai nút "Mở tủ" / "Trả tủ" và gửi lại cùng mật mã với `OPEN` / `CHECKOUT`. |
 
 `SecurityFilter` mở công khai `/k/*` và `/api/kiosk/unlock`.
 
@@ -206,7 +233,8 @@ Endpoint này **không** kết thúc lượt gửi nữa, vì việc đó đã l
 Web: đặt tủ (chọn cách mở) → Deposit RESERVED, trừ tiền, sinh mật mã hoặc mã đăng ký
 Hộp: [nếu Thẻ/Vân tay mà chưa đăng ký] enroll/start → enroll/finish
 Hộp: auth (lần 1) → UNLOCK, CHECK_IN → mở chốt 8 giây → batch
-Hộp: auth (lần 2) → UNLOCK, PICKUP → COMPLETED, ngăn trống → batch
+Hộp: auth ASK (các lần sau) → CHOOSE → phím A: auth OPEN → UNLOCK, ACCESS → mở chốt, lượt vẫn ACTIVE → batch
+                                    → phím B: auth CHECKOUT → UNLOCK, PICKUP → COMPLETED, ngăn trống → batch
 Điện thoại: /k/LOCKER-01 → kiosk/unlock → lệnh UNLOCK → heartbeat → mở chốt
 Không đến trước hold_until → NO_SHOW, hoàn 90%
 ```

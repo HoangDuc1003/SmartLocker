@@ -48,15 +48,21 @@ pay from a wallet, with a real ESP32 box that talks to the server through a per-
 - **Plans:** 2 hours, 4 hours, Day pass, or **Custom ("Tự chọn")** 1-23 hours / 1-7 days (hours capped at the day pass, discount for several days).
 - **Clear booking:** a confirm popup shows the amount taken now, the balance left, the cancel rule and the late fee. The slot is held
   15 minutes; after booking the wallet must keep at least 10,000 VND for late fees.
-- **Cancel within 5 minutes** for a full refund. No-show after the 15-minute hold: no refund; 3 no-shows in 7 days block booking for a while.
+- **Cancel:** a full refund in the first 5 minutes; after that, until the 15-minute hold ends, a cancel still works and gives back 50%
+  (so the slot frees up early for someone else). No-show after the hold: no refund; 3 no-shows in 7 days block booking for a while.
 - **Extension:** up to 3 times, each started hour at the size's hourly rate.
 - **Overdue:** a slot is never freed on its own (the user's things are inside). After the grace period the slot locks, each late hour
   is charged, and the wallet may go negative; the box refuses to open (`OVERDUE_UNPAID`) until the debt is paid. After 48 hours the
   booking is escalated to staff with an alert.
 - **Wallet:** top-up by VietQR, credited after staff approval.
 - **My locker ("Tủ của tôi"):** PIN (show/hide), card or fingerprint enrollment code, hold and cancel countdowns, extension, overdue
-  panel with the debt, a due reminder e-mail 15 minutes before the due time (address confirmed by a code), registered cards and fingers, history.
-- **Phone page** `/k/{device_code}`: scan the QR on the box and type the PIN (5 wrong tries lock the page for 2 minutes).
+  panel with the debt, a due reminder e-mail 15 minutes before the due time (address confirmed by a code), registered cards and fingers,
+  how many times the slot was opened during the rental, history.
+- **Open many times during a rental:** the first auth stores (CHECK_IN). After that, every PIN / card / finger makes the box ask
+  `A: Mo tu` / `B: Tra tu`: A opens to take or add things (the rental goes on, phase `ACCESS`), B takes everything and ends the rental
+  (PICKUP); `*` or 15 seconds without a key cancels. An overdue-locked booking can only be returned.
+- **Phone page** `/k/{device_code}`: scan the QR on the box and type the PIN (5 wrong tries lock the page for 2 minutes); a rented
+  slot gets the same two buttons "Mở tủ" (open) / "Trả tủ" (return).
 
 ### Staff
 
@@ -94,7 +100,7 @@ accounts of `sql/test_setup.sql`; no real personal data.
 |---|---|
 | ![Custom by hours](docs/images/booking-custom-hours.png) | ![Custom by days](docs/images/booking-custom-days.png) |
 
-| Booking confirm popup | My locker: PIN, cancel within 5 minutes |
+| Booking confirm popup | My locker: PIN, cancel button with countdown |
 |---|---|
 | ![Confirm popup](docs/images/booking-confirm.png) | ![My locker with PIN](docs/images/my-locker-pin.png) |
 
@@ -281,7 +287,8 @@ when the card is enrolled at the box. Amounts in VND:
 | 6 days (90%) | 135,000 | 175,500 | 228,200 |
 | 7 days (80%) | 140,000 | 182,000 | 236,600 |
 
-Other rules (`AppConfig`): 15-minute hold (`HOLD_MIN`), full refund within 5 minutes (`CANCEL_FREE_MIN`), 0% refund on no-show
+Other rules (`AppConfig`): 15-minute hold (`HOLD_MIN`), full refund within 5 minutes (`CANCEL_FREE_MIN`), 50% after that until the hold ends, rounded down to 100 VND
+(`CANCEL_LATE_REFUND_PCT`), 0% refund on no-show
 (`NO_SHOW_REFUND_PCT`), 10,000 VND minimum left after booking (`BOOKING_BUFFER`), reminder 15 minutes before due (`DUE_REMINDER_MIN`),
 escalation after 48 hours (`ESCALATE_HOURS`). To change a number, change both the SQL and `util.Pricing`, then run `PricingDatabaseIntegrationTest`.
 
@@ -313,8 +320,15 @@ sequenceDiagram
     S-->>B: UNLOCK + physical (true: servo opens, false: LCD shows OK)
     Note over U,B: Extension (up to 3 times) in My locker
     U->>B: Type the PIN again
-    B->>S: POST /api/device/auth
-    S-->>B: UNLOCK PICKUP, booking COMPLETED, slot AVAILABLE
+    B->>S: POST /api/device/auth (intent ASK)
+    S-->>B: CHOOSE (nothing changes), LCD "A: Mo tu / B: Tra tu"
+    alt Key A: open, the rental goes on (as often as needed)
+        B->>S: POST /api/device/auth (intent OPEN)
+        S-->>B: UNLOCK ACCESS, booking still ACTIVE, ACCESS audit row
+    else Key B: return the slot
+        B->>S: POST /api/device/auth (intent CHECKOUT)
+        S-->>B: UNLOCK PICKUP, booking COMPLETED, slot AVAILABLE
+    end
 ```
 
 ### Overdue, lock, escalation and alerts
@@ -435,7 +449,7 @@ SmartLocker/
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/BookingController` | `action=reserve` (plan `planId` or Custom `customMin`), `cancel`, `extend` |
+| `POST` | `/BookingController` | `action=reserve` (plan `planId` or Custom `customMin`), `cancel` (`expectedRefund`: the amount the popup showed), `extend` |
 | `GET` | `/api/locker-map` | Areas, banks, slots, size prices, Custom (visitors may read) |
 | `GET` | `/api/my-locker` | Open booking, cards, fingers, history of the user |
 | `POST` | `/TopupController` | VietQR top-up request; staff approve or reject |

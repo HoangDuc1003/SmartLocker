@@ -53,6 +53,7 @@ public class MyLockerApi extends HttpServlet {
         b.addProperty("size_code", d.getSizeCode());
         b.addProperty("size_cm", d.getSizeCm());
         b.addProperty("extend_count", d.getExtendCount());
+        b.addProperty("access_count", d.getAccessCount());   // v6: opens during the rental
         b.addProperty("locked", d.isLocked());
         b.addProperty("escalated", d.getEscalatedAt() != null);
         b.addProperty("overdue_hours", d.getOverdueHours());
@@ -82,6 +83,7 @@ public class MyLockerApi extends HttpServlet {
             dao.AppConfigDao config = new dao.AppConfigDao();
             reply.addProperty("card_deposit", config.get("CARD_DEPOSIT", Pricing.CARD_DEPOSIT));
             reply.addProperty("cancel_min", config.getInt("CANCEL_FREE_MIN", Pricing.CANCEL_FREE_MIN));
+            reply.addProperty("cancel_late_pct", config.getInt("CANCEL_LATE_REFUND_PCT", Pricing.CANCEL_LATE_REFUND_PCT));
             reply.addProperty("hold_min", config.getInt("HOLD_MIN", Pricing.HOLD_MIN));
             Deposit open = deposits.findOpenByUser(me.getUserId());
             reply.add("booking", open == null ? com.google.gson.JsonNull.INSTANCE : booking(open));

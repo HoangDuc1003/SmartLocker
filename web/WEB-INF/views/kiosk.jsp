@@ -48,10 +48,19 @@
                         <p class="hint" id="pinHelp">Xem mật mã ở mục Tủ của tôi trên web Smart Locker.</p>
                         <button type="submit" class="kiosk__submit" id="kioskSubmit">Mở tủ</button>
                     </form>
+                    <%-- v6: a rented slot (CHOOSE) asks what to do; kiosk.js posts the same PIN again with the intent --%>
+                    <div class="kiosk__choice" id="kioskChoice" hidden>
+                        <button type="button" class="kiosk__submit" data-intent="OPEN">Mở tủ</button>
+                        <p class="hint">Lấy hoặc cất thêm đồ, lượt thuê vẫn tiếp tục.</p>
+                        <button type="button" class="kiosk__submit ghost" data-intent="CHECKOUT">Trả tủ</button>
+                        <p class="hint">Lấy hết đồ, lượt thuê kết thúc và ngăn được trả lại.</p>
+                        <button type="button" class="link" id="kioskChoiceCancel">Hủy, nhập lại mật mã</button>
+                    </div>
                     <p class="kiosk__result" id="kioskResult" role="status" aria-live="polite" hidden></p>
                 </div>
-                <p class="kiosk__help">Lần nhập đầu mở tủ để cất đồ, lần sau mở tủ để lấy đồ và kết thúc lượt.
-                    Chốt tự đóng sau vài giây. Nhập sai 5 lần, trang này tạm khóa nhập 2 phút.</p>
+                <p class="kiosk__help">Lần nhập đầu mở tủ để cất đồ. Trong lúc thuê, mỗi lần nhập mật mã bạn chọn Mở tủ
+                    (lấy hoặc cất thêm đồ) hoặc Trả tủ (kết thúc lượt). Chốt tự đóng sau vài giây.
+                    Nhập sai 5 lần, trang này tạm khóa nhập 2 phút.</p>
             </c:otherwise>
         </c:choose>
     </div>

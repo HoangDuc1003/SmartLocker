@@ -95,6 +95,16 @@ public class PricingTest {
     }
 
     @Test
+    public void lateCancelGivesBackHalfRoundedDown() {
+        assertEquals(Pricing.lateCancelRefund(5000, 50), 2500);
+        assertEquals(Pricing.lateCancelRefund(6500, 50), 3200);     // 3,250 -> 3,200
+        assertEquals(Pricing.lateCancelRefund(8500, 50), 4200);
+        assertEquals(Pricing.lateCancelRefund(87800, 50), 43900);
+        assertEquals(Pricing.lateCancelRefund(6500, 0), 0);
+        assertEquals(Pricing.lateCancelRefund(6500, 100), 6500);
+    }
+
+    @Test
     public void tenThousandMustStayAfterBooking() {
         assertTrue(Pricing.canBook(16500, 6500, 0, 10000));
         assertFalse(Pricing.canBook(16499, 6500, 0, 10000));

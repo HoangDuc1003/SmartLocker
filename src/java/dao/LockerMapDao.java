@@ -161,7 +161,7 @@ public class LockerMapDao {
 
             // the slots: status from the view, the booking on it, the open alert and ticket
             String slotSql = "SELECT m.slot_id, m.slot_code, m.size_code, m.size_cm, m.bank_id, m.display_status, "
-                    + "m.is_locked, m.is_escalated, d.overdue_fee, d.overdue_hours, "
+                    + "m.is_locked, m.is_escalated, d.overdue_fee, d.overdue_hours, d.paid_amount, "
                     + "CONVERT(VARCHAR(27), d.reserved_at, 121) AS reserved_at, "
                     + "d.deposit_id, d.user_id, u.username, CONVERT(VARCHAR(27), d.hold_until, 121) AS hold_until, "
                     + "CONVERT(VARCHAR(27), d.due_at, 121) AS due_at, al.alert_id, al.label AS alert_label, tk.ticket_id "
@@ -207,6 +207,7 @@ public class LockerMapDao {
                         s.addProperty("escalated", staff && rs.getInt("is_escalated") == 1);
                         if (hasDeposit && (mine || staff)) {
                             put(s, "reserved_at", iso(rs.getString("reserved_at")));
+                            s.addProperty("paid_amount", rs.getLong("paid_amount"));   // the cancel button shows the refund
                             s.addProperty("overdue_fee", rs.getLong("overdue_fee"));
                             s.addProperty("overdue_hours", rs.getInt("overdue_hours"));
                         }

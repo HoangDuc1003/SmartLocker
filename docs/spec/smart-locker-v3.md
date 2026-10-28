@@ -53,6 +53,7 @@ Các mục đánh dấu **[Giả định]** là chỗ mình tự chọn; bạn s
 |---|---|---|
 | `HOLD_MIN` | 15 | `Deposit_Reserve`, popup, đếm ngược |
 | `CANCEL_FREE_MIN` | 5 | `Deposit_Cancel`, nút hủy, đếm ngược |
+| `CANCEL_LATE_REFUND_PCT` | 50 | `Deposit_Cancel`: hủy sau `CANCEL_FREE_MIN` phút, trước khi hết giữ chỗ |
 | `NO_SHOW_REFUND_PCT` | 0 | `Deposit_ExpireNoShow` |
 | `BOOKING_BUFFER` | 10000 | `Deposit_Reserve` (Q2) |
 | `OVERDUE_FEE_PCT` | 150 | phụ phí mỗi giờ = 150% giá một giờ |
@@ -103,7 +104,7 @@ Bảng mới `SlotSize(size_code CHAR(1) PK, size_cm NVARCHAR(20), price_pct INT
 | `fn_SlotPrice(@price, @pct, @method)` (mới) | giá gói × hệ số cỡ (tròn 100) rồi giảm thẻ (tròn 100). `fn_OpenPrice` giữ lại, gọi `fn_SlotPrice` với 100 cho code cũ. |
 | `fn_HourRate(@pct)`, `fn_OverdueRate(@pct)` (mới) | giá một giờ và phụ phí một giờ của một cỡ, lấy từ gói đang bán có `duration_min` nhỏ nhất (mục 3.3). |
 | `Deposit_Reserve` | giá theo cỡ; kiểm tra `số dư − giá ≥ BOOKING_BUFFER` (và cọc thẻ nếu lần đầu); lỗi mới `50046`; lưu `size_pct`, `overdue_rate`; `hold_until` = `HOLD_MIN`. |
-| `Deposit_Cancel` | từ chối khi `reserved_at` cũ hơn `CANCEL_FREE_MIN` phút: lỗi mới `50047`. |
+| `Deposit_Cancel` | trong `CANCEL_FREE_MIN` phút hoàn 100%; sau đó tới `hold_until` hoàn `CANCEL_LATE_REFUND_PCT`% (làm tròn xuống 100 đ); hết giữ chỗ: `50047`. Tham số `@expected_refund` (số popup đã hiện): hoàn thấp hơn thì `50052`, không đổi gì. |
 | `Deposit_ExpireNoShow` | hoàn `NO_SHOW_REFUND_PCT` (0%); audit ghi số hoàn 0. |
 | `Deposit_ExpireOverdue` | **không giải phóng ngăn nữa**: gọi `Deposit_ChargeOverdue` (khóa lượt quá `due_at + grace_min`, audit `OVERDUE_LOCK`, thu phụ phí). Bỏ `AUTO_RELEASE_OVERDUE`. `LockerMonitor` gọi `Deposit_Escalate` ngay sau đó. |
 | `Deposit_ChargeOverdue @deposit_id = NULL` (mới) | thu phần giờ trễ chưa thu cho một lượt (hoặc mọi lượt bị khóa): `giờ = CEILING(giây trễ kể từ due_at / 3600)`, trừ `(giờ − overdue_hours) × overdue_rate` vào ví (cho phép âm), audit `OVERDUE_FEE`. Chạy lại không thu trùng. |
@@ -117,7 +118,8 @@ Bảng mới `SlotSize(size_code CHAR(1) PK, size_cm NVARCHAR(20), price_pct INT
 
 Mã lỗi mới, dịch sang tiếng Việt trong `Web.sqlMessage`:
 - `50046`: sau khi đặt, số dư phải còn ít nhất 10.000 đ để dự phòng phụ phí.
-- `50047`: đã quá 5 phút kể từ lúc đặt, không hủy được nữa.
+- `50047`: đã hết thời gian giữ chỗ, không hủy được nữa.
+- `50052`: thời gian hủy hoàn đủ vừa hết trong lúc popup đang mở; lượt chưa bị hủy.
 - `50048`: lượt gửi đã quá hạn và bị khóa, không gia hạn được; hãy nạp tiền và lấy đồ.
 - `50049`: số dư không đủ để gia hạn.
 
@@ -158,7 +160,7 @@ Gói gốc là gói đang bán có `duration_min` nhỏ nhất (hiện là 2 gi�
 - **Không có trần.** Rủi ro: quên 1 tuần ở cỡ L là 168 × 6.400 ≈ 1,07 triệu đ nợ. Mình không tự đặt trần, chỉ nêu ở báo cáo cuối.
 
 ### 3.4 Hủy và không đến
-- Hủy trong 5 phút đầu: hoàn 100% số đã trả. Sau 5 phút: không có nút, DB từ chối.
+- Hủy trong 5 phút đầu: hoàn 100% số đã trả. Sau 5 phút, tới hết 15 phút giữ chỗ: hoàn 50% (làm tròn xuống 100 đ), để người đổi ý vẫn có lý do trả ngăn sớm thay vì để thành không đến. Hết giữ chỗ: không có nút, DB từ chối.
 - Không đến trước `hold_until`: hoàn 0 đ, ngăn trống lại. `Pricing.noShowRefund(x) = 0`.
 
 ### 3.4b Tự chọn thời gian (bổ sung sau v5)
@@ -214,8 +216,8 @@ Thiết kế dùng skill ui-ux-pro-max để chọn bố cục, nhưng chỉ dù
    - Vẽ lại khối tủ: cửa cao theo cỡ, nhãn mã ngăn và cỡ, biểu tượng SVG cho trạng thái, ngăn bị khóa quá hạn có biểu tượng ổ khóa.
    - Dải "Tủ gần bạn": khu gần nhất và khoảng cách, nút "Chỉ đường"; danh sách khu sắp theo khoảng cách. `watchPosition` tối đa 1 lần cập nhật / 10 giây, dừng khi tab ẩn. Bị từ chối, hết giờ, không hỗ trợ hoặc không phải HTTPS: thông báo tiếng Việt, danh sách khu như cũ.
 3. **Bảng đặt ngăn**: thẻ cỡ ngăn (ảnh hoặc SVG, số đo, gợi ý vật dụng), giá theo cỡ cho từng cách mở.
-   **Popup xác nhận**: số tiền trừ ngay; "Được hủy trong 5 phút, hoàn đủ"; "Giữ chỗ 15 phút"; "Không đến sẽ mất toàn bộ số tiền"; phụ phí quá hạn mỗi giờ; số dư còn lại sau khi đặt. Panel tự làm mới vẫn dừng khi popup mở.
-4. **Tủ của tôi**: đếm ngược "còn hủy được" (5 phút) và "giữ chỗ" (15 phút); hết 5 phút thì nút hủy biến mất mà không cần tải lại. Lượt quá hạn: khung cảnh báo "Đã quá hạn, tủ đang khóa", số giờ trễ, phụ phí đã thu, số tiền đang nợ, nút "Nạp tiền" tới `TopupController`. Lượt chuyển xử lý: ghi rõ đã chuyển cho nhân viên.
+   **Popup xác nhận**: số tiền trừ ngay; "Hủy trong 5 phút đầu: hoàn đủ. Sau đó tới hết giờ giữ chỗ: hoàn 50%"; "Giữ chỗ 15 phút"; "Không đến sẽ mất toàn bộ số tiền"; phụ phí quá hạn mỗi giờ; số dư còn lại sau khi đặt. Panel tự làm mới vẫn dừng khi popup mở.
+4. **Tủ của tôi**: đếm ngược "hoàn đủ nếu hủy trong" (5 phút), rồi "hoàn 50% (X đ) nếu hủy trong" (tới hết giữ chỗ), và "giữ chỗ" (15 phút); nút đổi số tiền và câu xác nhận khi qua mốc 5 phút, biến mất khi hết giữ chỗ, không cần tải lại; đứng yên khi popup đang mở. Lượt quá hạn: khung cảnh báo "Đã quá hạn, tủ đang khóa", số giờ trễ, phụ phí đã thu, số tiền đang nợ, nút "Nạp tiền" tới `TopupController`. Lượt chuyển xử lý: ghi rõ đã chuyển cho nhân viên.
 5. **Cảnh báo / vận hành** (OPERATOR, ADMIN): cảnh báo `OVERDUE_ESCALATED` kèm người dùng, ngăn, số giờ trễ, số nợ. Lượt gửi (`deposit.jsp`) có cột "Khóa quá hạn" và "Chuyển xử lý".
 6. Mọi chỗ còn ghi "hoàn 90%", "mất 10%" được sửa.
 
@@ -245,7 +247,7 @@ So `Pricing` với `fn_SlotPrice`, `fn_HourRate` và `fn_OverdueRate` cho mọi 
 | 6 (sửa) | Không đến | `NO_SHOW`, hoàn 0 đ (trước đây 90%) |
 | 11 | Quá hạn bị khóa (`sql/test_overdue.sql` dời `due_at` về quá khứ, số dư nhỏ) | `DENY OVERDUE_UNPAID`, có `debt` |
 | 12 | Nạp tiền (script duyệt nạp) rồi mở lại | `UNLOCK PICKUP`, `overdue_fee` đúng |
-| 13 | Hủy trong 5 phút / sau 5 phút | hoàn 100% / lỗi 50047 |
+| 13 | Hủy trong 5 phút / sau 5 phút | hoàn 100% / số cũ: lỗi 50052, số đúng: hoàn 50% |
 | 14 | Đặt khi số dư dưới mức đệm | lỗi 50046 |
 | 15 | Chuyển xử lý sau 48 giờ | `escalated_at` có giá trị, có cảnh báo `OVERDUE_ESCALATED`, audit `OVERDUE_ESCALATE` |
 | 16 | Kiosk với lượt bị khóa | `OVERDUE_UNPAID`, message tiếng Việt có số nợ |
@@ -255,7 +257,7 @@ Không có bước đoán sai mã nào trước scenario 5 (Lessons). `OVERDUE_U
 `sql/test_v2_setup.sql` tạo thêm `v3overdue`, `v3poor`; `ScenarioSender` chạy lại các kịch bản cũ (remote, spoof, sensor).
 
 ### 7.4 End-to-end trên trình duyệt (claude-in-chrome)
-Đăng nhập (sáng/tối, 375px, hiện/ẩn mật khẩu, sai mật khẩu); sơ đồ (vẽ tủ mới, định vị cho phép / từ chối, chỉ đường); đặt từng cỡ, popup; hủy trong 5 phút; nút hủy biến mất sau 5 phút; quá hạn trên "Tủ của tôi", nạp tiền, duyệt, mở bằng `/k/LOCKER-01`; cảnh báo chuyển xử lý trên trang cảnh báo; email nhắc hạn tới hộp thư thử. Hard reload sau mỗi lần deploy CSS/JS.
+Đăng nhập (sáng/tối, 375px, hiện/ẩn mật khẩu, sai mật khẩu); sơ đồ (vẽ tủ mới, định vị cho phép / từ chối, chỉ đường); đặt từng cỡ, popup; hủy trong 5 phút; nút hủy đổi sang hoàn 50% sau 5 phút và biến mất khi hết giữ chỗ; quá hạn trên "Tủ của tôi", nạp tiền, duyệt, mở bằng `/k/LOCKER-01`; cảnh báo chuyển xử lý trên trang cảnh báo; email nhắc hạn tới hộp thư thử. Hard reload sau mỗi lần deploy CSS/JS.
 
 ---
 

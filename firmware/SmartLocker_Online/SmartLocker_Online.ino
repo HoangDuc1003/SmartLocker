@@ -9,13 +9,20 @@
  * Keypad:  0-9 PIN (6 digits)   # send   * clear / cancel
  *          B  enroll a card     C  enroll a finger   (then the 6-digit enroll code from "Tu cua toi", #)
  *          D  door closed: show IP / server status;  door open: lock now
+ *          A / B after "A: Mo tu / B: Tra tu": open the rented slot / return it
+ *
+ * Open many times (v6): every auth goes with "intent":"ASK". A rented slot answers CHOOSE and the LCD shows
+ * "A: Mo tu" / "B: Tra tu"; the box keeps the PIN / card UID / finger slot it just read and sends the same auth
+ * again with "intent":"OPEN" (UNLOCK phase ACCESS, the rental goes on) or "CHECKOUT" (PICKUP, the rental ends).
+ * '*' or CHOOSE_MS without a key cancels. An older server ignores the intent and answers PICKUP as before.
  *
  * One box serves every slot of the banks it manages, but only one compartment has the servos: an UNLOCK with
  * "physical":false (another slot, see sql/demo_box.sql) only shows "Ngan A07 OK" on the LCD. A reply without
  * "physical" (an older server) means every slot is the real one.
  *
- * After an unlock the bolt servo releases, the door servo opens, and the door locks again once the
- * "open_sec" hold has passed and the SRF05 has seen nobody within DOORWAY_CM for AUTO_CLOSE_MS.
+ * After an unlock the bolt servo releases (and the door servo opens, if fitted). The user locks it with D;
+ * a door left open locks by itself after DOOR_OPEN_MS. The SRF05 only drives the LCD backlight: on while
+ * someone is near, off SCREEN_OFF_MS after the last person and the last input.
  *
  * Arduino IDE libraries: MFRC522, Keypad, Adafruit Fingerprint Sensor Library, ArduinoJson 7,
  *                        LiquidCrystal I2C (Frank de Brabander). Servos use the ESP32 LEDC, no library.
@@ -39,7 +46,7 @@
 #error "Copy secrets.example.h to secrets.h and fill in Wi-Fi, server and API key"
 #endif
 
-static const char FIRMWARE[] = "3.2-esp32";
+static const char FIRMWARE[] = "3.3-esp32";
 
 // ---- Pin map of the box ----
 // RC522 on its own SPI pins; RST is tied to 3V3, so the chip is reset in software.
@@ -63,16 +70,16 @@ static constexpr int BOLT_LOCKED_DEG = 0;
 static constexpr int BOLT_UNLOCKED_DEG = 85;
 static constexpr int DOOR_CLOSED_DEG = 0;
 static constexpr int DOOR_OPEN_DEG = 180;
-static constexpr bool USE_SONAR = true;         // false: the backlight stays on and the door closes by time only
+static constexpr bool USE_DOOR_SERVO = false;   // false: only the bolt servo moves, GPIO2 stays untouched (no door servo fitted)
+static constexpr bool USE_SONAR = true;         // false: the backlight stays on (the SRF05 only drives the backlight)
 static constexpr int SONAR_TRIG = 5;
 static constexpr int SONAR_ECHO = 18;           // through the 1k / 2k divider (SRF05 echo is 5 V)
 
 static constexpr int NEAR_CM = 50;              // someone in front of the box wakes the backlight
-static constexpr int DOORWAY_CM = 30;           // someone in the doorway blocks the lock
-static constexpr uint32_t AUTO_CLOSE_MS = 5000; // doorway clear for this long, then lock
-static constexpr uint32_t AWAKE_MS = 60000;     // longest time the backlight stays on for one visit
-static constexpr uint32_t IDLE_SCREEN_MS = 20000;   // backlight on after the last key, card or finger
+static constexpr uint32_t DOOR_OPEN_MS = 20000; // a door nobody locks with D locks by itself after this
+static constexpr uint32_t SCREEN_OFF_MS = 60000;    // backlight off this long after the last person and input
 static constexpr uint32_t ONLINE_MS = 10000;    // no good heartbeat for this long: "mat ket noi"
+static constexpr uint32_t CHOOSE_MS = 15000;    // A / B after a CHOOSE reply; the server's choose_sec wins when sent
 static constexpr uint16_t HTTP_TIMEOUT_MS = 6000;
 
 char keys[4][4] = {
@@ -88,8 +95,11 @@ HardwareSerial FingerSerial(2);
 Adafruit_Fingerprint finger(&FingerSerial);
 LiquidCrystal_I2C lcd(LCD_ADDR, 16, 2);
 
-enum Mode { MODE_IDLE, MODE_ENROLL_CODE, MODE_ENROLL_CARD };
+enum Mode { MODE_IDLE, MODE_ENROLL_CODE, MODE_ENROLL_CARD, MODE_CHOOSE };
 Mode mode = MODE_IDLE;
+JsonDocument chooseBody;    // the auth that answered CHOOSE, sent again with OPEN or CHECKOUT
+String chooseSlot;
+uint32_t chooseDeadline = 0;
 String enrollType;          // "CARD" or "FINGERPRINT" while an enrollment runs
 String enrollCode;
 uint32_t enrollDeadline = 0;
@@ -105,20 +115,19 @@ uint8_t heartbeatFails = 0;
 int lastHttpCode = 0;
 
 bool doorOpen = false;
-uint32_t holdUntil = 0;     // the door stays open at least until then (open_sec from the server)
-uint32_t clearSince = 0;    // since when nobody stands in the doorway (0 = someone does)
+uint32_t holdUntil = 0;     // the door locks by itself at this time unless D locks it first
 uint32_t lastDoorDraw = 0;
 uint32_t messageUntil = 0;  // a result stays on screen until then, then the idle screen comes back
 bool idleDrawn = false;
 
 uint32_t lastFingerScan = 0;
 uint32_t fingerQuietUntil = 0;
+bool fingerWaitLift = true;   // read again only after the sensor saw no finger (a stuck or ghost image never repeats)
 String lastCardUid;
 uint32_t lastCardAt = 0;
 
 bool screenOn = true;
-uint32_t lastActivity = 0;
-uint32_t wokeAt = 0;
+uint32_t lastActivity = 0;  // last key, card, finger, message, or person seen by the SRF05
 uint32_t lastSonar = 0;
 long lastCm = -1;
 
@@ -136,7 +145,6 @@ void setScreen(bool on) {
 
 void wake() {
   lastActivity = millis();
-  if (!screenOn) wokeAt = millis();
   setScreen(true);
 }
 
@@ -164,6 +172,8 @@ void drawIdle() {
     show(String(enrollType == "CARD" ? "Ma DK the:" : "Ma DK van tay:") + "\n" + pinBuffer + "_");
   } else if (mode == MODE_ENROLL_CARD) {
     show(F("Quet the dang ky\n(* de huy)"));
+  } else if (mode == MODE_CHOOSE) {
+    show("A: Mo tu  * huy\nB: Tra tu " + chooseSlot);
   } else if (pinBuffer.length() > 0) {
     String stars;
     for (size_t i = 0; i < pinBuffer.length(); i++) stars += '*';
@@ -216,8 +226,8 @@ void sampleSonar() {
   lastCm = readDistanceCm();
 }
 
-bool personAtDoor() {
-  return USE_SONAR && lastCm > 0 && lastCm <= DOORWAY_CM;
+bool personNear() {
+  return USE_SONAR && lastCm > 0 && lastCm <= NEAR_CM;
 }
 
 // ---------------------------------------------------------------- bolt and door
@@ -233,11 +243,14 @@ void openDoor(int seconds, const String& message) {
   show(message, 3000);
   servoWrite(SERVO_BOLT_PIN, BOLT_UNLOCKED_DEG);   // release the bolt first, then push the door
   delay(1000);
-  servoWrite(SERVO_DOOR_PIN, DOOR_OPEN_DEG);
-  delay(500);
+  if (USE_DOOR_SERVO) {
+    servoWrite(SERVO_DOOR_PIN, DOOR_OPEN_DEG);
+    delay(500);
+  }
   doorOpen = true;
-  holdUntil = millis() + (uint32_t) max(seconds, 3) * 1000;
-  clearSince = USE_SONAR ? 0 : millis();
+  // the server's open_sec only makes the door stay open longer than DOOR_OPEN_MS, never shorter
+  uint32_t openMs = seconds > 0 ? (uint32_t) seconds * 1000 : 0;
+  holdUntil = millis() + (openMs > DOOR_OPEN_MS ? openMs : DOOR_OPEN_MS);
   lastDoorDraw = 0;
 }
 
@@ -249,8 +262,10 @@ void showSlotOk(const String& slotCode, const String& second) {
 }
 
 void closeDoor() {
-  servoWrite(SERVO_DOOR_PIN, DOOR_CLOSED_DEG);     // door first, then the bolt
-  delay(1500);
+  if (USE_DOOR_SERVO) {
+    servoWrite(SERVO_DOOR_PIN, DOOR_CLOSED_DEG);   // door first, then the bolt
+    delay(1500);
+  }
   servoWrite(SERVO_BOLT_PIN, BOLT_LOCKED_DEG);
   delay(500);
   doorOpen = false;
@@ -260,27 +275,18 @@ void closeDoor() {
   Serial.println(F("Door closed"));
 }
 
-// Keeps the door open until the hold time is over and the doorway has been clear for AUTO_CLOSE_MS.
+// The door stays open until D locks it (handleKeypadDoorOpen) or the timeout locks it here.
 void doorTick() {
   if (!doorOpen) return;
   uint32_t now = millis();
-  if (personAtDoor()) clearSince = 0;
-  else if (clearSince == 0) clearSince = now;
-
-  bool held = (int32_t) (now - holdUntil) >= 0;
-  if (held && clearSince != 0 && now - clearSince >= AUTO_CLOSE_MS) {
+  if ((int32_t) (now - holdUntil) >= 0) {
     closeDoor();
     return;
   }
   if (messageUntil == 0 && now - lastDoorDraw >= 1000) {
     lastDoorDraw = now;
-    if (personAtDoor()) {
-      show(F("Cua dang mo\nCo nguoi o cua"));
-    } else {
-      long waitHold = max(0L, (long) (int32_t) (holdUntil - now));
-      long waitClear = clearSince ? max(0L, (long) AUTO_CLOSE_MS - (long) (now - clearSince)) : (long) AUTO_CLOSE_MS;
-      show("Cua dang mo\nTu khoa sau " + String((max(waitHold, waitClear) + 999) / 1000) + "s");
-    }
+    long left = max(0L, (long) (int32_t) (holdUntil - now));
+    show("Bam D de khoa\nTu khoa sau " + String((left + 999) / 1000) + "s");
   }
 }
 
@@ -370,6 +376,8 @@ void runCommands(JsonArray commands) {
       int nl = m.indexOf('\n');
       String second = nl >= 0 ? m.substring(nl + 1) : "";
       String slot = cmd["slot_code"] | "";
+      // a phone ACCESS (v6) or CHECK_IN opens like a keypad one; PICKUP too, the server already ended the rental
+      Serial.printf("  phase %s, physical %d\n", (const char*) (cmd["phase"] | "-"), physical);
       if (physical) openDoor(cmd["open_sec"] | 8, "Mo tu ngan " + slot + "\n" + second);
       else showSlotOk(slot, second);
     } else if (action == "DELETE_FP" && fingerOk) {
@@ -418,10 +426,12 @@ void showServerError(int code) {
   else show("Loi may chu\nHTTP " + String(code), 3000);
 }
 
-// One request decides: UNLOCK opens the door, DENY shows the reason the server wrote for the screen.
+// One request decides: UNLOCK opens the door, CHOOSE asks A / B, DENY shows the reason the server wrote for the screen.
 // body: {"method":"PIN","pin":"482913"} | {"method":"CARD","card_uid":"04A1B2C3"} | {"method":"FINGERPRINT","sensor_slot":7}
-void authorize(const JsonDocument& body) {
+// A body without "intent" goes as ASK; the A / B keys send the kept body again with OPEN or CHECKOUT.
+void authorize(JsonDocument& body) {
   wake();
+  if (!body["intent"].is<const char*>()) body["intent"] = "ASK";
   show(F("Dang kiem tra..."));
   JsonDocument reply;
   int code = postJson("/device/auth", body, reply);
@@ -430,11 +440,22 @@ void authorize(const JsonDocument& body) {
     return;
   }
   String message = reply["message"] | "";
-  if (String(reply["result"] | "") == "UNLOCK") {
+  String result = reply["result"] | "";
+  if (result == "CHOOSE") {
+    chooseBody = body;
+    chooseSlot = reply["slot_code"] | "";
+    int sec = reply["choose_sec"] | 0;
+    chooseDeadline = millis() + (sec > 0 ? (uint32_t) sec * 1000 : CHOOSE_MS);
+    mode = MODE_CHOOSE;
+    pinBuffer = "";
+    idleDrawn = false;      // drawIdle shows "A: Mo tu / B: Tra tu"
+    Serial.printf("CHOOSE slot %s\n", chooseSlot.c_str());
+  } else if (result == "UNLOCK") {
+    String phase = reply["phase"] | "";
     if (reply["physical"] | true) {
-      openDoor(reply["open_sec"] | 8, message);
+      openDoor(reply["open_sec"] | 8, message);   // CHECK_IN, ACCESS and PICKUP all release the bolt; D locks it again
     } else {   // the booking moved on at the server; this slot has no servo
-      showSlotOk(reply["slot_code"] | "", String(reply["phase"] | "") == "PICKUP" ? "Da lay do" : "Da gui do");
+      showSlotOk(reply["slot_code"] | "", phase == "PICKUP" ? "Da lay do" : phase == "ACCESS" ? "Da mo tu" : "Da gui do");
     }
   } else {
     Serial.print(F("DENY ")); Serial.println(reply["reason"] | "");
@@ -525,13 +546,32 @@ void finishCardEnroll(const String& uid) {
 
 // ---------------------------------------------------------------- inputs
 
-// While the door is open only D works: lock now, unless somebody stands in the doorway.
+// While the door is open only D works: lock now.
 void handleKeypadDoorOpen() {
   char key = keypad.getKey();
   if (key != 'D') return;
   wake();
-  if (personAtDoor()) show(F("Co nguoi o cua\nKhong the khoa"), 1500);
-  else closeDoor();
+  closeDoor();
+}
+
+// A rented slot answered CHOOSE: A opens (the rental goes on), B returns the slot, * cancels. Other keys wait.
+void endChoose() {
+  mode = MODE_IDLE;
+  chooseBody.clear();
+  chooseSlot = "";
+  idleDrawn = false;
+}
+
+void handleChooseKey(char key) {
+  if (key == '*') {
+    endChoose();
+    show(F("Da huy"), 1500);
+  } else if (key == 'A' || key == 'B') {
+    JsonDocument body = chooseBody;
+    body["intent"] = key == 'A' ? "OPEN" : "CHECKOUT";
+    endChoose();
+    authorize(body);
+  }
 }
 
 void handleKeypad() {
@@ -539,6 +579,10 @@ void handleKeypad() {
   if (!key) return;
   wake();
   messageUntil = 0;
+  if (mode == MODE_CHOOSE) {
+    handleChooseKey(key);
+    return;
+  }
   if (key == '*') {
     if (mode != MODE_IDLE) show(F("Da huy"), 1500);
     mode = MODE_IDLE;
@@ -625,7 +669,13 @@ void handleFingerprint() {
   if (!fingerOk || mode != MODE_IDLE) return;
   if (millis() - lastFingerScan < 250 || (int32_t) (millis() - fingerQuietUntil) < 0) return;
   lastFingerScan = millis();
-  if (finger.getImage() != FINGERPRINT_OK) return;
+  uint8_t img = finger.getImage();
+  if (fingerWaitLift) {
+    if (img == FINGERPRINT_NOFINGER) fingerWaitLift = false;
+    return;
+  }
+  if (img != FINGERPRINT_OK) return;
+  fingerWaitLift = true;
   wake();
   fingerQuietUntil = millis() + 2500;
   if (finger.image2Tz() != FINGERPRINT_OK) {
@@ -639,25 +689,26 @@ void handleFingerprint() {
     body["method"] = "FINGERPRINT";
     body["sensor_slot"] = finger.fingerID;
     authorize(body);
+  } else if (r == FINGERPRINT_NOTFOUND) {
+    show(F("Van tay chua\ndang ky"), 2500);   // read fine, but not on this sensor: nothing to send to the server
   } else {
-    show(F("Van tay chua\ndang ky"), 2500);   // not on this sensor: nothing to send to the server
+    Serial.printf("Finger search error 0x%02X (ignored)\n", r);   // a sensor or wiring hiccup is not "unregistered"
+    drawIdle();
   }
 }
 
-// Backlight on while someone stands in front (at most AWAKE_MS per visit) or shortly after the last input.
+// Backlight on while someone is near; off SCREEN_OFF_MS after the last person and the last input.
 void handleScreen() {
   if (!USE_SONAR) return;
-  bool near = lastCm > 0 && lastCm <= NEAR_CM;
-  if (near && !screenOn) {
-    wokeAt = millis();
+  if (personNear()) {
     lastActivity = millis();
-    setScreen(true);
-    idleDrawn = false;
+    if (!screenOn) {
+      setScreen(true);
+      idleDrawn = false;
+    }
   }
   bool busy = doorOpen || mode != MODE_IDLE || pinBuffer.length() > 0;
-  bool recent = millis() - lastActivity < IDLE_SCREEN_MS;
-  bool visit = near && millis() - wokeAt < AWAKE_MS;
-  if (screenOn && !busy && !recent && !visit) setScreen(false);
+  if (screenOn && !busy && millis() - lastActivity >= SCREEN_OFF_MS) setScreen(false);
 }
 
 // ---------------------------------------------------------------- main
@@ -671,10 +722,12 @@ void setup() {
     pinMode(SONAR_ECHO, INPUT);
     digitalWrite(SONAR_TRIG, LOW);
   }
-  ledcAttach(SERVO_DOOR_PIN, 50, 14);
   ledcAttach(SERVO_BOLT_PIN, 50, 14);
-  servoWrite(SERVO_DOOR_PIN, DOOR_CLOSED_DEG);
-  delay(350);
+  if (USE_DOOR_SERVO) {
+    ledcAttach(SERVO_DOOR_PIN, 50, 14);
+    servoWrite(SERVO_DOOR_PIN, DOOR_CLOSED_DEG);
+    delay(350);
+  }
   servoWrite(SERVO_BOLT_PIN, BOLT_LOCKED_DEG);
   delay(350);
 
@@ -704,6 +757,7 @@ void setup() {
   connectWifi();
   loadBaseUrl();
   lastHeartbeat = millis() - heartbeatEveryMs;   // first heartbeat right away
+  fingerQuietUntil = millis() + 3000;            // the first frames after power-up are noise, not a finger
   wake();
 }
 
@@ -715,6 +769,10 @@ void loop() {
   if (mode == MODE_ENROLL_CARD && (int32_t) (millis() - enrollDeadline) >= 0) {
     mode = MODE_IDLE;
     show(F("Het thoi gian\nquet the"), 2000);
+  }
+  if (mode == MODE_CHOOSE && (int32_t) (millis() - chooseDeadline) >= 0) {
+    endChoose();
+    show(F("Het thoi gian\nchon, da huy"), 2000);
   }
   if (doorOpen) {
     handleKeypadDoorOpen();

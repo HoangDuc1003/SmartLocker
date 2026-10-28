@@ -35,6 +35,7 @@ public class Deposit {
     private long overdueFee;     // late fee already charged
     private java.sql.Timestamp lockedAt;     // past due_at + grace: opening needs a balance of 0 or more
     private java.sql.Timestamp escalatedAt;  // 48 hours late: handed to the staff
+    private int accessCount;     // v6: opens during the rental (ACCESS audit rows); only set by findOpenByUser
 
     public long getDepositId() { return depositId; }
     public void setDepositId(long depositId) { this.depositId = depositId; }
@@ -70,6 +71,8 @@ public class Deposit {
     public void setEndedAt(java.sql.Timestamp endedAt) { this.endedAt = endedAt; }
     public int getExtendCount() { return extendCount; }
     public void setExtendCount(int extendCount) { this.extendCount = extendCount; }
+    public int getAccessCount() { return accessCount; }
+    public void setAccessCount(int accessCount) { this.accessCount = accessCount; }
     public String getOpenMethod() { return openMethod; }
     public void setOpenMethod(String openMethod) { this.openMethod = openMethod; }
     public String getPinCode() { return pinCode; }

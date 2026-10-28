@@ -52,6 +52,7 @@ public class LockerMapApi extends HttpServlet {
             com.google.gson.JsonObject rules = new com.google.gson.JsonObject();
             rules.addProperty("hold_min", config.getInt("HOLD_MIN", util.Pricing.HOLD_MIN));
             rules.addProperty("cancel_min", config.getInt("CANCEL_FREE_MIN", util.Pricing.CANCEL_FREE_MIN));
+            rules.addProperty("cancel_late_pct", config.getInt("CANCEL_LATE_REFUND_PCT", util.Pricing.CANCEL_LATE_REFUND_PCT));
             rules.addProperty("booking_buffer", config.get("BOOKING_BUFFER", util.Pricing.BOOKING_BUFFER));
             rules.addProperty("card_deposit", config.get("CARD_DEPOSIT", util.Pricing.CARD_DEPOSIT));
             rules.addProperty("no_show_refund_pct", config.getInt("NO_SHOW_REFUND_PCT", util.Pricing.NO_SHOW_REFUND_PCT));

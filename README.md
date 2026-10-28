@@ -48,14 +48,19 @@ với hộp tủ ESP32 thật giao tiếp qua API có khóa riêng cho từng h�
 - **Gói gửi:** 2 giờ, 4 giờ, Trọn ngày, hoặc **Tự chọn** 1-23 giờ / 1-7 ngày (giờ không vượt giá trọn ngày, nhiều ngày được giảm).
 - **Đặt rõ ràng:** popup xác nhận ghi số tiền trừ ngay, số dư còn lại, luật hủy và phụ phí. Giữ chỗ 15 phút; sau khi đặt ví phải
   còn ít nhất 10.000 đ dự phòng phụ phí.
-- **Hủy trong 5 phút** được hoàn đủ. Không đến trong 15 phút giữ chỗ thì không hoàn; 3 lần không đến trong 7 ngày bị tạm cấm đặt.
+- **Hủy:** trong 5 phút đầu hoàn đủ; sau đó, tới hết 15 phút giữ chỗ, vẫn hủy được và hoàn 50% (để ngăn trống sớm cho người khác).
+  Không đến trong 15 phút giữ chỗ thì không hoàn; 3 lần không đến trong 7 ngày bị tạm cấm đặt.
 - **Gia hạn** tối đa 3 lần, mỗi giờ bắt đầu tính theo giá một giờ của cỡ ngăn.
 - **Quá hạn:** ngăn không bao giờ tự giải phóng (đồ vẫn ở trong). Quá ân hạn thì tủ khóa, mỗi giờ trễ trừ phụ phí, ví có thể âm;
   hộp từ chối mở (`OVERDUE_UNPAID`) tới khi nạp đủ tiền. Quá 48 giờ, lượt gửi được chuyển cho nhân viên kèm cảnh báo.
 - **Ví:** nạp tiền bằng mã VietQR, nhân viên duyệt rồi mới cộng tiền.
 - **Tủ của tôi:** mật mã (ẩn/hiện), mã đăng ký thẻ hoặc vân tay, đếm ngược hủy và giữ chỗ, gia hạn, khung quá hạn và số nợ,
-  email nhắc hạn 15 phút trước giờ trả (email được xác nhận bằng mã), thẻ và vân tay đã đăng ký, lịch sử.
-- **Trang điện thoại** `/k/{device_code}`: quét QR dán trên hộp, nhập mật mã để mở (sai 5 lần thì trang tạm khóa 2 phút).
+  email nhắc hạn 15 phút trước giờ trả (email được xác nhận bằng mã), thẻ và vân tay đã đăng ký, số lần đã mở tủ trong lượt, lịch sử.
+- **Mở nhiều lần trong một lượt thuê:** lần xác thực đầu cất đồ (CHECK_IN). Sau đó mỗi lần nhập mật mã / quẹt thẻ / đặt vân tay,
+  màn hộp hỏi `A: Mo tu` / `B: Tra tu`: phím A mở để lấy hoặc cất thêm đồ (lượt vẫn chạy, phase `ACCESS`), phím B lấy hết đồ và
+  kết thúc lượt (PICKUP); `*` hoặc 15 giây không bấm thì hủy. Lượt đã bị khóa quá hạn chỉ trả tủ được.
+- **Trang điện thoại** `/k/{device_code}`: quét QR dán trên hộp, nhập mật mã để mở (sai 5 lần thì trang tạm khóa 2 phút);
+  lượt đang thuê có hai nút "Mở tủ" / "Trả tủ" như trên hộp.
 
 ### Nhân viên
 
@@ -94,7 +99,7 @@ Chụp từ bản chạy thật tại `http://localhost:8080/SmartLocker` (giao 
 |---|---|
 | ![Tự chọn theo giờ](docs/images/booking-custom-hours.png) | ![Tự chọn theo ngày](docs/images/booking-custom-days.png) |
 
-| Popup xác nhận đặt | Tủ của tôi: mật mã, hủy trong 5 phút |
+| Popup xác nhận đặt | Tủ của tôi: mật mã, nút hủy kèm đếm ngược |
 |---|---|
 | ![Popup xác nhận](docs/images/booking-confirm.png) | ![Tủ của tôi với mật mã](docs/images/my-locker-pin.png) |
 
@@ -280,7 +285,8 @@ làm tròn lên 100 đ. Mật mã, thẻ RFID và vân tay cùng một giá; th�
 | 6 ngày (90%) | 135.000 | 175.500 | 228.200 |
 | 7 ngày (80%) | 140.000 | 182.000 | 236.600 |
 
-Các luật khác (`AppConfig`): giữ chỗ 15 phút (`HOLD_MIN`), hủy và hoàn 100% trong 5 phút (`CANCEL_FREE_MIN`), không đến hoàn 0%
+Các luật khác (`AppConfig`): giữ chỗ 15 phút (`HOLD_MIN`), hủy và hoàn 100% trong 5 phút (`CANCEL_FREE_MIN`), hủy sau đó tới hết giữ chỗ hoàn 50% làm tròn xuống 100 đ
+(`CANCEL_LATE_REFUND_PCT`), không đến hoàn 0%
 (`NO_SHOW_REFUND_PCT`), dư tối thiểu sau khi đặt 10.000 đ (`BOOKING_BUFFER`), email nhắc trước 15 phút (`DUE_REMINDER_MIN`),
 chuyển xử lý sau 48 giờ (`ESCALATE_HOURS`). Đổi một con số thì sửa cả SQL và `util.Pricing`, rồi chạy `PricingDatabaseIntegrationTest`.
 
@@ -312,8 +318,15 @@ sequenceDiagram
     S-->>B: UNLOCK + physical (true: mở servo, false: LCD báo OK)
     Note over U,B: Gia hạn (tối đa 3 lần) ở Tủ của tôi
     U->>B: Nhập lại mật mã
-    B->>S: POST /api/device/auth
-    S-->>B: UNLOCK PICKUP, lượt COMPLETED, ngăn AVAILABLE
+    B->>S: POST /api/device/auth (intent ASK)
+    S-->>B: CHOOSE (không đổi gì), LCD "A: Mo tu / B: Tra tu"
+    alt Phím A: mở tủ, lượt vẫn chạy (lặp lại bao nhiêu lần cũng được)
+        B->>S: POST /api/device/auth (intent OPEN)
+        S-->>B: UNLOCK ACCESS, lượt vẫn ACTIVE, audit ACCESS
+    else Phím B: trả tủ
+        B->>S: POST /api/device/auth (intent CHECKOUT)
+        S-->>B: UNLOCK PICKUP, lượt COMPLETED, ngăn AVAILABLE
+    end
 ```
 
 ### Quá hạn, khóa, chuyển xử lý và cảnh báo
@@ -434,7 +447,7 @@ SmartLocker/
 
 | Method | Endpoint | Mô tả |
 |---|---|---|
-| `POST` | `/BookingController` | `action=reserve` (gói `planId` hoặc Tự chọn `customMin`), `cancel`, `extend` |
+| `POST` | `/BookingController` | `action=reserve` (gói `planId` hoặc Tự chọn `customMin`), `cancel` (`expectedRefund`: số popup đã hiện), `extend` |
 | `GET` | `/api/locker-map` | Khu, dãy, ngăn, giá theo cỡ, Tự chọn (khách xem được, chỉ đọc) |
 | `GET` | `/api/my-locker` | Lượt đang mở, thẻ, vân tay, lịch sử của người dùng |
 | `POST` | `/TopupController` | Yêu cầu nạp tiền VietQR; nhân viên duyệt hoặc từ chối |

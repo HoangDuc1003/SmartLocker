@@ -1,5 +1,6 @@
 package api;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import dao.DeviceAuthDao;
 import dao.DeviceDao;
@@ -20,6 +21,12 @@ import service.AuthText;
  *           "physical":true}   (false: the slot has no servo, the box only shows OK; see sql/demo_box.sql)
  *          {"result":"DENY","reason":"WRONG_CODE","attempts_left":3,"retry_after_sec":0,"message":"Sai ma\nCon 3 lan"}
  *          v3: {"result":"DENY","reason":"OVERDUE_UNPAID","deposit_id":120,"debt":9700,"overdue_fee":14700,...}
+ * v6, open many times: an optional "intent" for an ACTIVE booking (a RESERVED one always checks in):
+ *          "ASK"      -> {"result":"CHOOSE","deposit_id":120,"slot_code":"A04","choose_sec":15,"options":["OPEN","CHECKOUT"],
+ *                         "message":"A: Mo tu  * huy\nB: Tra tu A04"}   opens nothing, changes nothing, not a wrong guess
+ *          "OPEN"     -> UNLOCK phase ACCESS (the booking stays ACTIVE)
+ *          "CHECKOUT" or no intent (old firmware, Postman) -> UNLOCK phase PICKUP as before
+ *          An overdue-locked booking with a wallet >= 0 answers PICKUP to every intent.
  * HTTP 200 for every decision, 400 for a bad body, 401 for a bad key (SecurityFilter), 500 when the database failed.
  */
 @WebServlet(name = "DeviceAuthApi", urlPatterns = {"/api/device/auth"})
@@ -27,13 +34,34 @@ public class DeviceAuthApi extends HttpServlet {
 
     static final String PIN_FORMAT = "\\d{6}";
     static final String UID_FORMAT = "[0-9A-F]{4,20}";
+    static final String INTENT_FORMAT = "ASK|OPEN|CHECKOUT";
+    static final int CHOOSE_SEC = 15;   // the box waits this long for A or B, then cancels
+
+    /** The optional "intent" of a body: null when absent, "" when it is not one of ASK, OPEN, CHECKOUT. */
+    static String intent(JsonObject body) {
+        String intent = ApiJson.text(body, "intent");
+        if (intent == null) {
+            return null;
+        }
+        intent = intent.toUpperCase();
+        return intent.matches(INTENT_FORMAT) ? intent : "";
+    }
 
     /** The JSON reply of a Device_Authorize row; message is for the OLED or the phone. */
     static JsonObject reply(Map<String, Object> row, String message) {
         JsonObject reply = new JsonObject();
         String result = String.valueOf(row.get("result"));
         reply.addProperty("result", result);
-        if ("UNLOCK".equals(result)) {
+        if ("CHOOSE".equals(result)) {
+            // v6: a good credential of an ACTIVE booking; the caller sends it again with OPEN or CHECKOUT
+            ApiJson.copyInt(row, "deposit_id", reply);
+            reply.addProperty("slot_code", (String) row.get("slot_code"));
+            reply.addProperty("choose_sec", CHOOSE_SEC);
+            JsonArray options = new JsonArray();
+            options.add("OPEN");
+            options.add("CHECKOUT");
+            reply.add("options", options);
+        } else if ("UNLOCK".equals(result)) {
             reply.addProperty("phase", (String) row.get("phase"));
             ApiJson.copyInt(row, "deposit_id", reply);
             reply.addProperty("slot_code", (String) row.get("slot_code"));
@@ -61,6 +89,11 @@ public class DeviceAuthApi extends HttpServlet {
         int deviceId = (Integer) req.getAttribute("DEVICE_ID");   // from the API key, never from the body
         JsonObject body = ApiJson.body(req);
         String method = ApiJson.text(body, "method");
+        String intent = intent(body);
+        if ("".equals(intent)) {
+            ApiJson.error(res, 400, "BAD_REQUEST", "Sai du lieu");
+            return;
+        }
         String pin = null, uid = null;
         Integer sensorSlot = null;
         if ("PIN".equals(method)) {
@@ -87,7 +120,7 @@ public class DeviceAuthApi extends HttpServlet {
             return;
         }
         try {
-            Map<String, Object> row = new DeviceAuthDao().authorize(deviceId, method, pin, uid, sensorSlot, "DEVICE");
+            Map<String, Object> row = new DeviceAuthDao().authorize(deviceId, method, pin, uid, sensorSlot, "DEVICE", intent);
             JsonObject reply = reply(row, AuthText.oled(row));
             if ("UNLOCK".equals(row.get("result")) && row.get("deposit_id") != null) {
                 // one box serves many slots, only the configured one has a servo (sql/demo_box.sql)

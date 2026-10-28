@@ -47,26 +47,33 @@
       node.textContent = 'Còn ' + (h > 0 ? h + ' giờ ' + two(m) + ' phút' : m + ':' + two(s));
       node.classList.remove('is-late');
     }
-    // v3 D4: the free cancel window. When it ends the cancel form goes away, no reload needed.
-    var forms = root.querySelectorAll('form[data-cancel-from]');
+    // v3 D4: full refund in the first minutes, then a part until the hold ends, then the form goes away; no reload.
+    // While a confirm popup is open nothing changes: the popup keeps the amount it shows, and the server refuses
+    // a lower refund than the posted expectedRefund.
+    var forms = document.querySelector('dialog.dlg[open]') ? [] : root.querySelectorAll('form[data-cancel-from]');
     for (var k = 0; k < forms.length; k++) {
       var form = forms[k];
       var mins = Number(form.getAttribute('data-cancel-min')) || 0;
-      var until = parseUtc(form.getAttribute('data-cancel-from')).getTime() + mins * 60000;
-      var rest = Math.round((until - Date.now()) / 1000);
-      if (isNaN(rest)) {
+      var free = parseUtc(form.getAttribute('data-cancel-from')).getTime() + mins * 60000;
+      var hold = parseUtc(form.getAttribute('data-hold-until')).getTime();
+      var now = Date.now();
+      if (isNaN(free) || isNaN(hold)) {
         continue;
       }
-      if (rest <= 0 && document.querySelector('dialog.dlg[open]')) {
-        continue;   // its confirm popup (js/app.js) is open: keep the form, the server refuses a late cancel with a message
-      }
-      if (rest <= 0) {
+      if (now >= hold) {
         var note = document.createElement('span');
         note.className = 'muted';
-        note.textContent = 'Đã quá ' + mins + ' phút kể từ lúc đặt nên không hủy được nữa.';
+        note.textContent = 'Đã hết thời gian giữ chỗ nên không hủy được nữa.';
         form.parentNode.replaceChild(note, form);
         continue;
       }
+      if (now >= free && !form.hasAttribute('data-late')) {
+        form.setAttribute('data-late', '');
+        form.setAttribute('data-confirm', form.getAttribute('data-confirm-late'));
+        form.querySelector('[data-expected-refund]').value = form.getAttribute('data-late-refund');
+        form.querySelector('[data-cancel-label]').textContent = form.getAttribute('data-late-label');
+      }
+      var rest = Math.round(((form.hasAttribute('data-late') ? hold : free) - now) / 1000);
       var left = form.querySelector('[data-cancel-left]');
       if (left) {
         left.textContent = Math.floor(rest / 60) + ':' + two(rest % 60);

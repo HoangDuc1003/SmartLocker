@@ -420,6 +420,8 @@ canvas { display: block; max-width: 100%; }
               letter-spacing: .4em; font-variant-numeric: tabular-nums;
               font-family: Consolas, "Cascadia Mono", ui-monospace, monospace; }
 .kiosk__submit { width: 100%; min-height: 50px; margin-top: 14px; font-size: 16px; }
+.kiosk__choice .hint { margin: 6px 2px 0; }
+.kiosk__choice .link { display: block; margin: 16px auto 0; }
 .kiosk__result { margin: 16px 0 0; padding: 12px 14px; border-radius: var(--radius); border-left: 4px solid var(--border-strong);
                  background: var(--surface-2); }
 .kiosk__result.is-ok { background: var(--success-soft); border-left-color: var(--success); }

@@ -541,6 +541,15 @@
     return rule('cancel_min', 5);
   }
 
+  function cancelLatePct() {
+    return rule('cancel_late_pct', 50);
+  }
+
+  // a cancel after the free minutes: the same rounding as Deposit_Cancel (down to 100 VND)
+  function lateRefund(paid) {
+    return Math.floor((Number(paid) || 0) * cancelLatePct() / 10000) * 100;
+  }
+
   function bookingBuffer() {
     return rule('booking_buffer', 10000);
   }
@@ -706,7 +715,8 @@
 
   function rulesHint() {
     var refund = rule('no_show_refund_pct', 0);
-    return 'Giữ chỗ ' + holdMinutes() + ' phút · hủy trong ' + cancelMinutes() + ' phút đầu được hoàn đủ; ' +
+    return 'Giữ chỗ ' + holdMinutes() + ' phút · hủy trong ' + cancelMinutes() + ' phút đầu được hoàn đủ, sau đó tới hết giờ giữ chỗ hoàn ' +
+      cancelLatePct() + '%; ' +
       (refund > 0 ? 'không đến chỉ được hoàn ' + refund + '%. ' : 'không đến sẽ mất toàn bộ số tiền. ') +
       'Không đến 3 lần trong 7 ngày sẽ bị tạm khóa đặt trực tuyến.';
   }
@@ -829,7 +839,7 @@
     rows.push(['Số dư còn lại', '<span class="money">' + esc(money(choice.after)) + '</span>']);
     var refund = rule('no_show_refund_pct', 0);
     var rules = [
-      ['check', 'Được hủy trong ' + cancelMinutes() + ' phút, hoàn đủ.'],
+      ['check', 'Hủy trong ' + cancelMinutes() + ' phút đầu: hoàn đủ. Sau đó tới hết giờ giữ chỗ: hoàn ' + cancelLatePct() + '%.'],
       ['clock', 'Giữ chỗ ' + holdMinutes() + ' phút từ lúc đặt.'],
       ['alert', refund > 0 ? 'Không đến chỉ được hoàn ' + refund + '% số tiền.' : 'Không đến sẽ mất toàn bộ số tiền.']
     ];
@@ -848,16 +858,32 @@
     return new Date(parseUtc(slot.reserved_at).getTime() + cancelMinutes() * 60000);
   }
 
+  // spec v3 D4: full refund in the first minutes, then a part until the hold ends. expectedRefund is the amount the
+  // popup shows; Deposit_Cancel refuses a lower refund, so a popup left open across the boundary cannot cost money.
   function cancelForm(slot) {
-    var until = cancelUntil(slot);
-    if (until && until.getTime() <= Date.now()) {
-      return '<p class="hint">Đã quá ' + cancelMinutes() + ' phút kể từ lúc đặt nên không hủy được nữa.</p>';
+    var now = Date.now();
+    var hold = slot.hold_until ? parseUtc(slot.hold_until).getTime() : 0;
+    if (hold <= now) {
+      return '<p class="hint">Đã hết thời gian giữ chỗ nên không hủy được nữa.</p>';
     }
-    return formStart(cfg.bookingUrl, 'cancel', slot, 'Hủy lượt đặt ngăn ' + slot.slot_code + '? Số tiền đã trả được hoàn đủ vào ví.',
-        until ? ' data-cancel-until="' + until.getTime() + '"' : '') +
+    var until = cancelUntil(slot);
+    var free = until ? until.getTime() : 0;
+    var isFree = free > now;
+    var paid = Number(slot.paid_amount) || 0;
+    var late = lateRefund(paid);
+    var head = 'Hủy lượt đặt ngăn ' + slot.slot_code + '? ';
+    var fullText = head + 'Hoàn đủ ' + money(paid) + ' vào ví.';
+    var lateText = head + 'Đã quá ' + cancelMinutes() + ' phút kể từ lúc đặt nên chỉ hoàn ' + cancelLatePct() + '%: ' +
+      money(late) + ' vào ví.';
+    var lateLabel = 'hoàn ' + cancelLatePct() + '% (' + money(late) + ')';
+    return formStart(cfg.bookingUrl, 'cancel', slot, isFree ? fullText : lateText,
+        ' data-cancel-until="' + free + '" data-hold-until="' + hold + '" data-late-refund="' + late + '"' +
+        ' data-confirm-late="' + esc(lateText) + '" data-late-label="' + esc(lateLabel) + '"' + (isFree ? '' : ' data-late')) +
       hidden('depositId', slot.deposit_id) +
-      '<button type="submit" class="btn ghost btn--block">Hủy đặt' +
-        (until ? ' · <span data-cancel-left>' + esc(leftText(until.getTime())) + '</span>' : '') + '</button>' +
+      '<input type="hidden" name="expectedRefund" value="' + (isFree ? paid : late) + '" data-expected-refund>' +
+      '<button type="submit" class="btn ghost btn--block">Hủy đặt · <span data-cancel-label>' +
+        esc(isFree ? 'hoàn đủ' : lateLabel) + '</span> · <span data-cancel-left>' +
+        esc(leftText(isFree ? free : hold)) + '</span></button>' +
     '</form>';
   }
 
@@ -1930,20 +1956,30 @@
       nodes[i].textContent = c.text;
       nodes[i].classList.toggle('is-late', c.late);
     }
-    // the free cancel window (spec v3 D4): the button goes away when it ends, without a reload
-    var cancels = el.panel.querySelectorAll('form[data-cancel-until]');
+    // the cancel button (spec v3 D4): partial refund once the free minutes end, gone when the hold ends, no reload.
+    // Frozen while a confirm popup is open (dialog.dlg: the map's own panel is a dialog too).
+    var cancels = document.querySelector('dialog.dlg[open]') ? [] : el.panel.querySelectorAll('form[data-cancel-until]');
     for (var k = 0; k < cancels.length; k++) {
-      var end = Number(cancels[k].getAttribute('data-cancel-until'));
-      if (end <= Date.now() && !document.querySelector('dialog[open]')) {
+      var form = cancels[k];
+      var free = Number(form.getAttribute('data-cancel-until'));
+      var hold = Number(form.getAttribute('data-hold-until'));
+      var now = Date.now();
+      if (hold <= now) {
         var note = document.createElement('p');
         note.className = 'hint';
-        note.textContent = 'Đã quá ' + cancelMinutes() + ' phút kể từ lúc đặt nên không hủy được nữa.';
-        cancels[k].parentNode.replaceChild(note, cancels[k]);
-      } else {
-        var left = cancels[k].querySelector('[data-cancel-left]');
-        if (left) {
-          left.textContent = leftText(end);
-        }
+        note.textContent = 'Đã hết thời gian giữ chỗ nên không hủy được nữa.';
+        form.parentNode.replaceChild(note, form);
+        continue;
+      }
+      if (free <= now && !form.hasAttribute('data-late')) {
+        form.setAttribute('data-late', '');
+        form.setAttribute('data-confirm', form.getAttribute('data-confirm-late'));
+        form.querySelector('[data-expected-refund]').value = form.getAttribute('data-late-refund');
+        form.querySelector('[data-cancel-label]').textContent = form.getAttribute('data-late-label');
+      }
+      var left = form.querySelector('[data-cancel-left]');
+      if (left) {
+        left.textContent = leftText(form.hasAttribute('data-late') ? hold : free);
       }
     }
   }

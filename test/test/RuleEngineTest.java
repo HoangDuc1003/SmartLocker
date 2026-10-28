@@ -67,6 +67,20 @@ public class RuleEngineTest {
     }
 
     @Test
+    public void openDuringRentalIsNotSpoof() {
+        // v6: an ACCESS at the keypad opens the door and moves weight; a phone ACCESS comes with its SENT command
+        LockerSession box = session(10, -80, true, 40);   // rfid_ok: the box accepted the credential
+        box.setOpenSource("PIN");
+        assertEquals(engine.evaluate(box, healthy()).getLabel(), "NORMAL");
+        LockerSession phone = session(10, -80, false, 40);
+        phone.setOpenSource("PHONE");
+        phone.setCommandId(14L);
+        SessionContext ctx = healthy();
+        ctx.setCommandValid(true);
+        assertEquals(engine.evaluate(phone, ctx).getLabel(), "STAFF_OPEN");
+    }
+
+    @Test
     public void remoteOpenWithoutCommandIsSpoof() {
         LockerSession s = session(8, 0, false, 40);
         s.setOpenSource("REMOTE");

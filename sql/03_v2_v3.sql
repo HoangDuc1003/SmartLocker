@@ -817,6 +817,7 @@ SELECT v.k, v.v, v.n
 FROM (VALUES
     (N'HOLD_MIN',           15,    N'Giữ chỗ (phút) tính từ lúc đặt'),
     (N'CANCEL_FREE_MIN',    5,     N'Được hủy và hoàn 100% trong chừng này phút sau khi đặt'),
+    (N'CANCEL_LATE_REFUND_PCT', 50, N'Hủy sau CANCEL_FREE_MIN phút, trước khi hết giữ chỗ: hoàn chừng này phần trăm'),
     (N'NO_SHOW_REFUND_PCT', 0,     N'Phần trăm hoàn lại khi không đến'),
     (N'BOOKING_BUFFER',     10000, N'Số dư tối thiểu còn lại sau khi đặt (đ), dự phòng phụ phí'),
     (N'OVERDUE_FEE_PCT',    150,   N'Phụ phí một giờ trễ, phần trăm của giá một giờ'),
@@ -1193,22 +1194,30 @@ BEGIN
 END;
 GO
 
--- v3: only within CANCEL_FREE_MIN (5) minutes of booking, everything paid comes back
-CREATE OR ALTER PROCEDURE Deposit_Cancel @deposit_id BIGINT, @actor INT
+-- v3: within CANCEL_FREE_MIN (5) minutes of booking everything paid comes back; after that, until the hold
+-- ends, CANCEL_LATE_REFUND_PCT (50%) of it, rounded down to 100 VND, so a user who changes their mind still
+-- frees the slot instead of letting it run into a no-show. @expected_refund is the amount the confirm popup
+-- showed: a lower refund (the free minutes ended while the popup was open) is refused, nothing changes.
+CREATE OR ALTER PROCEDURE Deposit_Cancel @deposit_id BIGINT, @actor INT, @expected_refund BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
     DECLARE @window INT = ISNULL(dbo.fn_Config(N'CANCEL_FREE_MIN'), 5);
+    DECLARE @late_pct BIGINT = ISNULL(dbo.fn_Config(N'CANCEL_LATE_REFUND_PCT'), 50);
     BEGIN TRY
         BEGIN TRAN;
-        DECLARE @slot INT, @refund BIGINT, @reserved DATETIME2;
-        SELECT @slot = slot_id, @refund = paid_amount, @reserved = reserved_at
+        DECLARE @slot INT, @refund BIGINT, @reserved DATETIME2, @hold DATETIME2;
+        SELECT @slot = slot_id, @refund = paid_amount, @reserved = reserved_at, @hold = hold_until
         FROM Deposit WITH (UPDLOCK, HOLDLOCK)
         WHERE deposit_id = @deposit_id AND user_id = @actor AND status = N'RESERVED';
         IF @slot IS NULL
             THROW 50036, N'Nothing to cancel: not your reservation, or it already started', 1;
+        IF @hold <= SYSUTCDATETIME()
+            THROW 50047, N'The hold is over, the booking can no longer be cancelled', 1;
         IF @reserved <= DATEADD(MINUTE, -@window, SYSUTCDATETIME())
-            THROW 50047, N'The 5 minutes to cancel are over', 1;
+            SET @refund = @refund * @late_pct / 10000 * 100;
+        IF @expected_refund IS NOT NULL AND @refund < @expected_refund
+            THROW 50052, N'The free cancel time just ended, the refund is lower now', 1;
 
         UPDATE Deposit SET status = N'CANCELLED', ended_at = SYSUTCDATETIME()
         WHERE deposit_id = @deposit_id;
@@ -1445,7 +1454,8 @@ GO
 -- ===== Part F. Procedures of 03_v2_v3.sql with the v3 changes =====
 
 -- commands may have no slot (DELETE_FP); the reply carries the sensor slot and who asked.
--- A phone UNLOCK checks in or picks up only here, when the box takes it: an offline box changes nothing.
+-- A phone UNLOCK checks in, opens (ACCESS) or picks up only here, when the box takes it: an offline box changes nothing.
+-- v6: the reply carries the phase, so the box knows a phone ACCESS opens like a CHECK_IN.
 CREATE OR ALTER PROCEDURE RemoteCommand_TakePending @device_id INT
 AS
 BEGIN
@@ -1463,29 +1473,33 @@ BEGIN
       AND d.status <> CASE c.phase WHEN N'CHECK_IN' THEN N'RESERVED' ELSE N'ACTIVE' END;
 
     -- v3: the wallet may have changed since the PIN was typed; a phone PICKUP of a locked booking whose
-    -- owner is below zero after the late fee up to now is dropped, so the latch does not open
+    -- owner is below zero after the late fee up to now is dropped, so the latch does not open.
+    -- v6: a phone ACCESS of a booking that became overdue-locked meanwhile is dropped too (a locked slot only checks out)
     DECLARE @pickups TABLE (deposit_id BIGINT);
     INSERT INTO @pickups SELECT DISTINCT c.deposit_id
     FROM RemoteCommand c JOIN Deposit d ON d.deposit_id = c.deposit_id
-    WHERE c.device_id = @device_id AND c.status = N'PENDING' AND c.phase = N'PICKUP' AND d.status = N'ACTIVE';
+    WHERE c.device_id = @device_id AND c.status = N'PENDING' AND c.phase IN (N'PICKUP', N'ACCESS') AND d.status = N'ACTIVE';
     WHILE EXISTS (SELECT 1 FROM @pickups)
     BEGIN
         SELECT TOP 1 @dep = deposit_id FROM @pickups;
         EXEC Deposit_ChargeOverdue @dep;
         DELETE FROM @pickups WHERE deposit_id = @dep;
     END
-    DECLARE @dropped TABLE (command_id BIGINT, deposit_id BIGINT);
+    DECLARE @dropped TABLE (command_id BIGINT, deposit_id BIGINT, phase NVARCHAR(10));
     UPDATE c SET c.status = N'EXPIRED'
-    OUTPUT inserted.command_id, inserted.deposit_id INTO @dropped
+    OUTPUT inserted.command_id, inserted.deposit_id, inserted.phase INTO @dropped
     FROM RemoteCommand c JOIN Deposit d ON d.deposit_id = c.deposit_id JOIN Users u ON u.user_id = d.user_id
-    WHERE c.device_id = @device_id AND c.status = N'PENDING' AND c.phase = N'PICKUP'
-      AND d.locked_at IS NOT NULL AND u.balance < 0;
-    DECLARE @sys_tp INT = (SELECT user_id FROM Users WHERE username = N'system'), @cmd BIGINT, @cmd_note NVARCHAR(100);
+    WHERE c.device_id = @device_id AND c.status = N'PENDING' AND d.locked_at IS NOT NULL
+      AND ((c.phase = N'PICKUP' AND u.balance < 0) OR c.phase = N'ACCESS');
+    DECLARE @sys_tp INT = (SELECT user_id FROM Users WHERE username = N'system'), @cmd BIGINT, @cmd_note NVARCHAR(100),
+            @cmd_action NVARCHAR(30);
     WHILE EXISTS (SELECT 1 FROM @dropped)
     BEGIN
-        SELECT TOP 1 @cmd = command_id, @dep = deposit_id FROM @dropped;
-        SET @cmd_note = CONCAT(N'{"command_id":', @cmd, N',"reason":"OVERDUE_UNPAID"}');
-        EXEC Audit_Append @sys_tp, N'PHONE_PICKUP_DROPPED', N'DEPOSIT', @dep, @cmd_note;
+        SELECT TOP 1 @cmd = command_id, @dep = deposit_id, @phase = phase FROM @dropped;
+        SET @cmd_note = CONCAT(N'{"command_id":', @cmd, N',"reason":"',
+                               CASE @phase WHEN N'ACCESS' THEN N'OVERDUE_LOCKED' ELSE N'OVERDUE_UNPAID' END, N'"}');
+        SET @cmd_action = CONCAT(N'PHONE_', @phase, N'_DROPPED');
+        EXEC Audit_Append @sys_tp, @cmd_action, N'DEPOSIT', @dep, @cmd_note;
         DELETE FROM @dropped WHERE command_id = @cmd;
     END
 
@@ -1505,19 +1519,27 @@ BEGIN
             EXEC Deposit_CheckIn @device_id, @slot;
         ELSE IF @phase = N'PICKUP' AND EXISTS (SELECT 1 FROM Deposit WHERE deposit_id = @dep AND status = N'ACTIVE')
             EXEC Deposit_Complete @device_id, @slot;
+        ELSE IF @phase = N'ACCESS' AND EXISTS (SELECT 1 FROM Deposit WHERE deposit_id = @dep AND status = N'ACTIVE')
+            EXEC Audit_Append @sys_tp, N'ACCESS', N'DEPOSIT', @dep, N'{"method":"PHONE"}';   -- v6: one open during the rental
         DELETE FROM @work WHERE deposit_id = @dep;
     END
     COMMIT;
-    SELECT command_id, slot_code, action, sensor_slot, source FROM @taken;
+    SELECT command_id, slot_code, action, sensor_slot, source, phase FROM @taken;
 END;
 GO
 
 -- ===== Device_Authorize (v3: the overdue lock): one decision for the keypad, the phone page, the card and the finger =====
 -- First good try: RESERVED -> ACTIVE (CHECK_IN). Next good try: ACTIVE -> COMPLETED (PICKUP).
 -- @source = PHONE queues an UNLOCK instead; the booking changes when the box takes it (RemoteCommand_TakePending).
+-- v6, open many times: @intent says what a good try of an ACTIVE booking does.
+--   NULL / CHECKOUT  PICKUP (old firmware and the Postman collection send no intent)
+--   ASK              result CHOOSE: opens nothing, changes nothing, no guess; the box asks "A: Mo tu / B: Tra tu"
+--                    and sends the same credential again with OPEN or CHECKOUT
+--   OPEN             UNLOCK phase ACCESS: the booking stays ACTIVE, the slot OCCUPIED; an ACCESS audit row per open
+-- An overdue-locked booking (wallet >= 0) only checks out: every intent is PICKUP. A RESERVED one always checks in.
 CREATE OR ALTER PROCEDURE Device_Authorize
     @device_id INT, @method NVARCHAR(12), @pin NVARCHAR(10) = NULL, @card_uid NVARCHAR(32) = NULL,
-    @sensor_slot INT = NULL, @source NVARCHAR(10) = N'DEVICE'
+    @sensor_slot INT = NULL, @source NVARCHAR(10) = N'DEVICE', @intent NVARCHAR(10) = NULL
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
@@ -1526,6 +1548,7 @@ BEGIN
     DECLARE @deposit BIGINT, @status NVARCHAR(20), @slot_id INT, @slot_code NVARCHAR(20), @user INT,
             @booked NVARCHAR(12), @hold DATETIME2, @deposit_device INT;
     DECLARE @debt BIGINT = NULL, @fee BIGINT = NULL, @balance BIGINT;   -- v3: overdue lock
+    DECLARE @locked BIT = 0, @choose BIT = 0;                         -- v6: open many times
     DECLARE @log_method NVARCHAR(12) = CASE WHEN @source = N'PHONE' THEN N'PHONE' ELSE @method END;
     DECLARE @channel NVARCHAR(5) = CASE WHEN @source = N'PHONE' THEN N'PHONE' ELSE N'BOX' END;
     DECLARE @lock_name NVARCHAR(40) = CONCAT(N'auth-device-', @device_id);
@@ -1609,7 +1632,9 @@ BEGIN
             EXEC Deposit_ChargeOverdue @deposit;
             SELECT @fee = overdue_fee FROM Deposit WHERE deposit_id = @deposit;
             SET @balance = (SELECT balance FROM Users WHERE user_id = @user);
-            IF EXISTS (SELECT 1 FROM Deposit WHERE deposit_id = @deposit AND locked_at IS NOT NULL) AND @balance < 0
+            IF EXISTS (SELECT 1 FROM Deposit WHERE deposit_id = @deposit AND locked_at IS NOT NULL)
+                SET @locked = 1;
+            IF @locked = 1 AND @balance < 0
             BEGIN
                 SET @reason = N'OVERDUE_UNPAID';
                 SET @debt = -@balance;
@@ -1619,8 +1644,14 @@ BEGIN
 
     IF @reason IS NULL
     BEGIN
-        SET @phase = CASE WHEN @status = N'RESERVED' THEN N'CHECK_IN' ELSE N'PICKUP' END;
-        IF @source = N'PHONE'
+        SET @phase = CASE WHEN @status = N'RESERVED' THEN N'CHECK_IN'
+                          WHEN @locked = 1 THEN N'PICKUP'
+                          WHEN @intent = N'ASK' THEN NULL
+                          WHEN @intent = N'OPEN' THEN N'ACCESS'
+                          ELSE N'PICKUP' END;
+        IF @phase IS NULL
+            SET @choose = 1;                              -- v6: nothing opens, nothing changes, the next call says what to do
+        ELSE IF @source = N'PHONE'
         BEGIN
             -- a second good try before the box took the first command gets the same command
             SELECT TOP 1 @command = command_id FROM RemoteCommand
@@ -1635,8 +1666,16 @@ BEGIN
         END
         ELSE IF @phase = N'CHECK_IN'
             EXEC Deposit_CheckIn @device_id, @slot_code;  -- writes the CHECK_IN audit row
+        ELSE IF @phase = N'ACCESS'
+        BEGIN
+            -- v6: the booking stays ACTIVE and the slot OCCUPIED; one audit row per open ("Tu cua toi" counts them)
+            DECLARE @sys_au INT = (SELECT user_id FROM Users WHERE username = N'system');
+            DECLARE @access_note NVARCHAR(100) = CONCAT(N'{"method":"', @method, N'"}');
+            EXEC Audit_Append @sys_au, N'ACCESS', N'DEPOSIT', @deposit, @access_note;
+        END
         ELSE
             EXEC Deposit_Complete @device_id, @slot_code; -- writes the COMPLETE audit row, the slot is free again
+        -- a CHOOSE is a good credential too: logged as ok, never counted towards the lockout
         EXEC Auth_Log @device_id, @channel, @log_method, 1, NULL, @deposit, @left OUTPUT, @retry OUTPUT;
     END
     ELSE IF @reason = N'LOCKED_OUT'
@@ -1648,7 +1687,7 @@ BEGIN
         EXEC Auth_Log @device_id, @channel, @log_method, 0, @reason, @deposit, @left OUTPUT, @retry OUTPUT;
     COMMIT;
 
-    SELECT CASE WHEN @reason IS NULL THEN N'UNLOCK' ELSE N'DENY' END AS result,
+    SELECT CASE WHEN @reason IS NOT NULL THEN N'DENY' WHEN @choose = 1 THEN N'CHOOSE' ELSE N'UNLOCK' END AS result,
            @phase AS phase, @reason AS reason,
            CASE WHEN @reason IS NULL OR @reason IN (N'METHOD_MISMATCH', N'EXPIRED', N'ACCOUNT_LOCKED', N'OVERDUE_UNPAID') THEN @deposit END AS deposit_id,
            CASE WHEN @reason IS NULL THEN @slot_code END AS slot_code,

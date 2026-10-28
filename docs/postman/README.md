@@ -50,16 +50,23 @@ và lấy đồ.
 | 16 | Cùng lượt, mở bằng `/api/kiosk/unlock` | `OVERDUE_UNPAID`, không có lệnh, câu tiếng Việt "Bạn còn nợ X đ" |
 | 17 | Gia hạn lượt bị khóa; `v2pin` đặt cỡ S, mở, gia hạn 90 phút | lỗi 50048 (flash), không trừ tiền; gia hạn trừ 2 × giá một giờ của S, flash "Đã trừ ... vào ví", `due_at` lùi 90 phút, lấy đồ `overdue_fee` = 0 |
 | 12 | `v3overdue` tạo yêu cầu nạp (nợ + 20.000 đ), `admin` duyệt, mở lại | ví 20.000 đ, `UNLOCK PICKUP` có `overdue_fee` bằng phụ phí của 11, lượt `COMPLETED`, ngăn trống |
-| 13 | `v2pin` đặt rồi hủy ngay; `v3late` hủy lượt đặt 6 phút trước | hoàn 100%; lỗi 50047 (flash), lượt vẫn `RESERVED`; cuối cùng mở và lấy đồ để trả ngăn |
+| 13 | `v2pin` đặt rồi hủy ngay; `v3late` hủy lượt đặt 6 phút trước (còn trong 15 phút giữ chỗ) | hoàn 100%; gửi số hoàn đủ đã cũ thì lỗi 50052 (flash), lượt vẫn `RESERVED`, ví không đổi; gửi đúng số thì hoàn `CANCEL_LATE_REFUND_PCT` (50%, làm tròn xuống 100 đ), lượt `CANCELLED` |
 | 14 | `v3poor` đặt cỡ S 2 giờ | lỗi 50046 (flash), không có lượt, ví vẫn 12.000 đ |
 | 15 | `v3esc` | chờ `LockerMonitor`: lượt `escalated`, `locked`, phụ phí ≥ 49 giờ; `admin` thấy cảnh báo `OVERDUE_ESCALATED` (lượt, người dùng) và dòng audit `OVERDUE_ESCALATE` có `alert_id` |
 
-- Lỗi nghiệp vụ của các form (50046, 50047, 50048) hiện ở thanh flash của trang mà form chuyển tới; Postman theo redirect
+- Lỗi nghiệp vụ của các form (50046, 50048, 50052) hiện ở thanh flash của trang mà form chuyển tới; Postman theo redirect
   và tìm đúng câu tiếng Việt trong HTML.
 - Nạp tiền: không có API duyệt riêng, Postman dùng chính form `TopupController` (người dùng `action=create`, nhân viên
   `action=approve`, tài khoản nhân viên trong biến `staff_user`, mặc định `admin`). Bước tạo yêu cầu tắt theo redirect để
   đọc mã yêu cầu trong header `Location`.
 - Các kịch bản tự tìm gói 2 giờ theo `duration_min` (không theo tên gói) và chỉ chọn ngăn cỡ S, vì chúng kiểm tra giá của cỡ S.
+
+## Kịch bản 18: mở nhiều lần (v6)
+Nằm ngay sau kịch bản 1 trong thư mục Scenarios, dùng lại `v2pin` (không có bước đoán sai, nên không ảnh hưởng kịch bản 5).
+Đặt cỡ S, `auth` lần 1 → `CHECK_IN`; `intent: ASK` → `CHOOSE` (có `options` OPEN/CHECKOUT, `choose_sec` 15, không có `phase`);
+`OPEN` → `UNLOCK ACCESS`, ngăn vẫn `OCCUPIED`, "Tủ của tôi" vẫn `ACTIVE` với `access_count` 1; lặp lại `ASK`/`OPEN` → `access_count` 2;
+`ASK` rồi `CHECKOUT` → `UNLOCK PICKUP`, `overdue_fee` 0, ngăn trống, không còn lượt mở. Các kịch bản cũ không gửi `intent`
+nên vẫn nhận `PICKUP` như trước.
 
 ## Lưu ý
 

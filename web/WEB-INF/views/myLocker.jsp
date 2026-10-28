@@ -54,7 +54,10 @@
             <%-- v3: size of the slot, one-hour price (extension) and late fee; the fee fixed at booking time wins --%>
             <c:set var="sz" value="${sizes[d.sizeCode]}"/>
             <c:set var="lateRate" value="${not empty d.overdueRate ? d.overdueRate : (not empty sz ? sz.overdueRate : 0)}"/>
-            <c:set var="canCancel" value="${d.status == 'RESERVED' and not empty d.reservedAt and d.reservedAt.time + cancelMin * 60000 gt now.time}"/>
+            <%-- v3 D4: cancel while the slot is held; 100% back in the first cancelMin minutes, then cancelLatePct% (rounded down to 100 VND) --%>
+            <c:set var="canCancel" value="${d.status == 'RESERVED' and not empty d.holdUntil and d.holdUntil.time gt now.time}"/>
+            <c:set var="freeCancel" value="${canCancel and not empty d.reservedAt and d.reservedAt.time + cancelMin * 60000 gt now.time}"/>
+            <fmt:formatNumber var="lateRefund" value="${(d.paidAmount * cancelLatePct - (d.paidAmount * cancelLatePct) % 10000) / 100}" maxFractionDigits="0" groupingUsed="false"/>
             <article class="panel ml-booking" aria-labelledby="bk${d.depositId}">
                 <div class="ml-booking__head">
                     <h3 id="bk${d.depositId}">Ngăn <c:out value="${d.slotCode}"/> <span class="muted"><c:out value="${d.bankCode}"/></span></h3>
@@ -119,6 +122,7 @@
                         <dt>Bắt đầu gửi</dt><dd><ui:dt value="${d.startedAt}"/></dd>
                         <dt>Hạn trả</dt><dd><ui:dt value="${d.dueAt}"/>
                             <c:if test="${not empty d.dueAt}"> · <span data-countdown="<c:out value='${d.dueAt}'/>" data-late-text="Đã quá hạn trả">&nbsp;</span></c:if></dd>
+                        <dt>Đã mở tủ</dt><dd class="num">${d.accessCount} lần <span class="muted">(ngoài lần cất đồ)</span></dd>
                     </c:if>
                 </dl>
 
@@ -183,19 +187,26 @@
 
                 <div class="ml-actions">
                     <c:choose>
-                        <c:when test="${d.status == 'RESERVED' and canCancel}">
-                            <%-- v3 D4: free cancel only in the first minutes; user-pages.js removes the form when the time is up --%>
+                        <c:when test="${canCancel}">
+                            <%-- user-pages.js switches to the partial refund when the free minutes end and removes the form when the hold ends;
+                                 expectedRefund is what the popup showed, the procedure refuses a lower refund --%>
+                            <c:set var="fullText">Hủy lượt đặt ngăn <c:out value='${d.slotCode}'/>? Hoàn đủ <fmt:formatNumber value="${d.paidAmount}" groupingUsed="true"/> đ vào ví.</c:set>
+                            <c:set var="lateText">Hủy lượt đặt ngăn <c:out value='${d.slotCode}'/>? Đã quá ${cancelMin} phút kể từ lúc đặt nên chỉ hoàn ${cancelLatePct}%: <fmt:formatNumber value="${lateRefund}" groupingUsed="true"/> đ vào ví.</c:set>
+                            <c:set var="lateLabel">Hoàn ${cancelLatePct}% (<fmt:formatNumber value="${lateRefund}" groupingUsed="true"/> đ) nếu hủy trong</c:set>
                             <form method="post" action="${ctx}/BookingController" data-cancel-from="<c:out value='${d.reservedAt}'/>" data-cancel-min="${cancelMin}"
-                                  data-confirm="Hủy lượt đặt ngăn <c:out value='${d.slotCode}'/>? Số tiền đã trả được hoàn đủ vào ví." data-confirm-ok="Hủy đặt" data-confirm-danger>
+                                  data-hold-until="<c:out value='${d.holdUntil}'/>" data-late-refund="${lateRefund}"
+                                  data-confirm-late="${lateText}" data-late-label="${lateLabel}" ${freeCancel ? '' : 'data-late'}
+                                  data-confirm="${freeCancel ? fullText : lateText}" data-confirm-ok="Hủy đặt" data-confirm-danger>
                                 <input type="hidden" name="action" value="cancel">
                                 <input type="hidden" name="depositId" value="${d.depositId}">
                                 <input type="hidden" name="back" value="list">
+                                <input type="hidden" name="expectedRefund" value="${freeCancel ? d.paidAmount : lateRefund}" data-expected-refund>
                                 <button type="submit" class="ghost">Hủy đặt</button>
-                                <span class="muted">Còn hủy được: <b class="num" data-cancel-left>&nbsp;</b></span>
+                                <span class="muted"><span data-cancel-label>${freeCancel ? 'Hoàn đủ nếu hủy trong' : lateLabel}</span>: <b class="num" data-cancel-left>&nbsp;</b></span>
                             </form>
                         </c:when>
                         <c:when test="${d.status == 'RESERVED'}">
-                            <span class="muted">Đã quá ${cancelMin} phút kể từ lúc đặt nên không hủy được nữa.</span>
+                            <span class="muted">Đã hết thời gian giữ chỗ nên không hủy được nữa.</span>
                         </c:when>
                         <c:when test="${d.locked}">
                             <span class="muted">Không gia hạn được khi tủ đã khóa vì quá hạn.</span>

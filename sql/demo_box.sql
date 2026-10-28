@@ -9,8 +9,8 @@
 
 -- ===== Settings =====
 DECLARE @device_code   NVARCHAR(30)  = N'LOCKER-01';  -- the real ESP32 box
-DECLARE @banks         NVARCHAR(400) = N'CANT-A';     -- banks it manages, comma separated, e.g. N'CANT-A,CANT-B'
-DECLARE @physical_bank NVARCHAR(20)  = N'CANT-A';     -- bank + slot of the compartment with the servo;
+DECLARE @banks         NVARCHAR(400) = N'LIB-A';     -- banks it manages, comma separated, e.g. N'CANT-A,CANT-B'
+DECLARE @physical_bank NVARCHAR(20)  = N'LIB-A';     -- bank + slot of the compartment with the servo;
 DECLARE @physical_slot NVARCHAR(20)  = N'A01';        --   both NULL: every slot of the box moves the servo
 -- ====================
 

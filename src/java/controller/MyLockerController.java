@@ -47,6 +47,9 @@ public class MyLockerController extends HttpServlet {
             Map<Long, Long> refunds = deposits.noShowRefunds(me.getUserId());   // NO_SHOW rows: what came back
             for (Deposit d : deposits.listByUser(me.getUserId())) {
                 if ("RESERVED".equals(d.getStatus()) || "ACTIVE".equals(d.getStatus())) {
+                    if ("ACTIVE".equals(d.getStatus())) {
+                        d.setAccessCount(deposits.accessCount(d.getDepositId()));   // v6: opens during the rental
+                    }
                     open.add(d);
                 } else if (history.size() < HISTORY_MAX) {
                     history.add(d);
@@ -63,6 +66,7 @@ public class MyLockerController extends HttpServlet {
             AppConfigDao config = new AppConfigDao();
             req.setAttribute("cardDeposit", config.get("CARD_DEPOSIT", Pricing.CARD_DEPOSIT));
             req.setAttribute("cancelMin", config.getInt("CANCEL_FREE_MIN", Pricing.CANCEL_FREE_MIN));
+            req.setAttribute("cancelLatePct", config.getInt("CANCEL_LATE_REFUND_PCT", Pricing.CANCEL_LATE_REFUND_PCT));
             req.setAttribute("holdMin", config.getInt("HOLD_MIN", Pricing.HOLD_MIN));
             req.setAttribute("escalateHours", config.getInt("ESCALATE_HOURS", Pricing.ESCALATE_HOURS));
             UserDao users = new UserDao();

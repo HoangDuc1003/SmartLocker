@@ -14,6 +14,7 @@ public final class Pricing {
     public static final long CARD_DEPOSIT = 10000;     // once per card, taken when the card is enrolled at the box
     public static final int HOLD_MIN = 15;             // a reservation waits this long after booking
     public static final int CANCEL_FREE_MIN = 5;       // cancel with a full refund only this soon after booking
+    public static final int CANCEL_LATE_REFUND_PCT = 50; // a later cancel, before the hold ends, gets this much back
     public static final int NO_SHOW_REFUND_PCT = 0;    // a no-show loses everything
     public static final long BOOKING_BUFFER = 10000;   // left in the wallet after booking, for a late fee
     public static final int OVERDUE_FEE_PCT = 150;     // one late hour costs 150% of one hour
@@ -89,6 +90,11 @@ public final class Pricing {
     /** A reservation can be cancelled for a full refund while less than cancelMin minutes have passed. */
     public static boolean canCancel(long reservedAtMs, int cancelMin, long nowMs) {
         return nowMs < reservedAtMs + cancelMin * 60_000L;
+    }
+
+    /** Refund of a cancel after the free minutes (before the hold ends): latePct of the price, rounded down to 100 VND. */
+    public static long lateCancelRefund(long paid, int latePct) {
+        return paid * latePct / 10000 * 100;
     }
 
     /** Handed to the staff when more than escalateHours have passed since due_at. */

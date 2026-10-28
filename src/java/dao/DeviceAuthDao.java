@@ -43,8 +43,17 @@ public class DeviceAuthDao {
     /** method = PIN, CARD or FINGERPRINT; source = DEVICE (the box itself) or PHONE (the /k page). */
     public Map<String, Object> authorize(int deviceId, String method, String pin, String cardUid,
                                          Integer sensorSlot, String source) throws SQLException {
+        return authorize(deviceId, method, pin, cardUid, sensorSlot, source, null);
+    }
+
+    /**
+     * v6: intent = ASK (an ACTIVE booking answers CHOOSE), OPEN (UNLOCK phase ACCESS), CHECKOUT or null (PICKUP).
+     * A RESERVED booking always checks in, an overdue-locked one always picks up.
+     */
+    public Map<String, Object> authorize(int deviceId, String method, String pin, String cardUid,
+                                         Integer sensorSlot, String source, String intent) throws SQLException {
         try (Connection conn = DbContext.getConnection();
-             CallableStatement cs = conn.prepareCall("{call Device_Authorize(?, ?, ?, ?, ?, ?)}")) {
+             CallableStatement cs = conn.prepareCall("{call Device_Authorize(?, ?, ?, ?, ?, ?, ?)}")) {
             cs.setInt(1, deviceId);
             cs.setString(2, method);
             cs.setString(3, pin);
@@ -55,6 +64,7 @@ public class DeviceAuthDao {
                 cs.setInt(5, sensorSlot);
             }
             cs.setString(6, source);
+            cs.setString(7, intent);
             return firstRow(cs);
         }
     }

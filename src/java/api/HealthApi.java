@@ -22,7 +22,8 @@ import javax.servlet.http.HttpServletResponse;
  *
  * Request:  {"firmware":"2.0","uptime_sec":1234}
  * Reply:    {"interval_sec":3,
- *            "commands":[{"command_id":15,"action":"UNLOCK","slot_code":"A04","open_sec":8,"message":"Mo tu\n(dien thoai)","physical":true},
+ *            "commands":[{"command_id":15,"action":"UNLOCK","slot_code":"A04","open_sec":8,"message":"Mo tu\n(dien thoai)","physical":true,
+ *                         "phase":"ACCESS"},   (v6: phone opens carry CHECK_IN, ACCESS or PICKUP; staff opens have no phase)
  *                        {"command_id":16,"action":"DELETE_FP","sensor_slot":7}],
  *            "server_time":"2026-10-17 07:03:00",
  *            "blocked_cards":["04A1B2C3"], "reserved":[{"slot_code":"A02","card_uid":"0499AABB"}]}   (v1 keys, kept for ScenarioSender)
@@ -73,6 +74,9 @@ public class HealthApi extends HttpServlet {
                 if ("UNLOCK".equals(action)) {
                     c.addProperty("slot_code", (String) cmd.get("slot_code"));
                     c.addProperty("open_sec", AuthText.OPEN_SEC);
+                    if (cmd.get("phase") != null) {
+                        c.addProperty("phase", (String) cmd.get("phase"));
+                    }
                     c.addProperty("message", "PHONE".equals(cmd.get("source")) ? "Mo tu\n(dien thoai)" : "Mo tu\n(tu xa)");
                     // the commands are already SENT and the bookings moved on: a failed check keeps the servo shut, never a 500
                     boolean physical = false;

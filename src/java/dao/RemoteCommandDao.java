@@ -27,7 +27,7 @@ public class RemoteCommandDao {
         }
     }
 
-    /** Hands the pending commands to the device in the heartbeat reply. Keys: command_id, slot_code, action, sensor_slot, source. */
+    /** Hands the pending commands to the device in the heartbeat reply. Keys: command_id, slot_code, action, sensor_slot, source, phase. */
     public List<Map<String, Object>> takePending(int deviceId) throws SQLException {
         // the procedure ends with one SELECT; it also checks in or picks up phone bookings, so skip any update count first
         List<Map<String, Object>> list = new ArrayList<>();
@@ -50,6 +50,7 @@ public class RemoteCommandDao {
                     int sensorSlot = rs.getInt("sensor_slot");
                     cmd.put("sensor_slot", rs.wasNull() ? null : sensorSlot);
                     cmd.put("source", rs.getString("source"));
+                    cmd.put("phase", rs.getString("phase"));   // CHECK_IN, ACCESS, PICKUP for a phone open, else null
                     list.add(cmd);
                 }
             }

@@ -2,8 +2,8 @@
 
 Tài liệu mô tả đường đi của dữ liệu và vòng đời một lượt gửi đồ, đúng với code hiện tại (v3).
 Hợp đồng API chi tiết của thiết bị nằm ở [spec/smart-locker-v2.md](spec/smart-locker-v2.md) mục 4; phần thay đổi của v3
-(giá theo cỡ, hủy 5 phút, không đến mất toàn bộ, khóa quá hạn và nợ, chuyển xử lý) ở [spec/smart-locker-v3.md](spec/smart-locker-v3.md).
-Mọi con số (15 phút giữ chỗ, 5 phút hủy, 0% hoàn khi không đến, đệm 10.000 đ, phụ phí 150%, 48 giờ) nằm trong bảng `AppConfig`.
+(giá theo cỡ, hủy 5 phút hoàn đủ rồi hoàn 50% tới hết giữ chỗ, không đến mất toàn bộ, khóa quá hạn và nợ, chuyển xử lý) ở [spec/smart-locker-v3.md](spec/smart-locker-v3.md).
+Mọi con số (15 phút giữ chỗ, 5 phút hủy hoàn đủ, 50% khi hủy muộn, 0% hoàn khi không đến, đệm 10.000 đ, phụ phí 150%, 48 giờ) nằm trong bảng `AppConfig`.
 
 ---
 
@@ -60,11 +60,14 @@ flowchart TD
     Mine --> Open1{"Mở lần 1 tại hộp (auth) hoặc điện thoại (/k/LOCKER-01)"}
     Open1 -- "CHECK_IN" --> Active["ACTIVE, ngăn OCCUPIED, due_at = lúc mở + thời gian của gói (hoặc custom_min)"]
     Held -- "Hủy trong 5 phút đầu" --> Cancel["CANCELLED, hoàn 100%"]
-    Held -- "Hủy sau 5 phút" --> Err2["50047: không hủy được"]
+    Held -- "Hủy sau 5 phút, còn giữ chỗ" --> CancelLate["CANCELLED, hoàn 50% (làm tròn xuống 100 đ)"]
+    Held -- "Popup cũ vẫn ghi hoàn đủ" --> Err2["50052: chưa hủy, hiện lại số mới"]
+    Err2 --> Held
     Held -- "Hết 15 phút" --> NoShow["NO_SHOW, không hoàn (0%)"]
     Active -- "Gia hạn trả tiền (tối đa 3 lần)" --> Active
-    Active --> Open2{"Mở lần 2"}
-    Open2 -- "PICKUP" --> Done["COMPLETED, ngăn AVAILABLE"]
+    Active --> Open2{"Mở trong lúc thuê: hộp hỏi A: Mở tủ / B: Trả tủ (CHOOSE)"}
+    Open2 -- "A: OPEN -> ACCESS, audit ACCESS" --> Active
+    Open2 -- "B: CHECKOUT -> PICKUP" --> Done["COMPLETED, ngăn AVAILABLE"]
     Active -- "Quá due_at + ân hạn" --> Locked["Khóa quá hạn: locked_at, phụ phí mỗi giờ trễ, ví có thể âm"]
     Locked -- "Gia hạn" --> Err3["50048: không gia hạn được"]
     Locked -- "Mở khi ví âm" --> Deny["DENY OVERDUE_UNPAID, kèm số nợ"]
@@ -103,12 +106,35 @@ sequenceDiagram
     participant Box as Hộp ESP32
     participant Api as DeviceAuthApi
     participant Db as Device_Authorize
-    Box->>Api: X-API-Key + {"method":"PIN","pin":"..."}
+    Box->>Api: X-API-Key + {"method":"PIN","pin":"...","intent":"ASK"}
     Api->>Api: kiểm tra định dạng (400 nếu sai)
     Api->>Db: device_id lấy từ khóa, không lấy từ body
-    Db-->>Api: UNLOCK (CHECK_IN / PICKUP) hoặc DENY + reason
-    Api-->>Box: message ASCII cho màn OLED, open_sec, attempts_left, retry_after_sec
+    Db-->>Api: UNLOCK (CHECK_IN / ACCESS / PICKUP), CHOOSE hoặc DENY + reason
+    Api-->>Box: message ASCII cho màn LCD, open_sec, attempts_left, retry_after_sec
+    Note over Box: CHOOSE: LCD "A: Mo tu / B: Tra tu", giữ PIN / UID thẻ / ô vân tay vừa đọc
+    Box->>Api: cùng body, "intent":"OPEN" (phím A) hoặc "CHECKOUT" (phím B)
+    Api-->>Box: UNLOCK ACCESS (lượt vẫn ACTIVE) hoặc UNLOCK PICKUP (kết thúc lượt)
 ```
+
+**Mở nhiều lần trong một lượt thuê (v6).** Lần xác thực đầu của lượt `RESERVED` vẫn là `CHECK_IN`. Sau đó, mỗi lần xác thực
+lượt `ACTIVE` (chưa bị khóa quá hạn) với `"intent":"ASK"` nhận `{"result":"CHOOSE",...}`: không mở, không đổi gì, không tính
+là đoán sai. Hộp hiện `A: Mo tu` / `B: Tra tu`, giữ thông tin vừa đọc và gửi lại cùng xác thực với `"intent":"OPEN"` hoặc
+`"CHECKOUT"`; bấm `*` hoặc 15 giây không bấm thì hủy.
+
+| `intent` | Lượt `RESERVED` | Lượt `ACTIVE` chưa khóa | Lượt bị khóa, ví ≥ 0 | Lượt bị khóa, ví âm |
+|---|---|---|---|---|
+| không gửi (firmware cũ, Postman cũ) | `UNLOCK CHECK_IN` | `UNLOCK PICKUP` | `UNLOCK PICKUP` | `DENY OVERDUE_UNPAID` |
+| `ASK` | `UNLOCK CHECK_IN` | `CHOOSE` | `UNLOCK PICKUP` | `DENY OVERDUE_UNPAID` |
+| `OPEN` | `UNLOCK CHECK_IN` | `UNLOCK ACCESS` | `UNLOCK PICKUP` | `DENY OVERDUE_UNPAID` |
+| `CHECKOUT` | `UNLOCK CHECK_IN` | `UNLOCK PICKUP` | `UNLOCK PICKUP` | `DENY OVERDUE_UNPAID` |
+
+- `ACCESS`: lượt vẫn `ACTIVE`, ngăn vẫn `OCCUPIED`, hạn trả không đổi; mỗi lần mở ghi một dòng audit `ACCESS`
+  (`{"method":"PIN"}`, `CARD`, `FINGERPRINT` hoặc `PHONE`). "Tủ của tôi" đếm các dòng này: "Đã mở tủ N lần".
+- Hộp mở cho `ACCESS` giống `CHECK_IN`: nhả chốt, bấm D để khóa, tự khóa sau thời gian mở cửa; vẫn theo cờ `physical`.
+- Trang điện thoại `/k/{device_code}` làm giống hệt: gửi mật mã với `ASK`, lượt đang thuê hiện hai nút "Mở tủ" / "Trả tủ",
+  rồi gửi lại cùng mật mã với `OPEN` / `CHECKOUT`. Lệnh `UNLOCK` trong heartbeat có thêm `"phase"` (`CHECK_IN`, `ACCESS`,
+  `PICKUP`); dòng audit `ACCESS` của điện thoại chỉ ghi khi hộp nhận lệnh. Lệnh `ACCESS` của lượt vừa bị khóa quá hạn bị bỏ
+  (audit `PHONE_ACCESS_DROPPED`).
 
 - Lý do từ chối thường gặp: `WRONG_CODE`, `UNKNOWN_CARD`, `UNKNOWN_FINGER`, `CARD_BLOCKED`, `METHOD_MISMATCH`, `LOCKED_OUT`,
   `OVERDUE_UNPAID` (v3: lượt bị khóa quá hạn và ví đang âm; trả thêm `debt` và `overdue_fee`).
@@ -157,7 +183,11 @@ nhau (ví dụ `CANT-A` A01–A15 và `CANT-B` B01–B12), vì hộp nhận lư�
 | Hộp mất kết nối | Hộp `OFFLINE` | `THROW 50035` | Báo lỗi |
 | Không đến | Hết 15 phút giữ chỗ | `Deposit_ExpireNoShow`: không hoàn (0%), audit `NO_SHOW` ghi số hoàn 0 | Lượt `NO_SHOW`, ngăn trống |
 | Hủy | Người dùng hủy trong 5 phút đầu, chưa mở lần đầu | Hoàn đủ số đã trả | Lượt `CANCELLED`, ngăn trống |
-| Hủy muộn | Đã quá 5 phút kể từ lúc đặt | `THROW 50047`; nút hủy đã ẩn trên web | Lượt vẫn `RESERVED` |
+| Hủy muộn | Quá 5 phút nhưng còn trong 15 phút giữ chỗ | Hoàn `CANCEL_LATE_REFUND_PCT` (50%) số đã trả, làm tròn xuống 100 đ; nút hủy trên web tự đổi số tiền khi qua mốc 5 phút | Lượt `CANCELLED`, ngăn trống ngay cho người khác |
+| Hủy với số tiền cũ | Popup đang ghi "hoàn đủ" thì qua mốc 5 phút (form gửi `expectedRefund`) | `THROW 50052`, không đổi gì | Lượt vẫn `RESERVED`, người dùng hủy lại với số mới |
+| Hủy sau giờ giữ chỗ | `hold_until` đã qua (trước khi `LockerMonitor` kịp chuyển `NO_SHOW`) | `THROW 50047` | Lượt thành `NO_SHOW` ở chu kỳ kế tiếp |
+| Mở trong lúc thuê | Lượt `ACTIVE`, chưa khóa; hộp/điện thoại gửi `ASK` rồi `OPEN` | `CHOOSE` (không đổi gì), rồi `UNLOCK ACCESS`, audit `ACCESS` | Lượt vẫn `ACTIVE`, "Tủ của tôi" tăng số lần mở |
+| Trả tủ | Lượt `ACTIVE`, chưa khóa; `ASK` rồi `CHECKOUT` (hoặc không gửi `intent`) | `Deposit_Complete`, audit `COMPLETE` | Lượt `COMPLETED`, ngăn trống |
 | Gia hạn | Lượt `ACTIVE`, chưa khóa, dưới 3 lần | Trừ giá một giờ của cỡ × số giờ bắt đầu thêm; thiếu tiền `50049` | `due_at` lùi, audit `EXTEND` |
 | Quá hạn | `due_at` + ân hạn đã qua | `Deposit_ChargeOverdue`: đặt `locked_at`, trừ phụ phí mỗi giờ trễ (cho phép âm), audit `OVERDUE_LOCK`, `OVERDUE_FEE` | Lượt vẫn `ACTIVE`, ngăn vẫn `OCCUPIED`, hiện ổ khóa |
 | Mở khi đang nợ | Lượt bị khóa, ví âm | `DENY OVERDUE_UNPAID` kèm `debt` (không tính lần sai) | Tủ không mở |

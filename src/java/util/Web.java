@@ -129,7 +129,8 @@ public class Web {
             {"Fingerprint not found or not yours", "Không tìm thấy vân tay hoặc vân tay không phải của bạn"},
             // v3 (sql/03_v2_v3.sql)
             {"After booking at least 10,000 VND must stay in the wallet", "Sau khi đặt, ví phải còn ít nhất 10.000 đ để dự phòng phụ phí quá hạn. Hãy nạp thêm tiền."},
-            {"The 5 minutes to cancel are over", "Đã quá 5 phút kể từ lúc đặt nên không hủy được nữa."},
+            {"The hold is over, the booking can no longer be cancelled", "Đã hết thời gian giữ chỗ nên không hủy được nữa."},
+            {"The free cancel time just ended, the refund is lower now", "Thời gian hủy được hoàn đủ vừa hết nên số tiền hoàn bây giờ thấp hơn. Lượt đặt chưa bị hủy; hãy xem lại số tiền rồi hủy lại."},
             {"The booking is overdue and locked, it cannot be extended", "Lượt gửi đã quá hạn và tủ đang bị khóa nên không gia hạn được. Hãy nạp tiền và tới lấy đồ."},
             {"Insufficient balance to extend", "Số dư không đủ để gia hạn. Hãy nạp thêm tiền."},
             // "Tự chọn" (custom duration)
