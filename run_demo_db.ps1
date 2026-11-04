@@ -47,6 +47,12 @@ foreach ($s in $scripts) {
         Write-Error "Script file not found: $filePath"
         exit 1
     }
+    if ($Database -ne "PRJ301_LOCKER" -and -not $Azure) {
+        # the scripts name PRJ301_LOCKER: without this, -Database SL_X would still drop and rebuild the real database
+        $text = [IO.File]::ReadAllText($filePath, [Text.Encoding]::UTF8).Replace("PRJ301_LOCKER", $Database)
+        $filePath = Join-Path $tmpDir $s
+        [IO.File]::WriteAllText($filePath, $text, $utf8Bom)
+    }
     if ($Azure) {
         $text = [IO.File]::ReadAllText($filePath, [Text.Encoding]::UTF8)
         $text = [regex]::Replace($text, '(?s)USE master;.*?CREATE DATABASE PRJ301_LOCKER;', '')

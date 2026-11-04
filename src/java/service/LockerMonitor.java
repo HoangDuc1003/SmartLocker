@@ -163,6 +163,8 @@ public class LockerMonitor implements ServletContextListener {
         MailService mail = MailService.of(sce.getServletContext());
         if (mail.isEnabled()) {
             LOG.info("Due reminder e-mails on, settings from " + mail.source());
+        } else {
+            LOG.info("Due reminder e-mails off, no mail settings found");
         }
         DueReminder reminder = new DueReminder(mail);
         mailer.scheduleWithFixedDelay(() -> {

@@ -1,0 +1,3 @@
+# Differences a refactor may leave behind, one per line: <file>|<+ or ->|<the exact line of diff.txt without its sign>
+# Only 03_constraints, 05_parameters, 06_objects and 07_modules; never data, identity, columns, indexes or THROW text.
+# A line that the diff no longer needs makes compare.ps1 fail.
