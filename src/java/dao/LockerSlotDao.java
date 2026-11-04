@@ -215,6 +215,24 @@ public class LockerSlotDao {
         }
     }
 
+    /**
+     * True when another bank of the same device already has this slot code: the box finds a slot by
+     * device + slot code (see LockerBankDao.slotCodeClash). exceptSlotId = 0 when creating.
+     */
+    public boolean codeExistsOnDevice(int bankId, String slotCode, int exceptSlotId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM LockerSlot o JOIN LockerBank ob ON ob.bank_id = o.bank_id "
+                + "JOIN LockerBank b ON b.device_id = ob.device_id "
+                + "WHERE b.bank_id = ? AND ob.bank_id <> b.bank_id AND o.slot_code = ? AND o.locker_slot_id <> ?";
+        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, bankId);
+            ps.setString(2, slotCode);
+            ps.setInt(3, exceptSlotId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
     /** exceptSlotId = 0 when creating. */
     public boolean codeExists(int bankId, String slotCode, int exceptSlotId) throws SQLException {
         String sql = "SELECT COUNT(*) FROM LockerSlot WHERE bank_id = ? AND slot_code = ? AND locker_slot_id <> ?";

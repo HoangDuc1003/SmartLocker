@@ -13,6 +13,7 @@ public class LockerSession {
     private boolean rfidOk;
     private double stayMin;
     private String slotCode;   // optional, A01
+    private String bankCode;   // optional, only needed when the box manages two banks with the same slot code
     private String cardUid;   // optional
     private String openSource;   // RFID or REMOTE
     private Long commandId;   // only for REMOTE
@@ -37,6 +38,8 @@ public class LockerSession {
     public void setStayMin(double stayMin) { this.stayMin = stayMin; }
     public String getSlotCode() { return slotCode; }
     public void setSlotCode(String slotCode) { this.slotCode = slotCode; }
+    public String getBankCode() { return bankCode; }
+    public void setBankCode(String bankCode) { this.bankCode = bankCode; }
     public String getCardUid() { return cardUid; }
     public void setCardUid(String cardUid) { this.cardUid = cardUid; }
     public String getOpenSource() { return openSource; }

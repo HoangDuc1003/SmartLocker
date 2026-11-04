@@ -11,6 +11,7 @@
     <script src="${pageContext.request.contextPath}/js/theme.js"></script>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/js/vendor/leaflet/leaflet.css">
+    <c:if test="${not empty mapbox.token}"><link rel="stylesheet" href="${pageContext.request.contextPath}/js/vendor/mapbox/mapbox-gl.css"></c:if>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/locker-map.css">
 </head>
 <body class="map-page">
@@ -38,10 +39,17 @@
       data-login-url="${ctx}/LoginController"
       data-booking-url="${ctx}/BookingController"
       data-mylocker-url="${ctx}/MyLockerController"
-      data-topup-url="${ctx}/TopupController">
+      data-topup-url="${ctx}/TopupController"
+      data-mapbox-token="<c:out value='${mapbox.token}'/>"
+      data-mapbox-light="<c:out value='${mapbox.styleLight}'/>"
+      data-mapbox-dark="<c:out value='${mapbox.styleDark}'/>">
 
     <div class="map-canvas" data-ref="mapCanvas" role="region" aria-label="Bản đồ các khu vực tủ"></div>
-    <p class="map-notice glass glass--pill" data-ref="mapNotice" role="status" hidden>Không tải được nền bản đồ (cần Internet). Các khu vẫn nằm đúng vị trí.</p>
+    <div class="map-top">
+        <%-- where the user's locker is, filled by js/locker-map.js (renderPlace) --%>
+        <div class="place-alert" data-ref="place" hidden></div>
+        <p class="map-notice glass glass--pill" data-ref="mapNotice" role="status" hidden>Không tải được nền bản đồ (cần Internet). Các khu vẫn nằm đúng vị trí.</p>
+    </div>
 
     <div class="map-left">
         <div class="search-pill glass glass--pill glass--refract">
@@ -157,7 +165,9 @@
 <script src="${ctx}/js/glass-motion.js"></script>
 <script src="${ctx}/js/auth-modal.js"></script>
 <script src="${ctx}/js/vendor/leaflet/leaflet.js"></script>
+<c:if test="${not empty mapbox.token}"><script src="${ctx}/js/vendor/mapbox/mapbox-gl.js"></script></c:if>
 <script src="${ctx}/js/area-map.js"></script>
+<c:if test="${not empty mapbox.token}"><script src="${ctx}/js/area-map-mapbox.js"></script></c:if>
 <script src="${ctx}/js/user-pages.js"></script>
 <script src="${ctx}/js/glass-panel.js"></script>
 <script src="${ctx}/js/locker-map.js"></script>

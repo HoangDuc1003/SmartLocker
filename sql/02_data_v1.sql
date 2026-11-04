@@ -821,12 +821,17 @@ AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
     DECLARE @sys INT = (SELECT user_id FROM Users WHERE username = N'system');
-    DECLARE @was NVARCHAR(20) = (SELECT status FROM Device WHERE device_id = @device_id);
+    DECLARE @was NVARCHAR(20);
+    DECLARE @old TABLE (status NVARCHAR(20));
     BEGIN TRAN;
+    -- the old status comes from the UPDATE itself (row already locked), so a Device_MarkOffline running in
+    -- between cannot leave the device ACTIVE with its DEVICE_OFFLINE alert still open
     UPDATE Device
     SET last_seen = SYSUTCDATETIME(),
         status = CASE WHEN status = N'OFFLINE' THEN N'ACTIVE' ELSE status END   -- MAINTENANCE stays
+    OUTPUT deleted.status INTO @old
     WHERE device_id = @device_id;
+    SELECT @was = status FROM @old;
     IF @was = N'OFFLINE'
     BEGIN
         UPDATE Alert SET status = N'RESOLVED'
@@ -906,13 +911,13 @@ BEGIN
 END;
 GO
 
--- only PENDING ones: a SENT command is already on the device and waits for its session
+-- only those not yet on the device (PENDING, or a card scan AWAITING_EMAIL): a SENT command waits for its session
 CREATE OR ALTER PROCEDURE RemoteCommand_Expire
 AS
 BEGIN
     SET NOCOUNT ON;
     UPDATE RemoteCommand SET status = N'EXPIRED'
-    WHERE status = N'PENDING' AND expires_at < SYSUTCDATETIME();
+    WHERE status IN (N'PENDING', N'AWAITING_EMAIL') AND expires_at < SYSUTCDATETIME();
 END;
 GO
 
@@ -1070,19 +1075,28 @@ END;
 GO
 
 -- a session ended: the items are out, the slot is free again
-CREATE OR ALTER PROCEDURE Deposit_Complete @device_id INT, @slot_code NVARCHAR(20)
+-- @locker_slot_id (optional): a box that manages several banks may see the same slot code twice; callers that
+-- know the slot pass it so the right booking is closed
+CREATE OR ALTER PROCEDURE Deposit_Complete @device_id INT, @slot_code NVARCHAR(20), @locker_slot_id INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
     DECLARE @sys INT = (SELECT user_id FROM Users WHERE username = N'system');
     DECLARE @id BIGINT, @slot_id INT;
+    BEGIN TRAN;
+    -- read under UPDLOCK, HOLDLOCK: a keypad PICKUP and a remote command racing on the same booking must not
+    -- both close it (the second one waits, then finds no ACTIVE row)
     SELECT TOP 1 @id = d.deposit_id, @slot_id = d.slot_id
-    FROM Deposit d
+    FROM Deposit d WITH (UPDLOCK, HOLDLOCK)
     JOIN LockerSlot s ON s.locker_slot_id = d.slot_id
     JOIN LockerBank b ON b.bank_id = s.bank_id
-    WHERE d.status = N'ACTIVE' AND s.slot_code = @slot_code AND b.device_id = @device_id;
-    IF @id IS NULL RETURN;
-    BEGIN TRAN;
+    WHERE d.status = N'ACTIVE' AND s.slot_code = @slot_code AND b.device_id = @device_id
+      AND (@locker_slot_id IS NULL OR d.slot_id = @locker_slot_id);
+    IF @id IS NULL
+    BEGIN
+        COMMIT;   -- keeps @@TRANCOUNT balanced for callers that run inside their own transaction
+        RETURN;
+    END
     UPDATE Deposit SET status = N'COMPLETED', ended_at = SYSUTCDATETIME() WHERE deposit_id = @id;
     UPDATE LockerSlot SET status = N'AVAILABLE' WHERE locker_slot_id = @slot_id AND status <> N'MAINTENANCE';
     EXEC Audit_Append @sys, N'COMPLETE', N'DEPOSIT', @id, NULL;

@@ -450,6 +450,10 @@ void authorize(JsonDocument& body) {
     pinBuffer = "";
     idleDrawn = false;      // drawIdle shows "A: Mo tu / B: Tra tu"
     Serial.printf("CHOOSE slot %s\n", chooseSlot.c_str());
+  } else if (result == "CONFIRM_EMAIL") {
+    // nothing opens now: the owner confirms from the e-mail, the UNLOCK then comes with a heartbeat like a phone open
+    Serial.printf("CONFIRM_EMAIL slot %s\n", (const char*) (reply["slot_code"] | ""));
+    show(message, 5000);
   } else if (result == "UNLOCK") {
     String phase = reply["phase"] | "";
     if (reply["physical"] | true) {

@@ -82,7 +82,7 @@ public class ScenarioSender {
 
     private static JsonObject session(String slot, String card, boolean rfidOk,
                                       double doorSec, double weightG, double stayMin) {
-        SimpleDateFormat utc = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat utc = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");   // keep millis: whole seconds land before the command
         utc.setTimeZone(TimeZone.getTimeZone("UTC"));   // the server compares with SYSUTCDATETIME()
         JsonObject s = new JsonObject();
         s.addProperty("seq", ++seq);

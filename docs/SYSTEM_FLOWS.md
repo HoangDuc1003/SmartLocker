@@ -169,6 +169,38 @@ nhau (ví dụ `CANT-A` A01–A15 và `CANT-B` B01–B12), vì hộp nhận lư�
 - Báo mất thẻ: thẻ chuyển `LOST`, UID nằm trong `blocked_cards` của heartbeat; dùng lại sẽ bị `CARD_BLOCKED`.
 - Xóa vân tay: máy chủ xếp lệnh `DELETE_FP` cho hộp; nếu đang có lượt gửi bằng vân tay trên hộp đó, lượt đó nhận mã đăng ký mới.
 
+### 2.4 Quét thẻ, xác nhận qua Gmail, rồi mở tủ
+Áp dụng khi máy chủ có cấu hình email và chủ thẻ có địa chỉ thật (địa chỉ mẫu `@smartlocker.edu.vn` không nhận được thư nên thẻ của các tài khoản mẫu vẫn mở ngay như cũ, thiếu cấu hình email cũng vậy).
+
+```mermaid
+sequenceDiagram
+    participant Box as Hộp tủ
+    participant API as /api/device/auth
+    participant Mail as Gmail
+    participant Page as Trang /c/{token}
+    Box->>API: CARD + UID (intent OPEN, CHECKOUT, hoặc lượt RESERVED)
+    API-->>Box: CONFIRM_EMAIL, LCD "Mo Gmail/web de xac nhan mo tu"
+    Note over API: RemoteCommand trạng thái AWAITING_EMAIL, 5 phút, chỉ lưu SHA-256 của liên kết
+    API->>Mail: card_confirm, chứa liên kết một lần
+    Mail->>Page: chủ thẻ mở liên kết (GET không đổi gì)
+    Page->>API: POST approve, lệnh thành PENDING trong 2 phút
+    Box->>API: heartbeat
+    API-->>Box: UNLOCK kèm phase, lượt thuê đổi trạng thái lúc này
+```
+
+- Quét lại trong lúc chờ: không gửi thêm thư. Chọn thao tác khác (Mở tủ rồi lại Trả tủ): thư mới, liên kết cũ hết hiệu lực.
+- Bấm "Không phải tôi": lệnh hết hiệu lực, ghi `CARD_CONFIRM_REJECTED` vào nhật ký, tủ không mở.
+- Không có thư (gõ sai địa chỉ, máy chủ thư lỗi): chủ tủ đăng nhập rồi xác nhận ngay trên bản đồ, cùng một thủ tục `CardConfirm_Decide`. Nếu gửi thư lỗi, lần quét sau gửi lại thư mới.
+- Hộp mất kết nối lúc xác nhận: yêu cầu vẫn chờ, xác nhận lại được khi hộp có kết nối.
+- Thời gian chờ xác nhận không trừ vào giờ giữ chỗ: quét thẻ đúng hạn thì `hold_until` được kéo tới hết thời gian chờ, nên không bị tính là không đến.
+- Địa chỉ email được lưu như người dùng gõ, chưa có bước xác minh: gõ nhầm địa chỉ của người khác thì người đó nhận được thư và liên kết.
+
+### 2.5 Đi sai chỗ: cảnh báo trên bản đồ
+- Bản đồ (`/api/locker-map` trả `my_booking`) cho ghim khu có tủ của người dùng phát sóng và gắn nhãn "Tủ của bạn".
+- Quét thẻ ở hộp khác: `DENY` lý do `WRONG_PLACE`, LCD ghi dãy đúng, không tính vào lượt khóa 5 lần sai; chủ thẻ nhận thư `wrong_place` (tối đa một thư mỗi 10 phút) và bản đồ hiện "Bạn quét thẻ sai hộp tủ" trong 10 phút hoặc đến khi quét đúng.
+- Theo GPS (vị trí chỉ nằm trong trình duyệt, không gửi đi): đứng trong 120 m của khu khác là "Bạn đang đi sai chỗ" kèm đường nối và nút Chỉ đường; đứng đúng khu là "Bạn đến đúng chỗ rồi". GPS sai số trên 300 m thì không kết luận đúng hay sai.
+- Nền bản đồ: Mapbox khi có `config/mapbox.local.properties` (token `pk.*`); thiếu token, token sai hoặc mất mạng thì tự về Leaflet và OpenStreetMap, ghim và sóng giữ nguyên.
+
 ### 2.4 Bảng tình huống
 
 | Tình huống | Điều kiện | Hệ thống làm gì | Kết quả |

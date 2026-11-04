@@ -184,6 +184,28 @@ public class LockerBankDao {
         }
     }
 
+    /**
+     * A slot code that the bank would share with another bank of the device (null when none). The box, its
+     * keypad and Deposit_CheckIn / Deposit_Complete find a slot by device + slot code, so the codes of all banks
+     * of one device must not repeat (same rule as sql/demo_box.sql, error 50904).
+     */
+    public String slotCodeClash(int bankId, Integer deviceId) throws SQLException {
+        if (bankId <= 0 || deviceId == null || deviceId <= 0) {
+            return null;                                  // a new bank has no slots yet; no device, no clash
+        }
+        String sql = "SELECT TOP 1 s.slot_code FROM LockerSlot s "
+                + "WHERE s.bank_id = ? AND EXISTS (SELECT 1 FROM LockerSlot o JOIN LockerBank ob ON ob.bank_id = o.bank_id "
+                + "WHERE ob.device_id = ? AND ob.bank_id <> s.bank_id AND o.slot_code = s.slot_code) "
+                + "ORDER BY s.slot_code";
+        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, bankId);
+            ps.setInt(2, deviceId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        }
+    }
+
     public boolean codeExists(String bankCode, int exceptBankId) throws SQLException {
         String sql = "SELECT COUNT(*) FROM LockerBank WHERE bank_code = ? AND bank_id <> ?";
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {

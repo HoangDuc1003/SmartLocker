@@ -5,6 +5,7 @@ public class Alert {
 
     private int alertId;
     private int deviceId;
+    private String deviceCode;   // joined, list page only
     private Long sessionId;   // null for DEVICE_OFFLINE
     private String source;   // RULE or ML
     private String label;
@@ -17,6 +18,8 @@ public class Alert {
     public void setAlertId(int alertId) { this.alertId = alertId; }
     public int getDeviceId() { return deviceId; }
     public void setDeviceId(int deviceId) { this.deviceId = deviceId; }
+    public String getDeviceCode() { return deviceCode; }
+    public void setDeviceCode(String deviceCode) { this.deviceCode = deviceCode; }
     public Long getSessionId() { return sessionId; }
     public void setSessionId(Long sessionId) { this.sessionId = sessionId; }
     public String getSource() { return source; }

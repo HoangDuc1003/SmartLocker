@@ -12,6 +12,20 @@ public class RuleEngine {
     public static final double ITEM_LEFT_G = 50;      // grams still in the slot after pick-up
     public static final double SPOOF_WEIGHT_G = 50;   // weight moved although the door sensor says it never opened
     public static final long CLOCK_AHEAD_SEC = 300;   // measured_at more than 5 minutes in the future
+    public static final long COMMAND_TTL_SEC = 30 * 60;   // a remote/phone command must be used within 30 minutes
+    /**
+     * A box clock may lag the server: the firmware stamps whole seconds and its RTC drifts between NTP syncs.
+     * A session stamped up to 60 s before the command was created still uses it. This opens no replay hole:
+     * the command is bound to one device and slot, must be SENT (it reached the box) and is used once:
+     * AlertService claims it with RemoteCommandDao.markDone (UPDATE ... WHERE status = 'SENT', one row or none),
+     * and a second session carrying the same command becomes SUSPECTED_SPOOF.
+     */
+    public static final long COMMAND_CLOCK_LAG_SEC = 60;
+
+    /** True when a session measured secondsAfterIssue after its command was created falls in the command's window. */
+    public static boolean isCommandInWindow(long secondsAfterIssue) {
+        return secondsAfterIssue >= -COMMAND_CLOCK_LAG_SEC && secondsAfterIssue <= COMMAND_TTL_SEC;
+    }
 
     public Verdict evaluate(LockerSession s, SessionContext ctx) {
         // 1 sensor fault, 2 remote open, 3 lost card, 4 the six behaviour labels

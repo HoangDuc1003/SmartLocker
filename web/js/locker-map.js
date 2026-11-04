@@ -53,7 +53,12 @@
     bookingUrl: root.getAttribute('data-booking-url') || 'BookingController',
     myLockerUrl: root.getAttribute('data-mylocker-url') || 'MyLockerController',
     topupUrl: root.getAttribute('data-topup-url') || 'TopupController',
-    loginUrl: root.getAttribute('data-login-url') || 'LoginController'
+    loginUrl: root.getAttribute('data-login-url') || 'LoginController',
+    mapbox: {
+      token: root.getAttribute('data-mapbox-token') || '',
+      light: root.getAttribute('data-mapbox-light') || '',
+      dark: root.getAttribute('data-mapbox-dark') || ''
+    }
   };
 
   var state = {
@@ -289,6 +294,9 @@
       var tone = areaTone(a);
       var where = dist !== null ? formatDistance(dist) : (a.location || a.area_code);
       var tags = [];
+      if (myBooking() && myBooking().area_code === a.area_code) {
+        tags.push('<span class="gtag gtag--mine">Tủ của bạn</span>');
+      }
       if (dist !== null && a === sorted[0]) {
         tags.push('<span class="gtag">Gần nhất</span>');
       }
@@ -312,7 +320,165 @@
     if (!areaMap || !state.data) {
       return;
     }
-    state.placed = areaMap.update(list, state.sheetMode === 'detail' ? state.area : null);
+    state.placed = areaMap.update(list, state.sheetMode === 'detail' ? state.area : null,
+      myBooking() ? myBooking().area_code : null);
+  }
+
+  /* ---------- where the user's locker is: the waves on its pin, the "wrong place" warning ---------- */
+
+  var PLACE_RADIUS_M = 120;      // standing at an area
+  var PLACE_MAX_ACC_M = 300;     // a position worse than this (a PC on Wi-Fi) never says "right" or "wrong"
+  var place = { dismissed: null, sig: null, html: '', kind: null, route: '', flown: false };
+  // the same words as CardMail.action on the server
+  var CARD_ACTION = { CHECK_IN: 'cất đồ vào ngăn', ACCESS: 'mở ngăn (lượt thuê vẫn tiếp tục)', PICKUP: 'lấy đồ và trả tủ (lượt thuê kết thúc)' };
+  // result of CardConfirm_Decide -> [the message, is it an error]
+  var CARD_ANSWER = {
+    OK: ['Đã xác nhận. Hộp sẽ mở trong vài giây.', false],
+    DONE_BEFORE: ['Yêu cầu này đã được xác nhận trước đó.', false],
+    REJECTED: ['Đã hủy, tủ không mở. Nếu bạn không quét thẻ, hãy báo nhân viên để khóa thẻ.', false],
+    DEVICE_OFFLINE: ['Hộp đang mất kết nối nên chưa mở được. Hãy thử lại sau ít giây.', true],
+    EXPIRED: ['Yêu cầu đã hết hiệu lực. Hãy quét lại thẻ tại hộp tủ.', true]
+  };
+
+  function myBooking() {
+    return state.data && state.data.my_booking ? state.data.my_booking : null;
+  }
+
+  // kind: confirm | here | wrong | info. A card scan waiting for its answer comes first. The GPS says "here" before a
+  // wrong scan, so that one does not nag someone who walked to the right area.
+  function placeNow(b, mine) {
+    var dist = distanceTo(mine);
+    var key = b.area_code + '|' + b.slot_code;
+    if (b.confirm_until) {
+      return { kind: 'confirm', dist: dist, sig: 'confirm|' + b.confirm_until + '|' + key };
+    }
+    var sure = dist !== null && geo.pos.acc <= PLACE_MAX_ACC_M;
+    var nearest = sure ? sortedAreas(areas()).filter(hasCoords)[0] : null;
+    var gap = nearest ? distanceTo(nearest) : null;
+    // two areas can be 30 m apart (DOMA, CANT): "here" only when this one is the nearest, or the position cannot tell them apart
+    if (sure && dist <= PLACE_RADIUS_M && (nearest.area_code === b.area_code || dist - gap <= geo.pos.acc)) {
+      return { kind: 'here', dist: dist, sig: 'here|' + key };
+    }
+    if (b.wrong_scan) {
+      return { kind: 'wrong', scan: true, near: b.wrong_area, dist: dist, sig: 'scan|' + b.wrong_scan + '|' + key };
+    }
+    if (sure && gap <= PLACE_RADIUS_M && nearest.area_code !== b.area_code) {
+      return { kind: 'wrong', near: nearest.name, dist: dist, sig: 'wrong|' + nearest.area_code + '|' + key };
+    }
+    return { kind: 'info', dist: dist, sig: 'info|' + key };
+  }
+
+  function placeHtml(b, mine, now) {
+    var name = b.area_name;
+    var slot = 'ngăn ' + b.slot_code + ', dãy ' + b.bank_code;
+    var far = now.dist !== null ? ' (cách bạn ' + formatDistance(now.dist) + ')' : '';
+    var where = (b.status === 'RESERVED' ? 'Bạn giữ ' : 'Đồ của bạn ở ') + slot + ', ' + name + far + '.';
+    var title, text, ico;
+    if (now.kind === 'confirm') {
+      return '<span class="place-alert__ico">' + icon('unlock') + '</span>' +
+        '<div class="place-alert__body"><b>Xác nhận mở tủ</b><p>' +
+          esc('Thẻ của bạn vừa được quét tại hộp tủ để ' + (CARD_ACTION[b.confirm_phase] || 'mở tủ') + '. Tủ của bạn: ' + slot + ', ' + name +
+              '. Chưa thấy email? Bạn có thể xác nhận ngay ở đây.') + '</p></div>' +
+        '<button type="button" class="round-btn lg-hover place-alert__close" data-place-close aria-label="Đóng thông báo vị trí tủ">' + icon('close') + '</button>' +
+        '<div class="place-alert__do">' +
+          '<button type="button" class="chip lg-hover place-alert__yes" data-card-answer="approve">' + icon('unlock') + 'Xác nhận mở tủ</button>' +
+          '<button type="button" class="chip lg-hover" data-card-answer="reject">Không phải tôi</button>' +
+        '</div>';
+    }
+    if (now.kind === 'wrong') {
+      ico = 'alert';
+      title = now.scan ? 'Bạn quét thẻ sai hộp tủ' : 'Bạn đang đi sai chỗ';
+      text = (now.scan ? 'Thẻ vừa được quét ở ' + (now.near || 'một hộp khác') : 'Bạn đang ở ' + now.near) + '. ' + where;
+    } else if (now.kind === 'here') {
+      ico = 'check';
+      title = 'Bạn đến đúng chỗ rồi';
+      text = 'Tủ của bạn ở ngay khu này: ' + slot + ', ' + name + '.';
+    } else {
+      ico = 'box';
+      title = 'Tủ của bạn ở ' + name;
+      text = (b.status === 'RESERVED' ? 'Bạn giữ ' : 'Đồ của bạn ở ') + slot + far + '. Khu có tủ của bạn có vòng sóng trên bản đồ.';
+    }
+    return '<span class="place-alert__ico">' + icon(ico) + '</span>' +
+      '<div class="place-alert__body"><b>' + esc(title) + '</b><p>' + esc(text) + '</p></div>' +
+      '<button type="button" class="round-btn lg-hover place-alert__close" data-place-close aria-label="Đóng thông báo vị trí tủ">' + icon('close') + '</button>' +
+      (now.kind === 'here' ? '' : '<div class="place-alert__do">' +
+        '<button type="button" class="chip lg-hover" data-place-show>' + icon('locate') + 'Xem tủ của tôi</button>' +
+        (hasCoords(mine) ? '<a class="chip lg-hover" href="' + esc(directionsUrl(mine)) + '" target="_blank" rel="noopener noreferrer">' +
+          icon('route') + 'Chỉ đường</a>' : '') + '</div>');
+  }
+
+  function renderPlace() {
+    var b = myBooking();
+    drawPlace(b);
+    // whoever has a locker sees its waves first; after the warning is drawn, so the pin stays out from under it
+    if (b && !place.flown && areaMap && !state.userChoseArea && !readParam('area')) {
+      place.flown = true;
+      areaMap.focus(b.area_code);
+    }
+  }
+
+  function drawPlace(b) {
+    var mine = b ? areas().filter(function (a) { return a.area_code === b.area_code; })[0] : null;
+    var now = b ? placeNow(b, mine) : null;
+    if (areaMap) {
+      var line = now && now.kind === 'wrong' && geo.pos && hasCoords(mine);
+      var key = line ? [geo.pos.lat, geo.pos.lng, mine.area_code].join() : '';
+      if (key !== place.route) {
+        place.route = key;
+        areaMap.setRoute(line ? geo.pos : null, line ? { lat: mine.latitude, lng: mine.longitude } : null);
+      }
+    }
+    if (!now || place.dismissed === now.sig) {
+      el.place.hidden = true;
+      el.place.innerHTML = '';
+      place.html = '';
+      place.kind = null;
+      return;
+    }
+    place.sig = now.sig;        // also with the same text: a second wrong scan has a new mark, which the X must close
+    var html = placeHtml(b, mine, now);
+    if (html === place.html) {
+      return;                   // a redraw would lose the focus of a button
+    }
+    var fresh = place.kind !== now.kind;
+    place.html = html;
+    place.kind = now.kind;
+    el.place.className = 'place-alert place-alert--' + now.kind;
+    el.place.setAttribute('role', now.kind === 'wrong' || now.kind === 'confirm' ? 'alert' : 'status');
+    el.place.innerHTML = html;
+    el.place.hidden = false;
+    if (fresh) {
+      motion.pop(el.place);
+    }
+  }
+
+  // the answer to a card scan from the map: MyLockerController asks the same procedure as the page behind the e-mail
+  function answerCard(button) {
+    var body = new URLSearchParams();
+    body.set('action', 'cardConfirm');
+    body.set('decision', button.getAttribute('data-card-answer'));
+    Array.prototype.forEach.call(el.place.querySelectorAll('[data-card-answer]'), function (b) {
+      b.disabled = true;
+    });
+    fetch(cfg.myLockerUrl, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json' }, body: body })
+      .then(function (res) {
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+        return res.json();
+      })
+      .then(function (answer) {
+        var said = CARD_ANSWER[answer.result] || CARD_ANSWER.EXPIRED;
+        toast(said[0], said[1] ? 'error' : undefined);
+      })
+      .catch(function () {
+        toast('Chưa gửi được câu trả lời. Hãy thử lại.', 'error');
+      })
+      .then(function () {
+        place.html = '';        // the buttons work again if the wait goes on (box offline, no network)
+        state.etag = null;      // the wait is over: the next answer must come in full, not as a 304
+        load();
+      });
   }
 
   /* ---------- one area: head, quick tiles, chips, banks ---------- */
@@ -1179,6 +1345,7 @@
     renderSync();
     renderBalance();
     fitSheet();
+    renderPlace();
   }
 
   /* ---------- nearest area (spec v3 D6): the position stays in the browser, it is never sent ---------- */
@@ -1281,7 +1448,7 @@
     // the first fix shows the nearest area on the map, unless the visitor already chose one or the link names one
     if (!geo.picked) {
       geo.picked = true;
-      var nearest = state.data && !state.userChoseArea && !readParam('area') ? sortedAreas(areas())[0] : null;
+      var nearest = state.data && !myBooking() && !state.userChoseArea && !readParam('area') ? sortedAreas(areas())[0] : null;
       if (nearest && distanceTo(nearest) !== null && areaMap) {
         areaMap.focus(nearest.area_code);
       }
@@ -1289,6 +1456,7 @@
     renderAreas();
     renderNear();
     renderHead();
+    renderPlace();
   }
 
   function onGeoError(err) {
@@ -1463,10 +1631,11 @@
 
   // the px the islands cover, so a pin flown to stays in the free part of the map
   function mapPadding() {
+    var alertBottom = el.place.hidden ? 0 : el.place.getBoundingClientRect().bottom + 8;   // the pin stays out from under the warning
     if (isPhone()) {
-      return { left: 0, right: 56, top: 64, bottom: window.innerHeight - el.sheet.getBoundingClientRect().top };
+      return { left: 0, right: 56, top: Math.max(64, alertBottom), bottom: window.innerHeight - el.sheet.getBoundingClientRect().top };
     }
-    return { left: el.sheet.getBoundingClientRect().right, right: 72, top: 0, bottom: 76 };
+    return { left: el.sheet.getBoundingClientRect().right, right: 72, top: alertBottom, bottom: 76 };
   }
 
   /* ---------- selection ---------- */
@@ -1659,12 +1828,23 @@
 
   function onClick(e) {
     var target = e.target.closest('[data-area],[data-slot],[data-filter],[data-filter-clear],[data-close],[data-refresh],' +
-      '[data-geo-start],[data-map-fit],[data-map-me],[data-map-zoom],[data-sheet-list],[data-auth-reserve]');
+      '[data-geo-start],[data-map-fit],[data-map-me],[data-map-zoom],[data-sheet-list],[data-auth-reserve],' +
+      '[data-place-show],[data-place-close],[data-card-answer]');
     if (!target) {
       return;
     }
     if (target.hasAttribute('data-area')) {
       selectArea(target.getAttribute('data-area'));
+    } else if (target.hasAttribute('data-card-answer')) {
+      answerCard(target);
+    } else if (target.hasAttribute('data-place-show')) {
+      if (myBooking()) {
+        selectArea(myBooking().area_code);
+        motion.bump(el.mapCanvas.querySelector('.pin.is-target .ring'));
+      }
+    } else if (target.hasAttribute('data-place-close')) {
+      place.dismissed = place.sig;
+      renderPlace();
     } else if (target.hasAttribute('data-map-fit')) {
       if (areaMap) {
         areaMap.fitAll();
@@ -1990,7 +2170,7 @@
   collectRefs();
   if (window.AreaMap) {
     areaMap = window.AreaMap.create(el.mapCanvas, {
-      esc: esc, tone: areaTone, onSelect: selectArea, padding: mapPadding, notice: el.mapNotice
+      esc: esc, tone: areaTone, onSelect: selectArea, padding: mapPadding, notice: el.mapNotice, mapbox: cfg.mapbox
     });
   }
   bindEvents();

@@ -58,15 +58,18 @@ public class RemoteCommandDao {
         return list;
     }
 
-    /** A valid command is used once: SENT becomes DONE and remembers the session that used it. */
-    public void markDone(long commandId, long sessionId) throws SQLException {
+    /**
+     * Claims the command for one session. The conditional UPDATE is atomic: of two sessions that carry the same
+     * command, only one sees a row change; the other gets false and must treat the open as not authorised.
+     */
+    public boolean markDone(long commandId, long sessionId) throws SQLException {
         // UPDATE ... WHERE status = 'SENT' makes the command single use
         String sql = "UPDATE RemoteCommand SET status = 'DONE', done_at = SYSUTCDATETIME(), session_id = ? "
                 + "WHERE command_id = ? AND status = 'SENT'";
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, sessionId);
             ps.setLong(2, commandId);
-            ps.executeUpdate();
+            return ps.executeUpdate() == 1;
         }
     }
 

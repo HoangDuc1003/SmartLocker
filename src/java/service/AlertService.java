@@ -35,9 +35,15 @@ public class AlertService {
         }
 
         if ("STAFF_OPEN".equals(verdict.getLabel())) {       // case 2: the command is used up
-            new RemoteCommandDao().markDone(session.getCommandId(), session.getSessionId());
-            new AuditDao().append(AuditDao.SYSTEM_USER_ID, "COMMAND_DONE", "COMMAND", session.getCommandId(),
-                    "session " + session.getSessionId());
+            // the context read saw the command SENT, but a concurrent session with the same command_id may have
+            // claimed it since; only the session whose conditional UPDATE changed the row is the staff open
+            if (new RemoteCommandDao().markDone(session.getCommandId(), session.getSessionId())) {
+                new AuditDao().append(AuditDao.SYSTEM_USER_ID, "COMMAND_DONE", "COMMAND", session.getCommandId(),
+                        "session " + session.getSessionId());
+            } else {
+                verdict = Verdict.alert("SUSPECTED_SPOOF", "reason", "remote command already used")
+                        .with("command_id", String.valueOf(session.getCommandId()));
+            }
         }
 
         if (verdict.isAlert()) {

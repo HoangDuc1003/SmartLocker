@@ -121,11 +121,7 @@ public class LockerMonitor implements ServletContextListener {
         //    request isn't blocked by a potentially slow stored-procedure call)
         scheduler.scheduleWithFixedDelay(new Runnable() {
             @Override public void run() {
-                // Demo devices have no ESP32 behind them, so their heartbeat is simulated here. Only the ones the
-                // seed marks "demo":true in OperatingProfile: a real device that stops calling still goes OFFLINE.
-                runProcedure("UPDATE d SET last_seen = SYSUTCDATETIME() FROM Device d "
-                        + "WHERE d.status = 'ACTIVE' AND EXISTS (SELECT 1 FROM OperatingProfile p "
-                        + "WHERE p.device_id = d.device_id AND p.params_json LIKE '%\"demo\":true%')");
+                heartbeatDemoDevices();
                 runProcedure("{call Device_MarkOffline(90)}");   // demo devices get a heartbeat above, a silent one is OFFLINE after 90 s
                 runProcedure("{call Deposit_ExpireNoShow}");
                 runProcedure("{call Deposit_ExpireOverdue}");    // v3: locks and charges the late fee, never frees the slot
@@ -199,6 +195,41 @@ public class LockerMonitor implements ServletContextListener {
         } catch (SQLException e) {
             LOG.log(Level.WARNING, "Dashboard snapshot build failed: " + e.getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Demo devices have no ESP32 behind them, so their heartbeat is simulated here. Only the ones the seed marks
+     * "demo":true in OperatingProfile: a real device that stops calling still goes OFFLINE. Each one goes through
+     * Device_Heartbeat, the same call a real box makes, so a demo box that Device_MarkOffline flipped (the PC slept,
+     * Tomcat was stopped) comes back ACTIVE with its DEVICE_OFFLINE alert resolved; MAINTENANCE stays.
+     * An OFFLINE demo box is revived only when the clock job put it there: its latest status entry in AuditLog
+     * (MARK_OFFLINE by Device_MarkOffline, BACK_ONLINE, or DEVICE_STATUS by staff) is MARK_OFFLINE. A box set
+     * OFFLINE on purpose (staff "Đánh dấu mất kết nối", the seed example LOCKER-07 with no such entry) stays OFFLINE
+     * until staff sets it ACTIVE again. The audit log already records who changed the status, so no new column.
+     */
+    private void heartbeatDemoDevices() {
+        String sql = "SELECT d.device_id FROM Device d WHERE EXISTS (SELECT 1 FROM OperatingProfile p "
+                + "WHERE p.device_id = d.device_id AND p.params_json LIKE '%\"demo\":true%') "
+                + "AND (d.status <> 'OFFLINE' OR (SELECT TOP 1 a.action FROM AuditLog a "
+                + "WHERE a.object_type = 'DEVICE' AND a.object_id = d.device_id "
+                + "AND a.action IN ('MARK_OFFLINE', 'BACK_ONLINE', 'DEVICE_STATUS') "
+                + "ORDER BY a.audit_id DESC) = 'MARK_OFFLINE')";
+        try (Connection conn = DbContext.getConnection()) {
+            java.util.List<Integer> ids = new java.util.ArrayList<>();
+            try (java.sql.Statement st = conn.createStatement(); java.sql.ResultSet rs = st.executeQuery(sql)) {
+                while (rs.next()) {
+                    ids.add(rs.getInt(1));
+                }
+            }
+            try (CallableStatement cs = conn.prepareCall("{call Device_Heartbeat(?)}")) {
+                for (int id : ids) {
+                    cs.setInt(1, id);
+                    cs.execute();
+                }
+            }
+        } catch (SQLException e) {
+            LOG.log(Level.WARNING, "LockerMonitor demo heartbeat failed: " + e.getMessage());
         }
     }
 

@@ -1,0 +1,7 @@
+# Copy to config/mapbox.local.properties (git ignores *.local.properties), fill in, then restart Tomcat.
+# Create the token at https://account.mapbox.com/access-tokens/ : a PUBLIC token (pk.*), it goes into the page.
+# Limit it to your own URLs there. A secret token (sk.*) is refused. Without a token the map stays on Leaflet + OpenStreetMap.
+mapbox.token=pk.your-public-token
+# optional: the map styles of the light and the dark theme
+#mapbox.style.light=mapbox://styles/mapbox/streets-v12
+#mapbox.style.dark=mapbox://styles/mapbox/dark-v11

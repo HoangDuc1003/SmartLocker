@@ -112,6 +112,10 @@ public class LockerSlotController extends HttpServlet {
         if (dao.codeExists(s.getBankId(), s.getSlotCode(), s.getSlotId())) {
             return "Dãy tủ này đã có ngăn mã " + s.getSlotCode();
         }
+        if (dao.codeExistsOnDevice(s.getBankId(), s.getSlotCode(), s.getSlotId())) {
+            return "Một dãy tủ khác cùng thiết bị đã có ngăn mã " + s.getSlotCode()
+                    + "; hộp tìm ngăn theo mã nên mã ngăn không được trùng";
+        }
         return null;
     }
 

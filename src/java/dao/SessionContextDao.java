@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import model.LockerSession;
+import service.RuleEngine;
 import service.SessionContext;
 
 /**
@@ -50,16 +51,19 @@ public class SessionContextDao {
                 }
             }
 
-            // 4. a remote open is genuine only for a SENT command of this device and slot, issued less than 30 minutes before
+            // 4. a remote open is genuine only for a SENT command of this device and slot, used within its window
+            //    (RuleEngine.isCommandInWindow: up to 30 minutes after it was issued, with a small clock-lag tolerance)
             if (("REMOTE".equals(s.getOpenSource()) || "PHONE".equals(s.getOpenSource())) && s.getCommandId() != null) {
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "SELECT COUNT(*) FROM RemoteCommand c JOIN LockerSession s ON s.session_id = ? "
+                        // a day either side is far outside the window; the CASE keeps DATEDIFF from overflowing on a wild clock
+                        "SELECT CASE WHEN s.measured_at BETWEEN DATEADD(DAY, -1, c.created_at) AND DATEADD(DAY, 1, c.created_at) "
+                        + "THEN DATEDIFF(SECOND, c.created_at, s.measured_at) ELSE 86400 END FROM RemoteCommand c "
+                        + "JOIN LockerSession s ON s.session_id = ? "
                         + "WHERE c.command_id = s.command_id AND c.device_id = s.device_id AND c.slot_id = s.slot_id "
-                        + "AND c.status = N'SENT' AND s.measured_at BETWEEN c.created_at AND DATEADD(MINUTE, 30, c.created_at)")) {
+                        + "AND c.status = N'SENT'")) {
                     ps.setLong(1, s.getSessionId());
                     try (ResultSet rs = ps.executeQuery()) {
-                        rs.next();
-                        ctx.setCommandValid(rs.getInt(1) > 0);
+                        ctx.setCommandValid(rs.next() && RuleEngine.isCommandInWindow(rs.getLong(1)));
                     }
                 }
             }

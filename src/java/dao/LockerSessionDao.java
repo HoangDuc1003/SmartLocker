@@ -19,43 +19,110 @@ public class LockerSessionDao {
     public static final int DUPLICATE_KEY = 2627;
     public static final int DUPLICATE_INDEX = 2601;
 
+    /** insert() result: the device already sent this (device, seq). */
+    public static final long DUPLICATE = -1;
+    /** insert() result: the slot code matches slots in two banks of the device and nothing tells them apart. */
+    public static final long AMBIGUOUS_SLOT = -2;
+    /** insert() result: the bank_code sent with the session is not a bank of this device (nothing stored). */
+    public static final long UNKNOWN_BANK = -3;
+
     /**
-     * Stores one session. Returns the new session_id, or -1 when the same (device, seq) is already there,
-     * which happens when the device re-sends its buffer. Any other error is thrown.
+     * The slot of a session. A box may manage several banks (sql/demo_box.sql), so (device, slot_code) can match
+     * more than one slot. Tie-breakers, in order: the bank_code sent with the session, then the slot of the
+     * session's own command (PHONE/REMOTE). Returns null for no slot code or no match, AMBIGUOUS_SLOT when still
+     * more than one slot fits: never guess, the alert rules would judge the wrong booking. A bank_code that is
+     * not a bank of the device gives UNKNOWN_BANK (a firmware/config error, not "no slot").
+     */
+    static Long resolveSlot(Connection conn, LockerSession s) throws SQLException {
+        if (s.getBankCode() != null) {
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "SELECT COUNT(*) FROM LockerBank WHERE device_id = ? AND bank_code = ?")) {
+                ps.setInt(1, s.getDeviceId());
+                ps.setString(2, s.getBankCode());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next() && rs.getInt(1) == 0) {
+                        return UNKNOWN_BANK;
+                    }
+                }
+            }
+        }
+        if (s.getSlotCode() == null) {
+            return null;
+        }
+        String sql = "SELECT s.locker_slot_id, CASE WHEN c.command_id IS NULL THEN 0 ELSE 1 END AS of_command "
+                + "FROM LockerSlot s JOIN LockerBank b ON b.bank_id = s.bank_id "
+                + "LEFT JOIN RemoteCommand c ON c.command_id = ? AND c.device_id = b.device_id AND c.slot_id = s.locker_slot_id "
+                + "WHERE b.device_id = ? AND s.slot_code = ? AND (? IS NULL OR b.bank_code = ?)";
+        List<long[]> rows = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (s.getCommandId() == null) {
+                ps.setNull(1, Types.BIGINT);
+            } else {
+                ps.setLong(1, s.getCommandId());
+            }
+            ps.setInt(2, s.getDeviceId());
+            ps.setString(3, s.getSlotCode());
+            ps.setString(4, s.getBankCode());
+            ps.setString(5, s.getBankCode());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(new long[]{rs.getLong(1), rs.getInt(2)});
+                }
+            }
+        }
+        if (rows.size() == 1) {
+            return rows.get(0)[0];
+        }
+        for (long[] r : rows) {
+            if (r[1] == 1) {
+                return r[0];                                  // the command names exactly one slot
+            }
+        }
+        return rows.isEmpty() ? null : AMBIGUOUS_SLOT;
+    }
+
+    /**
+     * Stores one session. Returns the new session_id, DUPLICATE when the same (device, seq) is already there
+     * (the device re-sends its buffer), AMBIGUOUS_SLOT or UNKNOWN_BANK (nothing stored). Any other error is thrown.
      */
     public long insert(LockerSession s) throws SQLException {
-        // INSERT ... SELECT so slot_code becomes slot_id in the same statement; catch the duplicate
         String sql = "INSERT INTO LockerSession (device_id, device_seq, measured_at, door_open_sec, weight_delta_g, "
                 + "unlock_count, rfid_ok, stay_min, slot_id, card_uid, open_source, command_id) "
-                + "SELECT ?, ?, ?, ?, ?, ?, ?, ?, "
-                + "(SELECT s.locker_slot_id FROM LockerSlot s JOIN LockerBank b ON b.bank_id = s.bank_id "
-                + " WHERE b.device_id = ? AND s.slot_code = ?), ?, ?, ?";
-        try (Connection conn = DbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setInt(1, s.getDeviceId());
-            ps.setInt(2, s.getDeviceSeq());
-            ps.setTimestamp(3, s.getMeasuredAt());
-            ps.setDouble(4, s.getDoorOpenSec());
-            ps.setDouble(5, s.getWeightDeltaG());
-            ps.setInt(6, s.getUnlockCount());
-            ps.setBoolean(7, s.isRfidOk());
-            ps.setDouble(8, s.getStayMin());
-            ps.setInt(9, s.getDeviceId());
-            ps.setString(10, s.getSlotCode());
-            ps.setString(11, s.getCardUid());
-            ps.setString(12, s.getOpenSource());
-            if (s.getCommandId() == null) {
-                ps.setNull(13, Types.BIGINT);
-            } else {
-                ps.setLong(13, s.getCommandId());
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DbContext.getConnection()) {
+            Long slotId = resolveSlot(conn, s);
+            if (slotId != null && (slotId == AMBIGUOUS_SLOT || slotId == UNKNOWN_BANK)) {
+                return slotId;
             }
-            ps.executeUpdate();
-            try (ResultSet keys = ps.getGeneratedKeys()) {
-                return keys.next() ? keys.getLong(1) : -1;
+            try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setInt(1, s.getDeviceId());
+                ps.setInt(2, s.getDeviceSeq());
+                ps.setTimestamp(3, s.getMeasuredAt());
+                ps.setDouble(4, s.getDoorOpenSec());
+                ps.setDouble(5, s.getWeightDeltaG());
+                ps.setInt(6, s.getUnlockCount());
+                ps.setBoolean(7, s.isRfidOk());
+                ps.setDouble(8, s.getStayMin());
+                if (slotId == null) {
+                    ps.setNull(9, Types.INTEGER);
+                } else {
+                    ps.setInt(9, slotId.intValue());
+                }
+                ps.setString(10, s.getCardUid());
+                ps.setString(11, s.getOpenSource());
+                if (s.getCommandId() == null) {
+                    ps.setNull(12, Types.BIGINT);
+                } else {
+                    ps.setLong(12, s.getCommandId());
+                }
+                ps.executeUpdate();
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    return keys.next() ? keys.getLong(1) : DUPLICATE;
+                }
             }
         } catch (SQLException e) {
             if (e.getErrorCode() == DUPLICATE_KEY || e.getErrorCode() == DUPLICATE_INDEX) {
-                return -1;
+                return DUPLICATE;
             }
             throw e;
         }

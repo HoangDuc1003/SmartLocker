@@ -85,17 +85,18 @@ public class AlertDao {
 
     /** One page, newest first. status and label are "" for all. */
     public List<Alert> search(String status, String label, int page, int size) throws SQLException {
-        StringBuilder sb = new StringBuilder("SELECT alert_id, device_id, session_id, source, label, risk_score, status, created_at FROM Alert WHERE 1=1");
+        StringBuilder sb = new StringBuilder("SELECT a.alert_id, a.device_id, a.session_id, a.source, a.label, a.risk_score, "
+                + "a.status, a.created_at, d.device_code FROM Alert a LEFT JOIN Device d ON d.device_id = a.device_id WHERE 1=1");
         List<Object> params = new ArrayList<>();
         if (status != null && !status.trim().isEmpty()) {
-            sb.append(" AND status = ?");
+            sb.append(" AND a.status = ?");
             params.add(status.trim());
         }
         if (label != null && !label.trim().isEmpty()) {
-            sb.append(" AND label = ?");
+            sb.append(" AND a.label = ?");
             params.add(label.trim());
         }
-        sb.append(" ORDER BY alert_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        sb.append(" ORDER BY a.alert_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         params.add((page - 1) * size);
         params.add(size);
         List<Alert> list = new ArrayList<>();
@@ -105,7 +106,9 @@ public class AlertDao {
             }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    list.add(map(rs));
+                    Alert a = map(rs);
+                    a.setDeviceCode(rs.getString("device_code"));
+                    list.add(a);
                 }
             }
         }

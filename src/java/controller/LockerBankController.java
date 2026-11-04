@@ -75,6 +75,11 @@ public class LockerBankController extends HttpServlet {
         if (dao.codeExists(b.getBankCode(), b.getBankId())) {
             return "Mã dãy tủ " + b.getBankCode() + " đã tồn tại";
         }
+        String clash = dao.slotCodeClash(b.getBankId(), b.getDeviceId());
+        if (clash != null) {
+            return "Thiết bị này đã quản lý một dãy tủ khác có ngăn mã " + clash
+                    + "; hộp tìm ngăn theo mã nên các dãy của cùng một thiết bị không được trùng mã ngăn";
+        }
         return null;
     }
 

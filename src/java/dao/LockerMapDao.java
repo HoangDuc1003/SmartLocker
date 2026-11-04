@@ -29,6 +29,50 @@ public class LockerMapDao {
     }
 
     /**
+     * Where the signed-in user's locker is (the waves and the "wrong place" warning of the map), or null without an open
+     * booking. wrong_scan: the card was scanned at another box in the last 10 minutes and not at the right one since.
+     * confirm_until, confirm_phase: a card scan waits for the owner's answer. The end time, not the seconds left: the
+     * ETag of this JSON must not change on every call.
+     */
+    private JsonObject myBooking(Connection conn, int userId) throws SQLException {
+        String sql = "SELECT TOP 1 d.status, s.slot_code, b.bank_code, a.area_code, a.name AS area_name, "
+                + "w.at AS wrong_at, w.wrong_area, cw.phase AS confirm_phase, cw.expires_at AS confirm_until "
+                + "FROM Deposit d JOIN LockerSlot s ON s.locker_slot_id = d.slot_id JOIN LockerBank b ON b.bank_id = s.bank_id "
+                + "OUTER APPLY (SELECT TOP 1 c.phase, c.expires_at FROM RemoteCommand c WHERE c.deposit_id = d.deposit_id "
+                + "AND c.status = N'AWAITING_EMAIL' AND c.expires_at > SYSUTCDATETIME() ORDER BY c.command_id DESC) cw "
+                + "JOIN LockerArea a ON a.area_id = b.area_id "
+                + "OUTER APPLY (SELECT TOP 1 t.at, (SELECT TOP 1 a2.name FROM LockerBank b2 JOIN LockerArea a2 ON a2.area_id = b2.area_id "
+                + "WHERE b2.device_id = t.device_id) AS wrong_area FROM AuthAttempt t "
+                + "WHERE t.deposit_id = d.deposit_id AND t.reason = N'WRONG_PLACE' AND t.at > DATEADD(MINUTE, -10, SYSUTCDATETIME()) "
+                + "AND NOT EXISTS (SELECT 1 FROM AuthAttempt k WHERE k.deposit_id = d.deposit_id AND k.ok = 1 AND k.at > t.at) "
+                + "ORDER BY t.at DESC) w "
+                + "WHERE d.user_id = ? AND d.status IN (N'RESERVED', N'ACTIVE')";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                JsonObject o = new JsonObject();
+                o.addProperty("status", rs.getString("status"));
+                o.addProperty("slot_code", rs.getString("slot_code"));
+                o.addProperty("bank_code", rs.getString("bank_code"));
+                o.addProperty("area_code", rs.getString("area_code"));
+                o.addProperty("area_name", rs.getString("area_name"));
+                if (rs.getString("wrong_at") != null) {
+                    put(o, "wrong_area", rs.getString("wrong_area"));
+                    o.addProperty("wrong_scan", iso(rs.getString("wrong_at")));
+                }
+                if (rs.getString("confirm_until") != null) {
+                    o.addProperty("confirm_phase", rs.getString("confirm_phase"));
+                    o.addProperty("confirm_until", iso(rs.getString("confirm_until")));
+                }
+                return o;
+            }
+        }
+    }
+
+    /**
      * @param areaCode  the area to draw; empty or unknown means the first area that has slots
      * @param userId    the signed-in user, used for the "mine" flag
      * @param staff     true for roles that may see who uses a slot and its alerts
@@ -81,6 +125,10 @@ public class LockerMapDao {
                 }
             }
             root.add("areas", areas);
+            JsonObject myBooking = userId > 0 ? myBooking(conn, userId) : null;
+            if (myBooking != null) {
+                root.add("my_booking", myBooking);
+            }
             if (chosen == null) {
                 root.add("banks", new JsonArray());
                 return root;

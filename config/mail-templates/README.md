@@ -25,6 +25,8 @@ Mỗi file `*.txt` là một mẫu. Sửa trực tiếp, không cần biên dị
 | `welcome` | Đăng ký tài khoản | name, username, map_url, my_locker_url |
 | `topup_approved` | Duyệt nạp tiền | name, amount, balance, topup_url |
 | `topup_rejected` | Từ chối nạp tiền | name, amount, reason, topup_url |
+| `card_confirm` | Quét thẻ, chờ xác nhận mở tủ — **đang chạy tự động** | name, slot_code, bank_code, area_name, action, expires_min, confirm_url |
+| `wrong_place` | Quét thẻ ở sai hộp tủ — **đang chạy tự động** | name, slot_code, bank_code, area_name, map_url |
 
 Thời gian ghi theo giờ Việt Nam (`16:00 23/10/2026`), tiền ghi `14.700 đ`.
 
@@ -37,4 +39,4 @@ sh scripts/mail-preview.sh due_soon ten@gmail.com
 ```
 
 Lệnh thứ hai in nội dung với dữ liệu mẫu; lệnh thứ ba gửi thật bản mẫu đó tới địa chỉ đã cho.
-Hiện chỉ `due_soon` được hệ thống gửi tự động; các mẫu còn lại đã sẵn sàng và chưa nối vào sự kiện nào.
+Hiện `due_soon`, `card_confirm` và `wrong_place` được hệ thống gửi tự động; các mẫu còn lại đã sẵn sàng và chưa nối vào sự kiện nào.

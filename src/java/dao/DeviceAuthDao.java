@@ -52,8 +52,17 @@ public class DeviceAuthDao {
      */
     public Map<String, Object> authorize(int deviceId, String method, String pin, String cardUid,
                                          Integer sensorSlot, String source, String intent) throws SQLException {
+        return authorize(deviceId, method, pin, cardUid, sensorSlot, source, intent, null);
+    }
+
+    /**
+     * confirmHash (the card at the box, when e-mail works): the owner of a card with a real address gets CONFIRM_EMAIL
+     * and the slot opens only after the link in the e-mail, which hashes to this value.
+     */
+    public Map<String, Object> authorize(int deviceId, String method, String pin, String cardUid,
+                                         Integer sensorSlot, String source, String intent, String confirmHash) throws SQLException {
         try (Connection conn = DbContext.getConnection();
-             CallableStatement cs = conn.prepareCall("{call Device_Authorize(?, ?, ?, ?, ?, ?, ?)}")) {
+             CallableStatement cs = conn.prepareCall("{call Device_Authorize(?, ?, ?, ?, ?, ?, ?, ?)}")) {
             cs.setInt(1, deviceId);
             cs.setString(2, method);
             cs.setString(3, pin);
@@ -65,7 +74,51 @@ public class DeviceAuthDao {
             }
             cs.setString(6, source);
             cs.setString(7, intent);
+            cs.setString(8, confirmHash);
             return firstRow(cs);
+        }
+    }
+
+    /** What a link stands for (status, phase, left_sec, slot_code, bank_code, area_name, location, device_code); empty when unknown. */
+    public Map<String, Object> confirmFind(String hash) throws SQLException {
+        try (Connection conn = DbContext.getConnection();
+             CallableStatement cs = conn.prepareCall("{call CardConfirm_Find(?)}")) {
+            cs.setString(1, hash);
+            return firstRow(cs);
+        }
+    }
+
+    /** The answer on the page behind the link. Returns OK, REJECTED, EXPIRED, DONE_BEFORE, NOT_FOUND or DEVICE_OFFLINE. */
+    public String confirmDecide(String hash, boolean approve) throws SQLException {
+        return decide(hash, approve, null);
+    }
+
+    /** The answer of the signed-in owner on the map, for when the e-mail does not come. Same results. */
+    public String confirmDecideMine(int userId, boolean approve) throws SQLException {
+        return decide(null, approve, userId);
+    }
+
+    private String decide(String hash, boolean approve, Integer userId) throws SQLException {
+        try (Connection conn = DbContext.getConnection();
+             CallableStatement cs = conn.prepareCall("{call CardConfirm_Decide(?, ?, ?)}")) {
+            cs.setString(1, hash);
+            cs.setBoolean(2, approve);
+            if (userId == null) {
+                cs.setNull(3, Types.INTEGER);
+            } else {
+                cs.setInt(3, userId);
+            }
+            return String.valueOf(firstRow(cs).get("result"));
+        }
+    }
+
+    /** The e-mail could not be sent: the owner can still answer on the map, and the next scan sends a new e-mail. */
+    public void mailFailed(long commandId) throws SQLException {
+        try (Connection conn = DbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE RemoteCommand SET confirm_hash = NULL WHERE command_id = ? AND status = N'AWAITING_EMAIL'")) {
+            ps.setLong(1, commandId);
+            ps.executeUpdate();
         }
     }
 

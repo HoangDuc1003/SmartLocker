@@ -2,10 +2,13 @@
    a ring of free slots and a glass label with the name. The street tiles come from OpenStreetMap (or a mirror) and are kept
    in Cache Storage, so a tile seen (or prefetched) once also draws offline. With no tile at all the pins stay on the
    right places over a plain grid and a note says so, so the page still works offline.
-   Usage (js/locker-map.js):  var map = AreaMap.create(element, { esc, tone, onSelect, padding, notice });
+   With a Mapbox token (opts.mapbox) the users' map is drawn by js/area-map-mapbox.js instead, and comes back here when
+   Mapbox cannot draw (bad token, no WebGL, no Internet).
+   Usage (js/locker-map.js):  var map = AreaMap.create(element, { esc, tone, onSelect, padding, notice, mapbox });
    The staff page (js/locker-map-staff.js) passes { classic: true } for its map card with round pins.
    padding() returns the px the islands cover ({ left, right, top, bottom }); flyTo and fitBounds keep pins out of them.
-   map.update(areas, activeCode)  map.setUser({lat, lng, acc})  map.focus(code)  map.fitAll()  map.zoom(+1 | -1) */
+   map.update(areas, activeCode, targetCode)  map.setUser({lat, lng, acc})  map.setRoute(from, to)  map.focus(code)
+   map.fitAll()  map.zoom(+1 | -1). targetCode is the area of the user's own locker: its pin sends out waves. */
 (function () {
   'use strict';
 
@@ -146,11 +149,58 @@
     return { enabled: enabled, src: src, prefetch: prefetch };
   })();
 
-  function create(host, opts) {
+  /* ---------- the pin of the users' map, shared with js/area-map-mapbox.js ---------- */
+
+  function glassPinHtml(a, tone, isActive, isTarget, esc) {
+    var pct = a.slot_count ? Math.round(a.available * 100 / a.slot_count) : 0;
+    return '<div class="pin tone-' + tone.key + (isActive ? ' is-active' : '') + (isTarget ? ' is-target' : '') + '">' +
+      (isTarget ? '<span class="pin__wave" aria-hidden="true"><i></i><i></i><i></i></span>' : '') +
+      '<span class="ring" style="--p:' + pct + '"><b>' + esc(a.available) + '</b></span>' +
+      (a.alert ? '<span class="pin__alert" aria-hidden="true">!</span>' : '') +
+      '<span class="pin__label">' + (isTarget ? 'Tủ của bạn<span class="pin__name"> · ' + esc(a.name) + '</span>' : esc(a.name)) +
+      '</span></div>';
+  }
+
+  function pinTitle(a, tone, isTarget) {
+    return (isTarget ? 'Tủ của bạn ở đây. ' : '') + a.name + ': trống ' + a.available + '/' + a.slot_count + ' ngăn, ' + tone.label;
+  }
+
+  // two areas a few metres apart: the labels would cover each other, so a lower one hides its label
+  function declutterPins(entries, active, target) {
+    function rank(code) {
+      return code === target ? 0 : (code === active ? 1 : 2);
+    }
+    var taken = [];
+    entries.slice().sort(function (x, y) {
+      return rank(x.code) - rank(y.code);
+    }).forEach(function (entry) {
+      var pin = entry.node && entry.node.querySelector('.pin');
+      if (!pin) {
+        return;
+      }
+      pin.classList.remove('is-crowded');
+      var ring = pin.querySelector('.ring').getBoundingClientRect();
+      var label = pin.querySelector('.pin__label').getBoundingClientRect();
+      var box = { l: ring.left, t: Math.min(ring.top, label.top), r: label.right, b: Math.max(ring.bottom, label.bottom) };
+      var hit = taken.some(function (o) {
+        return box.l < o.r && box.r > o.l && box.t < o.b && box.b > o.t;
+      });
+      if (hit && rank(entry.code) === 2) {
+        pin.classList.add('is-crowded');
+        taken.push({ l: ring.left, t: ring.top, r: ring.right, b: ring.bottom });
+      } else {
+        taken.push(box);
+      }
+    });
+  }
+
+  function createLeaflet(host, opts) {
     var L = window.L;
     var esc = opts.esc;
     var markers = {};          // area_code -> { marker, html }
     var active = null;
+    var target = null;
+    var routeLine = null;
     var userMarker = null;
     var userCircle = null;
     var notice = opts.notice || null;
@@ -160,7 +210,7 @@
     if (!L) {
       host.innerHTML = '<p class="map-fallback">Không tải được thư viện bản đồ. Hãy chọn khu ở danh sách bên cạnh.</p>';
       return { update: function () { return 0; }, setUser: function () {}, focus: function () {},
-               fitAll: function () {}, zoom: function () {}, invalidate: function () {},
+               setRoute: function () {}, fitAll: function () {}, zoom: function () {}, invalidate: function () {},
                hasUser: function () { return false; }, focusUser: function () {} };
     }
 
@@ -377,58 +427,29 @@
 
     var PIN_SIZE = classic ? { iconSize: [40, 48], iconAnchor: [20, 46] } : { iconSize: [44, 44], iconAnchor: [22, 22] };
 
-    function pinHtml(a, tone, isActive) {
+    function pinHtml(a, tone, isActive, isTarget) {
       if (classic) {
         return '<div class="pin tone-' + tone.key + (isActive ? ' is-active' : '') + '">' +
           '<span class="pin__dot"><span class="pin__n">' + esc(a.available) + '</span>' +
           (a.alert ? '<span class="pin__alert" aria-hidden="true">!</span>' : '') + '</span>' +
           (isActive ? '<span class="pin__name">' + esc(a.name) + '</span>' : '') + '</div>';
       }
-      var pct = a.slot_count ? Math.round(a.available * 100 / a.slot_count) : 0;
-      return '<div class="pin tone-' + tone.key + (isActive ? ' is-active' : '') + '">' +
-        '<span class="ring" style="--p:' + pct + '"><b>' + esc(a.available) + '</b></span>' +
-        (a.alert ? '<span class="pin__alert" aria-hidden="true">!</span>' : '') +
-        '<span class="pin__label">' + esc(a.name) + '</span></div>';
+      return glassPinHtml(a, tone, isActive, isTarget, esc);
     }
 
-    function title(a, tone) {
-      return a.name + ': trống ' + a.available + '/' + a.slot_count + ' ngăn, ' + tone.label;
-    }
-
-    // two areas a few metres apart: the labels would cover each other, so a lower one hides its label
     function declutter() {
       if (classic) {
         return;   // the round pins show the name of the chosen area only
       }
-      var codes = Object.keys(markers).sort(function (x, y) {
-        return (x === active ? -1 : 0) - (y === active ? -1 : 0);
-      });
-      var taken = [];
-      codes.forEach(function (code) {
-        var node = markers[code].marker.getElement();
-        var pin = node && node.querySelector('.pin');
-        if (!pin) {
-          return;
-        }
-        pin.classList.remove('is-crowded');
-        var ring = pin.querySelector('.ring').getBoundingClientRect();
-        var label = pin.querySelector('.pin__label').getBoundingClientRect();
-        var box = { l: ring.left, t: Math.min(ring.top, label.top), r: label.right, b: Math.max(ring.bottom, label.bottom) };
-        var hit = taken.some(function (o) {
-          return box.l < o.r && box.r > o.l && box.t < o.b && box.b > o.t;
-        });
-        if (hit && code !== active) {
-          pin.classList.add('is-crowded');
-          taken.push({ l: ring.left, t: ring.top, r: ring.right, b: ring.bottom });
-        } else {
-          taken.push(box);
-        }
-      });
+      declutterPins(Object.keys(markers).map(function (code) {
+        return { code: code, node: markers[code].marker.getElement() };
+      }), active, target);
     }
     map.on('zoomend', declutter);
 
-    function update(areas, activeCode) {
+    function update(areas, activeCode, targetCode) {
       active = activeCode;
+      target = targetCode || null;
       var seen = {};
       var bounds = [];
       areas.forEach(function (a) {
@@ -439,12 +460,13 @@
         bounds.push([a.latitude, a.longitude]);
         var tone = opts.tone(a);
         var isActive = a.area_code === activeCode;
-        var html = pinHtml(a, tone, isActive);
+        var isTarget = a.area_code === target;
+        var html = pinHtml(a, tone, isActive, isTarget);
         var entry = markers[a.area_code];
         if (!entry) {
           var marker = L.marker([a.latitude, a.longitude], {
             icon: L.divIcon({ className: 'pin-wrap', html: html, iconSize: PIN_SIZE.iconSize, iconAnchor: PIN_SIZE.iconAnchor }),
-            title: title(a, tone), alt: title(a, tone), keyboard: true, riseOnHover: true
+            title: pinTitle(a, tone, isTarget), alt: pinTitle(a, tone, isTarget), keyboard: true, riseOnHover: true
           });
           marker.on('click', function () {
             opts.onSelect(a.area_code);
@@ -456,11 +478,11 @@
           if (entry.html !== html) {
             // only when it changed: setIcon draws a new element and a focused pin would lose the focus
             entry.html = html;
-            entry.marker.options.title = title(a, tone);   // before setIcon, which redraws the pin with the title
+            entry.marker.options.title = pinTitle(a, tone, isTarget);   // before setIcon, which redraws the pin with the title
             entry.marker.setIcon(L.divIcon({ className: 'pin-wrap', html: html, iconSize: PIN_SIZE.iconSize, iconAnchor: PIN_SIZE.iconAnchor }));
           }
         }
-        entry.marker.setZIndexOffset(isActive ? 1000 : 0);
+        entry.marker.setZIndexOffset(isTarget ? 1500 : (isActive ? 1000 : 0));
       });
       Object.keys(markers).forEach(function (code) {
         if (!seen[code]) {
@@ -548,12 +570,23 @@
       userCircle.setRadius(Math.min(Math.max(pos.acc || 60, 20), 500));
     }
 
+    // a straight line from the user to the locker, only a direction: there are no street directions here
+    function setRoute(from, to) {
+      if (routeLine) {
+        map.removeLayer(routeLine);
+        routeLine = null;
+      }
+      if (from && to) {
+        routeLine = L.polyline([[from.lat, from.lng], [to.lat, to.lng]], { className: 'me-route', interactive: false }).addTo(map);
+      }
+    }
+
     function invalidate() {
       map.invalidateSize();
     }
 
     return {
-      update: update, setUser: setUser, focus: focus, fitAll: fitAll, invalidate: invalidate,
+      update: update, setUser: setUser, setRoute: setRoute, focus: focus, fitAll: fitAll, invalidate: invalidate,
       zoom: function (step) {
         if (step > 0) {
           map.zoomIn();
@@ -570,5 +603,53 @@
     };
   }
 
-  window.AreaMap = { create: create };
+  // Mapbox for the users' map when the page has a token; what the page said so far is replayed on Leaflet if Mapbox gives up
+  function create(host, opts) {
+    var useMapbox = !opts.classic && opts.mapbox && opts.mapbox.token && window.mapboxgl && window.AreaMapbox &&
+      navigator.onLine !== false;
+    if (!useMapbox) {
+      return createLeaflet(host, opts);
+    }
+    var said = { update: null, user: null, route: null };
+    var impl;
+    function toLeaflet() {
+      impl = createLeaflet(host, opts);
+      if (said.update) {
+        impl.update.apply(impl, said.update);
+      }
+      if (said.user) {
+        impl.setUser(said.user);
+      }
+      if (said.route) {
+        impl.setRoute.apply(impl, said.route);
+      }
+    }
+    try {
+      impl = window.AreaMapbox.create(host, opts, toLeaflet);
+    } catch (e) {
+      return createLeaflet(host, opts);   // no WebGL: the constructor throws
+    }
+    return {
+      update: function (areas, activeCode, targetCode) {
+        said.update = [areas, activeCode, targetCode];
+        return impl.update(areas, activeCode, targetCode);
+      },
+      setUser: function (pos) {
+        said.user = pos;
+        impl.setUser(pos);
+      },
+      setRoute: function (from, to) {
+        said.route = [from, to];
+        impl.setRoute(from, to);
+      },
+      focus: function (code) { impl.focus(code); },
+      fitAll: function () { impl.fitAll(); },
+      invalidate: function () { impl.invalidate(); },
+      zoom: function (step) { impl.zoom(step); },
+      hasUser: function () { return impl.hasUser(); },
+      focusUser: function () { impl.focusUser(); }
+    };
+  }
+
+  window.AreaMap = { create: create, pinHtml: glassPinHtml, pinTitle: pinTitle, declutter: declutterPins };
 })();

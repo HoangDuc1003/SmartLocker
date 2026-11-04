@@ -20,6 +20,7 @@ public class LockerMapController extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         // forward to the view, keeping the ?area=, ?slot= and ?panel= of the URL for the script
         String view = Web.isUserView(Web.currentUser(req)) ? "lockerMap.jsp" : "lockerMapStaff.jsp";
+        req.setAttribute("mapbox", service.MapboxConfig.of(getServletContext()));
         req.getRequestDispatcher("/WEB-INF/views/" + view).forward(req, res);
     }
 }

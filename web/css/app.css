@@ -190,6 +190,7 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: var(--radi
 .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
          padding: 18px; box-shadow: var(--shadow-sm); }
 .panel + .panel { margin-top: 16px; }
+.grid-2 > .panel + .panel, .grid-3 > .panel + .panel { margin-top: 0; }   /* the grid gap spaces them; keeps the tops aligned */
 .panel > h3:first-child { margin-top: 0; }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 .panel-head h3 { margin: 0; }

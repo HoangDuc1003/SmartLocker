@@ -34,7 +34,8 @@
                 <dt>Nguồn phát hiện</dt><dd><c:out value="${alert.source == 'ML' ? 'Mô hình học máy (ML)' : 'Luật (RULE)'}"/></dd>
                 <dt>Thời điểm</dt><dd><ui:dt value="${alert.createdAt}"/></dd>
                 <c:if test="${not empty alert.riskScore}">
-                    <dt>Điểm rủi ro</dt><dd class="num"><c:out value="${alert.riskScore}"/></dd>
+                    <%-- risk = 1 - P(NORMAL), shown as a whole percent like the list and the dashboard --%>
+                    <dt>Điểm rủi ro</dt><dd class="num"><fmt:formatNumber value="${alert.riskScore}" type="percent" maxFractionDigits="0"/></dd>
                 </c:if>
                 <dt>Thiết bị</dt>
                 <dd>
@@ -166,10 +167,10 @@
         <tr class="${a.status == 'OPEN' ? 'locked' : ''}">
             <td><a href="${ctx}/AlertController?id=${a.alertId}">#${a.alertId}</a></td>
             <td><ui:dt value="${a.createdAt}"/></td>
-            <td>Thiết bị #${a.deviceId}</td>
+            <td><c:choose><c:when test="${not empty a.deviceCode}"><b><c:out value="${a.deviceCode}"/></b></c:when><c:otherwise>Thiết bị #${a.deviceId}</c:otherwise></c:choose></td>
             <td><b><c:out value="${a.label}"/></b></td>
             <td><c:out value="${a.source}"/></td>
-            <td class="r num"><c:out value="${not empty a.riskScore ? a.riskScore : '–'}"/></td>
+            <td class="r num"><c:choose><c:when test="${not empty a.riskScore}"><fmt:formatNumber value="${a.riskScore}" type="percent" maxFractionDigits="0"/></c:when><c:otherwise>–</c:otherwise></c:choose></td>
             <td><ui:status value="${a.status}"/></td>
             <td class="ops">
                 <a href="${ctx}/AlertController?id=${a.alertId}">Chi tiết</a>

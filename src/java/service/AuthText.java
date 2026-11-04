@@ -39,10 +39,13 @@ public final class AuthText {
         if ("CHOOSE".equals(str(row, "result"))) {
             return "A: Mo tu  * huy\nB: Tra tu " + str(row, "slot_code");
         }
+        if ("CONFIRM_EMAIL".equals(str(row, "result"))) {
+            return "Mo Gmail/web de\nxac nhan mo tu";
+        }
         if ("UNLOCK".equals(str(row, "result"))) {
             String slot = str(row, "slot_code");
             String phase = str(row, "phase");
-            String first = "PICKUP".equals(phase) ? "Moi lay do" : "ACCESS".equals(phase) ? "Moi mo tu" : "Moi cat do";
+            String first ="PICKUP".equals(phase) ? "Moi lay do" : "ACCESS".equals(phase) ? "Moi mo tu" : "Moi cat do";
             return first + "\nNgan " + slot;
         }
         switch (reason) {
@@ -56,6 +59,8 @@ public final class AuthText {
                 return "Tam khoa\nCho " + num(row, "retry_after_sec") + " giay";
             case "NO_BOOKING":
                 return "Khong co luot\ndat o hop nay";
+            case "WRONG_PLACE":
+                return "Sai cho! Tu o\n" + str(row, "right_bank");
             case "METHOD_MISMATCH":
                 return "Sai cach mo\n" + oledMethod(str(row, "open_method"));
             case "CARD_BLOCKED":

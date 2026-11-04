@@ -90,6 +90,13 @@ public class MyLockerController extends HttpServlet {
         String action = Web.trimmed(req, "action");
         String anchor = "";
         try {
+            if ("cardConfirm".equals(action)) {
+                // the map answers a card scan waiting for its e-mail, for when the e-mail does not come
+                String result = new DeviceAuthDao().confirmDecideMine(me.getUserId(), "approve".equals(Web.trimmed(req, "decision")));
+                res.setContentType("application/json;charset=UTF-8");
+                res.getWriter().write("{\"result\":\"" + result + "\"}");
+                return;
+            }
             if ("newEnrollCode".equals(action)) {
                 String code = new DepositDao().newEnrollCode(Web.longParam(req, "depositId", 0), me.getUserId());
                 Web.flash(req.getSession(), "Đã tạo mã đăng ký mới " + code + ", có hạn 10 phút.", false);

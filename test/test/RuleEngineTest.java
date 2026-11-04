@@ -81,6 +81,18 @@ public class RuleEngineTest {
     }
 
     @Test
+    public void commandWindowToleratesASlowBoxClock() {
+        // a box clock up to COMMAND_CLOCK_LAG_SEC behind the server still uses its command; a command is never valid long before or after
+        assertTrue(RuleEngine.isCommandInWindow(0));
+        assertTrue(RuleEngine.isCommandInWindow(-1));                                   // whole-second stamp of the firmware
+        assertTrue(RuleEngine.isCommandInWindow(-RuleEngine.COMMAND_CLOCK_LAG_SEC));
+        assertFalse(RuleEngine.isCommandInWindow(-RuleEngine.COMMAND_CLOCK_LAG_SEC - 1));
+        assertTrue(RuleEngine.isCommandInWindow(RuleEngine.COMMAND_TTL_SEC));
+        assertFalse(RuleEngine.isCommandInWindow(RuleEngine.COMMAND_TTL_SEC + 1));
+        assertFalse(RuleEngine.isCommandInWindow(86400));                              // SessionContextDao's value for a wild clock
+    }
+
+    @Test
     public void remoteOpenWithoutCommandIsSpoof() {
         LockerSession s = session(8, 0, false, 40);
         s.setOpenSource("REMOTE");

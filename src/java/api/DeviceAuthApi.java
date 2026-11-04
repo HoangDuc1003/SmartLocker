@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import service.AuthText;
+import service.CardMail;
+import service.MailService;
 
 /**
  * v2, spec 4.2: a code, a card or a finger at the box. The server decides "open" or "not open"; the box has one latch.
@@ -27,6 +29,11 @@ import service.AuthText;
  *          "OPEN"     -> UNLOCK phase ACCESS (the booking stays ACTIVE)
  *          "CHECKOUT" or no intent (old firmware, Postman) -> UNLOCK phase PICKUP as before
  *          An overdue-locked booking with a wallet >= 0 answers PICKUP to every intent.
+ * A card, when e-mail works and its owner has a real address:
+ *          {"result":"CONFIRM_EMAIL","phase":"PICKUP","deposit_id":120,"slot_code":"A04","confirm_sec":300,"message":"Mo Gmail/web de\nxac nhan mo tu"}
+ *          nothing opens now: the link in the e-mail (or the signed-in owner on the map) queues the UNLOCK, the box takes it
+ *          with its heartbeat like a phone open.
+ *          {"result":"DENY","reason":"WRONG_PLACE","right_bank":"CANT-B","message":"Sai cho! Tu o\nCANT-B"}   the booking is at another box
  * HTTP 200 for every decision, 400 for a bad body, 401 for a bad key (SecurityFilter), 500 when the database failed.
  */
 @WebServlet(name = "DeviceAuthApi", urlPatterns = {"/api/device/auth"})
@@ -61,6 +68,11 @@ public class DeviceAuthApi extends HttpServlet {
             options.add("OPEN");
             options.add("CHECKOUT");
             reply.add("options", options);
+        } else if ("CONFIRM_EMAIL".equals(result)) {
+            reply.addProperty("phase", (String) row.get("phase"));
+            ApiJson.copyInt(row, "deposit_id", reply);
+            reply.addProperty("slot_code", (String) row.get("slot_code"));
+            reply.addProperty("confirm_sec", CardMail.CONFIRM_MIN * 60);
         } else if ("UNLOCK".equals(result)) {
             reply.addProperty("phase", (String) row.get("phase"));
             ApiJson.copyInt(row, "deposit_id", reply);
@@ -77,6 +89,9 @@ public class DeviceAuthApi extends HttpServlet {
                 ApiJson.copyInt(row, "deposit_id", reply);
                 ApiJson.copyInt(row, "debt", reply);
                 ApiJson.copyInt(row, "overdue_fee", reply);
+            }
+            if ("WRONG_PLACE".equals(row.get("reason"))) {
+                reply.addProperty("right_bank", (String) row.get("right_bank"));
             }
         }
         reply.addProperty("message", message);
@@ -120,7 +135,18 @@ public class DeviceAuthApi extends HttpServlet {
             return;
         }
         try {
-            Map<String, Object> row = new DeviceAuthDao().authorize(deviceId, method, pin, uid, sensorSlot, "DEVICE", intent);
+            // without working e-mail a card opens at once as before: nobody is locked out by a missing mail setup
+            MailService mail = MailService.of(getServletContext());
+            String token = "CARD".equals(method) && mail.isEnabled() ? CardMail.newToken() : null;
+            Map<String, Object> row = new DeviceAuthDao().authorize(deviceId, method, pin, uid, sensorSlot, "DEVICE", intent,
+                    token == null ? null : CardMail.hash(token));
+            if (row.get("mail_to") != null && mail.isEnabled()) {
+                if ("CONFIRM_EMAIL".equals(row.get("result"))) {
+                    CardMail.sendConfirm(mail, row, token, CardMail.baseUrl(mail, req));
+                } else if ("WRONG_PLACE".equals(row.get("reason"))) {
+                    CardMail.sendWrongPlace(mail, row, CardMail.baseUrl(mail, req));
+                }
+            }
             JsonObject reply = reply(row, AuthText.oled(row));
             if ("UNLOCK".equals(row.get("result")) && row.get("deposit_id") != null) {
                 // one box serves many slots, only the configured one has a servo (sql/demo_box.sql)

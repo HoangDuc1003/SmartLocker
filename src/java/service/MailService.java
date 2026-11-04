@@ -105,6 +105,9 @@ public final class MailService {
     /** The public address of the app for links in a message, e.g. https://.../SmartLocker; may be empty. */
     public String baseUrl() {
         String url = get("app.base_url");
+        if (url.contains("<")) {
+            return "";   // still the placeholder of the .example file
+        }
         return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     }
 

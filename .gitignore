@@ -13,3 +13,6 @@ __pycache__/
 
 # Wi-Fi password and device key of the ESP32 sketch
 firmware/*/secrets.h
+
+# run results of the paper (about 90 MB): kept on the machine, not in git
+docs/paper/evidence/newman*.json

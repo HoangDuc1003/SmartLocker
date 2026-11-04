@@ -52,6 +52,7 @@
     <form class="filter" method="get" action="${ctx}/RemoteCommandController">
         <select name="status" aria-label="Trạng thái">
             <option value="">Tất cả trạng thái</option>
+            <option value="AWAITING_EMAIL" ${status == 'AWAITING_EMAIL' ? 'selected' : ''}>Chờ xác nhận email</option>
             <option value="PENDING" ${status == 'PENDING' ? 'selected' : ''}>Chờ xử lý</option>
             <option value="SENT" ${status == 'SENT' ? 'selected' : ''}>Đã gửi</option>
             <option value="DONE" ${status == 'DONE' ? 'selected' : ''}>Hoàn tất</option>
