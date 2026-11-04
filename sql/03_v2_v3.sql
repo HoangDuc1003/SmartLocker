@@ -1,4 +1,4 @@
-﻿﻿-- ============================================================
+﻿-- ============================================================
 -- 03_v2_v3.sql  Smart Locker, PRJ301 FALL2026
 -- v2 (open methods, PIN, fingerprint), Vietnamese seed names, v3 (sizes, prices, overdue) and the VNU-HCM campus.
 -- Run after 02_data_v1.sql. Safe to run again; it resets the LOCKER-01 key to the public seed key (README).
