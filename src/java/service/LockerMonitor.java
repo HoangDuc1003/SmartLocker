@@ -44,6 +44,9 @@ public class LockerMonitor implements ServletContextListener {
     /** How often the dashboard snapshot is refreshed (seconds). */
     private static final int SNAPSHOT_INTERVAL_SEC  = 2;
 
+    /** How often the audit chain is walked (seconds): the log can be large, so never with every snapshot. */
+    private static final int AUDIT_INTERVAL_SEC     = 60;
+
     /** If the cached snapshot is older than this, the API thread refreshes it immediately. */
     private static final long STALENESS_LIMIT_MS    = 3_000L;
 
@@ -97,6 +100,19 @@ public class LockerMonitor implements ServletContextListener {
 
     private ScheduledExecutorService scheduler;
     private ScheduledExecutorService mailer;
+    private ScheduledExecutorService auditor;
+
+    /** The last finished audit chain check, read by each snapshot. Valid until a check says otherwise (M6 adds "unknown"). */
+    private static volatile boolean auditChainValid = true;
+
+    /** Walks the audit log and stores the result. A check that could not finish keeps the last result. */
+    public static void checkAuditChain() {
+        try {
+            auditChainValid = AuditVerifier.findFirstBroken() == -1;
+        } catch (Exception | OutOfMemoryError e) {   // an exception escaping a scheduled task cancels all its future runs
+            LOG.log(Level.WARNING, "AuditVerifier failed: " + e);
+        }
+    }
 
     /** How often the due reminder e-mails are looked for (seconds). */
     private static final int MAIL_INTERVAL_SEC = 30;
@@ -130,7 +146,15 @@ public class LockerMonitor implements ServletContextListener {
             }
         }, PROCEDURE_INTERVAL_SEC, PROCEDURE_INTERVAL_SEC, TimeUnit.SECONDS);
 
-        // 3. v3: due reminder e-mails on their own thread, so a slow SMTP server never delays the jobs above
+        // 3. Audit chain check on its own thread: a large log must not delay the snapshot or the clock jobs
+        auditor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "LockerMonitor-audit");
+            t.setDaemon(true);
+            return t;
+        });
+        auditor.scheduleWithFixedDelay(LockerMonitor::checkAuditChain, 0, AUDIT_INTERVAL_SEC, TimeUnit.SECONDS);
+
+        // 4. v3: due reminder e-mails on their own thread, so a slow SMTP server never delays the jobs above
         mailer = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "LockerMonitor-mail");
             t.setDaemon(true);
@@ -159,6 +183,9 @@ public class LockerMonitor implements ServletContextListener {
         if (mailer != null) {
             mailer.shutdownNow();
         }
+        if (auditor != null) {
+            auditor.shutdownNow();
+        }
         CACHE.set(null);
         DbContext.shutdown();
     }
@@ -175,15 +202,7 @@ public class LockerMonitor implements ServletContextListener {
         try {
             DashboardDao.KpiSnapshot kpis = dao.fetchKpis();
 
-            // Audit chain check — expensive on large logs; run only when snapshot is built
-            // and cache the result inside the snapshot so the API never triggers it.
-            try {
-                long broken = service.AuditVerifier.findFirstBroken();
-                kpis.auditChainValid = (broken == -1);
-            } catch (Exception e) {
-                LOG.log(Level.WARNING, "AuditVerifier failed, assuming valid: " + e.getMessage());
-                kpis.auditChainValid = true;
-            }
+            kpis.auditChainValid = auditChainValid;   // from the scheduled check, never walked here
 
             return new Snapshot(
                 kpis,

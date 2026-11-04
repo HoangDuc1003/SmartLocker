@@ -75,6 +75,17 @@ public class UserDao {
         return null;
     }
 
+    /** The account's own spelling of a typed username, or null when there is no such account. */
+    public String findUsername(String typed) throws SQLException {
+        try (Connection conn = DbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT username FROM Users WHERE username = ?")) {
+            ps.setString(1, typed);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        }
+    }
+
     /** v3: with the optional e-mail that receives the due reminders; an e-mail in use = 2601 on UX_Users_email. */
     public int register(String username, String password, String fullName, String email) throws SQLException {
         // one transaction: INSERT Users, then INSERT UserRole for END_USER

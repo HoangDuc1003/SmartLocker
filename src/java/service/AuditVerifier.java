@@ -9,10 +9,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
- * Recomputes the whole hash chain of the audit log and finds the first row that does not match.
+ * Recomputes the whole hash chain of the audit log and finds the first row that does not match, one row at a time:
+ * the log can be larger than the heap.
  * The text that is hashed must be built exactly as Audit_Append builds it in SQL.
  */
 public class AuditVerifier {
@@ -63,51 +65,90 @@ public class AuditVerifier {
         return sb.toString();
     }
 
+    /** Walks the chain in order, holding only the hash of the row before: the link to it, then the recomputed hash. */
+    private static final class Walker {
+        private final MessageDigest digest;
+        private String prevHash = ZERO_HASH;
+
+        Walker() {
+            try {
+                digest = MessageDigest.getInstance("SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        /** False when this row does not continue the chain. */
+        boolean accept(Row r) {
+            String text = r.auditId + "|" + r.tsText + "|" + r.actor + "|" + r.action + "|" + r.objectType + "|"
+                    + r.objectId + "|" + r.diff + "|" + prevHash;
+            String expected = toHex(digest.digest(text.getBytes(UTF16LE)));
+            if (!prevHash.equals(r.prevHash) || !expected.equals(r.chainHash)) {
+                return false;
+            }
+            prevHash = expected;
+            return true;
+        }
+    }
+
     /** The audit_id of the first broken row, or -1 when the whole chain is intact. Works on rows already loaded. */
     public static long findFirstBroken(List<Row> rows) {
-        // walk the chain in order: the link to the previous row, then the recomputed hash
-        String prevHash = ZERO_HASH;
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            for (Row r : rows) {
-                String text = r.auditId + "|" + r.tsText + "|" + r.actor + "|" + r.action + "|" + r.objectType + "|"
-                        + r.objectId + "|" + r.diff + "|" + prevHash;
-                String expected = toHex(digest.digest(text.getBytes(UTF16LE)));
-                if (!prevHash.equals(r.prevHash) || !expected.equals(r.chainHash)) {
-                    return r.auditId;
-                }
-                prevHash = expected;
+        return findFirstBroken(rows.iterator());
+    }
+
+    /** Same, keeping no row that was already checked. */
+    public static long findFirstBroken(Iterator<Row> rows) {
+        Walker walker = new Walker();
+        while (rows.hasNext()) {
+            Row r = rows.next();
+            if (!walker.accept(r)) {
+                return r.auditId;
             }
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
         }
         return -1;
     }
 
-    /** Reads the log from the database in chain order. */
+    // the query converts ts to text in SQL and turns NULL into an empty diff
+    private static final String LOG_IN_CHAIN_ORDER =
+            "SELECT a.audit_id, CONVERT(NVARCHAR(33), a.ts, 126), a.actor_user_id, a.action, a.object_type, "
+            + "a.object_id, ISNULL(a.diff_json, N''), h.prev_hash, h.chain_hash "
+            + "FROM AuditLog a JOIN HashChain h ON h.audit_id = a.audit_id ORDER BY h.anchor_id";
+
+    private static Row rowAt(ResultSet rs) throws SQLException {
+        int actor = rs.getInt(3);
+        Integer actorOrNull = rs.wasNull() ? null : actor;
+        long objectId = rs.getLong(6);
+        Long objectOrNull = rs.wasNull() ? null : objectId;
+        return new Row(rs.getLong(1), rs.getString(2), actorOrNull, rs.getString(4), rs.getString(5),
+                objectOrNull, rs.getString(7), rs.getString(8), rs.getString(9));
+    }
+
+    /** The whole log in memory, for the tests only: production code walks it with {@link #findFirstBroken()}. */
     public static List<Row> loadRows() throws SQLException {
-        // the query converts ts to text in SQL and turns NULL into an empty diff
-        String sql = "SELECT a.audit_id, CONVERT(NVARCHAR(33), a.ts, 126), a.actor_user_id, a.action, a.object_type, "
-                + "a.object_id, ISNULL(a.diff_json, N''), h.prev_hash, h.chain_hash "
-                + "FROM AuditLog a JOIN HashChain h ON h.audit_id = a.audit_id ORDER BY h.anchor_id";
         List<Row> rows = new ArrayList<>();
         try (Connection conn = DbContext.getConnection();
              Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
+             ResultSet rs = st.executeQuery(LOG_IN_CHAIN_ORDER)) {
             while (rs.next()) {
-                int actor = rs.getInt(3);
-                Integer actorOrNull = rs.wasNull() ? null : actor;
-                long objectId = rs.getLong(6);
-                Long objectOrNull = rs.wasNull() ? null : objectId;
-                rows.add(new Row(rs.getLong(1), rs.getString(2), actorOrNull, rs.getString(4), rs.getString(5),
-                        objectOrNull, rs.getString(7), rs.getString(8), rs.getString(9)));
+                rows.add(rowAt(rs));
             }
         }
         return rows;
     }
 
-    /** The audit_id of the first broken row, or -1 when intact. */
+    /** The audit_id of the first broken row, or -1 when intact. Reads the log as a stream (forward-only, adaptive buffering). */
     public static long findFirstBroken() throws SQLException {
-        return findFirstBroken(loadRows());
+        Walker walker = new Walker();
+        try (Connection conn = DbContext.getConnection();
+             Statement st = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+             ResultSet rs = st.executeQuery(LOG_IN_CHAIN_ORDER)) {
+            while (rs.next()) {
+                Row r = rowAt(rs);
+                if (!walker.accept(r)) {
+                    return r.auditId;
+                }
+            }
+        }
+        return -1;
     }
 }
