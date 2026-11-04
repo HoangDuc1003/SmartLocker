@@ -1,0 +1,2 @@
+# the SQL scripts keep CRLF on every checkout (their BOM is part of the content)
+sql/*.sql text eol=crlf
