@@ -23,8 +23,10 @@ $copy = Join-Path $Out "test_setup.sql"
 if ($LASTEXITCODE -ne 0) { throw "test_setup.sql failed on $Database." }
 
 $json = Join-Path $Out "newman.json"
+if (Test-Path $json) { Remove-Item -Force $json }   # a crashed run must not be judged by the results of the last one
 & cmd /c "newman run `"$repo\docs\postman\SmartLocker-v2.postman_collection.json`" -e `"$repo\docs\postman\SmartLocker-local.postman_environment.json`" --env-var base_url=http://localhost:8081/SmartLocker --env-var api_key=$ApiKey --reporters json --reporter-json-export `"$json`" --reporter-json-omitHeaders --timeout-request 30000 >nul 2>&1"
 
+if (-not (Test-Path $json)) { throw "newman wrote no report: it did not run." }
 # One line per failed assertion, stable from run to run: folder/request :: assertion
 $run = (Get-Content $json -Raw -Encoding UTF8 | ConvertFrom-Json).run
 $failed = @($run.failures | ForEach-Object { "$($_.source.name) :: $(if ($_.error.test) { $_.error.test } else { $_.error.message })" } | Sort-Object)

@@ -62,7 +62,8 @@ SELECT o.name + ' ' + IIF(kc.is_system_named = 1, '<auto>', ISNULL(i.name, '<hea
   + IIF(i.is_primary_key = 1, ' PK', '') + IIF(i.is_unique_constraint = 1, ' UQ', '') + IIF(i.is_unique = 1, ' UNIQUE', '')
   + ' (' + ISNULL((SELECT STRING_AGG(COL_NAME(x.object_id, x.column_id) + IIF(x.is_descending_key = 1, ' DESC', ''), ',') WITHIN GROUP (ORDER BY x.key_ordinal) FROM sys.index_columns x WHERE x.object_id = i.object_id AND x.index_id = i.index_id AND x.is_included_column = 0), '') + ')'
   + ISNULL(' INCLUDE (' + (SELECT STRING_AGG(COL_NAME(x.object_id, x.column_id), ',') WITHIN GROUP (ORDER BY x.column_id) FROM sys.index_columns x WHERE x.object_id = i.object_id AND x.index_id = i.index_id AND x.is_included_column = 1) + ')', '')
-  + ISNULL(' WHERE ' + i.filter_definition, '') AS line
+  + ISNULL(' WHERE ' + i.filter_definition, '') + IIF(i.is_disabled = 1, ' DISABLED', '') + IIF(i.ignore_dup_key = 1, ' IGNORE_DUP_KEY', '')
+  + IIF(i.fill_factor <> 0, ' FILLFACTOR=' + CAST(i.fill_factor AS VARCHAR), '') AS line
 FROM sys.indexes i JOIN sys.objects o ON o.object_id = i.object_id AND o.type IN ('U','V')
 LEFT JOIN sys.key_constraints kc ON kc.parent_object_id = i.object_id AND kc.unique_index_id = i.index_id
 ORDER BY line
@@ -77,25 +78,61 @@ Save-Query "06_objects.txt" @"
 SELECT line FROM (
   SELECT o.type_desc COLLATE DATABASE_DEFAULT + ' ' + o.name AS line FROM sys.objects o
     WHERE o.is_ms_shipped = 0 AND o.parent_object_id = 0 AND o.type NOT IN ('S','IT','SQ') OR o.type = 'SO'
-  UNION ALL SELECT 'USER TYPE ' + t.name FROM sys.types t WHERE t.is_user_defined = 1
-  UNION ALL SELECT 'TRIGGER ' + tr.name + ' on ' + OBJECT_NAME(tr.parent_id) + IIF(tr.is_disabled = 1, ' DISABLED', '') + IIF(tr.is_instead_of_trigger = 1, ' INSTEAD OF', '')
-    FROM sys.triggers tr WHERE tr.parent_class = 1
+  UNION ALL SELECT 'USER TYPE ' + t.name + ' base=' + TYPE_NAME(t.system_type_id) + ' len=' + CAST(t.max_length AS VARCHAR) + ' prec=' + CAST(t.precision AS VARCHAR) + ' scale=' + CAST(t.scale AS VARCHAR) + IIF(t.is_nullable = 1, ' NULL', ' NOT NULL')
+    FROM sys.types t WHERE t.is_user_defined = 1
+  UNION ALL SELECT 'TABLE TYPE ' + tt.name + ' #' + RIGHT('00' + CAST(c.column_id AS VARCHAR), 3) + ' ' + c.name + ' ' + TYPE_NAME(c.user_type_id) + ' len=' + CAST(c.max_length AS VARCHAR) + IIF(c.is_nullable = 1, ' NULL', ' NOT NULL')
+    FROM sys.table_types tt JOIN sys.columns c ON c.object_id = tt.type_table_object_id
+  UNION ALL SELECT 'SEQUENCE ' + s.name + ' start=' + CAST(s.start_value AS VARCHAR) + ' inc=' + CAST(s.increment AS VARCHAR) + ' current=' + CAST(s.current_value AS VARCHAR)
+    FROM sys.sequences s
+  UNION ALL SELECT 'TRIGGER ' + tr.name + ' on ' + ISNULL(OBJECT_NAME(tr.parent_id), 'DATABASE') + IIF(tr.is_disabled = 1, ' DISABLED', '') + IIF(tr.is_instead_of_trigger = 1, ' INSTEAD OF', '')
+    FROM sys.triggers tr
 ) x ORDER BY line
+"@
+
+Save-Query "08_security.txt" @"
+SELECT line FROM (
+  SELECT 'PRINCIPAL ' + p.name + ' ' + p.type_desc COLLATE DATABASE_DEFAULT AS line FROM sys.database_principals p WHERE p.is_fixed_role = 0 AND p.principal_id > 4 AND p.principal_id < 16384
+  UNION ALL SELECT 'PERMISSION ' + d.state_desc COLLATE DATABASE_DEFAULT + ' ' + d.permission_name COLLATE DATABASE_DEFAULT + ' on ' + d.class_desc COLLATE DATABASE_DEFAULT + ' ' + ISNULL(OBJECT_NAME(d.major_id), '') + ' to ' + USER_NAME(d.grantee_principal_id)
+    FROM sys.database_permissions d WHERE d.grantee_principal_id > 4 AND d.grantee_principal_id < 16384
+  UNION ALL SELECT 'MEMBER ' + USER_NAME(m.member_principal_id) + ' of ' + USER_NAME(m.role_principal_id) FROM sys.database_role_members m WHERE m.member_principal_id <> 1
+) x ORDER BY line
+"@
+Save-Query "09_database.txt" @"
+SELECT line FROM (
+  SELECT 'EXTENDED PROPERTY class=' + CAST(e.class AS VARCHAR) + ' ' + ISNULL(OBJECT_NAME(e.major_id), '') + ' minor=' + CAST(e.minor_id AS VARCHAR) + ' ' + e.name + '=' + CAST(e.value AS NVARCHAR(4000)) AS line FROM sys.extended_properties e
+  UNION ALL SELECT 'OPTION ' + o.k + '=' + o.v FROM sys.databases d CROSS APPLY (VALUES
+    ('compatibility_level', CAST(d.compatibility_level AS VARCHAR)), ('collation', CAST(d.collation_name AS VARCHAR(100)) COLLATE DATABASE_DEFAULT), ('recursive_triggers', CAST(d.is_recursive_triggers_on AS VARCHAR)),
+    ('ansi_nulls', CAST(d.is_ansi_nulls_on AS VARCHAR)), ('ansi_padding', CAST(d.is_ansi_padding_on AS VARCHAR)), ('ansi_warnings', CAST(d.is_ansi_warnings_on AS VARCHAR)),
+    ('arithabort', CAST(d.is_arithabort_on AS VARCHAR)), ('concat_null', CAST(d.is_concat_null_yields_null_on AS VARCHAR)), ('quoted_identifier', CAST(d.is_quoted_identifier_on AS VARCHAR)),
+    ('read_committed_snapshot', CAST(d.is_read_committed_snapshot_on AS VARCHAR)), ('snapshot_isolation', CAST(d.snapshot_isolation_state AS VARCHAR)), ('recovery', CAST(d.recovery_model_desc AS VARCHAR(60)) COLLATE DATABASE_DEFAULT),
+    ('auto_close', CAST(d.is_auto_close_on AS VARCHAR)), ('trustworthy', CAST(d.is_trustworthy_on AS VARCHAR)), ('broker', CAST(d.is_broker_enabled AS VARCHAR))
+  ) o(k, v) WHERE d.name = DB_NAME()
+) x ORDER BY line
+"@
+# The hashes are masked (they cover the build time), so the chain itself is recomputed here: a seed that edits a logged row shows.
+Save-Query "10_audit_chain.txt" @"
+SELECT 'audit ' + CAST(a.audit_id AS VARCHAR)
+  + ' row_hash=' + IIF(a.row_hash = h.chain_hash, 'ok', 'BAD')
+  + ' recomputed=' + IIF(LOWER(CONVERT(CHAR(64), HASHBYTES('SHA2_256', CONCAT(a.audit_id, '|', CONVERT(NVARCHAR(33), a.ts, 126), '|', a.actor_user_id, '|', a.action, '|', a.object_type, '|', a.object_id, '|', ISNULL(a.diff_json, N''), '|', h.prev_hash)), 2)) = h.chain_hash, 'ok', 'BAD')
+  + ' link=' + IIF(h.prev_hash = LAG(h.chain_hash, 1, REPLICATE('0', 64)) OVER (ORDER BY h.anchor_id), 'ok', 'BAD') AS line
+FROM AuditLog a LEFT JOIN HashChain h ON h.audit_id = a.audit_id ORDER BY a.audit_id
 "@
 
 # ---- modules: comments and white space gone, line breaks where we choose them, so a reformat never shows ----
 $strip = [regex]"('(?:[^']|'')*')|(--[^\r\n]*)|(/\*[\s\S]*?\*/)|(\s+)"
 $breaks = [regex]"('(?:[^']|'')*')|\b(BEGIN|END|IF|ELSE|WHILE|SELECT|FROM|WHERE|JOIN|LEFT JOIN|INSERT|UPDATE|DELETE|MERGE|DECLARE|SET|EXEC|THROW|RETURN|COMMIT|ROLLBACK|CASE|WHEN)\b"
 $out = New-Object System.Text.StringBuilder
-$mods = Get-Rows $conn "SELECT o.name, o.type_desc, m.definition, m.uses_ansi_nulls, m.uses_quoted_identifier FROM sys.sql_modules m JOIN sys.objects o ON o.object_id = m.object_id ORDER BY o.name"
+$mods = Get-Rows $conn "SELECT ISNULL(o.name, t.name) AS name, ISNULL(o.type_desc COLLATE DATABASE_DEFAULT, 'DATABASE_TRIGGER') AS type_desc, m.definition, m.uses_ansi_nulls, m.uses_quoted_identifier FROM sys.sql_modules m LEFT JOIN sys.objects o ON o.object_id = m.object_id LEFT JOIN sys.triggers t ON t.object_id = m.object_id ORDER BY ISNULL(o.name, t.name)"
 foreach ($m in $mods.Rows) {
     $text = $strip.Replace([string]$m.definition, { param($x) if ($x.Groups[1].Success) { $x.Value } else { ' ' } }).Trim()
     # CREATE OR ALTER, ALTER and CREATE store different text for the same module
     $text = [regex]::Replace($text, '^(CREATE\s+OR\s+ALTER|ALTER|CREATE)\s+(PROCEDURE|PROC)\b', 'CREATE PROCEDURE', 'IgnoreCase')
     $text = [regex]::Replace($text, '^(CREATE\s+OR\s+ALTER|ALTER|CREATE)\s+(VIEW|FUNCTION|TRIGGER)\b', 'CREATE $2', 'IgnoreCase')
-    $text = $breaks.Replace($text, { param($x) if ($x.Groups[1].Success) { $x.Value } else { "`n" + $x.Value } })
+    # a line break inside a string literal is content: print it escaped, so the line handling below never reaches it
+    $text = $breaks.Replace($text, { param($x) if ($x.Groups[1].Success) { $x.Value.Replace("`r", '\r').Replace("`n", '\n') } else { "`n" + $x.Value } })
     [void]$out.Append("=== $($m.type_desc) $($m.name) ansi_nulls=$($m.uses_ansi_nulls) quoted_identifier=$($m.uses_quoted_identifier)`n")
-    [void]$out.Append((($text -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ }) -join "`n") + "`n")
+    # every line carries its module, so a diff line (and an accepted.txt line) says where it is
+    [void]$out.Append((($text -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ } | ForEach-Object { "$($m.name): $_" }) -join "`n") + "`n")
 }
 Write-Utf8 (Join-Path $OutDir "07_modules.txt") $out.ToString()
 
@@ -103,16 +140,18 @@ Write-Utf8 (Join-Path $OutDir "07_modules.txt") $out.ToString()
 $mark = (Get-Rows $conn "SELECT DATEADD(MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), d.create_date) AS m FROM sys.databases d WHERE d.name = DB_NAME()").Rows[0].m
 function Format-Cell($v, [string]$typeName, [string]$key) {
     if ($v -is [DBNull]) { return 'NULL' }
-    if ($natural.ContainsKey($key) -and -not $RawNatural) { return "<natural:$(([string]$v).Length)>" }
-    if ($v -is [string] -and $v -match '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?$') { $v = [DateTime]::Parse($v, [Globalization.CultureInfo]::InvariantCulture) }
+    if ($natural.ContainsKey($key) -and -not $RawNatural) { return "<natural:$(([string]$v).Length)$(if ([string]$v -match '^\d+$') { ':digits' })>" }
+    if ($v -is [string] -and $v -match '^\d{4}-\d\d-\d\d[T ]\d\d:\d\d:\d\d(\.\d+)?$') { $v = [DateTime]::Parse($v, [Globalization.CultureInfo]::InvariantCulture) }
     if ($v -is [DateTime]) {
         if ($typeName -eq 'date') { return 'D' + [int]($v.Date - $mark.Date).TotalDays }
         # a seed row is "now minus N minutes"; the build takes a second or two, so round the offset to the minute
         return 'T' + [string][math]::Round(($v - $mark).TotalMinutes) + 'm'
     }
     if ($v -is [byte[]]) { return '0x' + [BitConverter]::ToString($v).Replace('-', '') }
+    if ($v -is [double] -or $v -is [float]) { return $v.ToString('R', [Globalization.CultureInfo]::InvariantCulture) }
     if ($v -is [IFormattable]) { return $v.ToString($null, [Globalization.CultureInfo]::InvariantCulture) }
-    return ([string]$v).Replace('\', '\\').Replace("`r", '\r').Replace("`n", '\n')
+    # other control characters too: one NUL makes git call the whole file binary
+    return [regex]::Replace(([string]$v).Replace('\', '\\').Replace("`r", '\r').Replace("`n", '\n'), '[\x00-\x1F]', { param($c) '\x{0:X2}' -f [int][char]$c.Value })
 }
 $tables = Get-Rows $conn "SELECT name FROM sys.tables WHERE is_ms_shipped = 0 ORDER BY name"
 foreach ($tr in $tables.Rows) {

@@ -3,8 +3,12 @@
 # Usage: DB_URL='jdbc:sqlserver://localhost:1433;databaseName=SL_X;encrypt=false' sh scripts/test.sh [test.PricingTest,...]
 # (default: every class in test/test). The tests write to the database, so only an SL_* database is accepted.
 set -e
-case "$DB_URL" in
-  *databaseName=SL_*) ;;
+DB_NAME=$(printf '%s' "$DB_URL" | sed -n 's/.*;databaseName=\([^;]*\).*/\1/p')
+case "$DB_URL:$DB_NAME" in
+  *PRJ301_LOCKER*) DB_NAME= ;;
+esac
+case "$DB_NAME" in
+  SL_*) ;;
   *) echo "DB_URL must name an SL_* database (see scripts/proof/README.md); got: '$DB_URL'" >&2; exit 2 ;;
 esac
 cd "$(dirname "$0")/.."

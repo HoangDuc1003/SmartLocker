@@ -4,7 +4,8 @@
 param(
     [Parameter(Mandatory)][string]$Repo,
     [Parameter(Mandatory)][string]$Database,
-    [switch]$TestSetup      # also run sql/test_setup.sql (the Postman accounts) after the core scripts
+    [switch]$TestSetup,     # also run sql/test_setup.sql (the Postman accounts) after the core scripts
+    [string[]]$Also = @()   # more scripts of sql/ to run last, in this order (demo_box.sql, test_overdue.sql...)
 )
 . "$PSScriptRoot\lib.ps1"
 Assert-TestDb $Database
@@ -14,6 +15,7 @@ $orderFile = Join-Path $Repo "sql\build-order.txt"
 $scripts = if (Test-Path $orderFile) { Get-Content $orderFile | Where-Object { $_.Trim() } }
            else { @("01_schema.sql", "02_data_v1.sql", "03_v2_v3.sql") }
 if ($TestSetup) { $scripts = @($scripts) + "test_setup.sql" }
+$scripts = @($scripts) + $Also
 
 $tmp = Join-Path ([IO.Path]::GetTempPath()) ("sl-proof-" + $Database)
 if (Test-Path $tmp) { Remove-Item -Recurse -Force $tmp }

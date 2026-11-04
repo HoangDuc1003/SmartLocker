@@ -21,9 +21,14 @@ function New-Fault([string]$Name, [string]$File, [string]$From, [string]$To) {
     Copy-Item "$Old\sql\*" "$dir\sql\"
     $path = "$dir\sql\$File"
     $text = [IO.File]::ReadAllText($path, [Text.Encoding]::UTF8)
-    $at = $text.IndexOf($From)
-    if ($at -lt 0) { throw "Fault '$Name': text not found in ${File}: $From" }
-    [IO.File]::WriteAllText($path, $text.Remove($at, $From.Length).Insert($at, $To), (New-Object System.Text.UTF8Encoding $true))
+    if ($From) {
+        $at = $text.IndexOf($From)
+        if ($at -lt 0) { throw "Fault '$Name': text not found in ${File}: $From" }
+        $text = $text.Remove($at, $From.Length).Insert($at, $To)
+    } else {
+        $text += "`r`nGO`r`n$To`r`nGO`r`n"   # a statement at the end of the script
+    }
+    [IO.File]::WriteAllText($path, $text, (New-Object System.Text.UTF8Encoding $true))
     return $dir
 }
 
@@ -61,7 +66,14 @@ Remove-TestDb $a; Remove-TestDb $b
 $faults = @(
     @{ n = "literal in a procedure"; f = "03_v2_v3.sql"; from = "extended 3 times at most"; to = "extended 4 times at most"; expect = "new/07_modules.txt" },
     @{ n = "one check";              f = "01_schema.sql"; from = "CHECK (amount >= 1000)"; to = "CHECK (amount >= 1001)"; expect = "new/03_constraints.txt" },
-    @{ n = "one seed cell";          f = "02_data_v1.sql"; from = "N'0905000001'"; to = "N'0905999001'"; expect = "new/data/Users.txt" }
+    @{ n = "one seed cell";          f = "02_data_v1.sql"; from = "N'0905000001'"; to = "N'0905999001'"; expect = "new/data/Users.txt" },
+    # what the export missed before the cross-review
+    @{ n = "a disabled index";       f = "03_v2_v3.sql"; from = ""; to = "ALTER INDEX UX_Users_email ON dbo.Users DISABLE;"; expect = "new/04_indexes.txt" },
+    @{ n = "a database trigger";     f = "03_v2_v3.sql"; from = ""; to = "CREATE TRIGGER tr_proof_ddl ON DATABASE FOR CREATE_TABLE AS PRINT 'x';"; expect = "new/06_objects.txt" },
+    @{ n = "a database user";        f = "03_v2_v3.sql"; from = ""; to = "CREATE USER proof_user WITHOUT LOGIN; GRANT SELECT ON dbo.Users TO proof_user;"; expect = "new/08_security.txt" },
+    @{ n = "a database option";      f = "03_v2_v3.sql"; from = ""; to = "ALTER DATABASE PRJ301_LOCKER SET RECURSIVE_TRIGGERS ON;"; expect = "new/09_database.txt" },
+    @{ n = "a broken audit chain";   f = "03_v2_v3.sql"; from = ""; to = "UPDATE dbo.HashChain SET chain_hash = REPLICATE('0', 64) WHERE anchor_id = 3;"; expect = "new/10_audit_chain.txt" },
+    @{ n = "a logged row edited";    f = "03_v2_v3.sql"; from = ""; to = "UPDATE dbo.AuditLog SET action = N'EDITED' WHERE audit_id = 3;"; expect = "new/10_audit_chain.txt" }
 )
 $i = 0
 foreach ($x in $faults) {
@@ -88,6 +100,23 @@ foreach ($t in @(
     & powershell -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot\compare.ps1" -Work "$root\same" -Accepted "$root\accepted.txt" | Out-Null
     Check $t.n ($LASTEXITCODE -eq 1)
 }
+# Fixtures: what git or the parser could lose.
+function Compare-Fixture([string]$Name, [string]$File, [string]$OldText, [string]$NewText, [string]$AcceptedLine = "") {
+    $w = "$root\fx"
+    if (Test-Path $w) { Remove-Item -Recurse -Force $w }
+    New-Item -ItemType Directory "$w\old", "$w\new" | Out-Null
+    Write-Utf8 "$w\old\$File" $OldText
+    Write-Utf8 "$w\new\$File" $NewText
+    Write-Utf8 "$root\accepted.txt" $AcceptedLine
+    & powershell -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot\compare.ps1" -Work $w -Accepted "$root\accepted.txt" | Out-Null
+    Check $Name ($LASTEXITCODE -eq 1)
+}
+Compare-Fixture "a NUL in a line does not make the diff binary" "a.txt" "a=1$([char]0)x`n" "a=2$([char]0)x`n"
+Compare-Fixture "a changed line that starts with -- is seen" "a.txt" "-- one`n" "-- two`n"
+Compare-Fixture "accepted.txt is case sensitive" "07_modules.txt" "A: x`n" "A: x`nA: 'active'`n" "07_modules.txt|+|A: 'ACTIVE'`n"
+Compare-Fixture "one accepted line covers one occurrence" "07_modules.txt" "A: x`n" "A: x`nA: y`nA: y`n" "07_modules.txt|+|A: y`n"
+Compare-Fixture "accepted.txt refuses RAISERROR" "07_modules.txt" "A: x`n" "A: x`nA: RAISERROR(1)`n" "07_modules.txt|+|A: RAISERROR(1)`n"
+
 # 4. The guard: no other database, whatever the command line says.
 $refused = $false
 try { Assert-TestDb "PRJ301_LOCKER" } catch { $refused = $true }

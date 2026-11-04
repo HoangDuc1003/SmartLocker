@@ -7,6 +7,7 @@ param(
     [string]$Work = (Join-Path ([IO.Path]::GetTempPath()) "sl-proof"),
     [string]$Accepted = "$PSScriptRoot\accepted.txt",
     [switch]$TestSetup,     # also run sql/test_setup.sql on both sides
+    [string[]]$Also = @(),  # more scripts of sql/ on both sides (demo_box.sql, test_overdue.sql, test_cleanup.sql)
     [switch]$Keep           # keep the two databases for inspection
 )
 . "$PSScriptRoot\lib.ps1"
@@ -18,8 +19,8 @@ $want = & git -C $Old rev-parse "rf-baseline^{commit}"
 if ($tag -ne $want -or (& git -C $Old status --porcelain -- sql)) { throw "$Old is not a clean checkout of rf-baseline." }
 
 $oldDb = "SL_PROOF_OLD"; $newDb = "SL_PROOF_NEW"
-& "$PSScriptRoot\build-db.ps1" -Repo $Old -Database $oldDb -TestSetup:$TestSetup
-& "$PSScriptRoot\build-db.ps1" -Repo $New -Database $newDb -TestSetup:$TestSetup
+& "$PSScriptRoot\build-db.ps1" -Repo $Old -Database $oldDb -TestSetup:$TestSetup -Also $Also
+& "$PSScriptRoot\build-db.ps1" -Repo $New -Database $newDb -TestSetup:$TestSetup -Also $Also
 if (Test-Path $Work) { Remove-Item -Recurse -Force $Work }
 New-Item -ItemType Directory $Work | Out-Null
 & "$PSScriptRoot\export-db.ps1" -Database $oldDb -OutDir "$Work\old"
