@@ -10,7 +10,7 @@ import service.SessionContext;
 
 /**
  * Loads everything the rules need besides the session itself: valid ranges, calibration,
- * clock difference, the remote command, the card and the booking.
+ * clock difference, the remote command and the booking.
  * Call it after the session is stored, because some queries read the stored row by session_id.
  */
 public class SessionContextDao {
@@ -64,19 +64,6 @@ public class SessionContextDao {
                     ps.setLong(1, s.getSessionId());
                     try (ResultSet rs = ps.executeQuery()) {
                         ctx.setCommandValid(rs.next() && RuleEngine.isCommandInWindow(rs.getLong(1)));
-                    }
-                }
-            }
-
-            // 5. the card: unknown card = null status and owner
-            if (s.getCardUid() != null) {
-                try (PreparedStatement ps = conn.prepareStatement("SELECT status, user_id FROM UserCard WHERE card_uid = ?")) {
-                    ps.setString(1, s.getCardUid());
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next()) {
-                            ctx.setCardStatus(rs.getString(1));
-                            ctx.setCardOwnerId(rs.getInt(2));
-                        }
                     }
                 }
             }

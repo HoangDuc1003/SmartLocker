@@ -106,11 +106,9 @@ public class PricingTest {
 
     @Test
     public void tenThousandMustStayAfterBooking() {
-        assertTrue(Pricing.canBook(16500, 6500, 0, 10000));
-        assertFalse(Pricing.canBook(16499, 6500, 0, 10000));
-        assertTrue(Pricing.canBook(26500, 6500, 10000, 10000));  // a first card also keeps its 10,000 deposit
-        assertFalse(Pricing.canBook(26499, 6500, 10000, 10000));
-        assertFalse(Pricing.canBook(-100, 0, 0, 10000));         // a debt blocks every booking
+        assertTrue(Pricing.canBook(16500, 6500, 10000));
+        assertFalse(Pricing.canBook(16499, 6500, 10000));
+        assertFalse(Pricing.canBook(-100, 0, 10000));         // a debt blocks every booking
     }
 
     // ---- time marks: hold 15 minutes, lock after grace, escalate after 48 hours, remind 15 minutes before ----

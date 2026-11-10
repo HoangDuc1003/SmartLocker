@@ -12,7 +12,7 @@
 -- ============================================================
 -- test_setup.sql  Test accounts for the v2 Postman collection (docs/postman). Not demo data.
 -- Run before each Postman run. Safe to run again: it only touches the v2test* accounts.
---   v2pin, v2card, v2fp  END_USER in Canteen, balance 200,000, no open booking, no card, no finger
+--   v2pin, v2card, v2fp  END_USER in Canteen, balance 200,000, no open booking, no finger
 --   v2noshow             a PIN booking on CANT-A whose hold time is already over (scenario 6)
 --   v3overdue            v3: balance 200,000, no open booking (overdue scenarios 11, 12, 15, 16 with test_overdue.sql)
 --   v3poor               v3: balance 12,000, below price + 10,000 buffer for every size (scenario 14)
@@ -33,7 +33,7 @@ DECLARE @dev INT = (SELECT device_id FROM Device WHERE device_code = N'LOCKER-01
 
 INSERT INTO Users (username, password_hash, full_name, status, balance, area_id)
 SELECT v.u, @hash, v.n, N'ACTIVE', 200000, @area
-FROM (VALUES (N'v2pin', N'Kiểm thử mật mã'), (N'v2card', N'Kiểm thử thẻ từ'),
+FROM (VALUES (N'v2pin', N'Kiểm thử mật mã'), (N'v2card', N'Kiểm thử điện thoại'),
              (N'v2fp', N'Kiểm thử vân tay'), (N'v2noshow', N'Kiểm thử không đến'),
              (N'v3overdue', N'Kiểm thử quá hạn'), (N'v3poor', N'Kiểm thử ít tiền')) v(u, n)
 WHERE NOT EXISTS (SELECT 1 FROM Users x WHERE x.username = v.u);
@@ -56,9 +56,7 @@ WHERE d.status IN (N'RESERVED', N'ACTIVE');
 UPDATE s SET s.status = N'AVAILABLE' FROM LockerSlot s JOIN @open o ON o.slot_id = s.locker_slot_id
 WHERE s.status IN (N'RESERVED', N'OCCUPIED');
 
--- no card, no finger: scenarios 3 and 4 enroll again (Postman makes a new card UID each run)
-UPDATE c SET c.status = N'BLOCKED', c.lost_at = ISNULL(c.lost_at, SYSUTCDATETIME())
-FROM UserCard c JOIN @tests t ON t.user_id = c.user_id WHERE c.status = N'ACTIVE';
+-- no finger: scenario 4 enrolls again
 UPDATE f SET f.status = N'DELETED' FROM Fingerprint f JOIN @tests t ON t.user_id = f.user_id WHERE f.status = N'ACTIVE';
 UPDATE u SET u.balance = 200000, u.status = N'ACTIVE' FROM Users u JOIN @tests t ON t.user_id = u.user_id;
 UPDATE Users SET balance = 12000 WHERE username = N'v3poor';

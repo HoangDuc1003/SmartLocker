@@ -40,7 +40,7 @@
                 <div class="field">
                     <label for="cmdReason">Lý do (ít nhất 5 ký tự)</label>
                     <input type="text" id="cmdReason" name="reason" required minlength="5" maxlength="200"
-                           placeholder="Ví dụ: Khách quên thẻ, đã xác minh CCCD">
+                           placeholder="Ví dụ: Khách hết pin điện thoại, đã xác minh CCCD">
                 </div>
                 <div>
                     <button type="submit" class="btn--block" data-confirm="Gửi lệnh mở khóa ngăn đã chọn?">Gửi lệnh mở khóa</button>
@@ -52,7 +52,6 @@
     <form class="filter" method="get" action="${ctx}/RemoteCommandController">
         <select name="status" aria-label="Trạng thái">
             <option value="">Tất cả trạng thái</option>
-            <option value="AWAITING_EMAIL" ${status == 'AWAITING_EMAIL' ? 'selected' : ''}>Chờ xác nhận email</option>
             <option value="PENDING" ${status == 'PENDING' ? 'selected' : ''}>Chờ xử lý</option>
             <option value="SENT" ${status == 'SENT' ? 'selected' : ''}>Đã gửi</option>
             <option value="DONE" ${status == 'DONE' ? 'selected' : ''}>Hoàn tất</option>

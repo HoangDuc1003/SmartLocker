@@ -179,8 +179,6 @@ public final class MailTemplates {
         v.put("my_locker_url", link(mail, "/MyLockerController"));
         v.put("map_url", link(mail, "/LockerMapController"));
         v.put("topup_url", link(mail, "/TopupController"));
-        v.put("action", CardMail.action("PICKUP"));
-        v.put("confirm_url", link(mail, "/c/0123456789abcdef"));
         return v;
     }
 

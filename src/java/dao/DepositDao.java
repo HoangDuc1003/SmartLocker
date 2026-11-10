@@ -17,7 +17,7 @@ import model.Deposit;
 public class DepositDao {
 
     private static final String SELECT = "SELECT d.deposit_id, d.user_id, u.username, d.slot_id, s.slot_code, b.bank_code, "
-            + "d.plan_id, p.plan_name, d.card_id, d.paid_amount, d.status, d.reserved_at, d.hold_until, "
+            + "d.plan_id, p.plan_name, d.paid_amount, d.status, d.reserved_at, d.hold_until, "
             + "d.started_at, d.due_at, d.ended_at, d.extend_count, "
             + "d.open_method, d.pin_code, d.enroll_code, d.enroll_expires, v.device_code, "
             + "s.size_code, s.size_cm, p.grace_min, d.overdue_rate, d.overdue_hours, d.overdue_fee, d.locked_at, d.escalated_at, d.custom_min "
@@ -46,8 +46,6 @@ public class DepositDao {
         d.setCustomMin(rs.wasNull() ? null : customMin);
         // a custom booking shows what was booked ("Tự chọn · 3 giờ"), not the plan it keeps for the grace time
         d.setPlanName(rs.wasNull() ? rs.getString("plan_name") : customLabel(customMin));
-        int cardId = rs.getInt("card_id");
-        d.setCardId(rs.wasNull() ? null : cardId);
         d.setPaidAmount(rs.getLong("paid_amount"));
         d.setStatus(rs.getString("status"));
         d.setReservedAt(rs.getTimestamp("reserved_at"));
@@ -95,7 +93,7 @@ public class DepositDao {
     }
 
     /** The open methods a booking may choose (spec v2, Q9). */
-    public static final java.util.List<String> OPEN_METHODS = java.util.Arrays.asList("PIN", "CARD", "FINGERPRINT");
+    public static final java.util.List<String> OPEN_METHODS = java.util.Arrays.asList("PIN", "PHONE", "FINGERPRINT");
 
     /** v2: the open method decides the code (a PIN or an enroll code); the price depends on the plan and the size only. */
     public long reserve(int userId, int slotId, int planId, String openMethod) throws SQLException {
@@ -238,28 +236,6 @@ public class DepositDao {
         }
     }
 
-    /** For the heartbeat reply: which card may open which reserved slot of this device. Keys: slot_code, card_uid. */
-    public List<Map<String, String>> reservedFor(int deviceId) throws SQLException {
-        String sql = "SELECT s.slot_code, c.card_uid FROM Deposit d "
-                + "JOIN LockerSlot s ON s.locker_slot_id = d.slot_id "
-                + "JOIN LockerBank b ON b.bank_id = s.bank_id "
-                + "JOIN UserCard c ON c.card_id = d.card_id "
-                + "WHERE b.device_id = ? AND d.status = 'RESERVED'";
-        List<Map<String, String>> list = new ArrayList<>();
-        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, deviceId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Map<String, String> row = new LinkedHashMap<>();
-                    row.put("slot_code", rs.getString(1));
-                    row.put("card_uid", rs.getString(2));
-                    list.add(row);
-                }
-            }
-        }
-        return list;
-    }
-
     /** The bookings of one user, newest first: the My bookings page. */
     public List<Deposit> listByUser(int userId) throws SQLException {
         String sql = SELECT + " WHERE d.user_id = ? ORDER BY d.reserved_at DESC";
@@ -330,8 +306,8 @@ public class DepositDao {
      * booking hits UX_Deposit_user_open (2601), which the controller turns into a message.
      */
     public long insert(Deposit d) throws SQLException {
-        String sqlDeposit = "INSERT INTO Deposit (user_id, slot_id, plan_id, card_id, status, started_at, due_at) "
-                + "VALUES (?, ?, ?, ?, ?, SYSUTCDATETIME(), ?)";
+        String sqlDeposit = "INSERT INTO Deposit (user_id, slot_id, plan_id, status, started_at, due_at) "
+                + "VALUES (?, ?, ?, ?, SYSUTCDATETIME(), ?)";
         String sqlSlot = "UPDATE LockerSlot SET status = 'OCCUPIED' WHERE locker_slot_id = ? AND status = 'AVAILABLE' "
                 + "AND NOT EXISTS (SELECT 1 FROM v_LockerSlotMap m WHERE m.slot_id = locker_slot_id AND m.display_status = 'OFFLINE')";
         try (Connection conn = DbContext.getConnection()) {
@@ -348,13 +324,8 @@ public class DepositDao {
                     ps.setInt(1, d.getUserId());
                     ps.setInt(2, d.getSlotId());
                     ps.setInt(3, d.getPlanId());
-                    if (d.getCardId() != null && d.getCardId() > 0) {
-                        ps.setInt(4, d.getCardId());
-                    } else {
-                        ps.setNull(4, Types.INTEGER);
-                    }
-                    ps.setString(5, d.getStatus() != null ? d.getStatus() : "ACTIVE");
-                    ps.setTimestamp(6, d.getDueAt());
+                    ps.setString(4, d.getStatus() != null ? d.getStatus() : "ACTIVE");
+                    ps.setTimestamp(5, d.getDueAt());
                     ps.executeUpdate();
                     try (ResultSet keys = ps.getGeneratedKeys()) {
                         depositId = keys.next() ? keys.getLong(1) : -1;

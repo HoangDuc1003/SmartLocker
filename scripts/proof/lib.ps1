@@ -4,7 +4,7 @@ $script:Server = "localhost"
 $script:SqlUser = "sa"
 $script:SqlPassword = "12345"
 $script:RealDb = "PRJ301_LOCKER"
-$script:RealDbCreated = "2026-10-28 07:20:35"
+$script:RealDbCreated = "2026-11-07 08:09:43"   # the owner rebuilt PRJ301_LOCKER on 2026-11-07
 Add-Type -AssemblyName System.Data
 
 function Assert-TestDb([string]$Name) {

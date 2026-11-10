@@ -66,4 +66,4 @@ Kết quả diff nằm ở `%TEMP%\sl-proof\diff.txt`.
 
 `newman-baseline.txt` là tập assertion đang fail, mỗi dòng một assertion. Hiện file này rỗng: 221 request (211 mục cộng các vòng lặp của kịch bản), 472 assertion, không lỗi. `newman.ps1` chạy lại `test_setup.sql` trước mỗi lần và báo `NEW FAILURE` hoặc `NOW PASSES` khi khác baseline. Khóa `device-1-api-key` là khóa seed công khai của `03_v2_v3.sql`.
 
-Collection chưa có bước nào cho `CONFIRM_EMAIL` và `WRONG_PLACE`, nên Newman xanh chưa nói gì về hai nhánh đó.
+Collection chưa có bước nào cho `WRONG_PLACE` (v7 đã bỏ `CONFIRM_EMAIL` cùng thẻ từ), nên Newman xanh chưa nói gì về nhánh đó.

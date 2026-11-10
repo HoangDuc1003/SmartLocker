@@ -106,8 +106,6 @@ public class Web {
             {"Device is not online, the command cannot be delivered", "Thiết bị đang mất kết nối, không gửi được lệnh"},
             {"Another operator is controlling this device", "Một nhân viên khác đang điều khiển thiết bị này"},
             {"A reason of at least 5 characters is required", "Cần nhập lý do ít nhất 5 ký tự"},
-            {"Card not found, not yours, or already reported", "Không tìm thấy thẻ, thẻ không phải của bạn hoặc đã báo mất"},
-            {"Only a lost or blocked card can be replaced", "Chỉ đổi được thẻ đã báo mất hoặc bị khóa"},
             {"Insufficient balance. Add funds before booking.", "Số dư không đủ. Hãy nạp tiền trước khi đặt tủ."},
             {"Booking is blocked: 3 no-shows in the last 7 days", "Bạn bị tạm khóa đặt tủ: 3 lần không đến trong 7 ngày qua"},
             {"You already have a booking in progress", "Bạn đang có một lượt đặt chưa kết thúc"},
@@ -122,10 +120,9 @@ public class Web {
             {"Ticket not found or already closed", "Không tìm thấy phiếu hoặc phiếu đã đóng"},
             {"Alert not found or already resolved", "Không tìm thấy cảnh báo hoặc cảnh báo đã xử lý"},
             // v2 (sql/03_v2_v3.sql)
-            {"Insufficient balance for the price and the card deposit", "Số dư không đủ cho giá gói và tiền cọc thẻ. Hãy nạp thêm tiền."},
-            {"Choose how to open the locker: PIN, card or fingerprint", "Hãy chọn cách mở tủ: mật mã, thẻ từ hoặc vân tay"},
+            {"Choose how to open the locker: PIN, phone or fingerprint", "Hãy chọn cách mở tủ: mật mã, điện thoại hoặc vân tay"},
             {"Could not create a unique code, try again", "Không tạo được mã, hãy thử lại"},
-            {"This booking has nothing to enroll", "Lượt đặt này không cần đăng ký thẻ hoặc vân tay"},
+            {"This booking has nothing to enroll", "Lượt đặt này không cần đăng ký vân tay"},
             {"Fingerprint not found or not yours", "Không tìm thấy vân tay hoặc vân tay không phải của bạn"},
             // v3 (sql/03_v2_v3.sql)
             {"After booking at least 10,000 VND must stay in the wallet", "Sau khi đặt, ví phải còn ít nhất 10.000 đ để dự phòng phụ phí quá hạn. Hãy nạp thêm tiền."},

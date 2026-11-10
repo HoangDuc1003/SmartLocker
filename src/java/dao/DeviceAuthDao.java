@@ -40,89 +40,64 @@ public class DeviceAuthDao {
         return row;
     }
 
-    /** method = PIN, CARD or FINGERPRINT; source = DEVICE (the box itself) or PHONE (the /k page). */
-    public Map<String, Object> authorize(int deviceId, String method, String pin, String cardUid,
-                                         Integer sensorSlot, String source) throws SQLException {
-        return authorize(deviceId, method, pin, cardUid, sensorSlot, source, null);
+    /** method = PIN or FINGERPRINT; source = DEVICE (the box itself) or PHONE (the /k page). */
+    public Map<String, Object> authorize(int deviceId, String method, String pin, Integer sensorSlot, String source)
+            throws SQLException {
+        return authorize(deviceId, method, pin, sensorSlot, source, null);
     }
 
     /**
      * v6: intent = ASK (an ACTIVE booking answers CHOOSE), OPEN (UNLOCK phase ACCESS), CHECKOUT or null (PICKUP).
      * A RESERVED booking always checks in, an overdue-locked one always picks up.
      */
-    public Map<String, Object> authorize(int deviceId, String method, String pin, String cardUid,
-                                         Integer sensorSlot, String source, String intent) throws SQLException {
-        return authorize(deviceId, method, pin, cardUid, sensorSlot, source, intent, null);
+    public Map<String, Object> authorize(int deviceId, String method, String pin, Integer sensorSlot, String source,
+                                         String intent) throws SQLException {
+        return call(deviceId, method, pin, sensorSlot, source, intent, null, null);
     }
 
     /**
-     * confirmHash (the card at the box, when e-mail works): the owner of a card with a real address gets CONFIRM_EMAIL
-     * and the slot opens only after the link in the e-mail, which hashes to this value.
+     * v7: the signed-in owner tapped the box with a phone (method PHONE). tap is the token of the box's NFC tag
+     * (Device_TapIssue); a demo box needs none. Opens any open booking of the user on this box, as a phone command.
      */
-    public Map<String, Object> authorize(int deviceId, String method, String pin, String cardUid,
-                                         Integer sensorSlot, String source, String intent, String confirmHash) throws SQLException {
+    public Map<String, Object> authorizeTap(int deviceId, int userId, String tap, String intent) throws SQLException {
+        return call(deviceId, "PHONE", null, null, "PHONE", intent, userId, tap);
+    }
+
+    private Map<String, Object> call(int deviceId, String method, String pin, Integer sensorSlot, String source,
+                                     String intent, Integer userId, String tap) throws SQLException {
         try (Connection conn = DbContext.getConnection();
              CallableStatement cs = conn.prepareCall("{call Device_Authorize(?, ?, ?, ?, ?, ?, ?, ?)}")) {
             cs.setInt(1, deviceId);
             cs.setString(2, method);
             cs.setString(3, pin);
-            cs.setString(4, cardUid);
             if (sensorSlot == null) {
-                cs.setNull(5, Types.INTEGER);
+                cs.setNull(4, Types.INTEGER);
             } else {
-                cs.setInt(5, sensorSlot);
+                cs.setInt(4, sensorSlot);
             }
-            cs.setString(6, source);
-            cs.setString(7, intent);
-            cs.setString(8, confirmHash);
-            return firstRow(cs);
-        }
-    }
-
-    /** What a link stands for (status, phase, left_sec, slot_code, bank_code, area_name, location, device_code); empty when unknown. */
-    public Map<String, Object> confirmFind(String hash) throws SQLException {
-        try (Connection conn = DbContext.getConnection();
-             CallableStatement cs = conn.prepareCall("{call CardConfirm_Find(?)}")) {
-            cs.setString(1, hash);
-            return firstRow(cs);
-        }
-    }
-
-    /** The answer on the page behind the link. Returns OK, REJECTED, EXPIRED, DONE_BEFORE, NOT_FOUND or DEVICE_OFFLINE. */
-    public String confirmDecide(String hash, boolean approve) throws SQLException {
-        return decide(hash, approve, null);
-    }
-
-    /** The answer of the signed-in owner on the map, for when the e-mail does not come. Same results. */
-    public String confirmDecideMine(int userId, boolean approve) throws SQLException {
-        return decide(null, approve, userId);
-    }
-
-    private String decide(String hash, boolean approve, Integer userId) throws SQLException {
-        try (Connection conn = DbContext.getConnection();
-             CallableStatement cs = conn.prepareCall("{call CardConfirm_Decide(?, ?, ?)}")) {
-            cs.setString(1, hash);
-            cs.setBoolean(2, approve);
+            cs.setString(5, source);
+            cs.setString(6, intent);
             if (userId == null) {
-                cs.setNull(3, Types.INTEGER);
+                cs.setNull(7, Types.INTEGER);
             } else {
-                cs.setInt(3, userId);
+                cs.setInt(7, userId);
             }
-            return String.valueOf(firstRow(cs).get("result"));
+            cs.setString(8, tap);
+            return firstRow(cs);
         }
     }
 
-    /** The e-mail could not be sent: the owner can still answer on the map, and the next scan sends a new e-mail. */
-    public void mailFailed(long commandId) throws SQLException {
+    /** The token the box writes into its NFC tag; a new one each minute and after each use (Device_TapIssue). */
+    public String tapToken(int deviceId) throws SQLException {
         try (Connection conn = DbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "UPDATE RemoteCommand SET confirm_hash = NULL WHERE command_id = ? AND status = N'AWAITING_EMAIL'")) {
-            ps.setLong(1, commandId);
-            ps.executeUpdate();
+             CallableStatement cs = conn.prepareCall("{call Device_TapIssue(?)}")) {
+            cs.setInt(1, deviceId);
+            Object token = firstRow(cs).get("token");
+            return token == null ? null : token.toString().trim();
         }
     }
 
-    /** type = CARD or FINGERPRINT. A finger gets a free AS608 slot in "sensor_slot". */
+    /** type = FINGERPRINT (the only thing left to enroll). A finger gets a free AS608 slot in "sensor_slot". */
     public Map<String, Object> enrollStart(int deviceId, String type, String code) throws SQLException {
         try (Connection conn = DbContext.getConnection();
              CallableStatement cs = conn.prepareCall("{call Enroll_Start(?, ?, ?)}")) {
@@ -133,11 +108,10 @@ public class DeviceAuthDao {
         }
     }
 
-    /** Stores the finger slot, or the card UID and its one-time card deposit. */
-    public Map<String, Object> enrollFinish(int deviceId, String type, String code, Integer sensorSlot, String cardUid)
-            throws SQLException {
+    /** Stores the finger slot. */
+    public Map<String, Object> enrollFinish(int deviceId, String type, String code, Integer sensorSlot) throws SQLException {
         try (Connection conn = DbContext.getConnection();
-             CallableStatement cs = conn.prepareCall("{call Enroll_Finish(?, ?, ?, ?, ?)}")) {
+             CallableStatement cs = conn.prepareCall("{call Enroll_Finish(?, ?, ?, ?)}")) {
             cs.setInt(1, deviceId);
             cs.setString(2, type);
             cs.setString(3, code);
@@ -146,7 +120,6 @@ public class DeviceAuthDao {
             } else {
                 cs.setInt(4, sensorSlot);
             }
-            cs.setString(5, cardUid);
             return firstRow(cs);
         }
     }
@@ -161,10 +134,12 @@ public class DeviceAuthDao {
         }
     }
 
-    /** device_id, device_code, location, status of a box by its code (the /k/{device_code} page), or null. */
+    /** device_id, device_code, location, status, bank_code, area_name, demo of a box by its code (the /k page), or null. */
     public Map<String, Object> findDeviceByCode(String deviceCode) throws SQLException {
         // one box may manage several banks (sql/demo_box.sql): list them all, the area of the first
-        String sql = "SELECT v.device_id, v.device_code, v.location, v.status, bk.bank_code, bk.area_name "
+        String sql = "SELECT v.device_id, v.device_code, v.location, v.status, bk.bank_code, bk.area_name, "
+                + "CASE WHEN EXISTS (SELECT 1 FROM (SELECT TOP 1 p.params_json FROM OperatingProfile p WHERE p.device_id = v.device_id "
+                + "ORDER BY p.profile_id DESC) p WHERE p.params_json LIKE N'%\"demo\":true%') THEN 1 ELSE 0 END AS demo "
                 + "FROM Device v OUTER APPLY (SELECT STRING_AGG(b.bank_code, ', ') WITHIN GROUP (ORDER BY b.bank_code) AS bank_code, "
                 + "MIN(a.name) AS area_name FROM LockerBank b JOIN LockerArea a ON a.area_id = b.area_id "
                 + "WHERE b.device_id = v.device_id) bk WHERE v.device_code = ?";
@@ -181,33 +156,32 @@ public class DeviceAuthDao {
                 row.put("status", rs.getString("status"));
                 row.put("bank_code", rs.getString("bank_code"));
                 row.put("area_name", rs.getString("area_name"));
+                row.put("demo", rs.getInt("demo") == 1);   // a demo box has no NFC reader: its page opens without a tap
                 return row;
             }
         }
     }
 
-    /** The registered cards of a user (newest first). Keys: card_id, card_uid, status, deposit_amount, registered_device. */
-    public List<Map<String, Object>> cardsOf(int userId) throws SQLException {
-        String sql = "SELECT c.card_id, c.card_uid, c.status, c.deposit_amount, v.device_code, c.issued_at "
-                + "FROM UserCard c LEFT JOIN Device v ON v.device_id = c.registered_device_id "
-                + "WHERE c.user_id = ? ORDER BY c.card_id DESC";
-        List<Map<String, Object>> list = new ArrayList<>();
+    /** The open booking (RESERVED or ACTIVE) of a user on a box: slot_code, bank_code, status, open_method; or null. */
+    public Map<String, Object> openBookingAt(int userId, int deviceId) throws SQLException {
+        String sql = "SELECT TOP 1 s.slot_code, b.bank_code, d.status, d.open_method FROM Deposit d "
+                + "JOIN LockerSlot s ON s.locker_slot_id = d.slot_id JOIN LockerBank b ON b.bank_id = s.bank_id "
+                + "WHERE d.user_id = ? AND b.device_id = ? AND d.status IN (N'RESERVED', N'ACTIVE')";
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
+            ps.setInt(2, deviceId);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("card_id", rs.getInt("card_id"));
-                    row.put("card_uid", rs.getString("card_uid"));
-                    row.put("status", rs.getString("status"));
-                    row.put("deposit_amount", rs.getLong("deposit_amount"));
-                    row.put("registered_device", rs.getString("device_code"));
-                    row.put("registered", rs.getString("device_code") != null || rs.getLong("deposit_amount") > 0);
-                    list.add(row);
+                if (!rs.next()) {
+                    return null;
                 }
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("slot_code", rs.getString("slot_code"));
+                row.put("bank_code", rs.getString("bank_code"));
+                row.put("status", rs.getString("status"));
+                row.put("open_method", rs.getString("open_method"));
+                return row;
             }
         }
-        return list;
     }
 
     /** The ACTIVE fingerprints of a user, one per box. Keys: fp_id, device_code, sensor_slot, created_at. */
@@ -230,17 +204,5 @@ public class DeviceAuthDao {
             }
         }
         return list;
-    }
-
-    /** True when the user has a card enrolled at a box (or marked so by staff): no card deposit is due. */
-    public boolean hasRegisteredCard(int userId) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM UserCard WHERE user_id = ? AND status = N'ACTIVE' "
-                + "AND (registered_device_id IS NOT NULL OR deposit_amount > 0)";
-        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() && rs.getInt(1) > 0;
-            }
-        }
     }
 }

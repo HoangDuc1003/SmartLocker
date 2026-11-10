@@ -54,14 +54,11 @@ public class LockerMapApi extends HttpServlet {
             rules.addProperty("cancel_min", config.getInt("CANCEL_FREE_MIN", util.Pricing.CANCEL_FREE_MIN));
             rules.addProperty("cancel_late_pct", config.getInt("CANCEL_LATE_REFUND_PCT", util.Pricing.CANCEL_LATE_REFUND_PCT));
             rules.addProperty("booking_buffer", config.get("BOOKING_BUFFER", util.Pricing.BOOKING_BUFFER));
-            rules.addProperty("card_deposit", config.get("CARD_DEPOSIT", util.Pricing.CARD_DEPOSIT));
             rules.addProperty("no_show_refund_pct", config.getInt("NO_SHOW_REFUND_PCT", util.Pricing.NO_SHOW_REFUND_PCT));
             map.add("rules", rules);
             if (!staff && !guest) {
-                // v2 booking form: the first card deposit (AppConfig CARD_DEPOSIT), and the boxes where the user's finger is enrolled
+                // v2 booking form: the boxes where the user's finger is enrolled
                 dao.DeviceAuthDao auth = new dao.DeviceAuthDao();
-                map.addProperty("card_deposit_due", !auth.hasRegisteredCard(me.getUserId()));
-                map.addProperty("card_deposit", config.get("CARD_DEPOSIT", util.Pricing.CARD_DEPOSIT));
                 map.addProperty("hold_min", config.getInt("HOLD_MIN", util.Pricing.HOLD_MIN));
                 com.google.gson.JsonArray fp = new com.google.gson.JsonArray();
                 for (java.util.Map<String, Object> f : auth.fingerprintsOf(me.getUserId())) {

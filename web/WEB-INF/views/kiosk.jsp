@@ -1,7 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%-- Public phone page /k/{device_code} (KioskController), the target of the QR printed on the box. No menu, no login.
-     js/kiosk.js posts the PIN to /api/kiosk/unlock and shows the answer. --%>
+<%-- Public phone page /k/{device_code} (KioskController), the target of the QR on the box and (v7) of its NFC tag.
+     No menu. The PIN needs no login; "Mở tủ của tôi" needs the signed-in owner and the tag token (?n=).
+     js/kiosk.js posts either to /api/kiosk/unlock and shows the answer. --%>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <!DOCTYPE html>
 <html lang="vi">
@@ -41,6 +42,33 @@
                     <p class="sub">
                         <c:out value="${device.area_name}"/><c:if test="${not empty device.bank_code}"> · dãy <c:out value="${device.bank_code}"/></c:if><c:if test="${not empty device.location}"> · <c:out value="${device.location}"/></c:if>
                     </p>
+                    <%-- v7: the phone tap. The NFC tag of the box links here with ?n={token}; the signed-in owner of an open
+                         booking on this box opens it with one button. A demo box has no reader and needs no token. --%>
+                    <section class="kiosk__tap" id="kioskTap" aria-labelledby="tapTitle">
+                        <c:choose>
+                            <c:when test="${not empty mine and (not empty tap or device.demo)}">
+                                <h2 id="tapTitle">Tủ của bạn: ngăn <c:out value="${mine.slot_code}"/></h2>
+                                <p class="hint">Dãy <c:out value="${mine.bank_code}"/> ·
+                                    <c:out value="${mine.status == 'RESERVED' ? 'chưa cất đồ' : 'đang thuê'}"/>
+                                    <c:if test="${device.demo}"> · hộp demo, không cần chạm NFC</c:if></p>
+                                <button type="button" class="kiosk__submit" id="tapOpen" data-tap="<c:out value='${tap}'/>"<c:if test="${device.demo}"> data-demo</c:if>>Mở tủ của tôi</button>
+                            </c:when>
+                            <c:when test="${not empty mine}">
+                                <h2 id="tapTitle">Tủ của bạn: ngăn <c:out value="${mine.slot_code}"/></h2>
+                                <p class="hint">Chạm mặt sau điện thoại vào đầu đọc NFC trên hộp. Trang này sẽ mở lại kèm nút Mở tủ.</p>
+                            </c:when>
+                            <c:when test="${not empty signedIn}">
+                                <h2 id="tapTitle">Mở bằng điện thoại</h2>
+                                <p class="hint">Tài khoản <c:out value="${signedIn.username}"/> không có lượt đặt nào đang mở ở hộp này.
+                                    Lượt đặt bằng mật mã thì nhập mật mã bên dưới.</p>
+                            </c:when>
+                            <c:otherwise>
+                                <h2 id="tapTitle">Mở bằng điện thoại</h2>
+                                <p class="hint">Đăng nhập để mở tủ bằng điện thoại, không cần mật mã.</p>
+                                <a class="btn kiosk__submit" href="<c:out value='${signInUrl}'/>">Đăng nhập</a>
+                            </c:otherwise>
+                        </c:choose>
+                    </section>
                     <form id="kioskForm" data-api="${ctx}/api/kiosk/unlock" data-device="<c:out value='${device.device_code}'/>" novalidate>
                         <label for="pin">Mật mã 6 số</label>
                         <input id="pin" name="pin" class="kiosk__pin" type="text" inputmode="numeric" pattern="[0-9]{6}"
@@ -48,19 +76,19 @@
                         <p class="hint" id="pinHelp">Xem mật mã ở mục Tủ của tôi trên web Smart Locker.</p>
                         <button type="submit" class="kiosk__submit" id="kioskSubmit">Mở tủ</button>
                     </form>
-                    <%-- v6: a rented slot (CHOOSE) asks what to do; kiosk.js posts the same PIN again with the intent --%>
+                    <%-- v6: a rented slot (CHOOSE) asks what to do; kiosk.js posts the same PIN (or tap) again with the intent --%>
                     <div class="kiosk__choice" id="kioskChoice" hidden>
                         <button type="button" class="kiosk__submit" data-intent="OPEN">Mở tủ</button>
                         <p class="hint">Lấy hoặc cất thêm đồ, lượt thuê vẫn tiếp tục.</p>
                         <button type="button" class="kiosk__submit ghost" data-intent="CHECKOUT">Trả tủ</button>
                         <p class="hint">Lấy hết đồ, lượt thuê kết thúc và ngăn được trả lại.</p>
-                        <button type="button" class="link" id="kioskChoiceCancel">Hủy, nhập lại mật mã</button>
+                        <button type="button" class="link" id="kioskChoiceCancel">Hủy</button>
                     </div>
                     <p class="kiosk__result" id="kioskResult" role="status" aria-live="polite" hidden></p>
                 </div>
-                <p class="kiosk__help">Lần nhập đầu mở tủ để cất đồ. Trong lúc thuê, mỗi lần nhập mật mã bạn chọn Mở tủ
+                <p class="kiosk__help">Lần mở đầu tiên là để cất đồ. Trong lúc thuê, mỗi lần mở bạn chọn Mở tủ
                     (lấy hoặc cất thêm đồ) hoặc Trả tủ (kết thúc lượt). Chốt tự đóng sau vài giây.
-                    Nhập sai 5 lần, trang này tạm khóa nhập 2 phút.</p>
+                    Mỗi lần chạm NFC chỉ mở được một lần. Nhập sai mật mã 5 lần, ô mật mã tạm khóa 2 phút.</p>
             </c:otherwise>
         </c:choose>
     </div>

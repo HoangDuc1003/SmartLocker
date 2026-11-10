@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "4f0a8f0d-8ff5-5422-b1d4-8824242352f7",
     "name": "SmartLocker v2",
-    "description": "API thiết bị v2 (docs/spec/smart-locker-v2.md, mục 4 và 6) và thư mục v3 (docs/spec/smart-locker-v3.md, mục 7.3). Trước khi chạy: sql/test_setup.sql. Postman Runner: chạy cả collection theo thứ tự. Newman: newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<khóa LOCKER-01>. Khóa LOCKER-01 nằm trong config/device-keys.local.properties (scripts/set-device-key.ps1).",
+    "description": "API thiết bị v2 (v7: không còn thẻ từ, điện thoại chạm NFC) (docs/spec/smart-locker-v2.md, mục 4 và 6) và thư mục v3 (docs/spec/smart-locker-v3.md, mục 7.3). Trước khi chạy: sql/test_setup.sql. Postman Runner: chạy cả collection theo thứ tự. Newman: newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<khóa LOCKER-01>. Khóa LOCKER-01 nằm trong config/device-keys.local.properties (scripts/set-device-key.ps1).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -24,10 +24,7 @@
                   "    pm.expect(r.commands).to.be.an('array');",
                   "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                   "});",
-                  "pm.test('v1 keys kept for ScenarioSender', () => {",
-                  "    pm.expect(r.blocked_cards).to.be.an('array');",
-                  "    pm.expect(r.reserved).to.be.an('array');",
-                  "});"
+                  "pm.test('v7: no card keys any more', () => pm.expect(r.blocked_cards).to.be.undefined);"
                 ]
               }
             }
@@ -213,6 +210,53 @@
               }
             }
           }
+        },
+        {
+          "name": "v7: thẻ từ không còn (method CARD) -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/device/auth",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "device",
+                "auth"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"method\": \"CARD\", \"card_uid\": \"04A1B2C3\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
         }
       ],
       "description": "POST /api/device/auth: các lỗi định dạng (không tính vào giới hạn sai 5 lần)."
@@ -269,7 +313,55 @@
           }
         },
         {
-          "name": "Thiếu card_uid khi finish -> 400",
+          "name": "v7: đăng ký thẻ không còn (type CARD) -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/device/enroll/start",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "device",
+                "enroll",
+                "start"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"type\": \"CARD\", \"enroll_code\": \"123456\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Thiếu sensor_slot khi finish -> 400",
           "event": [
             {
               "listen": "test",
@@ -307,7 +399,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"type\": \"CARD\", \"enroll_code\": \"123456\"}",
+              "raw": "{\"type\": \"FINGERPRINT\", \"enroll_code\": \"123456\"}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -408,6 +500,79 @@
               }
             }
           }
+        },
+        {
+          "name": "Đăng xuất (bước 401 cần phiên trống)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/LogoutController",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "LogoutController"
+              ]
+            }
+          }
+        },
+        {
+          "name": "v7: chạm điện thoại khi chưa đăng nhập -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401 NOT_SIGNED_IN', () => {",
+                  "    pm.response.to.have.status(401);",
+                  "    pm.expect(pm.response.json().reason).to.eql('NOT_SIGNED_IN');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/kiosk/unlock",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "kiosk",
+                "unlock"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"device_code\": \"{{device_code}}\", \"method\": \"PHONE\", \"tap\": \"AAAAAAAAAAAA\", \"intent\": \"ASK\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
         }
       ],
       "description": "POST /api/kiosk/unlock: công khai, không cần API key."
@@ -500,10 +665,7 @@
                       "    pm.expect(r.commands).to.be.an('array');",
                       "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                       "});",
-                      "pm.test('v1 keys kept for ScenarioSender', () => {",
-                      "    pm.expect(r.blocked_cards).to.be.an('array');",
-                      "    pm.expect(r.reserved).to.be.an('array');",
-                      "});"
+                      "pm.test('v7: no card keys any more', () => pm.expect(r.blocked_cards).to.be.undefined);"
                     ]
                   }
                 }
@@ -1026,10 +1188,7 @@
                       "    pm.expect(r.commands).to.be.an('array');",
                       "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                       "});",
-                      "pm.test('v1 keys kept for ScenarioSender', () => {",
-                      "    pm.expect(r.blocked_cards).to.be.an('array');",
-                      "    pm.expect(r.reserved).to.be.an('array');",
-                      "});"
+                      "pm.test('v7: no card keys any more', () => pm.expect(r.blocked_cards).to.be.undefined);"
                     ]
                   }
                 }
@@ -1989,10 +2148,7 @@
                       "    pm.expect(r.commands).to.be.an('array');",
                       "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                       "});",
-                      "pm.test('v1 keys kept for ScenarioSender', () => {",
-                      "    pm.expect(r.blocked_cards).to.be.an('array');",
-                      "    pm.expect(r.reserved).to.be.an('array');",
-                      "});"
+                      "pm.test('v7: no card keys any more', () => pm.expect(r.blocked_cards).to.be.undefined);"
                     ]
                   }
                 }
@@ -2278,10 +2434,7 @@
                       "    pm.expect(r.commands).to.be.an('array');",
                       "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                       "});",
-                      "pm.test('v1 keys kept for ScenarioSender', () => {",
-                      "    pm.expect(r.blocked_cards).to.be.an('array');",
-                      "    pm.expect(r.reserved).to.be.an('array');",
-                      "});"
+                      "pm.test('v7: no card keys any more', () => pm.expect(r.blocked_cards).to.be.undefined);"
                     ]
                   }
                 }
@@ -2465,10 +2618,7 @@
                       "    pm.expect(r.commands).to.be.an('array');",
                       "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                       "});",
-                      "pm.test('v1 keys kept for ScenarioSender', () => {",
-                      "    pm.expect(r.blocked_cards).to.be.an('array');",
-                      "    pm.expect(r.reserved).to.be.an('array');",
-                      "});",
+                      "pm.test('v7: no card keys any more', () => pm.expect(r.blocked_cards).to.be.undefined);",
                       "",
                       "const cmd = r.commands.find(c => c.command_id === pm.environment.get('command_id'));",
                       "pm.test('UNLOCK command delivered', () => {",
@@ -2529,10 +2679,7 @@
                       "    pm.expect(r.commands).to.be.an('array');",
                       "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                       "});",
-                      "pm.test('v1 keys kept for ScenarioSender', () => {",
-                      "    pm.expect(r.blocked_cards).to.be.an('array');",
-                      "    pm.expect(r.reserved).to.be.an('array');",
-                      "});",
+                      "pm.test('v7: no card keys any more', () => pm.expect(r.blocked_cards).to.be.undefined);",
                       "",
                       "pm.test('command handed over once', () => pm.expect(r.commands.find(c => c.command_id === pm.environment.get('command_id'))).to.be.undefined);"
                     ]
@@ -2756,10 +2903,7 @@
                       "    pm.expect(r.commands).to.be.an('array');",
                       "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                       "});",
-                      "pm.test('v1 keys kept for ScenarioSender', () => {",
-                      "    pm.expect(r.blocked_cards).to.be.an('array');",
-                      "    pm.expect(r.reserved).to.be.an('array');",
-                      "});",
+                      "pm.test('v7: no card keys any more', () => pm.expect(r.blocked_cards).to.be.undefined);",
                       "",
                       "const cmd = r.commands.find(c => c.command_id === pm.environment.get('command_id'));",
                       "pm.test('UNLOCK command delivered', () => {",
@@ -2874,7 +3018,8 @@
           ]
         },
         {
-          "name": "3. Thẻ từ lần đầu: đăng ký, cọc 10.000 đ, cùng giá mật mã",
+          "name": "3. Điện thoại: chạm NFC, mã chạm dùng một lần (v7)",
+          "description": "Thay kịch bản thẻ từ. Heartbeat có \"nfc\":true trả tap_path (link của thẻ NFC giả lập trên PN532); người dùng đã đăng nhập gửi method PHONE + mã chạm tới /api/kiosk/unlock. Mã sai, cũ hoặc đã dùng là TAP_EXPIRED, không tính là lần đoán sai.",
           "item": [
             {
               "name": "Heartbeat",
@@ -2891,609 +3036,7 @@
                       "    pm.expect(r.commands).to.be.an('array');",
                       "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                       "});",
-                      "pm.test('v1 keys kept for ScenarioSender', () => {",
-                      "    pm.expect(r.blocked_cards).to.be.an('array');",
-                      "    pm.expect(r.reserved).to.be.an('array');",
-                      "});"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "X-API-Key",
-                    "value": "{{api_key}}"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/api/health",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "health"
-                  ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\"firmware\": \"2.0\", \"uptime_sec\": 60}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              }
-            },
-            {
-              "name": "Đăng xuất",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/LogoutController",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "LogoutController"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Đăng nhập v2card",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/LoginController",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "LoginController"
-                  ]
-                },
-                "body": {
-                  "mode": "urlencoded",
-                  "urlencoded": [
-                    {
-                      "key": "username",
-                      "value": "{{user_card}}"
-                    },
-                    {
-                      "key": "password",
-                      "value": "{{password}}"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Tủ của tôi: phiên đăng nhập",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
-                      "const me = pm.response.json();",
-                      "pm.test('signed in as ' + pm.environment.get('user_card'), () => pm.expect(me.username).to.eql(pm.environment.get('user_card')));",
-                      "pm.environment.set('balance_before', me.balance);"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/api/my-locker",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "my-locker"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Chưa có thẻ: phải cọc",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "const me = pm.response.json();",
-                      "pm.test('card deposit due', () => pm.expect(me.card_deposit_due).to.be.true);",
-                      "// plans are looked up by duration_min, not by name (03_v2_v3.sql renames them)",
-                      "const plan = me.plans.find(p => p.duration_min === 120);",
-                      "pm.environment.set('plan_id', plan.plan_id);",
-                      "pm.test('v5: one price per size, the card is not cheaper', () => pm.expect(plan.prices.S).to.be.a('number'));",
-                      "pm.test('v3: size S keeps the plan price (x1.00)', () => pm.expect(plan.prices.S).to.eql(plan.price));",
-                      "pm.environment.set('card_price', plan.prices.S);"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/api/my-locker",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "my-locker"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Chọn ngăn trống trên CANT-A",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const map = pm.response.json();",
-                      "const bank = map.banks.find(b => b.bank_code === pm.environment.get('bank_code'));",
-                      "pm.test('bank ' + pm.environment.get('bank_code') + ' is online', () => pm.expect(bank.device_status).to.eql('ACTIVE'));",
-                      "// v3: prices depend on the size; the scenarios expect the S price, so they take an S slot",
-                      "const slot = bank.slots.find(s => s.status === 'AVAILABLE' && (s.size_code || s.size) === 'S');",
-                      "pm.test('a free S slot exists', () => pm.expect(slot).to.be.an('object'));",
-                      "pm.environment.set('slot_id', slot.slot_id);",
-                      "pm.environment.set('slot_code', slot.slot_code);",
-                      "// plans are looked up by duration_min, not by name (03_v2_v3.sql renames them)",
-                      "const plan = map.plans.find(p => p.duration_min === 120);",
-                      "pm.test('2-hour plan priced for S', () => pm.expect(plan.prices.S).to.be.a('number'));",
-                      "pm.environment.set('plan_id', plan.plan_id);",
-                      "pm.environment.set('plan_price', plan.prices.S);"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/api/locker-map?area=CANT",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "locker-map"
-                  ],
-                  "query": [
-                    {
-                      "key": "area",
-                      "value": "CANT"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Đặt tủ: CARD",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/BookingController",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "BookingController"
-                  ]
-                },
-                "body": {
-                  "mode": "urlencoded",
-                  "urlencoded": [
-                    {
-                      "key": "action",
-                      "value": "reserve"
-                    },
-                    {
-                      "key": "slotId",
-                      "value": "{{slot_id}}"
-                    },
-                    {
-                      "key": "planId",
-                      "value": "{{plan_id}}"
-                    },
-                    {
-                      "key": "openMethod",
-                      "value": "CARD"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Tủ của tôi: lượt đặt CARD",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const me = pm.response.json();",
-                      "const b = me.booking;",
-                      "pm.test('booking RESERVED with CARD', () => {",
-                      "    pm.expect(b).to.be.an('object');",
-                      "    pm.expect(b.status).to.eql('RESERVED');",
-                      "    pm.expect(b.open_method).to.eql('CARD');",
-                      "    pm.expect(b.slot_id).to.eql(pm.environment.get('slot_id'));",
-                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
-                      "});",
-                      "pm.environment.set('deposit_id', b.deposit_id);",
-                      "pm.environment.set('pin', b.pin_code || '');",
-                      "pm.environment.set('enroll_code', b.enroll_code || '');",
-                      "",
-                      "pm.test('enroll code, no PIN', () => { pm.expect(b.enroll_code).to.match(/^\\d{6}$/); pm.expect(b.pin_code).to.be.null; });",
-                      "pm.test('paid the card price', () => pm.expect(b.paid_amount).to.eql(pm.environment.get('card_price')));",
-                      "pm.test('wallet charged only the price for now', () => pm.expect(me.balance).to.eql(pm.environment.get('balance_before') - b.paid_amount));",
-                      "pm.environment.set('balance_before', me.balance);"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/api/my-locker",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "my-locker"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "enroll/start CARD",
-              "event": [
-                {
-                  "listen": "prerequest",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.environment.set('card_uid', 'C' + Math.floor(Math.random() * 0xFFFFFFF).toString(16).toUpperCase().padStart(7, '0'));"
-                    ]
-                  }
-                },
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const r = pm.response.json();",
-                      "pm.test('OK, Quet the', () => { pm.expect(r.result).to.eql('OK'); pm.expect(r.message).to.eql('Quet the'); });"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "X-API-Key",
-                    "value": "{{api_key}}"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/api/device/enroll/start",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "device",
-                    "enroll",
-                    "start"
-                  ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\"type\": \"CARD\", \"enroll_code\": \"{{enroll_code}}\"}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              }
-            },
-            {
-              "name": "enroll/finish CARD (UID mới)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const r = pm.response.json();",
-                      "pm.test('OK, Dang ky xong', () => { pm.expect(r.result).to.eql('OK'); pm.expect(r.message).to.eql('Dang ky xong'); });",
-                      "pm.environment.set('used_enroll_code', pm.environment.get('enroll_code'));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "X-API-Key",
-                    "value": "{{api_key}}"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/api/device/enroll/finish",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "device",
-                    "enroll",
-                    "finish"
-                  ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\"type\": \"CARD\", \"enroll_code\": \"{{enroll_code}}\", \"card_uid\": \"{{card_uid}}\"}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              }
-            },
-            {
-              "name": "Tủ của tôi: UID thẻ, cọc 10.000 đ",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "const me = pm.response.json();",
-                      "const card = me.cards.find(c => c.card_uid === pm.environment.get('card_uid'));",
-                      "pm.test('card shown with its UID and deposit', () => {",
-                      "    pm.expect(card).to.be.an('object');",
-                      "    pm.expect(card.status).to.eql('ACTIVE');",
-                      "    pm.expect(card.deposit_amount).to.eql(10000);",
-                      "});",
-                      "pm.test('10,000 VND taken from the wallet', () => pm.expect(me.balance).to.eql(pm.environment.get('balance_before') - 10000));",
-                      "pm.test('no deposit due any more', () => pm.expect(me.card_deposit_due).to.be.false);",
-                      "pm.environment.set('card_id', card.card_id);"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/api/my-locker",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "my-locker"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "auth CARD lần 1 -> CHECK_IN",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const r = pm.response.json();",
-                      "pm.test('UNLOCK CHECK_IN', () => {",
-                      "    pm.expect(r.result).to.eql('UNLOCK');",
-                      "    pm.expect(r.phase).to.eql('CHECK_IN');",
-                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
-                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
-                      "    pm.expect(r.open_sec).to.eql(8);",
-                      "});",
-                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
-                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
-                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
-                      "});"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "X-API-Key",
-                    "value": "{{api_key}}"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/api/device/auth",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "device",
-                    "auth"
-                  ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\"method\": \"CARD\", \"card_uid\": \"{{card_uid}}\"}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              }
-            },
-            {
-              "name": "auth CARD lần 2 -> PICKUP",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const r = pm.response.json();",
-                      "pm.test('UNLOCK PICKUP', () => {",
-                      "    pm.expect(r.result).to.eql('UNLOCK');",
-                      "    pm.expect(r.phase).to.eql('PICKUP');",
-                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
-                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
-                      "    pm.expect(r.open_sec).to.eql(8);",
-                      "});",
-                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
-                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
-                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
-                      "});"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "X-API-Key",
-                    "value": "{{api_key}}"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/api/device/auth",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "device",
-                    "auth"
-                  ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\"method\": \"CARD\", \"card_uid\": \"{{card_uid}}\"}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              }
-            }
-          ]
-        },
-        {
-          "name": "9. Đặt bằng mật mã nhưng quẹt thẻ",
-          "item": [
-            {
-              "name": "Heartbeat",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                      "const r = pm.response.json();",
-                      "pm.test('v2 reply: interval_sec 3, commands, server_time', () => {",
-                      "    pm.expect(r.interval_sec).to.eql(3);",
-                      "    pm.expect(r.commands).to.be.an('array');",
-                      "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
-                      "});",
-                      "pm.test('v1 keys kept for ScenarioSender', () => {",
-                      "    pm.expect(r.blocked_cards).to.be.an('array');",
-                      "    pm.expect(r.reserved).to.be.an('array');",
-                      "});"
+                      "pm.test('v7: no card keys any more', () => pm.expect(r.blocked_cards).to.be.undefined);"
                     ]
                   }
                 }
@@ -3677,7 +3220,7 @@
               }
             },
             {
-              "name": "Đặt tủ: PIN",
+              "name": "Đặt tủ: PHONE",
               "event": [
                 {
                   "listen": "test",
@@ -3718,14 +3261,14 @@
                     },
                     {
                       "key": "openMethod",
-                      "value": "PIN"
+                      "value": "PHONE"
                     }
                   ]
                 }
               }
             },
             {
-              "name": "Tủ của tôi: lượt đặt PIN",
+              "name": "Tủ của tôi: lượt đặt PHONE",
               "event": [
                 {
                   "listen": "test",
@@ -3735,16 +3278,17 @@
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
                       "const me = pm.response.json();",
                       "const b = me.booking;",
-                      "pm.test('booking RESERVED with PIN', () => {",
+                      "pm.test('booking RESERVED with PHONE', () => {",
                       "    pm.expect(b).to.be.an('object');",
                       "    pm.expect(b.status).to.eql('RESERVED');",
-                      "    pm.expect(b.open_method).to.eql('PIN');",
+                      "    pm.expect(b.open_method).to.eql('PHONE');",
                       "    pm.expect(b.slot_id).to.eql(pm.environment.get('slot_id'));",
-                      "    pm.expect(b.device_code).to.eql(pm.environment.get('device_code'));",
                       "});",
-                      "pm.environment.set('deposit_id', b.deposit_id);",
-                      "pm.environment.set('pin', b.pin_code || '');",
-                      "pm.environment.set('enroll_code', b.enroll_code || '');"
+                      "pm.test('nothing to type or enroll: no PIN, no enroll code', () => { pm.expect(b.pin_code).to.be.null; pm.expect(b.enroll_code).to.be.null; });",
+                      "pm.test('paid the S price of the plan, no card deposit', () => pm.expect(b.paid_amount).to.eql(pm.environment.get('plan_price')));",
+                      "pm.test('wallet charged only the price', () => pm.expect(me.balance).to.eql(pm.environment.get('balance_before') - b.paid_amount));",
+                      "pm.test('v7: no card fields', () => { pm.expect(me.cards).to.be.undefined; pm.expect(me.card_deposit_due).to.be.undefined; });",
+                      "pm.environment.set('deposit_id', b.deposit_id);"
                     ]
                   }
                 }
@@ -3765,7 +3309,7 @@
               }
             },
             {
-              "name": "auth CARD -> METHOD_MISMATCH",
+              "name": "Heartbeat nfc:true -> tap_path",
               "event": [
                 {
                   "listen": "test",
@@ -3774,10 +3318,9 @@
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
                       "const r = pm.response.json();",
-                      "pm.test('DENY METHOD_MISMATCH', () => {",
-                      "    pm.expect(r.result).to.eql('DENY');",
-                      "    pm.expect(r.reason).to.eql('METHOD_MISMATCH');",
-                      "});"
+                      "const re = new RegExp('^/k/' + pm.environment.get('device_code') + '\\\\?n=[A-Za-z0-9]{12}$');",
+                      "pm.test('tap_path for the NFC tag', () => pm.expect(r.tap_path).to.match(re));",
+                      "pm.environment.set('tap', r.tap_path.split('?n=')[1]);"
                     ]
                   }
                 }
@@ -3795,19 +3338,18 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{base_url}}/api/device/auth",
+                  "raw": "{{base_url}}/api/health",
                   "host": [
                     "{{base_url}}"
                   ],
                   "path": [
                     "api",
-                    "device",
-                    "auth"
+                    "health"
                   ]
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\"method\": \"CARD\", \"card_uid\": \"{{card_uid}}\"}",
+                  "raw": "{\"firmware\": \"4.0-esp32\", \"uptime_sec\": 60, \"nfc\": true}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3817,7 +3359,7 @@
               }
             },
             {
-              "name": "auth PIN -> CHECK_IN",
+              "name": "Chạm với mã sai -> TAP_EXPIRED (không phải lần đoán)",
               "event": [
                 {
                   "listen": "test",
@@ -3826,17 +3368,63 @@
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
                       "const r = pm.response.json();",
-                      "pm.test('UNLOCK CHECK_IN', () => {",
+                      "pm.test('DENY TAP_EXPIRED, no lockout count', () => {",
+                      "    pm.expect(r.result).to.eql('DENY');",
+                      "    pm.expect(r.reason).to.eql('TAP_EXPIRED');",
+                      "    pm.expect(r.attempts_left).to.eql(5);",
+                      "});",
+                      "pm.test('Vietnamese message', () => pm.expect(r.message).to.include('chạm'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/kiosk/unlock",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "kiosk",
+                    "unlock"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"device_code\": \"{{device_code}}\", \"method\": \"PHONE\", \"tap\": \"zzzzzzzzzzzz\", \"intent\": \"ASK\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Chạm, ASK -> CHECK_IN + lệnh UNLOCK (lượt chưa cất đồ)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK CHECK_IN with command_id', () => {",
                       "    pm.expect(r.result).to.eql('UNLOCK');",
                       "    pm.expect(r.phase).to.eql('CHECK_IN');",
-                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
-                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
-                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "    pm.expect(r.command_id).to.be.a('number');",
                       "});",
-                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
-                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
-                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
-                      "});"
+                      "pm.test('Vietnamese message', () => pm.expect(r.message).to.include('Mời cất đồ'));",
+                      "pm.environment.set('command_id', r.command_id);"
                     ]
                   }
                 }
@@ -3845,28 +3433,24 @@
                 "method": "POST",
                 "header": [
                   {
-                    "key": "X-API-Key",
-                    "value": "{{api_key}}"
-                  },
-                  {
                     "key": "Content-Type",
                     "value": "application/json"
                   }
                 ],
                 "url": {
-                  "raw": "{{base_url}}/api/device/auth",
+                  "raw": "{{base_url}}/api/kiosk/unlock",
                   "host": [
                     "{{base_url}}"
                   ],
                   "path": [
                     "api",
-                    "device",
-                    "auth"
+                    "kiosk",
+                    "unlock"
                   ]
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "raw": "{\"device_code\": \"{{device_code}}\", \"method\": \"PHONE\", \"tap\": \"{{tap}}\", \"intent\": \"ASK\"}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3876,7 +3460,7 @@
               }
             },
             {
-              "name": "auth PIN -> PICKUP",
+              "name": "Cùng mã chạm lần nữa -> TAP_EXPIRED (đã dùng)",
               "event": [
                 {
                   "listen": "test",
@@ -3885,17 +3469,62 @@
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
                       "const r = pm.response.json();",
-                      "pm.test('UNLOCK PICKUP', () => {",
-                      "    pm.expect(r.result).to.eql('UNLOCK');",
-                      "    pm.expect(r.phase).to.eql('PICKUP');",
-                      "    pm.expect(r.deposit_id).to.eql(pm.environment.get('deposit_id'));",
-                      "    pm.expect(r.slot_code).to.eql(pm.environment.get('slot_code'));",
-                      "    pm.expect(r.open_sec).to.eql(8);",
+                      "pm.test('DENY TAP_EXPIRED', () => pm.expect(r.reason).to.eql('TAP_EXPIRED'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/kiosk/unlock",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "kiosk",
+                    "unlock"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"device_code\": \"{{device_code}}\", \"method\": \"PHONE\", \"tap\": \"{{tap}}\", \"intent\": \"ASK\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Heartbeat nhận lệnh, mã chạm mới",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "const re = new RegExp('^/k/' + pm.environment.get('device_code') + '\\\\?n=[A-Za-z0-9]{12}$');",
+                      "pm.test('tap_path for the NFC tag', () => pm.expect(r.tap_path).to.match(re));",
+                      "const cmd = (r.commands || []).find(c => c.command_id === pm.environment.get('command_id'));",
+                      "pm.test('UNLOCK command delivered', () => {",
+                      "    pm.expect(cmd).to.be.an('object');",
+                      "    pm.expect(cmd.action).to.eql('UNLOCK');",
+                      "    pm.expect(cmd.slot_code).to.eql(pm.environment.get('slot_code'));",
                       "});",
-                      "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
-                      "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
-                      "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
-                      "});"
+                      "const tap = r.tap_path.split('?n=')[1];",
+                      "pm.test('a new token after the use', () => pm.expect(tap).to.not.eql(pm.environment.get('tap')));",
+                      "pm.environment.set('tap', tap);"
                     ]
                   }
                 }
@@ -3913,19 +3542,18 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{base_url}}/api/device/auth",
+                  "raw": "{{base_url}}/api/health",
                   "host": [
                     "{{base_url}}"
                   ],
                   "path": [
                     "api",
-                    "device",
-                    "auth"
+                    "health"
                   ]
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\"method\": \"PIN\", \"pin\": \"{{pin}}\"}",
+                  "raw": "{\"firmware\": \"4.0-esp32\", \"uptime_sec\": 60, \"nfc\": true}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3933,91 +3561,17 @@
                   }
                 }
               }
-            }
-          ]
-        },
-        {
-          "name": "8. Thẻ đã báo mất",
-          "item": [
-            {
-              "name": "Đăng xuất",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/LogoutController",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "LogoutController"
-                  ]
-                }
-              }
             },
             {
-              "name": "Đăng nhập v2card",
+              "name": "Hộp nhận lệnh: lượt đã ACTIVE",
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/LoginController",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "LoginController"
-                  ]
-                },
-                "body": {
-                  "mode": "urlencoded",
-                  "urlencoded": [
-                    {
-                      "key": "username",
-                      "value": "{{user_card}}"
-                    },
-                    {
-                      "key": "password",
-                      "value": "{{password}}"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Tủ của tôi: phiên đăng nhập",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200 JSON', () => pm.response.to.have.status(200));",
                       "const me = pm.response.json();",
-                      "pm.test('signed in as ' + pm.environment.get('user_card'), () => pm.expect(me.username).to.eql(pm.environment.get('user_card')));",
-                      "pm.environment.set('balance_before', me.balance);"
+                      "pm.test('booking ACTIVE', () => pm.expect(me.booking.status).to.eql('ACTIVE'));"
                     ]
                   }
                 }
@@ -4038,47 +3592,7 @@
               }
             },
             {
-              "name": "Báo mất thẻ (trang Thẻ của tôi)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));"
-                    ]
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/MyCardController",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "MyCardController"
-                  ]
-                },
-                "body": {
-                  "mode": "urlencoded",
-                  "urlencoded": [
-                    {
-                      "key": "action",
-                      "value": "reportLost"
-                    },
-                    {
-                      "key": "cardId",
-                      "value": "{{card_id}}"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "auth CARD -> CARD_BLOCKED",
+              "name": "Chạm, ASK -> CHOOSE (không mở, mã chưa bị dùng)",
               "event": [
                 {
                   "listen": "test",
@@ -4087,9 +3601,111 @@
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
                       "const r = pm.response.json();",
-                      "pm.test('DENY CARD_BLOCKED', () => {",
-                      "    pm.expect(r.result).to.eql('DENY');",
-                      "    pm.expect(r.reason).to.eql('CARD_BLOCKED');",
+                      "pm.test('CHOOSE with OPEN and CHECKOUT', () => {",
+                      "    pm.expect(r.result).to.eql('CHOOSE');",
+                      "    pm.expect(r.options).to.eql(['OPEN', 'CHECKOUT']);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/kiosk/unlock",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "kiosk",
+                    "unlock"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"device_code\": \"{{device_code}}\", \"method\": \"PHONE\", \"tap\": \"{{tap}}\", \"intent\": \"ASK\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Chạm, CHECKOUT -> PICKUP + lệnh UNLOCK",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "pm.test('UNLOCK PICKUP with command_id', () => {",
+                      "    pm.expect(r.result).to.eql('UNLOCK');",
+                      "    pm.expect(r.phase).to.eql('PICKUP');",
+                      "    pm.expect(r.command_id).to.be.a('number');",
+                      "});",
+                      "pm.environment.set('command_id', r.command_id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/kiosk/unlock",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "kiosk",
+                    "unlock"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"device_code\": \"{{device_code}}\", \"method\": \"PHONE\", \"tap\": \"{{tap}}\", \"intent\": \"CHECKOUT\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Heartbeat nhận lệnh lấy đồ",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                      "const r = pm.response.json();",
+                      "const re = new RegExp('^/k/' + pm.environment.get('device_code') + '\\\\?n=[A-Za-z0-9]{12}$');",
+                      "pm.test('tap_path for the NFC tag', () => pm.expect(r.tap_path).to.match(re));",
+                      "const cmd = (r.commands || []).find(c => c.command_id === pm.environment.get('command_id'));",
+                      "pm.test('UNLOCK command delivered', () => {",
+                      "    pm.expect(cmd).to.be.an('object');",
+                      "    pm.expect(cmd.action).to.eql('UNLOCK');",
+                      "    pm.expect(cmd.slot_code).to.eql(pm.environment.get('slot_code'));",
                       "});"
                     ]
                   }
@@ -4108,24 +3724,52 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{base_url}}/api/device/auth",
+                  "raw": "{{base_url}}/api/health",
                   "host": [
                     "{{base_url}}"
                   ],
                   "path": [
                     "api",
-                    "device",
-                    "auth"
+                    "health"
                   ]
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\"method\": \"CARD\", \"card_uid\": \"{{card_uid}}\"}",
+                  "raw": "{\"firmware\": \"4.0-esp32\", \"uptime_sec\": 60, \"nfc\": true}",
                   "options": {
                     "raw": {
                       "language": "json"
                     }
                   }
+                }
+              }
+            },
+            {
+              "name": "Hộp nhận lệnh: lượt đã kết thúc",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const me = pm.response.json();",
+                      "pm.test('booking closed', () => pm.expect(me.booking).to.be.null);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/my-locker",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "my-locker"
+                  ]
                 }
               }
             }
@@ -4149,10 +3793,7 @@
                       "    pm.expect(r.commands).to.be.an('array');",
                       "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                       "});",
-                      "pm.test('v1 keys kept for ScenarioSender', () => {",
-                      "    pm.expect(r.blocked_cards).to.be.an('array');",
-                      "    pm.expect(r.reserved).to.be.an('array');",
-                      "});"
+                      "pm.test('v7: no card keys any more', () => pm.expect(r.blocked_cards).to.be.undefined);"
                     ]
                   }
                 }
@@ -4486,7 +4127,8 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test('OK', () => pm.expect(pm.response.json().result).to.eql('OK'));"
+                      "pm.test('OK', () => pm.expect(pm.response.json().result).to.eql('OK'));",
+                      "pm.environment.set('used_enroll_code', pm.environment.get('enroll_code'));   // scenario 7 tries it again"
                     ]
                   }
                 }
@@ -5191,7 +4833,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\"type\": \"CARD\", \"enroll_code\": \"123456\"}",
+                  "raw": "{\"type\": \"FINGERPRINT\", \"enroll_code\": \"123456\"}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -5360,10 +5002,7 @@
                       "    pm.expect(r.commands).to.be.an('array');",
                       "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                       "});",
-                      "pm.test('v1 keys kept for ScenarioSender', () => {",
-                      "    pm.expect(r.blocked_cards).to.be.an('array');",
-                      "    pm.expect(r.reserved).to.be.an('array');",
-                      "});"
+                      "pm.test('v7: no card keys any more', () => pm.expect(r.blocked_cards).to.be.undefined);"
                     ]
                   }
                 }
@@ -5474,7 +5113,7 @@
               }
             },
             {
-              "name": "Hộp đã khóa: thẻ cũng bị từ chối",
+              "name": "Hộp đã khóa: vân tay cũng bị từ chối",
               "event": [
                 {
                   "listen": "test",
@@ -5516,7 +5155,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\"method\": \"CARD\", \"card_uid\": \"FFFF0001\"}",
+                  "raw": "{\"method\": \"FINGERPRINT\", \"sensor_slot\": 1}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -5664,10 +5303,7 @@
                       "    pm.expect(r.commands).to.be.an('array');",
                       "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                       "});",
-                      "pm.test('v1 keys kept for ScenarioSender', () => {",
-                      "    pm.expect(r.blocked_cards).to.be.an('array');",
-                      "    pm.expect(r.reserved).to.be.an('array');",
-                      "});"
+                      "pm.test('v7: no card keys any more', () => pm.expect(r.blocked_cards).to.be.undefined);"
                     ]
                   }
                 }
@@ -5725,10 +5361,7 @@
                       "    pm.expect(r.commands).to.be.an('array');",
                       "    pm.expect(r.server_time).to.match(/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$/);",
                       "});",
-                      "pm.test('v1 keys kept for ScenarioSender', () => {",
-                      "    pm.expect(r.blocked_cards).to.be.an('array');",
-                      "    pm.expect(r.reserved).to.be.an('array');",
-                      "});"
+                      "pm.test('v7: no card keys any more', () => pm.expect(r.blocked_cards).to.be.undefined);"
                     ]
                   }
                 }
@@ -5955,7 +5588,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\"type\": \"CARD\", \"enroll_code\": \"{{used_enroll_code}}\", \"card_uid\": \"{{card_uid}}\"}",
+                  "raw": "{\"type\": \"FINGERPRINT\", \"enroll_code\": \"{{used_enroll_code}}\", \"sensor_slot\": 150}",
                   "options": {
                     "raw": {
                       "language": "json"

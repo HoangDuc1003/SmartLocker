@@ -11,7 +11,6 @@ public class Deposit {
     private String bankCode;   // joined
     private int planId;
     private String planName;   // joined
-    private Integer cardId;
     private long paidAmount;
     private String status;   // RESERVED, ACTIVE, COMPLETED, NO_SHOW or CANCELLED
     private java.sql.Timestamp reservedAt;
@@ -20,9 +19,9 @@ public class Deposit {
     private java.sql.Timestamp dueAt;
     private java.sql.Timestamp endedAt;
     private int extendCount;
-    private String openMethod;   // PIN, CARD or FINGERPRINT
+    private String openMethod;   // PIN, PHONE or FINGERPRINT
     private String pinCode;      // 6 digits, only for PIN; shown to the owner only
-    private String enrollCode;   // 6 digits while a card or finger still has to be enrolled at the box
+    private String enrollCode;   // 6 digits while a finger still has to be enrolled at the box
     private java.sql.Timestamp enrollExpires;
     private String deviceCode;   // joined: the box of the slot
     // v3 (sql/03_v2_v3.sql)
@@ -53,8 +52,6 @@ public class Deposit {
     public void setPlanId(int planId) { this.planId = planId; }
     public String getPlanName() { return planName; }
     public void setPlanName(String planName) { this.planName = planName; }
-    public Integer getCardId() { return cardId; }
-    public void setCardId(Integer cardId) { this.cardId = cardId; }
     public long getPaidAmount() { return paidAmount; }
     public void setPaidAmount(long paidAmount) { this.paidAmount = paidAmount; }
     public String getStatus() { return status; }

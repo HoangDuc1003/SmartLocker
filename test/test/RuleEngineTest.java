@@ -32,14 +32,12 @@ public class RuleEngineTest {
         return s;
     }
 
-    /** A context in which nothing is wrong: valid ranges, the card of the booking owner, 130 minutes allowed. */
+    /** A context in which nothing is wrong: valid ranges, 130 minutes allowed. */
     private SessionContext healthy() {
         SessionContext c = new SessionContext();
         c.setRange("DOOR", 0, 3600);
         c.setRange("WEIGHT", -200, 20000);
         c.setRange("STAY", 0, 10080);
-        c.setCardStatus("ACTIVE");
-        c.setCardOwnerId(7);
         c.setDepositOwnerId(7);
         c.setAllowedMin(130);
         return c;
@@ -101,13 +99,6 @@ public class RuleEngineTest {
     }
 
     @Test
-    public void lostCardIsFlagged() {
-        SessionContext ctx = healthy();
-        ctx.setCardStatus("LOST");
-        assertEquals(engine.evaluate(session(6, 2, true, 30), ctx).getLabel(), "LOST_CARD_USED");
-    }
-
-    @Test
     public void impossibleWeightIsSensorFaultNotForcedOpen() {
         Verdict v = engine.evaluate(session(6, -5000, false, 30), healthy());
         assertEquals(v.getLabel(), "SENSOR_FAULT");
@@ -131,13 +122,6 @@ public class RuleEngineTest {
     @Test
     public void doorOpenedWithoutValidCardIsForcedOpen() {
         assertEquals(engine.evaluate(session(6, 2, false, 40), healthy()).getLabel(), "FORCED_OPEN");
-    }
-
-    @Test
-    public void cardOfAnotherUserIsWrongUser() {
-        SessionContext ctx = healthy();
-        ctx.setCardOwnerId(9);
-        assertEquals(engine.evaluate(session(6, 2, true, 40), ctx).getLabel(), "WRONG_USER");
     }
 
     @Test

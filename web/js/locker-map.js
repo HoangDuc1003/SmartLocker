@@ -329,29 +329,15 @@
   var PLACE_RADIUS_M = 120;      // standing at an area
   var PLACE_MAX_ACC_M = 300;     // a position worse than this (a PC on Wi-Fi) never says "right" or "wrong"
   var place = { dismissed: null, sig: null, html: '', kind: null, route: '', flown: false };
-  // the same words as CardMail.action on the server
-  var CARD_ACTION = { CHECK_IN: 'cất đồ vào ngăn', ACCESS: 'mở ngăn (lượt thuê vẫn tiếp tục)', PICKUP: 'lấy đồ và trả tủ (lượt thuê kết thúc)' };
-  // result of CardConfirm_Decide -> [the message, is it an error]
-  var CARD_ANSWER = {
-    OK: ['Đã xác nhận. Hộp sẽ mở trong vài giây.', false],
-    DONE_BEFORE: ['Yêu cầu này đã được xác nhận trước đó.', false],
-    REJECTED: ['Đã hủy, tủ không mở. Nếu bạn không quét thẻ, hãy báo nhân viên để khóa thẻ.', false],
-    DEVICE_OFFLINE: ['Hộp đang mất kết nối nên chưa mở được. Hãy thử lại sau ít giây.', true],
-    EXPIRED: ['Yêu cầu đã hết hiệu lực. Hãy quét lại thẻ tại hộp tủ.', true]
-  };
-
   function myBooking() {
     return state.data && state.data.my_booking ? state.data.my_booking : null;
   }
 
-  // kind: confirm | here | wrong | info. A card scan waiting for its answer comes first. The GPS says "here" before a
-  // wrong scan, so that one does not nag someone who walked to the right area.
+  // kind: here | wrong | info. The GPS says "here" before a wrong scan (a finger or a phone tap at another box), so that
+  // one does not nag someone who walked to the right area.
   function placeNow(b, mine) {
     var dist = distanceTo(mine);
     var key = b.area_code + '|' + b.slot_code;
-    if (b.confirm_until) {
-      return { kind: 'confirm', dist: dist, sig: 'confirm|' + b.confirm_until + '|' + key };
-    }
     var sure = dist !== null && geo.pos.acc <= PLACE_MAX_ACC_M;
     var nearest = sure ? sortedAreas(areas()).filter(hasCoords)[0] : null;
     var gap = nearest ? distanceTo(nearest) : null;
@@ -374,21 +360,10 @@
     var far = now.dist !== null ? ' (cách bạn ' + formatDistance(now.dist) + ')' : '';
     var where = (b.status === 'RESERVED' ? 'Bạn giữ ' : 'Đồ của bạn ở ') + slot + ', ' + name + far + '.';
     var title, text, ico;
-    if (now.kind === 'confirm') {
-      return '<span class="place-alert__ico">' + icon('unlock') + '</span>' +
-        '<div class="place-alert__body"><b>Xác nhận mở tủ</b><p>' +
-          esc('Thẻ của bạn vừa được quét tại hộp tủ để ' + (CARD_ACTION[b.confirm_phase] || 'mở tủ') + '. Tủ của bạn: ' + slot + ', ' + name +
-              '. Chưa thấy email? Bạn có thể xác nhận ngay ở đây.') + '</p></div>' +
-        '<button type="button" class="round-btn lg-hover place-alert__close" data-place-close aria-label="Đóng thông báo vị trí tủ">' + icon('close') + '</button>' +
-        '<div class="place-alert__do">' +
-          '<button type="button" class="chip lg-hover place-alert__yes" data-card-answer="approve">' + icon('unlock') + 'Xác nhận mở tủ</button>' +
-          '<button type="button" class="chip lg-hover" data-card-answer="reject">Không phải tôi</button>' +
-        '</div>';
-    }
     if (now.kind === 'wrong') {
       ico = 'alert';
-      title = now.scan ? 'Bạn quét thẻ sai hộp tủ' : 'Bạn đang đi sai chỗ';
-      text = (now.scan ? 'Thẻ vừa được quét ở ' + (now.near || 'một hộp khác') : 'Bạn đang ở ' + now.near) + '. ' + where;
+      title = now.scan ? 'Bạn mở nhầm hộp tủ' : 'Bạn đang đi sai chỗ';
+      text = (now.scan ? 'Bạn vừa thử mở tủ ở ' + (now.near || 'một hộp khác') : 'Bạn đang ở ' + now.near) + '. ' + where;
     } else if (now.kind === 'here') {
       ico = 'check';
       title = 'Bạn đến đúng chỗ rồi';
@@ -444,41 +419,12 @@
     place.html = html;
     place.kind = now.kind;
     el.place.className = 'place-alert place-alert--' + now.kind;
-    el.place.setAttribute('role', now.kind === 'wrong' || now.kind === 'confirm' ? 'alert' : 'status');
+    el.place.setAttribute('role', now.kind === 'wrong' ? 'alert' : 'status');
     el.place.innerHTML = html;
     el.place.hidden = false;
     if (fresh) {
       motion.pop(el.place);
     }
-  }
-
-  // the answer to a card scan from the map: MyLockerController asks the same procedure as the page behind the e-mail
-  function answerCard(button) {
-    var body = new URLSearchParams();
-    body.set('action', 'cardConfirm');
-    body.set('decision', button.getAttribute('data-card-answer'));
-    Array.prototype.forEach.call(el.place.querySelectorAll('[data-card-answer]'), function (b) {
-      b.disabled = true;
-    });
-    fetch(cfg.myLockerUrl, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json' }, body: body })
-      .then(function (res) {
-        if (!res.ok) {
-          throw new Error('HTTP ' + res.status);
-        }
-        return res.json();
-      })
-      .then(function (answer) {
-        var said = CARD_ANSWER[answer.result] || CARD_ANSWER.EXPIRED;
-        toast(said[0], said[1] ? 'error' : undefined);
-      })
-      .catch(function () {
-        toast('Chưa gửi được câu trả lời. Hãy thử lại.', 'error');
-      })
-      .then(function () {
-        place.html = '';        // the buttons work again if the wait goes on (box offline, no network)
-        state.etag = null;      // the wait is over: the next answer must come in full, not as a 304
-        load();
-      });
   }
 
   /* ---------- one area: head, quick tiles, chips, banks ---------- */
@@ -688,10 +634,10 @@
 
   var METHODS = {
     PIN: { label: 'Mật mã', desc: 'Nhập 6 số trên bàn phím của hộp hoặc trên điện thoại (quét QR).' },
-    CARD: { label: 'Thẻ RFID', desc: 'Quẹt thẻ RFID lên đầu đọc của hộp.' },
+    PHONE: { label: 'Điện thoại', desc: 'Đăng nhập trên điện thoại, chạm máy vào đầu đọc NFC của hộp rồi bấm Mở tủ. Không cần mật mã.' },
     FINGERPRINT: { label: 'Vân tay', desc: 'Đặt ngón tay lên cảm biến của hộp.' }
   };
-  var METHOD_ORDER = ['PIN', 'CARD', 'FINGERPRINT'];
+  var METHOD_ORDER = ['PIN', 'PHONE', 'FINGERPRINT'];
 
   // the numbers of the rules come from AppConfig through the API (spec v3 2.1); the defaults are only a fallback
   function rule(name, fallback) {
@@ -718,14 +664,6 @@
 
   function bookingBuffer() {
     return rule('booking_buffer', 10000);
-  }
-
-  function cardDepositDue() {
-    return !!(state.data && state.data.card_deposit_due);
-  }
-
-  function cardDeposit() {
-    return rule('card_deposit', (state.data && state.data.card_deposit) || 30000);
   }
 
   function sizeInfo(code) {
@@ -757,9 +695,6 @@
   }
 
   function methodDesc(code, bank) {
-    if (code === 'CARD' && cardDepositDue()) {
-      return METHODS.CARD.desc + ' Cọc ' + money(cardDeposit()) + ' khi đăng ký thẻ lần đầu tại hộp.';
-    }
     if (code === 'FINGERPRINT') {
       return METHODS.FINGERPRINT.desc + (fingerEnrolled(bank) ? ' Bạn đã đăng ký vân tay trên hộp này.'
         : ' Lần đầu cần đăng ký tại hộp bằng mã ở trang Tủ của tôi.');
@@ -803,7 +738,7 @@
     return { unit: unit, count: count, minutes: count * (unit === 'day' ? 1440 : 60) };
   }
 
-  // what the user is choosing: plan, open method, price taken now, and the card deposit taken later at the box
+  // what the user is choosing: plan, open method and the price taken now
   function reserveChoice(slot) {
     var form = el.panel.querySelector('form[data-reserve]');
     var plans = (state.data && state.data.plans) || [];
@@ -827,12 +762,11 @@
     }
     // "Tự chọn" picked but no longer offered (a refresh dropped it) or not priced: never show it as free
     var unavailable = wantsCustom && (!custom || price <= 0);
-    var deposit = method === 'CARD' && cardDepositDue() ? cardDeposit() : 0;
     var balance = Number(cfg.balance) || 0;
-    // Deposit_Reserve: balance - price (- first card deposit) must stay >= BOOKING_BUFFER
-    var enough = balance - price - deposit >= bookingBuffer();
+    // Deposit_Reserve: balance - price must stay >= BOOKING_BUFFER
+    var enough = balance - price >= bookingBuffer();
     return { plan: plan, custom: unavailable ? null : custom, unavailable: unavailable, method: method, price: price,
-             deposit: deposit, size: slot.size, balance: balance, after: balance - price, enough: enough };
+             size: slot.size, balance: balance, after: balance - price, enough: enough };
   }
 
   // "21/10 14:30": the due time if the slot is opened now (the clock starts at the first open)
@@ -999,9 +933,6 @@
       ['Cách mở', esc(METHODS[choice.method].label)],
       ['Trừ ngay', '<strong class="dlg__total money">' + (choice.price ? esc(money(choice.price)) : 'Miễn phí') + '</strong>']
     ]);
-    if (choice.deposit) {
-      rows.push(['Cọc thẻ', esc(money(choice.deposit)) + ' <span class="muted">(trừ khi đăng ký thẻ tại hộp, không trừ bây giờ)</span>']);
-    }
     rows.push(['Số dư còn lại', '<span class="money">' + esc(money(choice.after)) + '</span>']);
     var refund = rule('no_show_refund_pct', 0);
     var rules = [
@@ -1203,6 +1134,16 @@
     });
   }
 
+  // v7: the page of the box (/k/{device}): a phone opens the owner's slot there after a tap on its NFC reader; a demo box
+  // has no reader, so its page opens without a tap
+  function boxPageLink(bank) {
+    if (!bank || !bank.device_code) {
+      return '';
+    }
+    return '<a class="btn ghost btn--block" href="' + esc(cfg.ctx + '/k/' + encodeURIComponent(bank.device_code)) + '">' +
+      'Mở tủ bằng điện thoại</a>';
+  }
+
   function actionsHtml(slot, bank) {
     var role = cfg.role;
     var parts = [];
@@ -1215,11 +1156,13 @@
         parts.push(reserveForm(slot));
       } else if (bookingPhase(slot) === 'RESERVED') {
         parts.push('<a class="btn btn--block btn--pill lg-hover" href="' + esc(cfg.myLockerUrl) + '">' + icon('unlock') + 'Xem cách mở ở Tủ của tôi</a>');
+        parts.push(boxPageLink(bank));
         parts.push(cancelForm(slot));
       } else if (slot.mine && slot.locked) {
         parts.push(overdueBoxHtml(slot));
         parts.push('<a class="btn ghost btn--block" href="' + esc(cfg.myLockerUrl) + '">Xem ở Tủ của tôi</a>');
       } else if (bookingPhase(slot) === 'ACTIVE') {
+        parts.push(boxPageLink(bank));
         parts.push(extendForm(slot));
       }
     }
@@ -1293,7 +1236,7 @@
     var s = found.slot;
     return [cfg.role, s.slot_id, s.status, s.locked, s.mine, s.deposit_id, s.hold_until, s.due_at, s.reserved_at,
       s.escalated, s.occupant, s.alert ? s.alert.alert_id : '', s.ticket_id, s.overdue_hours, s.overdue_fee,
-      found.bank.device_status, cardDepositDue(), (state.data.fp_devices || []).join(',')].join('|');
+      found.bank.device_status, (state.data.fp_devices || []).join(',')].join('|');
   }
 
   function renderPanel(force) {
@@ -1829,14 +1772,12 @@
   function onClick(e) {
     var target = e.target.closest('[data-area],[data-slot],[data-filter],[data-filter-clear],[data-close],[data-refresh],' +
       '[data-geo-start],[data-map-fit],[data-map-me],[data-map-zoom],[data-sheet-list],[data-auth-reserve],' +
-      '[data-place-show],[data-place-close],[data-card-answer]');
+      '[data-place-show],[data-place-close]');
     if (!target) {
       return;
     }
     if (target.hasAttribute('data-area')) {
       selectArea(target.getAttribute('data-area'));
-    } else if (target.hasAttribute('data-card-answer')) {
-      answerCard(target);
     } else if (target.hasAttribute('data-place-show')) {
       if (myBooking()) {
         selectArea(myBooking().area_code);
@@ -1926,7 +1867,7 @@
         askFirst(form, {
           title: 'Xác nhận đặt ngăn ' + found.slot.slot_code,
           html: reserveConfirmHtml(found.slot, found.bank, choice),
-          okText: choice.price ? 'Đặt và trả ' + money(choice.price) : 'Đặt ngăn'   // the card deposit is taken later, at the box
+          okText: choice.price ? 'Đặt và trả ' + money(choice.price) : 'Đặt ngăn'
         }, e.submitter);
       } else if (isExtend) {
         var target = findSlot(toInt(form.querySelector('[name="slotId"]').value));

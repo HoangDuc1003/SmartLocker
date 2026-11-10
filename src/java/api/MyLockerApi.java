@@ -21,9 +21,9 @@ import util.Web;
 
 /**
  * "Tủ của tôi" as JSON for the signed-in user (BOOKING resource): the open booking with its PIN or enroll code,
- * cards, fingerprints, prices by open method and the recent history. The Postman collection reads it to chain steps.
+ * fingerprints, prices and the recent history. The Postman collection reads it to chain steps.
  *
- * GET  -> {"username","balance","card_deposit_due","booking":{...}|null,"cards":[...],"fingerprints":[...],"plans":[...],"history":[...]}
+ * GET  -> {"username","balance","booking":{...}|null,"fingerprints":[...],"plans":[...],"history":[...]}
  * POST action=newEnrollCode&depositId=..  -> {"ok":true,"enroll_code":"123456"}
  * POST action=deleteFingerprint&fpId=..   -> {"ok":true}
  */
@@ -72,22 +72,18 @@ public class MyLockerApi extends HttpServlet {
         try {
             DeviceAuthDao auth = new DeviceAuthDao();
             DepositDao deposits = new DepositDao();
-            boolean hasCard = auth.hasRegisteredCard(me.getUserId());
             JsonObject reply = new JsonObject();
             reply.addProperty("user_id", me.getUserId());
             reply.addProperty("username", me.getUsername());
             long balance = new UserDao().getBalance(me.getUserId());
             reply.addProperty("balance", balance);
             reply.addProperty("debt", balance < 0 ? -balance : 0);   // v3: a late fee may put the wallet below zero
-            reply.addProperty("card_deposit_due", !hasCard);
             dao.AppConfigDao config = new dao.AppConfigDao();
-            reply.addProperty("card_deposit", config.get("CARD_DEPOSIT", Pricing.CARD_DEPOSIT));
             reply.addProperty("cancel_min", config.getInt("CANCEL_FREE_MIN", Pricing.CANCEL_FREE_MIN));
             reply.addProperty("cancel_late_pct", config.getInt("CANCEL_LATE_REFUND_PCT", Pricing.CANCEL_LATE_REFUND_PCT));
             reply.addProperty("hold_min", config.getInt("HOLD_MIN", Pricing.HOLD_MIN));
             Deposit open = deposits.findOpenByUser(me.getUserId());
             reply.add("booking", open == null ? com.google.gson.JsonNull.INSTANCE : booking(open));
-            reply.add("cards", ApiJson.GSON.toJsonTree(auth.cardsOf(me.getUserId())));
             reply.add("fingerprints", ApiJson.GSON.toJsonTree(auth.fingerprintsOf(me.getUserId())));
             JsonArray plans = new JsonArray();
             java.util.List<dao.AppConfigDao.SlotSize> sizes = config.sizes();

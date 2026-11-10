@@ -554,7 +554,7 @@
     return formStart(cfg.commandUrl, null, slot, confirmText) +
       '<h3>Mở khóa từ xa</h3>' +
       '<label class="field"><span>Lý do</span>' +
-        '<textarea name="reason" required minlength="5" maxlength="200" placeholder="Ví dụ: Sinh viên quên thẻ, đã kiểm tra CCCD tại quầy"' +
+        '<textarea name="reason" required minlength="5" maxlength="200" placeholder="Ví dụ: Sinh viên hết pin điện thoại, đã kiểm tra CCCD tại quầy"' +
         (online ? '' : ' disabled') + '></textarea></label>' +
       '<button type="submit" class="btn btn--danger btn--block"' + (online ? '' : ' disabled') + '>' + icon('unlock') + 'Mở khóa ngay</button>' +
       (online ? '<p class="hint">Mỗi thiết bị chỉ do một nhân viên điều khiển tại một thời điểm.</p>'

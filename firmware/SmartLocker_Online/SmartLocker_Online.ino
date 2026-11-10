@@ -1,18 +1,24 @@
 /*
  * SmartLocker - online box LOCKER-01 (ESP32 DevKit, ESP32 core 3.x)
- * Hardware: LCD 1602 I2C, 2 servos (bolt + door), SRF05, keypad 4x4, RC522, AS608.
+ * Hardware: LCD 1602 I2C, 2 servos (bolt + door), SRF05, keypad 4x4, PN532 (NFC), AS608.
  *
- * The box never decides on its own: every PIN, card and finger goes to the web (POST /api/device/auth),
- * and the box opens only on "UNLOCK". A heartbeat every 3 s (POST /api/health) keeps LOCKER-01 ONLINE
- * and brings the commands queued by the web: UNLOCK (phone page, staff), DELETE_FP.
+ * The box never decides on its own: every PIN and finger goes to the web (POST /api/device/auth), and the box opens
+ * only on "UNLOCK". A heartbeat every 3 s (POST /api/health) keeps LOCKER-01 ONLINE and brings the commands queued by
+ * the web: UNLOCK (phone tap, phone page, staff), DELETE_FP.
+ *
+ * v7, the phone replaces the RFID card. The PN532 (I2C mode, on the bus of the LCD) emulates an NFC Type 4 tag holding
+ * one URL record: base URL + "tap_path" of the heartbeat reply, e.g. .../SmartLocker/k/LOCKER-01?n=Ab3dEf7hJk2m.
+ * The token changes every minute and after each use, so the tag is rewritten when the path changes. A phone that taps
+ * the box opens that page; the signed-in owner presses "Mo tu cua toi" and the UNLOCK comes with the next heartbeat.
+ * The box reads nothing from the phone and never sees who it is: the web checks the login and the token.
  *
  * Keypad:  0-9 PIN (6 digits)   # send   * clear / cancel
- *          B  enroll a card     C  enroll a finger   (then the 6-digit enroll code from "Tu cua toi", #)
+ *          C  enroll a finger   (then the 6-digit enroll code from "Tu cua toi", #)
  *          D  door closed: show IP / server status;  door open: lock now
  *          A / B after "A: Mo tu / B: Tra tu": open the rented slot / return it
  *
  * Open many times (v6): every auth goes with "intent":"ASK". A rented slot answers CHOOSE and the LCD shows
- * "A: Mo tu" / "B: Tra tu"; the box keeps the PIN / card UID / finger slot it just read and sends the same auth
+ * "A: Mo tu" / "B: Tra tu"; the box keeps the PIN / finger slot it just read and sends the same auth
  * again with "intent":"OPEN" (UNLOCK phase ACCESS, the rental goes on) or "CHECKOUT" (PICKUP, the rental ends).
  * '*' or CHOOSE_MS without a key cancels. An older server ignores the intent and answers PICKUP as before.
  *
@@ -24,18 +30,20 @@
  * a door left open locks by itself after DOOR_OPEN_MS. The SRF05 only drives the LCD backlight: on while
  * someone is near, off SCREEN_OFF_MS after the last person and the last input.
  *
- * Arduino IDE libraries: MFRC522, Keypad, Adafruit Fingerprint Sensor Library, ArduinoJson 7,
- *                        LiquidCrystal I2C (Frank de Brabander). Servos use the ESP32 LEDC, no library.
- * Copy secrets.example.h to secrets.h first.
+ * Arduino IDE libraries: Keypad, Adafruit Fingerprint Sensor Library, ArduinoJson 7, LiquidCrystal I2C (Frank de
+ * Brabander), and PN532 + PN532_I2C + NDEF of Seeed-Studio (github.com/Seeed-Studio/PN532, copy the three folders
+ * into Arduino/libraries). Servos use the ESP32 LEDC, no library. Copy secrets.example.h to secrets.h first.
  */
 
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
-#include <SPI.h>
 #include <Wire.h>
-#include <MFRC522.h>
+#include <PN532_I2C.h>
+#include <PN532.h>
+#include <emulatetag.h>
+#include <NdefMessage.h>
 #include <Keypad.h>
 #include <Adafruit_Fingerprint.h>
 #include <LiquidCrystal_I2C.h>
@@ -46,15 +54,12 @@
 #error "Copy secrets.example.h to secrets.h and fill in Wi-Fi, server and API key"
 #endif
 
-static const char FIRMWARE[] = "3.3-esp32";
+static const char FIRMWARE[] = "4.0-esp32";
 
 // ---- Pin map of the box ----
-// RC522 on its own SPI pins; RST is tied to 3V3, so the chip is reset in software.
-static constexpr uint8_t RFID_SS_PIN   = 4;
-static constexpr int     RFID_SCK_PIN  = 16;
-static constexpr int     RFID_MOSI_PIN = 17;
-static constexpr int     RFID_MISO_PIN = 34;
-static constexpr uint8_t RFID_RST_PIN  = MFRC522::UNUSED_PIN;
+// PN532 in I2C mode (switches I0=1, I1=0) on SDA 21 / SCL 22 next to the LCD; it answers at 0x24, the LCD at 0x27.
+static constexpr bool USE_NFC = true;           // false: no tag, phones open only through the /k page (QR) or staff
+static constexpr uint16_t NFC_LISTEN_MS = 40;   // each loop waits this long for a phone, short so no key press is missed
 byte rowPins[4] = {13, 14, 25, 26};             // R1..R4
 byte colPins[4] = {33, 19, 23, 27};             // C1..C4
 static constexpr int FP_RX_PIN = 35;            // ESP32 <- AS608 TX
@@ -89,20 +94,19 @@ char keys[4][4] = {
   {'*', '0', '#', 'D'}
 };
 
-MFRC522 rfid(RFID_SS_PIN, RFID_RST_PIN);
+PN532_I2C pn532i2c(Wire);
+EmulateTag nfc(pn532i2c);
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, 4, 4);
 HardwareSerial FingerSerial(2);
 Adafruit_Fingerprint finger(&FingerSerial);
 LiquidCrystal_I2C lcd(LCD_ADDR, 16, 2);
 
-enum Mode { MODE_IDLE, MODE_ENROLL_CODE, MODE_ENROLL_CARD, MODE_CHOOSE };
+enum Mode { MODE_IDLE, MODE_ENROLL_CODE, MODE_CHOOSE };
 Mode mode = MODE_IDLE;
 JsonDocument chooseBody;    // the auth that answered CHOOSE, sent again with OPEN or CHECKOUT
 String chooseSlot;
 uint32_t chooseDeadline = 0;
-String enrollType;          // "CARD" or "FINGERPRINT" while an enrollment runs
 String enrollCode;
-uint32_t enrollDeadline = 0;
 
 String baseUrl;             // e.g. http://192.168.1.10:8080/SmartLocker
 String pinBuffer;
@@ -123,11 +127,12 @@ bool idleDrawn = false;
 uint32_t lastFingerScan = 0;
 uint32_t fingerQuietUntil = 0;
 bool fingerWaitLift = true;   // read again only after the sensor saw no finger (a stuck or ghost image never repeats)
-String lastCardUid;
-uint32_t lastCardAt = 0;
+bool nfcOk = false;
+String tapPath;             // "/k/LOCKER-01?n=..." from the last heartbeat; empty: no tag is emulated
+uint8_t ndefBuf[128];       // the encoded NDEF message (EmulateTag copies it; NDEF_MAX_LENGTH is 128 there too)
 
 bool screenOn = true;
-uint32_t lastActivity = 0;  // last key, card, finger, message, or person seen by the SRF05
+uint32_t lastActivity = 0;  // last key, finger, tap, message, or person seen by the SRF05
 uint32_t lastSonar = 0;
 long lastCm = -1;
 
@@ -169,9 +174,7 @@ void show(const String& text, uint32_t holdMs = 0) {
 
 void drawIdle() {
   if (mode == MODE_ENROLL_CODE) {
-    show(String(enrollType == "CARD" ? "Ma DK the:" : "Ma DK van tay:") + "\n" + pinBuffer + "_");
-  } else if (mode == MODE_ENROLL_CARD) {
-    show(F("Quet the dang ky\n(* de huy)"));
+    show("Ma DK van tay:\n" + pinBuffer + "_");
   } else if (mode == MODE_CHOOSE) {
     show("A: Mo tu  * huy\nB: Tra tu " + chooseSlot);
   } else if (pinBuffer.length() > 0) {
@@ -181,29 +184,45 @@ void drawIdle() {
   } else if (!isOnline()) {
     show(WiFi.status() == WL_CONNECTED ? F("Mat ket noi\nDang thu lai...") : F("Mat Wi-Fi\nDang noi lai..."));
   } else {
-    show(F("Nhap PIN + #\nhoac the/van tay"));
+    show(F("PIN + # / van tay\nhoac cham NFC"));
   }
   idleDrawn = true;
 }
 
-// ---------------------------------------------------------------- RC522
+// ---------------------------------------------------------------- PN532: the NFC tag for the phone tap
 
-void initRC522() {
-  rfid.PCD_Init();
-  delay(50);
-  rfid.PCD_SetAntennaGain(rfid.RxGain_max);
-  rfid.PCD_AntennaOn();
+void initNfc() {
+  if (!USE_NFC) return;
+  nfc.setTagWriteable(false);           // a phone may read the tag, never change it
+  static uint8_t uid[3] = {0x53, 0x4C, 0x01};  // "SL", box 1; static: EmulateTag keeps the pointer and reads it later
+  nfc.setUid(uid);
+  nfcOk = nfc.init();
+  Serial.println(nfcOk ? F("PN532 OK (tag emulation)") : F("PN532 not found: I2C switches, SDA 21 / SCL 22, 0x24"));
 }
 
-// A wrong VersionReg means the chip lost its state (power dip): reset it.
-uint32_t lastRfidCheck = 0;
-void rfidHealthCheck() {
-  if (millis() - lastRfidCheck < 3000) return;
-  lastRfidCheck = millis();
-  byte v = rfid.PCD_ReadRegister(MFRC522::VersionReg);
-  if (v != 0x91 && v != 0x92 && v != 0x88) {
-    Serial.printf("RC522 VersionReg 0x%02X -> reset\n", v);
-    initRC522();
+// Writes base URL + tapPath into the tag. Called when the heartbeat brings another path or the base URL moved.
+void setTagUrl() {
+  if (!nfcOk || tapPath.isEmpty()) return;
+  String url = baseUrl + tapPath;
+  NdefMessage message = NdefMessage();
+  message.addUriRecord(url.c_str());
+  int size = message.getEncodedSize();
+  if (size > (int) sizeof(ndefBuf) - 2) {   // EmulateTag keeps 2 bytes of its 128 for the length
+    Serial.printf("Tag URL too long (%d bytes): %s\n", size, url.c_str());
+    return;
+  }
+  message.encode(ndefBuf);
+  nfc.setNdefFile(ndefBuf, size);
+  Serial.print(F("NFC tag: ")); Serial.println(url);
+}
+
+// Lets a phone read the tag for NFC_LISTEN_MS. The phone opens the link itself; the box only shows that it was read.
+void handleNfc() {
+  if (!nfcOk || tapPath.isEmpty() || mode != MODE_IDLE || pinBuffer.length() > 0) return;   // never while a PIN is typed
+  if (nfc.emulate(NFC_LISTEN_MS)) {
+    wake();
+    show(F("Da gui lien ket\nXem dien thoai"), 3000);
+    Serial.println(F("NFC tag read by a phone"));
   }
 }
 
@@ -269,7 +288,10 @@ void closeDoor() {
   servoWrite(SERVO_BOLT_PIN, BOLT_LOCKED_DEG);
   delay(500);
   doorOpen = false;
-  initRC522();              // the servo current dip resets the RC522
+  if (USE_NFC) {            // a servo current dip can reset the PN532: start it again with the same tag
+    initNfc();
+    setTagUrl();
+  }
   wake();
   show(F("Da khoa cua"), 1500);
   Serial.println(F("Door closed"));
@@ -401,6 +423,7 @@ void heartbeatIfDue() {
   JsonDocument body, reply;
   body["firmware"] = FIRMWARE;
   body["uptime_sec"] = millis() / 1000;
+  body["nfc"] = nfcOk;      // v7: the server answers "tap_path" only to a box with a working tag
   bool wasOnline = isOnline();
   int code = postJson("/health", body, reply);
   if (code == 200) {
@@ -408,11 +431,17 @@ void heartbeatIfDue() {
     heartbeatFails = 0;
     heartbeatEveryMs = (uint32_t) (reply["interval_sec"] | 3) * 1000;
     runCommands(reply["commands"].as<JsonArray>());
+    String path = reply["tap_path"] | "";
+    if (path != tapPath) {
+      tapPath = path;
+      setTagUrl();
+    }
   } else {
     if (code == 401) Serial.println(F("HTTP 401: DEVICE_API_KEY is wrong"));
     if (++heartbeatFails >= 5 && String(CONFIG_URL).length() > 0) {
       heartbeatFails = 0;
       loadBaseUrl();        // the tunnel may have a new address
+      setTagUrl();          // and the tag must point there
     }
   }
   if (wasOnline != isOnline() && mode == MODE_IDLE && messageUntil == 0) idleDrawn = false;
@@ -427,7 +456,7 @@ void showServerError(int code) {
 }
 
 // One request decides: UNLOCK opens the door, CHOOSE asks A / B, DENY shows the reason the server wrote for the screen.
-// body: {"method":"PIN","pin":"482913"} | {"method":"CARD","card_uid":"04A1B2C3"} | {"method":"FINGERPRINT","sensor_slot":7}
+// body: {"method":"PIN","pin":"482913"} | {"method":"FINGERPRINT","sensor_slot":7}
 // A body without "intent" goes as ASK; the A / B keys send the kept body again with OPEN or CHECKOUT.
 void authorize(JsonDocument& body) {
   wake();
@@ -450,10 +479,6 @@ void authorize(JsonDocument& body) {
     pinBuffer = "";
     idleDrawn = false;      // drawIdle shows "A: Mo tu / B: Tra tu"
     Serial.printf("CHOOSE slot %s\n", chooseSlot.c_str());
-  } else if (result == "CONFIRM_EMAIL") {
-    // nothing opens now: the owner confirms from the e-mail, the UNLOCK then comes with a heartbeat like a phone open
-    Serial.printf("CONFIRM_EMAIL slot %s\n", (const char*) (reply["slot_code"] | ""));
-    show(message, 5000);
   } else if (result == "UNLOCK") {
     String phase = reply["phase"] | "";
     if (reply["physical"] | true) {
@@ -506,18 +531,11 @@ bool captureFinger(int slot) {
 
 void startEnroll() {
   JsonDocument body, reply;
-  body["type"] = enrollType;
+  body["type"] = "FINGERPRINT";
   body["enroll_code"] = enrollCode;
   mode = MODE_IDLE;
   show(F("Kiem tra ma..."));
   if (!enrollCall("/device/enroll/start", body, reply)) return;
-
-  if (enrollType == "CARD") {
-    mode = MODE_ENROLL_CARD;
-    enrollDeadline = millis() + 30000;
-    idleDrawn = false;
-    return;
-  }
   if (!fingerOk) {
     show(F("Khong thay AS608"), 3000);
     return;
@@ -537,15 +555,6 @@ void startEnroll() {
   } else {
     finger.deleteModel(slot);
   }
-}
-
-void finishCardEnroll(const String& uid) {
-  mode = MODE_IDLE;
-  JsonDocument body, reply;
-  body["type"] = "CARD";
-  body["enroll_code"] = enrollCode;
-  body["card_uid"] = uid;
-  if (enrollCall("/device/enroll/finish", body, reply)) show(reply["message"] | "Dang ky xong", 3000);
 }
 
 // ---------------------------------------------------------------- inputs
@@ -594,9 +603,8 @@ void handleKeypad() {
     idleDrawn = false;
     return;
   }
-  if (key == 'B' || key == 'C') {
+  if (key == 'C') {
     mode = MODE_ENROLL_CODE;
-    enrollType = key == 'B' ? "CARD" : "FINGERPRINT";
     pinBuffer = "";
     idleDrawn = false;
     return;
@@ -621,51 +629,9 @@ void handleKeypad() {
     }
     return;
   }
-  if (key >= '0' && key <= '9' && pinBuffer.length() < 6 && mode != MODE_ENROLL_CARD) {
+  if (key >= '0' && key <= '9' && pinBuffer.length() < 6) {
     pinBuffer += key;
     idleDrawn = false;
-  }
-}
-
-String cardUidToString(const MFRC522::Uid& uid) {
-  String result;
-  for (byte i = 0; i < uid.size; i++) {
-    if (uid.uidByte[i] < 0x10) result += '0';
-    result += String(uid.uidByte[i], HEX);
-  }
-  result.toUpperCase();
-  return result;
-}
-
-void handleRfid() {
-  // WakeupA also answers a card that stays on the reader; the 1.5 s check below drops repeats
-  byte atqa[2];
-  byte atqaLen = sizeof(atqa);
-  MFRC522::StatusCode st = rfid.PICC_WakeupA(atqa, &atqaLen);
-  if (st != MFRC522::STATUS_OK && st != MFRC522::STATUS_COLLISION) return;
-  if (!rfid.PICC_ReadCardSerial()) {
-    rfid.PICC_HaltA();
-    rfid.PCD_StopCrypto1();
-    return;
-  }
-  String uid = cardUidToString(rfid.uid);
-  rfid.PICC_HaltA();
-  rfid.PCD_StopCrypto1();
-  if (uid == lastCardUid && millis() - lastCardAt < 1500) {   // the same card still on the reader
-    lastCardAt = millis();
-    return;
-  }
-  lastCardUid = uid;
-  lastCardAt = millis();
-  Serial.print(F("RFID UID: ")); Serial.println(uid);
-  wake();
-  if (mode == MODE_ENROLL_CARD) {
-    finishCardEnroll(uid);
-  } else if (mode == MODE_IDLE) {
-    JsonDocument body;
-    body["method"] = "CARD";
-    body["card_uid"] = uid;
-    authorize(body);
   }
 }
 
@@ -746,9 +712,7 @@ void setup() {
   }
   show(F("SmartLocker\nKhoi dong..."));
 
-  SPI.begin(RFID_SCK_PIN, RFID_MISO_PIN, RFID_MOSI_PIN, RFID_SS_PIN);
-  initRC522();
-  Serial.printf("RC522 VersionReg 0x%02X (0x91/0x92/0x88 = OK)\n", rfid.PCD_ReadRegister(MFRC522::VersionReg));
+  initNfc();
 
   if (USE_FINGERPRINT) {
     FingerSerial.begin(FP_BAUD, SERIAL_8N1, FP_RX_PIN, FP_TX_PIN);
@@ -770,10 +734,6 @@ void loop() {
   heartbeatIfDue();
   sampleSonar();
   doorTick();
-  if (mode == MODE_ENROLL_CARD && (int32_t) (millis() - enrollDeadline) >= 0) {
-    mode = MODE_IDLE;
-    show(F("Het thoi gian\nquet the"), 2000);
-  }
   if (mode == MODE_CHOOSE && (int32_t) (millis() - chooseDeadline) >= 0) {
     endChoose();
     show(F("Het thoi gian\nchon, da huy"), 2000);
@@ -782,10 +742,9 @@ void loop() {
     handleKeypadDoorOpen();
   } else {
     handleKeypad();
-    handleRfid();
     handleFingerprint();
+    handleNfc();
   }
-  rfidHealthCheck();
   handleScreen();
   if (messageUntil && (int32_t) (millis() - messageUntil) >= 0) {
     messageUntil = 0;

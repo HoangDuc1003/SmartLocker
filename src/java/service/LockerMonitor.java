@@ -230,8 +230,11 @@ public class LockerMonitor implements ServletContextListener {
      * until staff sets it ACTIVE again. The audit log already records who changed the status, so no new column.
      */
     private void heartbeatDemoDevices() {
-        String sql = "SELECT d.device_id FROM Device d WHERE EXISTS (SELECT 1 FROM OperatingProfile p "
-                + "WHERE p.device_id = d.device_id AND p.params_json LIKE '%\"demo\":true%') "
+        // demo by its latest profile row, the same rule as Device_Authorize and DeviceAuthDao: a box that became real
+        // (a newer "demo":false row) must never have its commands taken here
+        String sql = "SELECT d.device_id FROM Device d WHERE EXISTS (SELECT 1 FROM (SELECT TOP 1 p.params_json "
+                + "FROM OperatingProfile p WHERE p.device_id = d.device_id ORDER BY p.profile_id DESC) p "
+                + "WHERE p.params_json LIKE '%\"demo\":true%') "
                 + "AND (d.status <> 'OFFLINE' OR (SELECT TOP 1 a.action FROM AuditLog a "
                 + "WHERE a.object_type = 'DEVICE' AND a.object_id = d.device_id "
                 + "AND a.action IN ('MARK_OFFLINE', 'BACK_ONLINE', 'DEVICE_STATUS') "
@@ -248,6 +251,12 @@ public class LockerMonitor implements ServletContextListener {
                     cs.setInt(1, id);
                     cs.execute();
                 }
+            }
+            // v7: and it takes its commands like a real box would (a phone open moves the booking on, DELETE_FP is done):
+            // without this an open from /k on a demo box stayed PENDING until it expired
+            dao.RemoteCommandDao commands = new dao.RemoteCommandDao();
+            for (int id : ids) {
+                commands.takePending(id);
             }
         } catch (SQLException e) {
             LOG.log(Level.WARNING, "LockerMonitor demo heartbeat failed: " + e.getMessage());

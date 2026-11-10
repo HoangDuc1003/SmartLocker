@@ -25,7 +25,6 @@
     <c:when test="${v == 'NO_SHOW'}"><c:set var="cls" value=""/><c:set var="txt" value="Không đến"/></c:when>
     <c:when test="${v == 'CANCELLED'}"><c:set var="cls" value=""/><c:set var="txt" value="Đã hủy"/></c:when>
     <c:when test="${v == 'OVERDUE'}"><c:set var="cls" value="bad"/><c:set var="txt" value="Quá hạn"/></c:when>
-    <c:when test="${v == 'AWAITING_EMAIL'}"><c:set var="cls" value="warn"/><c:set var="txt" value="Chờ xác nhận email"/></c:when>
     <c:when test="${v == 'PENDING'}"><c:set var="cls" value="warn"/><c:set var="txt" value="Chờ xử lý"/></c:when>
     <c:when test="${v == 'SENT'}"><c:set var="cls" value="info"/><c:set var="txt" value="Đã gửi"/></c:when>
     <c:when test="${v == 'DONE'}"><c:set var="cls" value="ok"/><c:set var="txt" value="Hoàn tất"/></c:when>

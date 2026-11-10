@@ -6,12 +6,11 @@ package util;
  * PricingDatabaseIntegrationTest compares the two. The numbers themselves (5 minutes, 10,000 VND...) live in
  * the AppConfig table; the constants below are only the defaults the tests use.
  *
- * Price of a booking: plan price x size factor, rounded up to 100 VND. Every open method (PIN, card, finger)
- * costs the same; a first card only adds the one-time deposit, taken at the box.
+ * Price of a booking: plan price x size factor, rounded up to 100 VND. Every open method (PIN, phone, finger)
+ * costs the same.
  */
 public final class Pricing {
 
-    public static final long CARD_DEPOSIT = 10000;     // once per card, taken when the card is enrolled at the box
     public static final int HOLD_MIN = 15;             // a reservation waits this long after booking
     public static final int CANCEL_FREE_MIN = 5;       // cancel with a full refund only this soon after booking
     public static final int CANCEL_LATE_REFUND_PCT = 50; // a later cancel, before the hold ends, gets this much back
@@ -121,8 +120,8 @@ public final class Pricing {
         return noShowRefund(paid, NO_SHOW_REFUND_PCT);
     }
 
-    /** Booking is allowed when, after paying (and keeping a first card deposit), the buffer is left. */
-    public static boolean canBook(long balance, long price, long cardDeposit, long buffer) {
-        return balance - price - cardDeposit >= buffer;
+    /** Booking is allowed when, after paying, the buffer is left. */
+    public static boolean canBook(long balance, long price, long buffer) {
+        return balance - price >= buffer;
     }
 }

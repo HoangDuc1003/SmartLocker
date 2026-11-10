@@ -161,8 +161,8 @@ Không truyền `-TunnelUrl` hay `-LogFile` thì script hỏi địa chỉ.
 
 Phương án deploy không đổi. Chỉ thêm ba điểm:
 
-- **Database**: `run_demo_db.ps1` (qua `run_demo_db.bat`) chạy `01_schema.sql`, `02_data_v1.sql` rồi `03_v2_v3.sql`. Đã có
-  database thì chỉ cần chạy lại `sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\03_v2_v3.sql` (chạy lại được; luôn có `-I`).
+- **Database**: `run_demo_db.ps1` (qua `run_demo_db.bat`) chạy `01_schema.sql`, `02_data_v1.sql`, `03_v2_v3.sql` rồi `04_phone.sql`. Đã có
+  database thì chỉ chạy lại khối `CREATE OR ALTER` cần đổi (luôn có `-I`); sau `04_phone.sql`, `03_v2_v3.sql` không chạy lại được nữa.
 - **Định vị "Tìm tủ gần tôi" cần HTTPS**: trình duyệt chỉ cho `navigator.geolocation` trên trang HTTPS (hoặc `localhost`).
   Khi demo trên điện thoại, mở **link tunnel** (`https://hoangduc1003.github.io/SmartLocker/` chuyển tới
   `https://<tên>.trycloudflare.com/SmartLocker/`), không mở `http://<IP laptop>:8080`, nếu không trang chỉ báo "cần HTTPS" và
