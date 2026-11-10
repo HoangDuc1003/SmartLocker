@@ -189,6 +189,130 @@ public class LockerSessionDao {
         }
     }
 
+    /**
+     * The filters of the "Dữ liệu cảm biến" page. q: a word in the box code, the slot code, the open source, the label or the alert,
+     * or a session number. fromUtc / toUtc: the measured time, as UTC "yyyy-MM-dd HH:mm:ss" (the page turns the Vietnam
+     * dates into these), toUtc excluded. sort: a key of SORTS, desc: newest / largest first.
+     */
+    public static final class Filter {
+        public String q;
+        public Integer deviceId;
+        public String fromUtc;
+        public String toUtc;
+        public String sort = "measured";
+        public boolean desc = true;
+    }
+
+    /** The sortable columns of the page: key -> SQL column. Only these reach ORDER BY. */
+    public static final Map<String, String> SORTS = new LinkedHashMap<>();
+
+    static {
+        SORTS.put("measured", "ls.measured_at");
+        SORTS.put("ingested", "ls.ingested_at");
+        SORTS.put("id", "ls.session_id");
+        SORTS.put("device", "v.device_code");
+        SORTS.put("door", "ls.door_open_sec");
+        SORTS.put("weight", "ls.weight_delta_g");
+        SORTS.put("stay", "ls.stay_min");
+    }
+
+    private static final String LIST_FROM = "FROM LockerSession ls "
+            + "JOIN Device v ON v.device_id = ls.device_id "
+            + "LEFT JOIN LockerSlot s ON s.locker_slot_id = ls.slot_id "
+            + "LEFT JOIN LockerSessionLabel l ON l.session_id = ls.session_id "
+            + "OUTER APPLY (SELECT TOP 1 a.label, a.alert_id FROM Alert a WHERE a.session_id = ls.session_id ORDER BY a.alert_id DESC) al ";
+
+    private static String where(Filter f, List<Object> params) {
+        StringBuilder sb = new StringBuilder("WHERE 1 = 1 ");
+        if (f.q != null && !f.q.isEmpty()) {
+            String like = "%" + f.q.replace("[", "[[]").replace("%", "[%]").replace("_", "[_]") + "%";
+            sb.append("AND (v.device_code LIKE ? OR s.slot_code LIKE ? OR ls.open_source LIKE ? OR l.label LIKE ? OR al.label LIKE ? "
+                    + "OR CAST(ls.session_id AS NVARCHAR(20)) = ?) ");
+            params.add(like);
+            params.add(like);
+            params.add(like);
+            params.add(like);
+            params.add(like);
+            params.add(f.q.startsWith("#") ? f.q.substring(1) : f.q);
+        }
+        if (f.deviceId != null && f.deviceId > 0) {
+            sb.append("AND ls.device_id = ? ");
+            params.add(f.deviceId);
+        }
+        if (f.fromUtc != null) {
+            sb.append("AND ls.measured_at >= CAST(? AS DATETIME2) ");
+            params.add(f.fromUtc);
+        }
+        if (f.toUtc != null) {
+            sb.append("AND ls.measured_at < CAST(? AS DATETIME2) ");
+            params.add(f.toUtc);
+        }
+        return sb.toString();
+    }
+
+    private static void bind(PreparedStatement ps, List<Object> params) throws SQLException {
+        for (int i = 0; i < params.size(); i++) {
+            Object p = params.get(i);
+            if (p instanceof Integer) {
+                ps.setInt(i + 1, (Integer) p);
+            } else {
+                ps.setString(i + 1, (String) p);
+            }
+        }
+    }
+
+    /** One page of the "Dữ liệu cảm biến" list, with the box code and the label of each session. */
+    public List<Map<String, Object>> list(Filter f, int page, int size) throws SQLException {
+        List<Object> params = new ArrayList<>();
+        String column = SORTS.containsKey(f.sort) ? SORTS.get(f.sort) : SORTS.get("measured");
+        String dir = f.desc ? "DESC" : "ASC";
+        String sql = "SELECT ls.session_id, ls.device_id, v.device_code, ls.device_seq, ls.measured_at, ls.ingested_at, "
+                + "ls.door_open_sec, ls.weight_delta_g, ls.unlock_count, ls.rfid_ok, ls.stay_min, "
+                + "s.slot_code, ls.open_source, l.label, al.label AS alert_label, al.alert_id "
+                + LIST_FROM + where(f, params)
+                + "ORDER BY " + column + " " + dir + ", ls.session_id " + dir + " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        List<Map<String, Object>> list = new ArrayList<>();
+        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            bind(ps, params);
+            ps.setInt(params.size() + 1, (page - 1) * size);
+            ps.setInt(params.size() + 2, size);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("session_id", rs.getLong("session_id"));
+                    map.put("device_id", rs.getInt("device_id"));
+                    map.put("device_code", rs.getString("device_code"));
+                    map.put("device_seq", rs.getInt("device_seq"));
+                    map.put("measured_at", rs.getTimestamp("measured_at"));
+                    map.put("ingested_at", rs.getTimestamp("ingested_at"));
+                    map.put("door_open_sec", rs.getDouble("door_open_sec"));
+                    map.put("weight_delta_g", rs.getDouble("weight_delta_g"));
+                    map.put("unlock_count", rs.getInt("unlock_count"));
+                    map.put("rfid_ok", rs.getBoolean("rfid_ok"));
+                    map.put("stay_min", rs.getDouble("stay_min"));
+                    map.put("slot_code", rs.getString("slot_code"));
+                    map.put("open_source", rs.getString("open_source"));
+                    map.put("label", rs.getString("label"));             // the training label (seed data)
+                    map.put("alert_label", rs.getString("alert_label")); // what the rules or the model raised, if anything
+                    map.put("alert_id", rs.getObject("alert_id"));
+                    list.add(map);
+                }
+            }
+        }
+        return list;
+    }
+
+    public int count(Filter f) throws SQLException {
+        List<Object> params = new ArrayList<>();
+        String sql = "SELECT COUNT(*) " + LIST_FROM + where(f, params);
+        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            bind(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
     public LockerSession findById(long sessionId) throws SQLException {
         String sql = "SELECT ls.session_id, ls.device_id, ls.device_seq, ls.measured_at, ls.ingested_at, "
                 + "ls.door_open_sec, ls.weight_delta_g, ls.unlock_count, ls.rfid_ok, ls.stay_min, "

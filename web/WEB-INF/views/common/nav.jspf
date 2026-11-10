@@ -34,6 +34,7 @@
     <c:when test="${activeNav == 'dashboard'}"><c:set var="navTitle" value="Tổng quan"/></c:when>
     <c:when test="${activeNav == 'map'}"><c:set var="navTitle" value="Sơ đồ tủ"/></c:when>
     <c:when test="${activeNav == 'alerts'}"><c:set var="navTitle" value="Cảnh báo"/></c:when>
+    <c:when test="${activeNav == 'sessions'}"><c:set var="navTitle" value="Dữ liệu cảm biến"/></c:when>
     <c:when test="${activeNav == 'mylocker'}"><c:set var="navTitle" value="Tủ của tôi"/></c:when>
     <c:when test="${activeNav == 'topup'}"><c:set var="navTitle" value="Nạp tiền"/></c:when>
     <c:when test="${activeNav == 'areas'}"><c:set var="navTitle" value="Khu vực"/></c:when>
@@ -89,6 +90,10 @@
             <c:if test="${perms.contains('ALERT:READ')}">
                 <a class="side-link ${activeNav == 'alerts' ? 'on' : ''}" href="${ctx}/AlertController" ${activeNav == 'alerts' ? 'aria-current="page"' : ''}>
                     <svg class="ico" aria-hidden="true"><use href="#i-bell"/></svg>Cảnh báo</a>
+            </c:if>
+            <c:if test="${perms.contains('LOCKERSESSION:READ')}">
+                <a class="side-link ${activeNav == 'sessions' ? 'on' : ''}" href="${ctx}/LockerSessionController" ${activeNav == 'sessions' ? 'aria-current="page"' : ''}>
+                    <svg class="ico" aria-hidden="true"><use href="#i-file"/></svg>Dữ liệu cảm biến</a>
             </c:if>
         </div>
         </c:if>

@@ -65,6 +65,7 @@ public class SecurityFilter implements Filter {
         RESOURCE_BY_PATH.put("/UserCardController", "USERCARD");
         RESOURCE_BY_PATH.put("/DepositController", "DEPOSIT");
         RESOURCE_BY_PATH.put("/RemoteCommandController", "COMMAND");
+        RESOURCE_BY_PATH.put("/LockerSessionController", "LOCKERSESSION");   // the sessions the boxes posted (read only)
         RESOURCE_BY_PATH.put("/BookingController", "BOOKING");
         RESOURCE_BY_PATH.put("/api/my-locker", "BOOKING");
         RESOURCE_BY_PATH.put("/MyLockerController", "BOOKING");

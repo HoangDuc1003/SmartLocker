@@ -261,6 +261,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); outline:
 input[readonly], input:disabled, select:disabled { background: var(--surface-2); color: var(--text-muted); }
 input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); }
 .filter input[type=text] { min-width: 220px; }
+.filter__date { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-muted); }
+.filter__date input { flex: 1 1 auto; }
+table.grid th .th-sort { color: inherit; text-decoration: none; }
+table.grid th .th-sort:hover { color: var(--text); text-decoration: underline; }
 
 .form { max-width: 620px; background: var(--surface); border: 1px solid var(--border);
         border-radius: var(--radius-lg); padding: 20px; }
