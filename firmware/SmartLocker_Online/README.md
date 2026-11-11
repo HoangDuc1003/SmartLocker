@@ -21,7 +21,7 @@ Máy chủ không bao giờ gọi vào hộp, nên không cần biết IP của 
 cũng không mở được. Hộp không đọc gì từ điện thoại: máy chủ kiểm tra người đăng nhập và mã chạm. Android mở liên kết
 ngay khi chạm; iPhone (XS trở lên) đọc thẻ NFC nền nhưng với thẻ giả lập bằng PN532 có máy không nhận, khi đó dùng QR.
 
-**Thẻ và điện thoại luân phiên.** Mỗi vòng lặp PN532 làm một việc: đọc thẻ khoảng 30 ms hoặc giả lập thẻ NFC khoảng 40 ms, đổi vai
+**Thẻ và điện thoại luân phiên.** Mỗi vòng lặp PN532 làm một việc: đọc thẻ (timeout 30 ms) hoặc giả lập thẻ NFC (timeout 5 ms, thực tế chặn vòng lặp khoảng 60 ms vì thư viện hỏi PN532 nhiều lần), đổi vai
 bằng `SAMConfig`. Đang gõ PIN hoặc đang đăng ký thẻ thì không giả lập. Điện thoại có ví HCE trả lời lệnh đọc thẻ bằng UID ngẫu
 nhiên 4 byte bắt đầu bằng `08`: firmware bỏ qua, không gửi lên máy chủ, nên lần chạm không bị tính là thẻ lạ.
 

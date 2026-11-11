@@ -63,7 +63,8 @@ static const char FIRMWARE[] = "4.1-esp32";
 // ---- Pin map of the box ----
 // PN532 in I2C mode (switches I0=1, I1=0) on SDA 21 / SCL 22 next to the LCD; it answers at 0x24, the LCD at 0x27.
 static constexpr bool USE_NFC = true;           // false: no cards and no tag; phones open only through the /k page (QR) or staff
-static constexpr uint16_t NFC_LISTEN_MS = 40;   // an emulation slice waits this long for a phone, short so no key press is missed
+static constexpr uint16_t NFC_LISTEN_MS = 5;    // an emulation slice waits this long for a phone. The library polls the PN532 over I2C
+                                                // many times per timeout, so a turn really blocks the loop about 10x longer than this: keep it small
 static constexpr uint16_t CARD_POLL_MS = 30;    // a card slice waits this long for a card
 byte rowPins[4] = {13, 14, 25, 26};             // R1..R4
 byte colPins[4] = {33, 19, 23, 27};             // C1..C4
@@ -715,6 +716,7 @@ void cardSlice() {
     body["card_uid"] = text;
     authorize(body);
   }
+  lastCardAt = millis();    // the debounce counts from the end of the HTTP call, or a card still held is sent again
 }
 
 // One PN532 job per loop(), so the keypad stays responsive: the card poll and the tag take turns.
