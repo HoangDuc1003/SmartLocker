@@ -1,4 +1,4 @@
-# SmartLocker - Smart Locker Rental System
+# SmartLocker - Smart locker rental system
 
 <div align="center">
 
@@ -11,10 +11,10 @@
 ![TestNG](https://img.shields.io/badge/TestNG-FF6C37?style=for-the-badge&logo=testng&logoColor=white)
 ![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)
 
-**A Java web application for renting lockers: book a slot on a map, open it with a PIN, an RFID card, a phone (NFC tap) or a fingerprint,
-pay from a wallet, with a real ESP32 box that talks to the server through a per-device API key.**
+**Rent a locker on the web: pick a slot on a map, pay from a wallet, open it with a PIN, an RFID card, a phone (NFC tap) or a fingerprint.
+A real ESP32 box talks to the server through an API with its own key per box.**
 
-*PRJ301 course project (FALL2026). The web interface is in Vietnamese; the submitted Vietnamese README is [README.md](./README.md).*
+*PRJ301 course project (FALL2026). Bản tiếng Việt: [README.md](./README.md).*
 
 </div>
 
@@ -22,481 +22,505 @@ pay from a wallet, with a real ESP32 box that talks to the server through a per-
 
 ## Contents
 
-1. [Features](#features)
-2. [Screenshots](#screenshots)
-3. [Quick start](#quick-start)
-4. [Demo hardware: one main box, many slots](#demo-hardware-one-main-box-many-slots)
-5. [Pricing](#pricing)
-6. [Flows](#flows)
-7. [Testing](#testing)
-8. [Architecture and project layout](#architecture-and-project-layout)
-9. [Security](#security)
-10. [Related documents](#related-documents)
+1. [What the system is made of](#what-the-system-is-made-of)
+2. [Features](#features)
+3. [Screenshots](#screenshots)
+4. [Install and run](#install-and-run)
+5. [The ESP32 box](#the-esp32-box)
+6. [Pricing and rules](#pricing-and-rules)
+7. [Flows](#flows)
+8. [Testing](#testing)
+9. [Deploying to the Internet](#deploying-to-the-internet)
+10. [Architecture and source](#architecture-and-source)
+11. [Security and known limits](#security-and-known-limits)
+12. [Related documents](#related-documents)
 
 ---
+
+## What the system is made of
+
+| Part | Technology | Role |
+|---|---|---|
+| Web | Java 8, Servlet/JSP (MVC2), Tomcat 9 | Locker map, booking, wallet, staff pages, API for the boxes |
+| Database | SQL Server | Every money and time rule lives in stored procedures |
+| Box | ESP32, PN532, AS608, keypad, LCD, servos | Takes PIN, card, fingerprint and phone tap; the server decides whether to open |
+| Map | Leaflet vendored in the repo, Mapbox when a token is set | Without Internet the pins still show over a plain grid |
+| Alerts | Fixed rules (`RuleEngine`) and a Weka model (`RiskScorer`) | Rules decide, the model only adds a risk score |
+
+The pages use no CDN, the visible text is Vietnamese, and there are light and dark themes.
 
 ## Features
 
 ### Users
 
-- **The locker map is the home page:** the site opens straight on the map, which visitors can view without signing in.
-  Sign-in and sign-up are a popup on the map (there is no separate login page). Passwords are hashed with BCrypt.
-- **Areas, banks, slots:** 5 areas of VNU-HCM on a Leaflet map (vendored, no CDN), refreshed every 10 seconds. Each bank is drawn
-  as a locker block with doors sized by slot size; overdue slots show a padlock. Without Internet the pins still show over a plain grid.
-- **Find a locker near me:** sorts areas by distance and opens walking directions; the location stays in the browser.
-- **Three slot sizes:** S 20x20x20, M 40x40x40, L 60x60x60 cm; the price depends on the size, the same for every open method ([Pricing](#pricing)).
-- **Plans:** 2 hours, 4 hours, Day pass, or **Custom ("Tự chọn")** 1-23 hours / 1-7 days (hours capped at the day pass, discount for several days).
-- **Clear booking:** a confirm popup shows the amount taken now, the balance left, the cancel rule and the late fee. The slot is held
-  15 minutes; after booking the wallet must keep at least 10,000 VND for late fees.
-- **Cancel:** a full refund in the first 5 minutes; after that, until the 15-minute hold ends, a cancel still works and gives back 50%
-  (so the slot frees up early for someone else). When the hold ends the booking **checks in by itself** (v7.1, `sql/05_auto_checkin.sql`):
-  no more cancel, the slot stays locked for its owner, who may come early, late or never and opens it any time in the paid time
-  (counted from the auto check-in); nothing is refunded. A booking that started by itself and was never opened ends at its due time
-  (`NO_SHOW`), the slot is free again and no late fee is charged; 3 of those in 7 days block booking for a while.
-- **Extension:** up to 3 times, each started hour at the size's hourly rate.
-- **Overdue:** a slot is never freed on its own (the user's things are inside). After the grace period the slot locks, each late hour
-  is charged, and the wallet may go negative; the box refuses to open (`OVERDUE_UNPAID`) until the debt is paid. After 48 hours the
-  booking is escalated to staff with an alert.
-- **Wallet:** top-up by VietQR, credited after staff approval.
-- **My locker ("Tủ của tôi"):** PIN (show/hide), card or fingerprint enrollment code, hold and cancel countdowns, extension, overdue
-  panel with the debt, a due reminder e-mail 15 minutes before the due time (address confirmed by a code), registered cards and fingers,
-  how many times the slot was opened during the rental, history.
-- **Open many times during a rental:** the first auth stores (CHECK_IN). After that, every PIN / card / phone tap / finger makes the box ask
-  `A: Mo tu` / `B: Tra tu`: A opens to take or add things (the rental goes on, phase `ACCESS`), B takes everything and ends the rental
-  (PICKUP); `*` or 15 seconds without a key cancels. An overdue-locked booking can only be returned.
-- **Phone page** `/k/{device_code}`: scan the QR on the box and type the PIN (5 wrong tries lock the page for 2 minutes); a rented
-  slot gets the same two buttons "Mở tủ" (open) / "Trả tủ" (return).
+- **The map is the home page.** Visitors can browse it without signing in. Sign-in and sign-up are popups on the map; there are no separate pages.
+- **Areas, banks, slots.** 5 areas in VNU-HCM, refreshed every 10 seconds. "Find a locker near me" sorts areas by distance; the position is only used in the browser.
+- **Three slot sizes:** S 20x20x20, M 40x40x40, L 60x60x60 cm.
+- **Plans:** 2 hours, 4 hours, Full day, or Custom 1-23 hours / 1-7 days.
+- **Four ways to open, same price, no deposit:** 6-digit PIN, RFID card, phone tap, fingerprint.
+- **Clear booking.** A popup states the amount taken now, the balance left, the cancel rules and the late fee. After booking, the wallet must keep at least 10,000 VND to cover late fees.
+- **Cancel.** Full refund in the first 5 minutes, then 50% until the 15-minute hold ends.
+- **Automatic check-in.** When the 15-minute hold ends, the booking starts by itself and can no longer be cancelled. The slot stays locked for its owner. If it was never opened by the due time plus the grace period, the booking ends as `NO_SHOW`, the slot is free, no late fee is charged and nothing is refunded; 3 of these in 7 days block booking for a while.
+- **Open many times in one booking.** The first time stores the items (CHECK_IN). After that the box asks `A: Mo tu` / `B: Tra tu`: key A opens the slot and the booking goes on; key B collects the items and ends the booking.
+- **Extend** up to 3 times, at the hourly rate of the slot size.
+- **Overdue.** A slot never frees itself because the items are still inside. After the grace period the slot locks, each late hour is charged, the wallet may go negative and the box refuses to open (`OVERDUE_UNPAID`) until the debt is paid. After 48 hours the booking goes to staff with an alert.
+- **Wallet.** Top up with a VietQR code; staff approve before the money is added.
+- **My locker.** PIN (show/hide), card or fingerprint enrollment code, countdowns, extension, debt, number of openings, history, e-mail reminder 15 minutes before the due time.
+- **RFID cards.** Enroll at the box with a 6-digit code, report lost, replace. A card scan by an owner with a real e-mail address must be confirmed by e-mail or on the map.
+- **Phone page** `/k/{device_code}`: scan the QR code on the box and type the PIN, or tap the phone on the reader and press "Mở tủ của tôi".
 
 ### Staff
 
-- **OPERATOR:** staff map, remote open, top-up approval, areas, banks, slots, plans, cards, bookings, users.
-- **TECHNICIAN:** alerts, maintenance tickets, sensor calibration, slot and device status.
-- **AUDITOR:** read-only; verifies the hash chain of the audit log.
-- **ADMIN:** everything, including roles and permissions.
-- **Dashboard:** slot status, usage per area, devices, alerts, bookings per hour, busiest hours, 7-day revenue (revenue for ADMIN and OPERATOR only).
+| Role | Main rights |
+|---|---|
+| OPERATOR | Staff map, remote open, top-up approval, areas, banks, slots, plans, cards, bookings, users |
+| TECHNICIAN | Alerts, maintenance tickets, sensor calibration, slot and device status |
+| AUDITOR | Read only, checks the hash chain of the audit log |
+| ADMIN | Everything, including roles and permissions |
+
+The **Dashboard** shows slot status, use per area, devices, alerts, bookings per hour and 7-day revenue (revenue for ADMIN and OPERATOR only).
+The **Sensor data** page ("Dữ liệu cảm biến") lists the open/close sessions the boxes sent, with search, filters by box and date, sorting and paging.
 
 ### Devices
 
-- **One API key per box:** the server stores only its SHA-256; `device_id` comes from the key, never from the body.
-- **One box manages several banks:** the real box authorizes every slot of its banks; the servo moves only for the physical slot
-  ([details](#demo-hardware-one-main-box-many-slots)).
-- **Heartbeat:** a box silent for more than 90 seconds goes OFFLINE and its banks cannot be booked.
-- **Lockout:** 5 wrong guesses on a box lock it for 2 minutes.
-- **Alerts:** fixed rules (`RuleEngine`) decide; a Weka model (`RiskScorer`) only adds a risk score.
+- **One API key per box.** The server stores only its SHA-256; `device_id` comes from the key, never from the request body.
+- **One box manages many banks.** The servo moves only for the physical slot; other slots only report on the LCD.
+- **Heartbeat.** A box silent for more than 90 seconds goes OFFLINE and its banks cannot be booked.
+- **Wrong-guess lockout.** 5 wrong guesses within 5 minutes on one channel (the box or the phone page) lock that channel for 2 minutes.
 
 ---
 
 ## Screenshots
 
-Taken from the running app at `http://localhost:8080/SmartLocker` (light theme). The data is the demo accounts and the test
-accounts of `sql/test_setup.sql`; no real personal data.
+Taken from the running app with demo data; no real personal data.
 
-| Locker map (visitor, not signed in) | Map on a phone |
+| Locker map (visitor) | Map on a phone |
 |---|---|
 | ![Locker map for visitors](docs/images/map-visitor.png) | <img src="docs/images/map-phone.png" alt="Map on a phone" width="260"> |
 
-| One area: banks, overdue-locked slots (A04, A12) | Slot card: fixed plan, size M price |
+| One area: banks and locked overdue slots | Slot card: plans and four ways to open |
 |---|---|
-| ![Canteen area with overdue slots](docs/images/map-area.png) | ![Booking card with the 2-hour plan](docs/images/booking-plan.png) |
+| ![Canteen area with overdue slots](docs/images/map-area.png) | ![Booking card](docs/images/booking-plan.png) |
 
-| Custom by hours (5 hours) | Custom by days (3 days, 10% off) |
+| Custom by hours | Custom by days |
 |---|---|
 | ![Custom by hours](docs/images/booking-custom-hours.png) | ![Custom by days](docs/images/booking-custom-days.png) |
 
-| Booking confirm popup | My locker: PIN, cancel button with countdown |
+| Booking confirmation | My locker: PIN and cancel countdown |
 |---|---|
-| ![Confirm popup](docs/images/booking-confirm.png) | ![My locker with PIN](docs/images/my-locker-pin.png) |
+| ![Confirmation popup](docs/images/booking-confirm.png) | ![My locker with PIN](docs/images/my-locker-pin.png) |
 
-| My locker: in use, extension | My locker: overdue, locked, in debt |
+| My locker: in use, extend | My locker: overdue, locked, in debt |
 |---|---|
-| ![Extension](docs/images/my-locker-extend.png) | ![Locked overdue booking](docs/images/my-locker-overdue.png) |
+| ![Extend](docs/images/my-locker-extend.png) | ![Locked overdue booking](docs/images/my-locker-overdue.png) |
 
-| Staff dashboard | Escalation alert after 48 hours |
+| Staff dashboard | Sensor data |
 |---|---|
-| ![Dashboard](docs/images/dashboard.png) | ![OVERDUE_ESCALATED alert](docs/images/alert-escalated.png) |
+| ![Dashboard](docs/images/dashboard.png) | ![Sensor data](docs/images/sensor-data.png) |
 
-| Alert list | Banks page: real box and physical slot |
+| Alert escalated after 48 hours | Alert list |
 |---|---|
-| ![Alert list](docs/images/alerts.png) | ![Banks page](docs/images/locker-banks.png) |
+| ![OVERDUE_ESCALATED alert](docs/images/alert-escalated.png) | ![Alert list](docs/images/alerts.png) |
 
-<p align="center"><img src="docs/images/kiosk-phone.png" alt="Phone unlock page" width="260"><br>
-<em>Phone unlock page <code>/k/LOCKER-01</code> (target of the QR code on the box)</em></p>
+| Banks: real box and slot with a real lock | Phone page to open a slot |
+|---|---|
+| ![Banks page](docs/images/locker-banks.png) | <img src="docs/images/kiosk-phone.png" alt="Phone page" width="260"> |
 
 ---
 
-## Quick start
+## Install and run
 
-Requirements: JDK 8, Apache Tomcat 9, SQL Server 2019/2022 (with `sqlcmd`), Git Bash (for the `.sh` scripts). NetBeans is optional.
+You need JDK 8, Apache Tomcat 9, SQL Server 2019/2022 with `sqlcmd`, and Git Bash for the `.sh` scripts. NetBeans is optional. Postman runs also need Node.js and `npm install -g newman`.
 
-### 1. Database
+### 1. Create the database
 
-Fast way, runs the 3 files (`01` drops and recreates the `PRJ301_LOCKER` database):
+One command (it **drops and recreates** the database `PRJ301_LOCKER`):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\run_demo_db.ps1
 ```
 
-Or by hand, **in this order** (always `-I`; SQL files with Vietnamese text must keep their UTF-8 BOM):
-
-```powershell
-sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\01_schema.sql
-sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\02_data_v1.sql
-sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\03_v2_v3.sql
-sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\04_phone.sql
-sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\05_auto_checkin.sql
-sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_box.sql
-```
+It runs files `01` to `05` below. Defaults are `localhost`, `sa`, `12345`.
 
 | File | Content |
 |---|---|
 | `sql/01_schema.sql` | Database, tables, views, triggers, `Audit_Append`, base permissions |
-| `sql/02_data_v1.sql` | Sample data (accounts, areas, banks, slots, history), scenario procedures, wallet and top-up |
-| `sql/03_v2_v3.sql` | Open methods (PIN, card, finger), lockout, `Device_Authorize`, `Enroll_*`, `AppConfig`, S/M/L sizes, size prices, Custom, 5-minute cancel, overdue, reminders, the VNU-HCM areas (approximate coordinates, editable on the Areas page) |
-| `sql/04_phone.sql` | v7: adds open method `PHONE` and the NFC tap token (`DeviceTap`, `Device_TapIssue`), removes the card deposit (`CARD_DEPOSIT`); safe to run again |
-| `sql/05_auto_checkin.sql` | v7.1: the booking checks in by itself when the 15-minute hold ends instead of becoming `NO_SHOW` (`Deposit_ExpireNoShow`, `Deposit_ExpireOverdue`, a patch of `Device_Authorize`); safe to run again, runs after 03/04 |
-| `sql/demo_box.sql` | The real box, the banks it manages and its physical slot ([below](#demo-hardware-one-main-box-many-slots)); safe to run again |
-| `sql/test_setup.sql` | Test accounts and prepared bookings for Postman (not demo data) |
-| `sql/test_overdue.sql` | Moves the due time of one `ACTIVE` booking into the past to demo the overdue lock, fee and escalation |
-| `sql/test_cleanup.sql` | Closes the bookings and alerts left by the test accounts |
+| `sql/02_data_v1.sql` | Demo data, scenario procedures, wallet and top-up |
+| `sql/03_v2_v3.sql` | Open methods, lockout, `Device_Authorize`, `AppConfig`, sizes S/M/L, prices, Custom, cancel, overdue, reminders, VNU-HCM areas |
+| `sql/04_phone.sql` | Open method `PHONE`, NFC tap tokens, no card deposit |
+| `sql/05_auto_checkin.sql` | Automatic check-in when the hold ends |
+| `sql/demo_box.sql` | Picks the real box, the banks it manages and the servo slot (run separately, see [The ESP32 box](#the-esp32-box)) |
+| `sql/upgrade_main_2026-11.sql` | Upgrades a running database, used when [deploying](#deploying-to-the-internet) |
+| `sql/test_setup.sql`, `test_overdue.sql`, `test_cleanup.sql` | Postman data, overdue demo, test data cleanup |
 
-Notes:
+When running single files again:
 
-- Running `02_data_v1.sql` again restores the old booking procedures, so run `03_v2_v3.sql` and `04_phone.sql` after it.
-- Running `03_v2_v3.sql` again restores the older `Device_Authorize` and other procedures, so run `04_phone.sql` after it.
-- `03_v2_v3.sql` resets the `LOCKER-01` key to the public sample key. Create your own secret key (kept in
-  `config/device-keys.local.properties`, never committed) and store its SHA-256 in the DB:
+- Always use `sqlcmd -I -b -f 65001`. Files with Vietnamese text must keep the UTF-8 BOM.
+- Do not run `02` alone on a database that went through `03`; rebuild with `run_demo_db.ps1`. After `03`, run `04` and `05` again. After `04`, run `05` again.
+- `03_v2_v3.sql` resets the key of `LOCKER-01` to the public sample key. Before plugging in a real box, create your own key (stored in `config/device-keys.local.properties`, not committed):
 
   ```powershell
   powershell -ExecutionPolicy Bypass -File scripts\set-device-key.ps1
   ```
 
-- To change one object on a live DB, run only that `CREATE OR ALTER` block, not all of `03_v2_v3.sql` (it resets the box key).
-- The DB connection is in `src/java/dao/DbContext.java` (default `localhost:1433`, `sa` / `12345`).
+### 2. Build and run
 
-### 2. Build and run on Tomcat
+**NetBeans:** Clean and Build, then Run on Tomcat 9.
 
-- **Git Bash:** compiles `src/java` into `build/web`, copies `web/` and the runtime jars, then tells Tomcat to reload the context
-  (`TOMCAT` defaults to `E:/apache-tomcat-9.0.113`, `JAVAC` to JDK 1.8.0_202; override with environment variables):
+**Git Bash:** the first time, create `conf/Catalina/localhost/SmartLocker.xml` in the Tomcat folder (use your repo path):
 
-  ```bash
-  sh scripts/build-dev.sh
-  ```
+```xml
+<Context docBase="C:\path-to-repo\build\web" reloadable="false">
+  <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor" sameSiteCookies="lax" />
+</Context>
+```
 
-  The `SmartLocker` context points at `build/web` (Tomcat's `conf/Catalina/localhost/SmartLocker.xml`). Wait about 15 seconds,
-  then open `http://localhost:8080/SmartLocker/`. Run Tomcat in its own window with `bin\startup.bat`.
-- **NetBeans:** Clean and Build, then Run (Tomcat 9).
+The command below then compiles into `build/web` and asks Tomcat to reload. If your machine differs from the defaults, set `TOMCAT` (the Tomcat folder) and `JAVAC` (the path of `javac`).
 
-Due reminder e-mails need `config/mail.local.properties` (copy `mail.local.properties.example`); without it, e-mail is off.
+```bash
+sh scripts/build-dev.sh
+```
+
+Wait about 15 seconds, then open <http://localhost:8080/SmartLocker/>.
+
+The default database connection is `localhost:1433`, `sa` / `12345`. Change it with the environment variables `DB_URL`, `DB_USER`, `DB_PASSWORD`.
+
+Two optional features: copy the `.example` file in `config/` to a `.local.properties` file and fill it in.
+
+| File | Effect when present |
+|---|---|
+| `config/mail.local.properties` | Sends due reminders and card confirmations; without it, mail is off |
+| `config/mapbox.local.properties` | Uses Mapbox (`pk.*`); without it, Leaflet |
 
 ### 3. Demo accounts
 
-Shared password: `123456`. These are the accounts created by `sql/02_data_v1.sql`.
+Common password: `123456`.
 
-| Role | Accounts | Notes |
+| Role | Accounts | Cannot sign in |
 |---|---|---|
-| ADMIN | `admin`, `admin_ops`, `admin_lib`, `admin_doma`, `admin_cant`, `admin_gym`, `sysadmin1`, `manager1`, `manager2` | `sysadmin2` is disabled |
-| OPERATOR | `operator1` ... `operator22` | `operator20` locked, `operator22` disabled |
-| TECHNICIAN | `tech1` ... `tech22` | `tech20` locked, `tech22` disabled |
-| AUDITOR | `auditor1` ... `auditor16` | `auditor15` locked, `auditor16` disabled |
-| END_USER | `student1` ... `student28`, `user1` | `locked1`, `student28` locked; `student27` disabled |
-| END_USER (Postman) | `v2pin`, `v2card`, `v2fp`, `v2noshow`, `v3overdue`, `v3poor`, `v3late`, `v3esc` | Created by `sql/test_setup.sql` |
+| ADMIN | `admin`, `admin_ops`, `admin_lib`, `admin_doma`, `admin_cant`, `admin_gym`, `sysadmin1`, `manager1`, `manager2` | `sysadmin2` |
+| OPERATOR | `operator1` ... `operator4` (one area each) | `operator5` ... `operator22` |
+| TECHNICIAN | `tech1` ... `tech22` | `tech20`, `tech22` |
+| AUDITOR | `auditor1` ... `auditor16` | `auditor15`, `auditor16` |
+| END_USER | `student1` ... `student28`, `user1` | `locked1`, `student27`, `student28` |
+
+Some demo accounts already have a booking. To try a new one, use an account without an open booking, for example `student10`.
 
 ---
 
-## Demo hardware: one main box, many slots
+## The ESP32 box
 
-There is **one real ESP32 box** (`LOCKER-01` by default) with **one slot that has a servo lock**. The box manages every slot of
-the banks attached to it: users may book any slot of those banks, and typing the PIN / swiping the card / tapping the phone / placing the finger at the
-box moves the booking through CHECK_IN and PICKUP as usual. The `UNLOCK` reply (of `/api/device/auth` and of the `UNLOCK` command in
-the `/api/health` heartbeat) carries a `"physical"` flag:
+The demo has **one real ESP32 box** (`LOCKER-01`) with **one slot with a servo**. It manages every slot of the banks attached to it. Any of those slots works as a booking, but the `UNLOCK` reply has a `physical` flag:
 
-- `true`: the physical slot (or no slot configured), the servo opens the door;
-- `false`: another slot, the servo does not move and the LCD only shows `Ngan A03 OK` / `Da gui do` (or `Da lay do`).
+- `true`: the physical slot, the servo opens the door.
+- `false`: another slot, the servo stays still and the LCD only reports the result.
 
-Firmware 3.2 (`firmware/SmartLocker_Online`) reads the flag; older firmware ignores it and always moves the servo. Staff remote opens
-and phone-page commands follow the same flag. The other banks belong to demo boxes (`"demo":true`) whose heartbeats `LockerMonitor`
-fakes, so they stay online on the map. The staff **Banks** page ("Dãy tủ") marks "Hộp thật" (real box) and the physical slot (screenshot above).
+The other banks belong to demo boxes (`"demo":true`) whose heartbeat the server simulates, so they are always online.
 
-### Setting the box, its banks and the physical slot
-
-Edit the 4 variables at the top of `sql/demo_box.sql` and run it again:
+**Picking the banks of the real box:** edit the 4 variables at the top of `sql/demo_box.sql` and run it in the app's database. By default the box manages bank `LIB-A`, servo slot `A01`.
 
 ```sql
-DECLARE @device_code   NVARCHAR(30)  = N'LOCKER-01';  -- the real ESP32 box
-DECLARE @banks         NVARCHAR(400) = N'CANT-A';     -- banks it manages, comma separated, e.g. N'CANT-A,CANT-B'
-DECLARE @physical_bank NVARCHAR(20)  = N'CANT-A';     -- bank + slot of the compartment with the servo;
-DECLARE @physical_slot NVARCHAR(20)  = N'A01';        --   both NULL: every slot of the box moves the servo
+DECLARE @device_code   NVARCHAR(30)  = N'LOCKER-01';
+DECLARE @banks         NVARCHAR(400) = N'LIB-A';     -- several banks: comma separated
+DECLARE @physical_bank NVARCHAR(20)  = N'LIB-A';
+DECLARE @physical_slot NVARCHAR(20)  = N'A01';       -- both NULL: every slot moves the servo
 ```
 
-```powershell
-sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_box.sql
-```
+Banks of one box must have different slot codes. When the real box is off, its banks go OFFLINE after 90 seconds; to test in a browser only, book on a demo bank such as `CANT-B`.
 
-The script attaches the banks to the box, gives every bank the box drops a `"demo":true` device (so it does not go OFFLINE), stores
-`physical_slot_id` in the box's `OperatingProfile`, never touches the API key, writes a `DEMO_BOX` audit entry and prints
-bank → box → physical slot. Banks of one box need distinct slot codes (e.g. `CANT-A` A01-A15 and `CANT-B` B01-B12) because the box
-finds a booking by slot code; the script refuses duplicates, and refuses to drop a bank that still has open bookings.
+**Firmware** is `firmware/SmartLocker_Online` (version 4.1, board ESP32 Dev Module). Copy `secrets.example.h` to `secrets.h` and fill in the Wi-Fi, the server address and the box key. Full guide (Vietnamese): [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md).
 
-When the real box is off, its banks go OFFLINE after 90 seconds and cannot be booked: for browser-only tests, book on a demo bank
-(e.g. `CANT-B`), or fake the box with `test/tool/ScenarioSender`.
-
-### Firmware and wiring
-
-Sketch `firmware/SmartLocker_Online/SmartLocker_Online.ino` (ESP32 Dev Module). Flashing, network setup (LAN or Cloudflare tunnel)
-and use at the box: [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md) (Vietnamese).
-`secrets.h` (Wi-Fi, server address, API key) is git-ignored.
-
-| Part | ESP32 pins |
+| Device | ESP32 pins |
 |---|---|
-| PN532 (cards and NFC tap, I2C mode) | SDA 21, SCL 22 shared with the LCD, address 0x24 |
+| PN532 (cards and NFC tap, I2C, address 0x24) | SDA 21, SCL 22 |
+| LCD 1602 I2C (address 0x27) | SDA 21, SCL 22 |
 | AS608 (fingerprint) | TX → 35, RX → 15 |
-| LCD 1602 I2C | SDA 21, SCL 22, address 0x27 |
 | Bolt servo | 32 |
-| Door servo | 2 |
+| Drawer servo | 2 (plug its signal wire in after the upload) |
 | SRF05 | TRIG 5, ECHO 18 (through a voltage divider) |
-| 4x4 keypad | Rows 13, 14, 25, 26; columns 33, 19, 23, 27 |
+| Keypad 4x4 | Rows 13, 14, 25, 26; columns 33, 19, 23, 27 |
 
-At the box: `0-9` + `#` sends the 6-digit PIN; `B` + enrollment code enrolls a card; `C` + enrollment code enrolls a finger; `D` shows the IP and server status;
-swipe a card or tap a phone on the PN532. The box never decides on its own: every PIN, card and finger goes to the server.
+At the box: `0-9` + `#` sends a PIN; `B` + enrollment code enrolls a card; `C` + enrollment code enrolls a fingerprint; `D` shows the IP and server status.
 
-**Cards and phones on one PN532 (v7).** Each firmware loop gives the PN532 one job: read a card, then emulate an NFC tag. A phone with an HCE wallet answers with a random UID starting `08`; the firmware ignores it, so a tap never counts as an unknown card.
+**Phone tap:** the PN532 emulates an NFC tag holding the link `/k/LOCKER-01?n=<token>`. The token comes with the heartbeat, changes every minute and after each opening, and lasts 5 minutes. A tap opens the box's page; the signed-in owner presses "Mở tủ của tôi". In each loop the PN532 alternates between reading cards and emulating the tag. Some iPhones cannot read the emulated tag; use the QR code then.
 
-**Phone tap.** The PN532 emulates an NFC tag that holds `/k/LOCKER-01?n=<token>`. The server
-hands the token out with the heartbeat (`"nfc":true` → `tap_path`); it changes every minute and after each use and works for
-5 minutes. A signed-in user with a booking on that box presses "Mở tủ của tôi"; the server checks the token is fresh (the
-phone is at the box) and queues the UNLOCK for the next heartbeat. The phone opens every booking of its owner on that box,
-whatever open method it was booked with. A demo box has no reader, so its page opens without a token.
+`firmware/SmartLocker_Local` is a hardware test without network and still uses an RC522 reader.
 
 ---
 
-## Pricing
+## Pricing and rules
 
-Every number lives in the `AppConfig`, `SlotSize` and `StoragePlan` tables (`sql/03_v2_v3.sql`); `util.Pricing` mirrors the SQL
-(`dbo.fn_SizePrice`, `fn_HourRate`, `fn_OverdueRate`, `fn_CustomPrice`). Price = plan price × size factor (S 100%, M 130%, L 169%),
-rounded up to 100 VND. PIN, RFID card, phone and fingerprint cost the same, with no deposit (v7 dropped `CARD_DEPOSIT`; enrolling a card is free). Amounts in VND:
+Price = plan price × size factor (S 100%, M 130%, L 169%), rounded up to 100 VND. Amounts are in VND.
 
 | Plan (grace) | S | M | L |
 |---|---:|---:|---:|
-| 2 hours (10 min) | 5,000 | 6,500 | 8,500 |
-| 4 hours (10 min) | 9,000 | 11,700 | 15,300 |
-| Day pass (30 min) | 25,000 | 32,500 | 42,300 |
+| 2 hours (10 minutes) | 5,000 | 6,500 | 8,500 |
+| 4 hours (10 minutes) | 9,000 | 11,700 | 15,300 |
+| Full day (30 minutes) | 25,000 | 32,500 | 42,300 |
 | Hourly rate (extension, Custom by hours) | 2,500 | 3,300 | 4,300 |
 | Late fee per hour (150% of the hourly rate) | 3,800 | 4,900 | 6,400 |
 
-**Custom** (whole hours 1-23 or whole days 1-7; the server prices it again, the page only displays):
+**Custom** is computed again by the server; the page only displays it:
 
-- By hours: `min(hourly rate × N, day pass)` of the size.
-- By days: `day pass × N × factor`, 100% for 1 day, 90% for 2-6 days (`CUSTOM_MULTI_DAY_PCT`), 80% for 7 days (`CUSTOM_WEEK_PCT`),
-  rounded up to 100 VND.
-- The grace period is the one of the longest plan not longer than the choice; extension and late fees follow the common rules.
+- By hours (1-23): `min(hourly rate × N, full-day price)`.
+- By days (1-7): `full-day price × N × factor`. Factor 100% for 1 day, 90% for 2-6 days, 80% for 7 days, rounded up to 100 VND.
 
 | Custom | S | M | L |
 |---|---:|---:|---:|
-| 1 hour | 2,500 | 3,300 | 4,300 |
 | 3 hours | 7,500 | 9,900 | 12,900 |
 | 9 hours | 22,500 | 29,700 | 38,700 |
-| 10-23 hours (capped at the day pass) | 25,000 | 32,500 | 42,300 |
-| 1 day | 25,000 | 32,500 | 42,300 |
-| 2 days (90%) | 45,000 | 58,500 | 76,100 |
-| 3 days (90%) | 67,500 | 87,800 | 114,100 |
-| 6 days (90%) | 135,000 | 175,500 | 228,200 |
-| 7 days (80%) | 140,000 | 182,000 | 236,600 |
+| 10-23 hours | 25,000 | 32,500 | 42,300 |
+| 2 days | 45,000 | 58,500 | 76,100 |
+| 3 days | 67,500 | 87,800 | 114,100 |
+| 6 days | 135,000 | 175,500 | 228,200 |
+| 7 days | 140,000 | 182,000 | 236,600 |
 
-Other rules (`AppConfig`): 15-minute hold (`HOLD_MIN`), full refund within 5 minutes (`CANCEL_FREE_MIN`), 50% after that until the hold ends, rounded down to 100 VND
-(`CANCEL_LATE_REFUND_PCT`), no refund for a no-show (v7.1: the booking starts by itself, `NO_SHOW_REFUND_PCT` is unused), 10,000 VND minimum left after booking (`BOOKING_BUFFER`), reminder 15 minutes before due (`DUE_REMINDER_MIN`),
-escalation after 48 hours (`ESCALATE_HOURS`). To change a number, change both the SQL and `util.Pricing`, then run `PricingDatabaseIntegrationTest`.
+| Rule | Value | `AppConfig` key |
+|---|---|---|
+| Hold | 15 minutes | `HOLD_MIN` |
+| Full refund on cancel | first 5 minutes | `CANCEL_FREE_MIN` |
+| Late cancel, until the hold ends | 50% back, rounded down to 100 VND | `CANCEL_LATE_REFUND_PCT` |
+| Minimum balance after booking | 10,000 VND | `BOOKING_BUFFER` |
+| Reminder e-mail before the due time | 15 minutes | `DUE_REMINDER_MIN` |
+| Escalation to staff | 48 hours | `ESCALATE_HOURS` |
+
+The numbers live in `AppConfig`, `SlotSize` and `StoragePlan`, and `util.Pricing` computes exactly what SQL does. To change a number, change both and run `PricingDatabaseIntegrationTest`.
 
 ---
 
 ## Flows
 
-### Book, store and pick up
+### Book, store and collect
 
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant W as Browser (map)
-    participant S as Tomcat (Servlet)
+    participant W as Browser
+    participant S as Tomcat
     participant D as SQL Server
-    participant B as ESP32 box LOCKER-01
+    participant B as ESP32 box
 
-    U->>W: Pick a slot, a plan (or Custom), an open method
-    W->>U: Popup: amount taken now, balance left, cancel rule and late fee
+    U->>W: Pick slot, plan, open method
+    W->>U: Popup: taken now, balance left, cancel rules
     U->>W: Confirm
     W->>S: POST /BookingController (action=reserve)
     S->>D: Deposit_Reserve (UPDLOCK, HOLDLOCK)
-    D-->>S: RESERVED, wallet charged (or error 500xx)
-    S-->>W: Slot held 15 minutes, PIN in My locker
-    U->>B: Type the PIN (or swipe the card, place the finger, tap the phone)
+    D-->>S: RESERVED, wallet charged
+    S-->>W: 15-minute hold, PIN in My locker
+    U->>B: PIN, card, fingerprint or phone tap
     B->>S: POST /api/device/auth (X-API-Key)
     S->>D: Device_Authorize
-    D-->>S: UNLOCK CHECK_IN, booking ACTIVE, due_at = first open + plan time
-    S-->>B: UNLOCK + physical (true: servo opens, false: LCD shows OK)
-    Note over U,B: Extension (up to 3 times) in My locker
-    U->>B: Type the PIN again
+    D-->>S: UNLOCK CHECK_IN, booking ACTIVE
+    S-->>B: UNLOCK + physical
+    U->>B: Authenticate again
     B->>S: POST /api/device/auth (intent ASK)
-    S-->>B: CHOOSE (nothing changes), LCD "A: Mo tu / B: Tra tu"
-    alt Key A: open, the rental goes on (as often as needed)
-        B->>S: POST /api/device/auth (intent OPEN)
-        S-->>B: UNLOCK ACCESS, booking still ACTIVE, ACCESS audit row
+    S-->>B: CHOOSE, LCD "A: Mo tu / B: Tra tu"
+    alt Key A: open, booking goes on
+        B->>S: intent OPEN
+        S-->>B: UNLOCK ACCESS
     else Key B: return the slot
-        B->>S: POST /api/device/auth (intent CHECKOUT)
-        S-->>B: UNLOCK PICKUP, booking COMPLETED, slot AVAILABLE
+        B->>S: intent CHECKOUT
+        S-->>B: UNLOCK PICKUP, booking COMPLETED, slot free
     end
 ```
 
-### Overdue, lock, escalation and alerts
+### Overdue
 
 ```mermaid
 flowchart TD
-    A["ACTIVE booking"] -->|"past due_at + grace"| L["Overdue lock: locked_at, fee per late hour, wallet may go negative"]
-    L -->|"extend"| E1["Refused 50048"]
-    L -->|"open at the box with a negative wallet"| E2["DENY OVERDUE_UNPAID with the debt"]
-    E2 -->|"VietQR top-up, staff approval"| L
-    L -->|"open with a wallet >= 0"| P["PICKUP, overdue_fee, COMPLETED"]
-    L -->|"48 hours past due_at"| X["Escalated: escalated_at"]
-    X --> AL["OVERDUE_ESCALATED alert with evidence"]
-    AL --> ST["OPERATOR / ADMIN contacts the user, remote open, closes the booking on the Bookings page"]
+    A["ACTIVE booking"] -->|"past due + grace"| L["Slot locks, late fee per hour, wallet may go negative"]
+    L -->|"open with a negative wallet"| E["Refused OVERDUE_UNPAID with the debt"]
+    E -->|"top up, staff approve"| L
+    L -->|"open with wallet not negative"| P["PICKUP, COMPLETED"]
+    L -->|"48 hours past due"| X["OVERDUE_ESCALATED alert"]
+    X --> ST["Staff contact the user, open remotely, end the booking"]
     ST --> P
-    M["LockerMonitor, every 15 seconds"] -.->|"Deposit_ExpireOverdue, Deposit_Escalate"| L
-    M -.-> X
 ```
 
-### Device alerts
+### Alerts
 
 ```mermaid
 flowchart LR
-    HB["Heartbeat /api/health (3 seconds)"] --> LM["LockerMonitor"]
-    LM -->|"silent for more than 90 seconds"| OFF["Device_MarkOffline: box OFFLINE, banks not bookable, DEVICE_OFFLINE alert"]
-    EV["Open/close events /api/locker/batch"] --> RE["RuleEngine (fixed rules)"]
-    RE --> AL["Alerts: SUSPECTED_SPOOF, SENSOR_FAULT, LOST_CARD_USED..."]
+    HB["Heartbeat /api/health"] --> LM["LockerMonitor"]
+    LM -->|"silent over 90 seconds"| OFF["Box OFFLINE, DEVICE_OFFLINE alert"]
+    EV["Open/close sessions /api/locker/batch"] --> RE["RuleEngine"]
+    RE --> AL["SUSPECTED_SPOOF, SENSOR_FAULT, LOST_CARD_USED..."]
     RS["RiskScorer (Weka)"] -.->|"risk score only"| AL
-    AL --> T["TECHNICIAN: evidence, maintenance ticket, mark resolved"]
+    AL --> T["Technician checks evidence, opens a ticket"]
 ```
 
-Every case, error code and the slot state diagram: [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md) (Vietnamese).
+The firmware does not send `/api/locker/batch` today because the box has no door sensor or scale. Data for this flow comes from the seed, `scripts/send-demo.ps1` or the `ScenarioSender` tool:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\send-demo.ps1 -Count 5 -Fault -Bad
+```
+
+Every case and error code (Vietnamese): [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md).
 
 ---
 
 ## Testing
 
-**Unit and integration tests** (TestNG; the `*DatabaseIntegrationTest` classes need SQL Server running):
+Results on a database built clean from the scripts, on 2026-11-11:
 
-```bash
-sh scripts/test.sh
-```
+| Suite | Result |
+|---|---|
+| TestNG, 14 classes | 83/83 pass, none skipped |
+| Postman + newman, 19 scenarios | 241 requests, 514 assertions, 0 failures |
+| Browser: visitor, book and cancel, open, overdue, phone page, 17 staff pages | 36/36 checks pass, no JavaScript error or HTTP 500 |
 
-One class: `sh scripts/test.sh test.PricingTest`. Classes: `PricingTest`, `PricingDatabaseIntegrationTest` (compares `util.Pricing`
-with the SQL, Custom included), `AuditChainDatabaseIntegrationTest`, `RuleEngineTest`, `RiskScorerTest`, `SecurityUtilsTest`, `MailTemplatesTest`.
+The tests write to the database, so run them only on a database named `SL_*`, never on `PRJ301_LOCKER`. Before using the scripts in `scripts/proof`:
 
-**Postman + newman** (18 scenarios: PIN, phone page, NFC tap, card, fingerprint, wrong code and 5-try lockout, no-show, overdue, top-up, cancel,
-buffer, escalation, extension). Run the setup script first, because every wrong guess at the box counts toward the 5-try lockout:
+- On another machine, or after rebuilding `PRJ301_LOCKER`, set `$script:RealDbCreated` in `scripts/proof/lib.ps1` to that database's real `create_date`. The scripts raise an alarm when the real database was rebuilt.
+- `test.sh` reads the JDK folder from `JDK` and Tomcat from `TOMCAT`. `test-stack.ps1` uses JDK 1.8.0_202 and takes the Tomcat folder as `-TomcatHome`.
 
-```bash
-sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql/test_setup.sql
-newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<LOCKER-01 key>
-sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql/test_cleanup.sql
-```
-
-Details: [docs/postman/README.md](./docs/postman/README.md).
-
-**Overdue demo without waiting:** book and open the box once (CHECK_IN), set `@username` in `sql/test_overdue.sql` and run it;
-`LockerMonitor` locks, charges and (with `@minutes_late` over 48 hours) escalates within 15 seconds. Clean up with `sql/test_cleanup.sql`.
-
-**Manual tools** (`test/tool`, not packed into the WAR): `ScenarioSender` (fake ESP32 box), `DataReplayer`, `ModelTrainer`
-(trains the Weka model into `src/java/ml`), `TransferCheck`, `DeviceKey`. Run with Run File in NetBeans, or:
+Build a test database and run TestNG:
 
 ```powershell
-javac -encoding UTF-8 -cp "build/web/WEB-INF/classes;lib/*" -d build/tools test/tool/*.java
-java -cp "build/tools;build/web/WEB-INF/classes;lib/*" tool.ScenarioSender remote
+powershell -ExecutionPolicy Bypass -File scripts\proof\build-db.ps1 -Repo "$PWD" -Database SL_TEST -TestSetup
+```
+
+```bash
+DB_URL='jdbc:sqlserver://localhost:1433;databaseName=SL_TEST;encrypt=false' sh scripts/test.sh
+```
+
+Run Postman on a separate test Tomcat on port 8081, on a freshly built database without `demo_box.sql`. `test-stack.ps1 start` stops if it finds `config/mail.local.properties` so the tests send no real mail, so run it in a clone without that file:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\proof\test-stack.ps1 start -Database SL_TEST -Build
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\proof\newman.ps1 -Database SL_TEST
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\proof\test-stack.ps1 clean
+```
+
+More (Vietnamese): [docs/postman/README.md](./docs/postman/README.md) and [scripts/proof/README.md](./scripts/proof/README.md).
+
+**Overdue demo without waiting:** open the slot once so the booking is ACTIVE, set `@username` in `sql/test_overdue.sql` and run it. Within 15 seconds the system locks the slot and charges the fee. Clean up with `sql/test_cleanup.sql`.
+
+**Manual tools** in `test/tool`, not packaged in the WAR: `ScenarioSender` (fake ESP32 box), `DataReplayer`, `ModelTrainer`, `TransferCheck`, `DeviceKey`.
+
+---
+
+## Deploying to the Internet
+
+| Option | Document (Vietnamese) |
+|---|---|
+| Render (Docker) + Azure SQL Database. **Each push to `main` makes Render build and deploy again** | [docs/deploy-render.md](./docs/deploy-render.md) |
+| Run on your own PC through a Cloudflare tunnel, for demos | [docs/deploy.md](./docs/deploy.md) |
+
+**Updating a running database** while keeping its rows: run only these files, in this order, skipping what is already done. Do not run `03_v2_v3.sql` again; it resets the box key.
+
+| The database is at | Run |
+|---|---|
+| Built from `main` at commit `da95f43` | `upgrade_main_2026-11.sql`, `04_phone.sql`, `05_auto_checkin.sql` |
+| Has `upgrade_main_2026-11.sql` | `04_phone.sql`, `05_auto_checkin.sql` |
+| Has `04_phone.sql` | `05_auto_checkin.sql` |
+
+```bash
+sqlcmd -I -b -f 65001 -S <server> -d PRJ301_LOCKER -U <user> -P <password> -i sql/05_auto_checkin.sql
 ```
 
 ---
 
-## Architecture and project layout
+## Architecture and source
 
 ```mermaid
 flowchart TD
     ESP["ESP32 box"] -->|X-API-Key| API["api/*: HealthApi, DeviceAuthApi, DeviceEnrollApi, LockerSessionApi"]
     Phone["Phone /k/LOCKER-01"] --> Kiosk["api/KioskApi"]
-    Browser["Browser"] --> Filter["filter/SecurityFilter (role permissions)"]
-    Filter --> Ctrl["controller/* (MVC2)"]
+    Browser["Browser"] --> Filter["filter/SecurityFilter"]
+    Filter --> Ctrl["controller/*"]
     Ctrl --> Views["WEB-INF/views/*.jsp"]
-    API --> DAO["dao/* (JDBC, DbContext)"]
+    API --> DAO["dao/*, DbContext"]
     Kiosk --> DAO
     Ctrl --> DAO
     API --> Svc["service/AlertService, RuleEngine, RiskScorer"]
-    Monitor["service/LockerMonitor"] -->|"snapshot every 2 s"| DashApi["api/DashboardApi"]
-    DAO --> DB[("SQL Server PRJ301_LOCKER")]
+    Monitor["service/LockerMonitor"] --> DashApi["api/DashboardApi"]
+    DAO --> DB[("SQL Server")]
 ```
 
-- `DbContext` is the only place that opens JDBC connections and keeps a small pool; DAOs close connections with try-with-resources (`close()` returns them to the pool).
-- Every money and time rule is a SQL procedure; Java calls it and translates errors into Vietnamese (`Web.sqlMessage`).
-- Views live in `WEB-INF/views` and are reached only through controllers. User data is printed with `<c:out>`; JavaScript builds HTML through `esc()`.
-- One stylesheet `web/css/app.css` (light/dark); `js/theme.js` sets the theme before paint; no CDN.
-- `/api/dashboard` reads the in-memory `LockerMonitor` snapshot (no DB query); chart data is `/api/dashboard/stats`, cached 60 seconds.
+- `DbContext` is the only place that opens JDBC connections and keeps a small pool; DAOs close them with try-with-resources.
+- Money and time rules live in SQL procedures; Java calls them and translates errors to Vietnamese (`Web.sqlMessage`).
+- Views live in `WEB-INF/views` and are reachable only through controllers.
+- `/api/dashboard` reads the in-memory snapshot of `LockerMonitor`, not the database; chart numbers are at `/api/dashboard/stats`.
 
 ```
 SmartLocker/
-├── config/        # Real box keys, e-mail settings (*.local.properties, not committed)
-├── docs/          # SYSTEM_FLOWS, v2/v3 specs, deploy, Postman, images (README screenshots)
-├── firmware/      # SmartLocker_Online (ESP32 talking to the web), SmartLocker_Local
-├── lib/           # JDBC, Gson, jBCrypt, Weka (in the WAR); TestNG, JCommander, SLF4J (tests only)
-├── scripts/       # build-dev.sh, test.sh, set-device-key.ps1, update-tunnel-link.ps1, mail-preview.sh
-├── sql/           # 01_schema, 02_data_v1, 03_v2_v3, 04_phone, demo_box and the test_* scripts
+├── config/        # Mail templates, sample config (*.local.properties are not committed)
+├── docs/          # SYSTEM_FLOWS, specs, deploy, Postman, images, the paper
+├── firmware/      # SmartLocker_Online (web-connected ESP32), SmartLocker_Local (hardware test)
+├── lib/           # JDBC, Gson, jBCrypt, Weka; TestNG, JCommander, SLF4J for tests only
+├── scripts/       # build-dev, test, set-device-key, send-demo, proof/ (test DB and Tomcat)
+├── sql/           # 01-05, demo_box, upgrade, test_*
 ├── src/java/
-│   ├── api/       # JSON APIs: devices, phone, dashboard, locker map, My locker
-│   ├── controller/# MVC2 servlets, one per page
-│   ├── dao/       # JDBC; DbContext
+│   ├── api/       # JSON API: devices, phone, dashboard, map, My locker
+│   ├── controller/# MVC2 servlets
+│   ├── dao/       # JDBC
 │   ├── filter/    # SecurityFilter: sign-in, permissions, device API keys
 │   ├── ml/        # Trained Weka model
 │   ├── model/     # Data classes
 │   ├── service/   # LockerMonitor, DueReminder, MailService, RuleEngine, RiskScorer, AuditVerifier
 │   └── util/      # Web, Pricing, Csv, SecurityUtils, SlotImages
-├── test/
-│   ├── test/      # Unit and integration tests (TestNG)
-│   └── tool/      # Manual tools, not packed into the WAR
-└── web/           # JSP, css, js, vendored Leaflet
+├── test/          # test/ (TestNG), tool/ (manual), support/
+└── web/           # JSP, CSS, JS, Leaflet
 ```
 
-### Main APIs
+### Main API
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/BookingController` | `action=reserve` (plan `planId` or Custom `customMin`), `cancel` (`expectedRefund`: the amount the popup showed), `extend` |
-| `GET` | `/api/locker-map` | Areas, banks, slots, size prices, Custom (visitors may read) |
-| `GET` | `/api/my-locker` | Open booking, cards, fingers, history of the user |
-| `POST` | `/TopupController` | VietQR top-up request; staff approve or reject |
-| `POST` | `/api/health` | Box heartbeat; returns pending commands (`UNLOCK` with `physical`) and `tap_path` for the NFC tag |
-| `POST` | `/api/device/auth` | PIN, card or finger at the box → `UNLOCK` / `CHOOSE` / `CONFIRM_EMAIL` / `DENY` |
-| `POST` | `/api/device/enroll/start`, `/finish` | Card or finger enrollment for the open booking |
-| `POST` | `/api/locker/batch` | Open/close history of the box |
-| `POST` | `/api/kiosk/unlock` | Open from the page of the box `/k/{device_code}`: a PIN, or a phone tap (`method: PHONE`, tap token, needs a login) |
-| `GET` | `/api/dashboard`, `/api/dashboard/stats` | Dashboard and chart data |
+| `POST` | `/BookingController` | `action=reserve`, `cancel`, `extend` |
+| `GET` | `/api/locker-map` | Areas, banks, slots, prices; open to visitors |
+| `GET` | `/api/my-locker` | Open bookings, cards, fingerprints, history |
+| `POST` | `/TopupController` | Top-up request; staff approve or reject |
+| `POST` | `/api/health` | Heartbeat; returns pending commands and `tap_path` for the NFC tag |
+| `POST` | `/api/device/auth` | PIN, card, fingerprint → `UNLOCK` / `CHOOSE` / `CONFIRM_EMAIL` / `DENY` |
+| `POST` | `/api/device/enroll/start`, `/finish` | Enroll a card or fingerprint |
+| `POST` | `/api/locker/batch` | Open/close sessions of a box |
+| `POST` | `/api/kiosk/unlock` | Open from the phone page with a PIN or NFC tap |
+| `GET` | `/api/dashboard`, `/api/dashboard/stats` | Dashboard and chart numbers |
 
-Device API contract: [docs/spec/smart-locker-v2.md](./docs/spec/smart-locker-v2.md) section 4.
+Device API contract (Vietnamese): [docs/spec/smart-locker-v2.md](./docs/spec/smart-locker-v2.md) section 4.
 
 ---
 
-## Security
+## Security and known limits
 
-- `SecurityFilter`: undeclared paths are refused; GET needs the resource's READ permission, other methods need WRITE.
-  Only the map and `/api/locker-map` (GET) are open to visitors.
-- The user is reloaded on every request: a locked account is signed out at once, a role change applies at once.
-- Booking races are prevented by locks inside the procedure (`UPDLOCK, HOLDLOCK`).
-- The audit log is append-only and hash-chained with SHA-256; AUDITOR is read-only.
-- Box API keys are stored as SHA-256; an e-mail address is saved only after the code sent to it comes back; session cookie SameSite=Lax.
-- Known limits: no CSRF token yet (relies on SameSite=Lax), the `sa` account is in `DbContext`.
+**In place:**
+
+- `SecurityFilter`: undeclared paths are refused; GET needs READ, other methods need WRITE. Visitors can only view the map and `/api/locker-map` (GET); also public are the box page `/k/*`, `/api/kiosk/unlock`, card confirmation `/c/*`, sign-in and sign-up.
+- Passwords are hashed with BCrypt. The user is reloaded on every request, so a locked account is signed out at once.
+- Booking races are stopped by locks in the procedure (`UPDLOCK, HOLDLOCK`).
+- The audit log is append-only with a SHA-256 hash chain.
+- Box API keys are stored as SHA-256. The session cookie is SameSite=Lax. User data is printed with `<c:out>` and `esc()`.
+
+**Not in place, because this is a demo project.** Fix these before real use:
+
+- No limit on failed sign-ins and no change-password page. Accounts created or reset by staff get the password `123456`.
+- E-mail addresses are saved as typed, with no verification code.
+- No CSRF token; it relies on SameSite=Lax.
+- No dedicated error page for HTTP 500.
+- `DbContext` defaults to `sa` / `12345` for local use; set `DB_URL`, `DB_USER`, `DB_PASSWORD` when deploying.
+- The firmware uses `setInsecure()` and does not pin the TLS certificate.
+
+---
 
 ## Related documents
 
-- [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md): business flows, case table, state diagrams.
-- [docs/spec/smart-locker-v2.md](./docs/spec/smart-locker-v2.md): v2 specification and device API contract.
-- [docs/spec/smart-locker-v3.md](./docs/spec/smart-locker-v3.md): v3 (sizes, prices, cancel, overdue, reminders).
-- [docs/deploy.md](./docs/deploy.md): demo over a Cloudflare tunnel, fixed GitHub Pages link, QR for the box.
-- [docs/postman/README.md](./docs/postman/README.md): Postman collection and newman.
-- [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md): flashing and using the real box.
+The documents below are in Vietnamese.
+
+- [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md): business flows, cases, state diagrams.
+- [docs/spec/smart-locker-v2.md](./docs/spec/smart-locker-v2.md), [docs/spec/smart-locker-v3.md](./docs/spec/smart-locker-v3.md): specifications.
+- [docs/deploy.md](./docs/deploy.md), [docs/deploy-render.md](./docs/deploy-render.md): deployment.
+- [docs/postman/README.md](./docs/postman/README.md): Postman and newman.
+- [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md): flashing the firmware and using the real box.
+- [docs/paper/smartlocker.tex](./docs/paper/smartlocker.tex): the paper, with measurements in [docs/paper/evidence](./docs/paper/evidence/README.md).
 
 ## License
 
-PRJ301 coursework. See [LICENSE](./LICENSE).
+PRJ301 course project. See [LICENSE](./LICENSE).

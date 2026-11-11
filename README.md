@@ -60,7 +60,7 @@ Trang web không dùng CDN, chữ hiển thị là tiếng Việt, có giao di�
 - **Bốn cách mở, cùng một giá, không tiền cọc:** mật mã 6 số, thẻ RFID, chạm điện thoại, vân tay.
 - **Đặt rõ ràng.** Popup ghi số tiền trừ ngay, số dư còn lại, luật hủy và phụ phí. Sau khi đặt, ví phải còn ít nhất 10.000 đ dự phòng phụ phí.
 - **Hủy.** Trong 5 phút đầu hoàn đủ, sau đó tới hết 15 phút giữ chỗ hoàn 50%.
-- **Tự check-in.** Hết 15 phút giữ chỗ, lượt tự bắt đầu tính giờ và không hủy được nữa. Ngăn vẫn khóa cho người đặt. Nếu tới hạn trả mà chưa từng mở, lượt kết thúc `NO_SHOW`, ngăn trống lại, không tính phụ phí, không hoàn tiền; 3 lần như vậy trong 7 ngày thì bị tạm cấm đặt.
+- **Tự check-in.** Hết 15 phút giữ chỗ, lượt tự bắt đầu tính giờ và không hủy được nữa. Ngăn vẫn khóa cho người đặt. Nếu quá hạn trả cộng ân hạn mà chưa từng mở, lượt kết thúc `NO_SHOW`, ngăn trống lại, không tính phụ phí, không hoàn tiền; 3 lần như vậy trong 7 ngày thì bị tạm cấm đặt.
 - **Mở nhiều lần trong một lượt.** Lần đầu cất đồ (CHECK_IN). Các lần sau hộp hỏi `A: Mo tu` / `B: Tra tu`: phím A mở tủ, lượt vẫn chạy; phím B lấy đồ và kết thúc lượt.
 - **Gia hạn** tối đa 3 lần, tính theo giá một giờ của cỡ ngăn.
 - **Quá hạn.** Ngăn không tự giải phóng vì đồ còn trong đó. Quá ân hạn thì tủ khóa, mỗi giờ trễ trừ phụ phí, ví có thể âm, hộp từ chối mở (`OVERDUE_UNPAID`) tới khi nạp đủ tiền. Quá 48 giờ, lượt được chuyển cho nhân viên kèm cảnh báo.
@@ -86,7 +86,7 @@ Trang **Dữ liệu cảm biến** liệt kê các phiên mở/đóng do hộp g
 - **Khóa API riêng cho mỗi hộp.** Máy chủ chỉ lưu SHA-256 của khóa; `device_id` lấy từ khóa, không tin nội dung gửi lên.
 - **Một hộp quản lý nhiều dãy.** Servo chỉ mở ở ngăn vật lý, các ngăn khác chỉ báo trên LCD.
 - **Heartbeat.** Hộp im lặng quá 90 giây thì chuyển OFFLINE và các dãy của nó không đặt được.
-- **Khóa nhập sai.** 5 lần đoán sai trên một hộp thì hộp tạm khóa 2 phút.
+- **Khóa nhập sai.** 5 lần đoán sai trong 5 phút trên cùng một kênh (tại hộp hoặc trang điện thoại) thì kênh đó tạm khóa 2 phút.
 
 ---
 
@@ -130,7 +130,7 @@ Chụp từ bản chạy thật trên dữ liệu demo, không có dữ liệu c
 
 ## Cài đặt và chạy
 
-Cần có JDK 8, Apache Tomcat 9, SQL Server 2019/2022 kèm `sqlcmd`, Git Bash cho các script `.sh`. NetBeans là tùy chọn.
+Cần có JDK 8, Apache Tomcat 9, SQL Server 2019/2022 kèm `sqlcmd`, Git Bash cho các script `.sh`. NetBeans là tùy chọn. Chạy Postman thì cần thêm Node.js và `npm install -g newman`.
 
 ### 1. Tạo cơ sở dữ liệu
 
@@ -156,7 +156,7 @@ Script chạy lần lượt các file `01` tới `05` dưới đây. Tham số m
 Lưu ý khi chạy lại từng file:
 
 - Luôn dùng `sqlcmd -I -b -f 65001`. File có chữ Việt phải giữ UTF-8 BOM.
-- Chạy lại `02` phải chạy lại `03`, `04`, `05`. Chạy lại `03` phải chạy lại `04`, `05`. Chạy lại `04` phải chạy lại `05`.
+- Không chạy lại riêng `02` trên DB đã qua `03`, hãy dựng lại bằng `run_demo_db.ps1`. Chạy lại `03` phải chạy lại `04`, `05`. Chạy lại `04` phải chạy lại `05`.
 - `03_v2_v3.sql` đặt khóa của `LOCKER-01` về khóa mẫu công khai. Trước khi cắm hộp thật, tạo khóa riêng bằng lệnh sau (khóa lưu trong `config/device-keys.local.properties`, không commit):
 
   ```powershell
@@ -167,13 +167,21 @@ Lưu ý khi chạy lại từng file:
 
 **NetBeans:** Clean and Build, rồi Run trên Tomcat 9.
 
-**Git Bash:** biên dịch vào `build/web`, rồi báo Tomcat tải lại. Đổi đường dẫn bằng biến `TOMCAT` và `JAVAC` nếu máy bạn khác mặc định.
+**Git Bash:** lần đầu, tạo file `conf/Catalina/localhost/SmartLocker.xml` trong thư mục Tomcat (thay đường dẫn repo của bạn):
+
+```xml
+<Context docBase="C:\duong-dan-repo\build\web" reloadable="false">
+  <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor" sameSiteCookies="lax" />
+</Context>
+```
+
+Sau đó lệnh dưới đây biên dịch vào `build/web` rồi báo Tomcat tải lại. Máy bạn khác mặc định thì đặt biến `TOMCAT` (thư mục Tomcat) và `JAVAC` (đường dẫn file `javac`).
 
 ```bash
 sh scripts/build-dev.sh
 ```
 
-Context `SmartLocker` của Tomcat trỏ tới `build/web` (file `conf/Catalina/localhost/SmartLocker.xml`). Chờ khoảng 15 giây rồi mở <http://localhost:8080/SmartLocker/>.
+Chờ khoảng 15 giây rồi mở <http://localhost:8080/SmartLocker/>.
 
 Kết nối DB mặc định là `localhost:1433`, `sa` / `12345`. Đổi bằng biến môi trường `DB_URL`, `DB_USER`, `DB_PASSWORD`.
 
@@ -191,7 +199,7 @@ Mật khẩu chung: `123456`.
 | Vai trò | Tài khoản | Không đăng nhập được |
 |---|---|---|
 | ADMIN | `admin`, `admin_ops`, `admin_lib`, `admin_doma`, `admin_cant`, `admin_gym`, `sysadmin1`, `manager1`, `manager2` | `sysadmin2` |
-| OPERATOR | `operator1` ... `operator22` | `operator20`, `operator22` |
+| OPERATOR | `operator1` ... `operator4` (mỗi người một khu) | `operator5` ... `operator22` |
 | TECHNICIAN | `tech1` ... `tech22` | `tech20`, `tech22` |
 | AUDITOR | `auditor1` ... `auditor16` | `auditor15`, `auditor16` |
 | END_USER | `student1` ... `student28`, `user1` | `locked1`, `student27`, `student28` |
@@ -361,7 +369,12 @@ Kết quả trên database dựng sạch từ script, ngày 11/11/2026:
 | Postman + newman, 19 kịch bản | 241 request, 514 assertion, 0 lỗi |
 | Trình duyệt: khách, đặt và hủy, mở tủ, quá hạn, trang điện thoại, 17 trang nhân viên | 36/36 mục đạt, không có lỗi JavaScript hay HTTP 500 |
 
-Test ghi vào database nên chỉ chạy trên database có tiền tố `SL_`, không chạy trên `PRJ301_LOCKER`. Lệnh PowerShell dưới đây dùng đường dẫn tuyệt đối tới thư mục repo:
+Test ghi vào database nên chỉ chạy trên database có tiền tố `SL_`, không chạy trên `PRJ301_LOCKER`. Trước khi dùng các script trong `scripts/proof`:
+
+- Trên máy khác, hoặc sau khi dựng lại `PRJ301_LOCKER`, sửa `$script:RealDbCreated` trong `scripts/proof/lib.ps1` theo `create_date` thật của database đó. Script dùng mốc này để báo động nếu database thật bị dựng lại.
+- `test.sh` đọc thư mục JDK từ biến `JDK` và Tomcat từ biến `TOMCAT`. `test-stack.ps1` dùng JDK 1.8.0_202 và nhận thư mục Tomcat qua `-TomcatHome`.
+
+Dựng database test rồi chạy TestNG:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\proof\build-db.ps1 -Repo "$PWD" -Database SL_TEST -TestSetup
@@ -371,7 +384,7 @@ powershell -ExecutionPolicy Bypass -File scripts\proof\build-db.ps1 -Repo "$PWD"
 DB_URL='jdbc:sqlserver://localhost:1433;databaseName=SL_TEST;encrypt=false' sh scripts/test.sh
 ```
 
-Chạy Postman trên một Tomcat test riêng ở cổng 8081, trên một database mới dựng và chưa chạy `demo_box.sql`. Hai script dưới đây dừng lại nếu thấy `config/mail.local.properties`, để test không gửi mail thật:
+Chạy Postman trên một Tomcat test riêng ở cổng 8081, trên một database mới dựng và chưa chạy `demo_box.sql`. `test-stack.ps1 start` dừng lại nếu thấy `config/mail.local.properties` để test không gửi mail thật, nên hãy chạy ở một bản clone không có file này:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\proof\test-stack.ps1 start -Database SL_TEST -Build
@@ -480,7 +493,7 @@ Hợp đồng API thiết bị: [docs/spec/smart-locker-v2.md](./docs/spec/smart
 
 **Đã có:**
 
-- `SecurityFilter`: đường dẫn chưa khai báo bị từ chối; GET cần quyền READ, phương thức khác cần WRITE. Chỉ bản đồ và `/api/locker-map` (GET) mở cho khách.
+- `SecurityFilter`: đường dẫn chưa khai báo bị từ chối; GET cần quyền READ, phương thức khác cần WRITE. Khách chỉ xem được bản đồ và `/api/locker-map` (GET); công khai thêm trang mở tủ `/k/*`, `/api/kiosk/unlock`, xác nhận thẻ `/c/*`, đăng nhập và đăng ký.
 - Mật khẩu băm BCrypt. Người dùng được nạp lại ở mỗi request, tài khoản bị khóa bị đăng xuất ngay.
 - Đặt tủ chống tranh chấp bằng khóa trong procedure (`UPDLOCK, HOLDLOCK`).
 - Nhật ký audit chỉ thêm, nối chuỗi băm SHA-256.
