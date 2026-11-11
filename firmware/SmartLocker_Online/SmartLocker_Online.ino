@@ -1,10 +1,20 @@
 /*
  * SmartLocker - online box LOCKER-01 (ESP32 DevKit, ESP32 core 3.x)
- * Hardware: LCD 1602 I2C, 2 servos (bolt + door), SRF05, keypad 4x4, RC522, AS608.
+ * Hardware: LCD 1602 I2C, 2 servos (bolt + door), SRF05, keypad 4x4, PN532 (NFC), AS608.
  *
- * The box never decides on its own: every PIN, card and finger goes to the web (POST /api/device/auth),
- * and the box opens only on "UNLOCK". A heartbeat every 3 s (POST /api/health) keeps LOCKER-01 ONLINE
- * and brings the commands queued by the web: UNLOCK (phone page, staff), DELETE_FP.
+ * The box never decides on its own: every PIN, card and finger goes to the web (POST /api/device/auth), and the box
+ * opens only on "UNLOCK". A heartbeat every 3 s (POST /api/health) keeps LOCKER-01 ONLINE and brings the commands queued
+ * by the web: UNLOCK (phone tap, phone page, staff), DELETE_FP.
+ *
+ * v7, one PN532 (I2C mode, on the bus of the LCD) does two jobs in turns, one short slice per loop():
+ *  - it reads RFID cards (readPassiveTargetID); a UID goes to /api/device/auth like before. A phone with an HCE wallet
+ *    answers this poll with a random 4-byte UID starting 0x08: those are ignored silently, or a tap would count as an
+ *    unknown card towards the 5-try lockout.
+ *  - it emulates an NFC Type 4 tag holding one URL record: base URL + "tap_path" of the heartbeat reply, e.g.
+ *    .../SmartLocker/k/LOCKER-01?n=Ab3dEf7hJk2m. The token changes every minute and after each use, so the tag is
+ *    rewritten when the path changes. A phone that taps the box opens that page; the signed-in owner presses
+ *    "Mo tu cua toi" and the UNLOCK comes with the next heartbeat. The box never sees who the phone belongs to.
+ * No emulation while a PIN is typed or a card is being enrolled.
  *
  * Keypad:  0-9 PIN (6 digits)   # send   * clear / cancel
  *          B  enroll a card     C  enroll a finger   (then the 6-digit enroll code from "Tu cua toi", #)
@@ -24,8 +34,9 @@
  * a door left open locks by itself after DOOR_OPEN_MS. The SRF05 only drives the LCD backlight: on while
  * someone is near, off SCREEN_OFF_MS after the last person and the last input.
  *
- * Arduino IDE libraries: MFRC522, Keypad, Adafruit Fingerprint Sensor Library, ArduinoJson 7,
- *                        LiquidCrystal I2C (Frank de Brabander). Servos use the ESP32 LEDC, no library.
+ * Arduino IDE libraries: Keypad, Adafruit Fingerprint Sensor Library, ArduinoJson 7, LiquidCrystal I2C (Frank de
+ * Brabander), and PN532-Arduino of Seeed-Studio (github.com/Seeed-Studio/PN532: PN532, PN532_I2C, EmulateTag). The NDEF
+ * record of the tag is built here, so no NDEF library is needed. Servos use the ESP32 LEDC, no library.
  * Copy secrets.example.h to secrets.h first.
  */
 
@@ -33,9 +44,10 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
-#include <SPI.h>
 #include <Wire.h>
-#include <MFRC522.h>
+#include <PN532_I2C.h>
+#include <PN532.h>
+#include <emulatetag.h>
 #include <Keypad.h>
 #include <Adafruit_Fingerprint.h>
 #include <LiquidCrystal_I2C.h>
@@ -46,15 +58,14 @@
 #error "Copy secrets.example.h to secrets.h and fill in Wi-Fi, server and API key"
 #endif
 
-static const char FIRMWARE[] = "3.3-esp32";
+static const char FIRMWARE[] = "4.1-esp32";
 
 // ---- Pin map of the box ----
-// RC522 on its own SPI pins; RST is tied to 3V3, so the chip is reset in software.
-static constexpr uint8_t RFID_SS_PIN   = 4;
-static constexpr int     RFID_SCK_PIN  = 16;
-static constexpr int     RFID_MOSI_PIN = 17;
-static constexpr int     RFID_MISO_PIN = 34;
-static constexpr uint8_t RFID_RST_PIN  = MFRC522::UNUSED_PIN;
+// PN532 in I2C mode (switches I0=1, I1=0) on SDA 21 / SCL 22 next to the LCD; it answers at 0x24, the LCD at 0x27.
+static constexpr bool USE_NFC = true;           // false: no cards and no tag; phones open only through the /k page (QR) or staff
+static constexpr uint16_t NFC_LISTEN_MS = 5;    // an emulation slice waits this long for a phone. The library polls the PN532 over I2C
+                                                // many times per timeout, so a turn really blocks the loop about 10x longer than this: keep it small
+static constexpr uint16_t CARD_POLL_MS = 30;    // a card slice waits this long for a card
 byte rowPins[4] = {13, 14, 25, 26};             // R1..R4
 byte colPins[4] = {33, 19, 23, 27};             // C1..C4
 static constexpr int FP_RX_PIN = 35;            // ESP32 <- AS608 TX
@@ -89,7 +100,9 @@ char keys[4][4] = {
   {'*', '0', '#', 'D'}
 };
 
-MFRC522 rfid(RFID_SS_PIN, RFID_RST_PIN);
+PN532_I2C pn532i2c(Wire);
+PN532 reader(pn532i2c);       // the card role
+EmulateTag nfc(pn532i2c);     // the tag role
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, 4, 4);
 HardwareSerial FingerSerial(2);
 Adafruit_Fingerprint finger(&FingerSerial);
@@ -125,9 +138,12 @@ uint32_t fingerQuietUntil = 0;
 bool fingerWaitLift = true;   // read again only after the sensor saw no finger (a stuck or ghost image never repeats)
 String lastCardUid;
 uint32_t lastCardAt = 0;
+bool nfcOk = false;
+String tapPath;             // "/k/LOCKER-01?n=..." from the last heartbeat; empty: no tag is emulated
+uint8_t ndefBuf[128];       // the encoded NDEF message (EmulateTag copies it; NDEF_MAX_LENGTH is 128 there too)
 
 bool screenOn = true;
-uint32_t lastActivity = 0;  // last key, card, finger, message, or person seen by the SRF05
+uint32_t lastActivity = 0;  // last key, card, finger, tap, message, or person seen by the SRF05
 uint32_t lastSonar = 0;
 long lastCm = -1;
 
@@ -181,29 +197,55 @@ void drawIdle() {
   } else if (!isOnline()) {
     show(WiFi.status() == WL_CONNECTED ? F("Mat ket noi\nDang thu lai...") : F("Mat Wi-Fi\nDang noi lai..."));
   } else {
-    show(F("Nhap PIN + #\nhoac the/van tay"));
+    show(F("PIN + # / van tay\nthe / cham NFC"));
   }
   idleDrawn = true;
 }
 
-// ---------------------------------------------------------------- RC522
+// ---------------------------------------------------------------- PN532: cards and the NFC tag for the phone tap
 
-void initRC522() {
-  rfid.PCD_Init();
-  delay(50);
-  rfid.PCD_SetAntennaGain(rfid.RxGain_max);
-  rfid.PCD_AntennaOn();
+void initNfc() {
+  if (!USE_NFC) return;
+  nfc.setTagWriteable(false);           // a phone may read the tag, never change it
+  static uint8_t uid[3] = {0x53, 0x4C, 0x01};  // "SL", box 1; static: EmulateTag keeps the pointer and reads it later
+  nfc.setUid(uid);
+  nfcOk = nfc.init();
+  if (nfcOk) reader.setPassiveActivationRetries(0x01);   // one try per slice, or a poll blocks the keypad
+  Serial.println(nfcOk ? F("PN532 OK (cards + tag)") : F("PN532 not found: I2C switches, SDA 21 / SCL 22, 0x24"));
 }
 
-// A wrong VersionReg means the chip lost its state (power dip): reset it.
-uint32_t lastRfidCheck = 0;
-void rfidHealthCheck() {
-  if (millis() - lastRfidCheck < 3000) return;
-  lastRfidCheck = millis();
-  byte v = rfid.PCD_ReadRegister(MFRC522::VersionReg);
-  if (v != 0x91 && v != 0x92 && v != 0x88) {
-    Serial.printf("RC522 VersionReg 0x%02X -> reset\n", v);
-    initRC522();
+// Writes base URL + tapPath into the tag. Called when the heartbeat brings another path or the base URL moved.
+void setTagUrl() {
+  if (!nfcOk || tapPath.isEmpty()) return;
+  String url = baseUrl + tapPath;
+  // one NDEF short record: MB+ME+SR+well-known, type length 1, payload length, type "U", URI code 0 (no prefix), the URL
+  int size = 5 + url.length();
+  if (size > (int) sizeof(ndefBuf) - 2) {   // EmulateTag keeps 2 bytes of its 128 for the length
+    Serial.printf("Tag URL too long (%d bytes): %s\n", size, url.c_str());
+    return;
+  }
+  ndefBuf[0] = 0xD1;
+  ndefBuf[1] = 1;
+  ndefBuf[2] = url.length() + 1;
+  ndefBuf[3] = 'U';
+  ndefBuf[4] = 0x00;
+  memcpy(ndefBuf + 5, url.c_str(), url.length());
+  nfc.setNdefFile(ndefBuf, size);
+  Serial.print(F("NFC tag: ")); Serial.println(url);
+}
+
+// True when this loop may give its slice to the tag: never while a PIN is typed or a card is being enrolled.
+bool canEmulate() {
+  return nfcOk && !tapPath.isEmpty() && mode == MODE_IDLE && pinBuffer.length() == 0;
+}
+
+// Lets a phone read the tag for NFC_LISTEN_MS. The phone opens the link itself; the box only shows that it was read.
+void emulateSlice() {
+  reader.SAMConfig();       // back from the reader role
+  if (nfc.emulate(NFC_LISTEN_MS)) {
+    wake();
+    show(F("Da gui lien ket\nXem dien thoai"), 3000);
+    Serial.println(F("NFC tag read by a phone"));
   }
 }
 
@@ -269,7 +311,10 @@ void closeDoor() {
   servoWrite(SERVO_BOLT_PIN, BOLT_LOCKED_DEG);
   delay(500);
   doorOpen = false;
-  initRC522();              // the servo current dip resets the RC522
+  if (USE_NFC) {            // a servo current dip can reset the PN532: start it again with the same tag
+    initNfc();
+    setTagUrl();
+  }
   wake();
   show(F("Da khoa cua"), 1500);
   Serial.println(F("Door closed"));
@@ -401,6 +446,7 @@ void heartbeatIfDue() {
   JsonDocument body, reply;
   body["firmware"] = FIRMWARE;
   body["uptime_sec"] = millis() / 1000;
+  body["nfc"] = nfcOk;      // v7: the server answers "tap_path" only to a box with a working tag
   bool wasOnline = isOnline();
   int code = postJson("/health", body, reply);
   if (code == 200) {
@@ -408,11 +454,17 @@ void heartbeatIfDue() {
     heartbeatFails = 0;
     heartbeatEveryMs = (uint32_t) (reply["interval_sec"] | 3) * 1000;
     runCommands(reply["commands"].as<JsonArray>());
+    String path = reply["tap_path"] | "";
+    if (path != tapPath) {
+      tapPath = path;
+      setTagUrl();
+    }
   } else {
     if (code == 401) Serial.println(F("HTTP 401: DEVICE_API_KEY is wrong"));
     if (++heartbeatFails >= 5 && String(CONFIG_URL).length() > 0) {
       heartbeatFails = 0;
       loadBaseUrl();        // the tunnel may have a new address
+      setTagUrl();          // and the tag must point there
     }
   }
   if (wasOnline != isOnline() && mode == MODE_IDLE && messageUntil == 0) idleDrawn = false;
@@ -627,46 +679,52 @@ void handleKeypad() {
   }
 }
 
-String cardUidToString(const MFRC522::Uid& uid) {
+String cardUidToString(const uint8_t* uid, uint8_t size) {
   String result;
-  for (byte i = 0; i < uid.size; i++) {
-    if (uid.uidByte[i] < 0x10) result += '0';
-    result += String(uid.uidByte[i], HEX);
+  for (uint8_t i = 0; i < size; i++) {
+    if (uid[i] < 0x10) result += '0';
+    result += String(uid[i], HEX);
   }
   result.toUpperCase();
   return result;
 }
 
-void handleRfid() {
-  // WakeupA also answers a card that stays on the reader; the 1.5 s check below drops repeats
-  byte atqa[2];
-  byte atqaLen = sizeof(atqa);
-  MFRC522::StatusCode st = rfid.PICC_WakeupA(atqa, &atqaLen);
-  if (st != MFRC522::STATUS_OK && st != MFRC522::STATUS_COLLISION) return;
-  if (!rfid.PICC_ReadCardSerial()) {
-    rfid.PICC_HaltA();
-    rfid.PCD_StopCrypto1();
-    return;
-  }
-  String uid = cardUidToString(rfid.uid);
-  rfid.PICC_HaltA();
-  rfid.PCD_StopCrypto1();
-  if (uid == lastCardUid && millis() - lastCardAt < 1500) {   // the same card still on the reader
+// One short poll for a card. A UID goes to the enrollment that waits for it, or to the server as an open.
+void cardSlice() {
+  if (!nfcOk || (mode != MODE_IDLE && mode != MODE_ENROLL_CARD)) return;
+  reader.SAMConfig();       // back from the tag role
+  uint8_t uid[10];
+  uint8_t size = 0;
+  if (!reader.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &size, CARD_POLL_MS)) return;
+  // ISO 14443: a 4-byte UID starting 0x08 is random, which is what a phone with an HCE wallet sends. It is no card:
+  // nothing on screen, nothing to the server, or a phone tap counts as UNKNOWN_CARD towards the 5-try lockout.
+  if (size == 4 && uid[0] == 0x08) return;
+  String text = cardUidToString(uid, size);
+  if (text == lastCardUid && millis() - lastCardAt < 1500) {   // the same card still on the reader
     lastCardAt = millis();
     return;
   }
-  lastCardUid = uid;
+  lastCardUid = text;
   lastCardAt = millis();
-  Serial.print(F("RFID UID: ")); Serial.println(uid);
+  Serial.print(F("Card UID: ")); Serial.println(text);
   wake();
   if (mode == MODE_ENROLL_CARD) {
-    finishCardEnroll(uid);
-  } else if (mode == MODE_IDLE) {
+    finishCardEnroll(text);
+  } else {
     JsonDocument body;
     body["method"] = "CARD";
-    body["card_uid"] = uid;
+    body["card_uid"] = text;
     authorize(body);
   }
+  lastCardAt = millis();    // the debounce counts from the end of the HTTP call, or a card still held is sent again
+}
+
+// One PN532 job per loop(), so the keypad stays responsive: the card poll and the tag take turns.
+void nfcSlice() {
+  static bool tagTurn = false;
+  tagTurn = !tagTurn;
+  if (tagTurn && canEmulate()) emulateSlice();
+  else cardSlice();
 }
 
 void handleFingerprint() {
@@ -746,9 +804,7 @@ void setup() {
   }
   show(F("SmartLocker\nKhoi dong..."));
 
-  SPI.begin(RFID_SCK_PIN, RFID_MISO_PIN, RFID_MOSI_PIN, RFID_SS_PIN);
-  initRC522();
-  Serial.printf("RC522 VersionReg 0x%02X (0x91/0x92/0x88 = OK)\n", rfid.PCD_ReadRegister(MFRC522::VersionReg));
+  initNfc();
 
   if (USE_FINGERPRINT) {
     FingerSerial.begin(FP_BAUD, SERIAL_8N1, FP_RX_PIN, FP_TX_PIN);
@@ -782,10 +838,9 @@ void loop() {
     handleKeypadDoorOpen();
   } else {
     handleKeypad();
-    handleRfid();
     handleFingerprint();
+    nfcSlice();
   }
-  rfidHealthCheck();
   handleScreen();
   if (messageUntil && (int32_t) (millis() - messageUntil) >= 0) {
     messageUntil = 0;

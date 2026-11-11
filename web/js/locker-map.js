@@ -345,7 +345,7 @@
   }
 
   // kind: confirm | here | wrong | info. A card scan waiting for its answer comes first. The GPS says "here" before a
-  // wrong scan, so that one does not nag someone who walked to the right area.
+  // wrong scan (a card, a finger or a phone tap at another box), so that one does not nag someone who walked to the right area.
   function placeNow(b, mine) {
     var dist = distanceTo(mine);
     var key = b.area_code + '|' + b.slot_code;
@@ -387,8 +387,8 @@
     }
     if (now.kind === 'wrong') {
       ico = 'alert';
-      title = now.scan ? 'Bạn quét thẻ sai hộp tủ' : 'Bạn đang đi sai chỗ';
-      text = (now.scan ? 'Thẻ vừa được quét ở ' + (now.near || 'một hộp khác') : 'Bạn đang ở ' + now.near) + '. ' + where;
+      title = now.scan ? 'Bạn mở nhầm hộp tủ' : 'Bạn đang đi sai chỗ';
+      text = (now.scan ? 'Bạn vừa thử mở tủ ở ' + (now.near || 'một hộp khác') : 'Bạn đang ở ' + now.near) + '. ' + where;
     } else if (now.kind === 'here') {
       ico = 'check';
       title = 'Bạn đến đúng chỗ rồi';
@@ -689,9 +689,10 @@
   var METHODS = {
     PIN: { label: 'Mật mã', desc: 'Nhập 6 số trên bàn phím của hộp hoặc trên điện thoại (quét QR).' },
     CARD: { label: 'Thẻ RFID', desc: 'Quẹt thẻ RFID lên đầu đọc của hộp.' },
+    PHONE: { label: 'Điện thoại', desc: 'Đăng nhập trên điện thoại, chạm máy vào đầu đọc NFC của hộp rồi bấm Mở tủ. Không cần mật mã.' },
     FINGERPRINT: { label: 'Vân tay', desc: 'Đặt ngón tay lên cảm biến của hộp.' }
   };
-  var METHOD_ORDER = ['PIN', 'CARD', 'FINGERPRINT'];
+  var METHOD_ORDER = ['PIN', 'CARD', 'PHONE', 'FINGERPRINT'];
 
   // the numbers of the rules come from AppConfig through the API (spec v3 2.1); the defaults are only a fallback
   function rule(name, fallback) {
@@ -718,14 +719,6 @@
 
   function bookingBuffer() {
     return rule('booking_buffer', 10000);
-  }
-
-  function cardDepositDue() {
-    return !!(state.data && state.data.card_deposit_due);
-  }
-
-  function cardDeposit() {
-    return rule('card_deposit', (state.data && state.data.card_deposit) || 30000);
   }
 
   function sizeInfo(code) {
@@ -757,9 +750,6 @@
   }
 
   function methodDesc(code, bank) {
-    if (code === 'CARD' && cardDepositDue()) {
-      return METHODS.CARD.desc + ' Cọc ' + money(cardDeposit()) + ' khi đăng ký thẻ lần đầu tại hộp.';
-    }
     if (code === 'FINGERPRINT') {
       return METHODS.FINGERPRINT.desc + (fingerEnrolled(bank) ? ' Bạn đã đăng ký vân tay trên hộp này.'
         : ' Lần đầu cần đăng ký tại hộp bằng mã ở trang Tủ của tôi.');
@@ -803,7 +793,7 @@
     return { unit: unit, count: count, minutes: count * (unit === 'day' ? 1440 : 60) };
   }
 
-  // what the user is choosing: plan, open method, price taken now, and the card deposit taken later at the box
+  // what the user is choosing: plan, open method and the price taken now
   function reserveChoice(slot) {
     var form = el.panel.querySelector('form[data-reserve]');
     var plans = (state.data && state.data.plans) || [];
@@ -827,12 +817,11 @@
     }
     // "Tự chọn" picked but no longer offered (a refresh dropped it) or not priced: never show it as free
     var unavailable = wantsCustom && (!custom || price <= 0);
-    var deposit = method === 'CARD' && cardDepositDue() ? cardDeposit() : 0;
     var balance = Number(cfg.balance) || 0;
-    // Deposit_Reserve: balance - price (- first card deposit) must stay >= BOOKING_BUFFER
-    var enough = balance - price - deposit >= bookingBuffer();
+    // Deposit_Reserve: balance - price must stay >= BOOKING_BUFFER
+    var enough = balance - price >= bookingBuffer();
     return { plan: plan, custom: unavailable ? null : custom, unavailable: unavailable, method: method, price: price,
-             deposit: deposit, size: slot.size, balance: balance, after: balance - price, enough: enough };
+             size: slot.size, balance: balance, after: balance - price, enough: enough };
   }
 
   // "21/10 14:30": the due time if the slot is opened now (the clock starts at the first open)
@@ -999,9 +988,6 @@
       ['Cách mở', esc(METHODS[choice.method].label)],
       ['Trừ ngay', '<strong class="dlg__total money">' + (choice.price ? esc(money(choice.price)) : 'Miễn phí') + '</strong>']
     ]);
-    if (choice.deposit) {
-      rows.push(['Cọc thẻ', esc(money(choice.deposit)) + ' <span class="muted">(trừ khi đăng ký thẻ tại hộp, không trừ bây giờ)</span>']);
-    }
     rows.push(['Số dư còn lại', '<span class="money">' + esc(money(choice.after)) + '</span>']);
     var refund = rule('no_show_refund_pct', 0);
     var rules = [
@@ -1203,6 +1189,16 @@
     });
   }
 
+  // v7: the page of the box (/k/{device}): a phone opens the owner's slot there after a tap on its NFC reader; a demo box
+  // has no reader, so its page opens without a tap
+  function boxPageLink(bank) {
+    if (!bank || !bank.device_code) {
+      return '';
+    }
+    return '<a class="btn ghost btn--block" href="' + esc(cfg.ctx + '/k/' + encodeURIComponent(bank.device_code)) + '">' +
+      'Mở tủ bằng điện thoại</a>';
+  }
+
   function actionsHtml(slot, bank) {
     var role = cfg.role;
     var parts = [];
@@ -1215,11 +1211,13 @@
         parts.push(reserveForm(slot));
       } else if (bookingPhase(slot) === 'RESERVED') {
         parts.push('<a class="btn btn--block btn--pill lg-hover" href="' + esc(cfg.myLockerUrl) + '">' + icon('unlock') + 'Xem cách mở ở Tủ của tôi</a>');
+        parts.push(boxPageLink(bank));
         parts.push(cancelForm(slot));
       } else if (slot.mine && slot.locked) {
         parts.push(overdueBoxHtml(slot));
         parts.push('<a class="btn ghost btn--block" href="' + esc(cfg.myLockerUrl) + '">Xem ở Tủ của tôi</a>');
       } else if (bookingPhase(slot) === 'ACTIVE') {
+        parts.push(boxPageLink(bank));
         parts.push(extendForm(slot));
       }
     }
@@ -1293,7 +1291,7 @@
     var s = found.slot;
     return [cfg.role, s.slot_id, s.status, s.locked, s.mine, s.deposit_id, s.hold_until, s.due_at, s.reserved_at,
       s.escalated, s.occupant, s.alert ? s.alert.alert_id : '', s.ticket_id, s.overdue_hours, s.overdue_fee,
-      found.bank.device_status, cardDepositDue(), (state.data.fp_devices || []).join(',')].join('|');
+      found.bank.device_status, (state.data.fp_devices || []).join(',')].join('|');
   }
 
   function renderPanel(force) {
@@ -1926,7 +1924,7 @@
         askFirst(form, {
           title: 'Xác nhận đặt ngăn ' + found.slot.slot_code,
           html: reserveConfirmHtml(found.slot, found.bank, choice),
-          okText: choice.price ? 'Đặt và trả ' + money(choice.price) : 'Đặt ngăn'   // the card deposit is taken later, at the box
+          okText: choice.price ? 'Đặt và trả ' + money(choice.price) : 'Đặt ngăn'
         }, e.submitter);
       } else if (isExtend) {
         var target = findSlot(toInt(form.querySelector('[name="slotId"]').value));

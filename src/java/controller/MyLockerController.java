@@ -60,11 +60,9 @@ public class MyLockerController extends HttpServlet {
             req.setAttribute("refunds", refunds);
             req.setAttribute("cards", auth.cardsOf(me.getUserId()));
             req.setAttribute("fingerprints", auth.fingerprintsOf(me.getUserId()));
-            req.setAttribute("cardDepositDue", !auth.hasRegisteredCard(me.getUserId()));
             // v3: the rules the page counts down (cancel 5 minutes, hold 15), the wallet that may be in debt,
             // and the size of the open booking (measures, late fee of one hour)
             AppConfigDao config = new AppConfigDao();
-            req.setAttribute("cardDeposit", config.get("CARD_DEPOSIT", Pricing.CARD_DEPOSIT));
             req.setAttribute("cancelMin", config.getInt("CANCEL_FREE_MIN", Pricing.CANCEL_FREE_MIN));
             req.setAttribute("cancelLatePct", config.getInt("CANCEL_LATE_REFUND_PCT", Pricing.CANCEL_LATE_REFUND_PCT));
             req.setAttribute("holdMin", config.getInt("HOLD_MIN", Pricing.HOLD_MIN));

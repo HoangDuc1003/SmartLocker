@@ -46,6 +46,7 @@
         <c:forEach var="d" items="${open}">
             <c:choose>
                 <c:when test="${d.openMethod == 'CARD'}"><c:set var="methodLabel" value="Thẻ từ"/></c:when>
+                <c:when test="${d.openMethod == 'PHONE'}"><c:set var="methodLabel" value="Điện thoại"/></c:when>
                 <c:when test="${d.openMethod == 'FINGERPRINT'}"><c:set var="methodLabel" value="Vân tay"/></c:when>
                 <c:otherwise><c:set var="methodLabel" value="Mật mã"/></c:otherwise>
             </c:choose>
@@ -164,7 +165,7 @@
                                 <li>Bấm <b><c:out value="${d.openMethod == 'CARD' ? 'B' : 'C'}"/></b> trên hộp rồi nhập mã đăng ký.</li>
                                 <c:choose>
                                     <c:when test="${d.openMethod == 'CARD'}">
-                                        <li>Quẹt thẻ lên đầu đọc. <c:if test="${cardDepositDue}">Ví bị trừ cọc <fmt:formatNumber value="${cardDeposit}" groupingUsed="true"/> đ khi đăng ký xong.</c:if></li>
+                                        <li>Quẹt thẻ lên đầu đọc.</li>
                                         <li>Quẹt thẻ lần nữa để mở tủ.</li>
                                     </c:when>
                                     <c:otherwise>
@@ -178,6 +179,14 @@
                     <c:when test="${d.openMethod == 'CARD'}">
                         <p class="hint">Quẹt thẻ đã đăng ký tại hộp <code><c:out value="${d.deviceCode}"/></code> để
                             <c:out value="${d.status == 'RESERVED' ? 'mở tủ và cất đồ' : 'lấy đồ và kết thúc lượt'}"/>.</p>
+                    </c:when>
+                    <%-- v7: the phone tap. The NFC tag of the box opens /k/{device} with a fresh token; a demo box needs none --%>
+                    <c:when test="${d.openMethod == 'PHONE'}">
+                        <p class="hint">Đăng nhập trên điện thoại rồi chạm mặt sau máy vào đầu đọc NFC của hộp
+                            <code><c:out value="${d.deviceCode}"/></code>, sau đó bấm Mở tủ của tôi để
+                            <c:out value="${d.status == 'RESERVED' ? 'mở tủ và cất đồ' : 'mở tủ hoặc trả tủ'}"/>.
+                            <c:if test="${not empty d.deviceCode}"><a href="${ctx}/k/<c:out value='${d.deviceCode}'/>">Mở trang của hộp</a>
+                                (hộp demo không có đầu đọc NFC, mở được ngay trên trang này).</c:if></p>
                     </c:when>
                     <c:when test="${d.openMethod == 'FINGERPRINT'}">
                         <p class="hint">Đặt ngón tay đã đăng ký lên cảm biến của hộp <code><c:out value="${d.deviceCode}"/></code> để
@@ -276,16 +285,14 @@
     <%-- 2. cards --%>
     <section class="ml-section" id="cards" aria-labelledby="hCards">
         <h3 id="hCards">Thẻ từ</h3>
-        <p class="hint">Cọc thẻ <fmt:formatNumber value="${cardDeposit}" groupingUsed="true"/> đ thu một lần khi đăng ký thẻ tại hộp.
-            Báo mất sẽ khóa thẻ ngay và không hoàn cọc; nhân viên thu hồi thẻ thì hoàn cọc.</p>
+        <p class="hint">Thẻ đăng ký miễn phí tại hộp. Báo mất sẽ khóa thẻ ngay, thẻ không mở được tủ nữa.</p>
         <div class="tablewrap">
         <table class="grid">
-            <tr><th>Mã thẻ (UID)</th><th>Trạng thái</th><th>Tiền cọc</th><th>Đăng ký tại hộp</th><th>Thao tác</th></tr>
+            <tr><th>Mã thẻ (UID)</th><th>Trạng thái</th><th>Đăng ký tại hộp</th><th>Thao tác</th></tr>
             <c:forEach var="c" items="${cards}">
             <tr class="${c.status == 'LOST' or c.status == 'BLOCKED' ? 'locked' : ''}">
                 <td><code><c:out value="${c.card_uid}"/></code></td>
                 <td><ui:status value="${c.status}"/></td>
-                <td><span class="money"><fmt:formatNumber value="${c.deposit_amount}" groupingUsed="true"/> đ</span></td>
                 <td><c:out value="${empty c.registered_device ? '–' : c.registered_device}"/></td>
                 <td class="ops">
                     <c:choose>
@@ -301,7 +308,7 @@
                 </td>
             </tr>
             </c:forEach>
-            <c:if test="${empty cards}"><tr><td colspan="5" class="empty">Bạn chưa có thẻ. Khi đặt tủ, chọn Thẻ từ rồi đăng ký thẻ tại hộp bằng mã đăng ký.</td></tr></c:if>
+            <c:if test="${empty cards}"><tr><td colspan="4" class="empty">Bạn chưa có thẻ. Khi đặt tủ, chọn Thẻ từ rồi đăng ký thẻ tại hộp bằng mã đăng ký.</td></tr></c:if>
         </table>
         </div>
     </section>
@@ -343,7 +350,7 @@
                 <td><b><c:out value="${d.slotCode}"/></b></td>
                 <td><c:out value="${d.bankCode}"/></td>
                 <td><c:out value="${d.planName}"/></td>
-                <td><c:out value="${d.openMethod == 'CARD' ? 'Thẻ từ' : d.openMethod == 'FINGERPRINT' ? 'Vân tay' : 'Mật mã'}"/></td>
+                <td><c:out value="${d.openMethod == 'CARD' ? 'Thẻ từ' : d.openMethod == 'PHONE' ? 'Điện thoại' : d.openMethod == 'FINGERPRINT' ? 'Vân tay' : 'Mật mã'}"/></td>
                 <td>
                     <c:choose>
                         <c:when test="${d.paidAmount == 0}"><span class="tag">Miễn phí</span></c:when>

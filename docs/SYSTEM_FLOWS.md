@@ -46,9 +46,9 @@ flowchart TD
 flowchart TD
     Start(["Đăng ký / đăng nhập"]) --> Map["Sơ đồ tủ: chọn ngăn trống"]
     Map --> Form["Chọn gói (2 giờ, 4 giờ, Trọn ngày hoặc Tự chọn 1-23 giờ / 1-7 ngày) và cách mở; giá theo cỡ S / M / L"]
-    Form --> Confirm["Popup xác nhận: số tiền trừ ngay, cọc thẻ trừ sau, số dư còn lại, luật hủy và phụ phí"]
+    Form --> Confirm["Popup xác nhận: số tiền trừ ngay, số dư còn lại, luật hủy và phụ phí"]
     Confirm --> Reserve{"Deposit_Reserve"}
-    Reserve -- "50030 / 50041 thiếu tiền" --> Err["Thông báo lỗi tiếng Việt (Web.sqlMessage)"]
+    Reserve -- "50030 thiếu tiền" --> Err["Thông báo lỗi tiếng Việt (Web.sqlMessage)"]
     Reserve -- "50046 còn dưới 10.000 đ sau khi đặt" --> Err
     Reserve -- "50031 3 lần không đến trong 7 ngày" --> Err
     Reserve -- "50032 đang có lượt gửi" --> Err
@@ -136,7 +136,7 @@ là đoán sai. Hộp hiện `A: Mo tu` / `B: Tra tu`, giữ thông tin vừa đ
   `PICKUP`); dòng audit `ACCESS` của điện thoại chỉ ghi khi hộp nhận lệnh. Lệnh `ACCESS` của lượt vừa bị khóa quá hạn bị bỏ
   (audit `PHONE_ACCESS_DROPPED`).
 
-- Lý do từ chối thường gặp: `WRONG_CODE`, `UNKNOWN_CARD`, `UNKNOWN_FINGER`, `CARD_BLOCKED`, `METHOD_MISMATCH`, `LOCKED_OUT`,
+- Lý do từ chối thường gặp: `WRONG_CODE`, `UNKNOWN_CARD`, `UNKNOWN_FINGER`, `CARD_BLOCKED`, `METHOD_MISMATCH`, `LOCKED_OUT`, `TAP_EXPIRED`, `NO_BOOKING`, `WRONG_PLACE`,
   `OVERDUE_UNPAID` (v3: lượt bị khóa quá hạn và ví đang âm; trả thêm `debt` và `overdue_fee`).
 - Với lượt `ACTIVE`, `Device_Authorize` gọi `Deposit_ChargeOverdue` cho lượt đó trước khi quyết định, nên phụ phí luôn tính tới
   lúc mở, không phải chờ `LockerMonitor`. Chạy lại không thu trùng. `PICKUP` thành công trả `overdue_fee` (0 nếu đúng hạn).
@@ -164,7 +164,7 @@ không đổi khóa API, ghi nhật ký `DEMO_BOX` và in bảng dãy → hộp 
 nhau (ví dụ `CANT-A` A01–A15 và `CANT-B` B01–B12), vì hộp nhận lượt gửi theo mã ngăn; script từ chối nếu trùng.
 
 ### 2.3 Thẻ từ và vân tay
-- Mọi cách mở (mật mã, thẻ RFID, vân tay) cùng một giá. Đặt bằng thẻ lần đầu: cần đủ tiền cho giá gói và cọc thẻ 10.000 đ (`AppConfig.CARD_DEPOSIT`); cọc chỉ bị trừ khi đăng ký thẻ xong (`enroll/finish`).
+- Mọi cách mở (mật mã, thẻ RFID, điện thoại, vân tay) cùng một giá. Thẻ không có tiền cọc (v7): đăng ký miễn phí, thẻ được coi là đã đăng ký khi có `registered_device_id`.
 - Đăng ký tại hộp: bấm B/C, nhập mã đăng ký 6 số (hết hạn sau 10 phút, lấy mã mới ở "Tủ của tôi").
 - Báo mất thẻ: thẻ chuyển `LOST`, UID nằm trong `blocked_cards` của heartbeat; dùng lại sẽ bị `CARD_BLOCKED`.
 - Xóa vân tay: máy chủ xếp lệnh `DELETE_FP` cho hộp; nếu đang có lượt gửi bằng vân tay trên hộp đó, lượt đó nhận mã đăng ký mới.
@@ -201,6 +201,40 @@ sequenceDiagram
 - Theo GPS (vị trí chỉ nằm trong trình duyệt, không gửi đi): đứng trong 120 m của khu khác là "Bạn đang đi sai chỗ" kèm đường nối và nút Chỉ đường; đứng đúng khu là "Bạn đến đúng chỗ rồi". GPS sai số trên 300 m thì không kết luận đúng hay sai.
 - Nền bản đồ: Mapbox khi có `config/mapbox.local.properties` (token `pk.*`); thiếu token, token sai hoặc mất mạng thì tự về Leaflet và OpenStreetMap, ghim và sóng giữ nguyên.
 
+### 2.6 Chạm điện thoại (v7)
+
+Cùng đầu PN532 đọc thẻ từ còn giả làm một thẻ NFC chứa liên kết của hộp, hai việc luân phiên trong mỗi vòng lặp của firmware. Điện thoại chạm vào thì tự mở liên kết đó. Điện thoại có ví HCE trả lời lệnh đọc thẻ bằng UID ngẫu nhiên 4 byte bắt đầu bằng `08`; firmware bỏ qua, nên lần chạm không bị tính là `UNKNOWN_CARD`.
+
+```mermaid
+sequenceDiagram
+    participant Box as Hộp ESP32 + PN532
+    participant Api as /api/health, /api/kiosk/unlock
+    participant Db as Device_TapIssue, Device_Authorize
+    participant Phone as Điện thoại (đã đăng nhập)
+    Box->>Api: heartbeat {"nfc":true}
+    Api->>Db: Device_TapIssue: mã 12 ký tự, đổi mỗi phút và sau mỗi lần dùng
+    Api-->>Box: "tap_path": "/k/LOCKER-01?n=<mã>"
+    Note over Box: ghi base URL + tap_path vào thẻ NFC giả lập
+    Phone->>Box: chạm NFC, đọc liên kết
+    Phone->>Api: GET /k/LOCKER-01?n=<mã> (chỉ hiện trang, không đổi gì)
+    Phone->>Api: POST {"method":"PHONE","tap":"<mã>","intent":"ASK"} kèm phiên đăng nhập
+    Api->>Db: Device_Authorize: mã còn mới (5 phút), chưa dùng, đúng hộp
+    Db-->>Api: UNLOCK (xếp lệnh, đánh dấu mã đã dùng) hoặc CHOOSE hoặc DENY
+    Box->>Api: heartbeat kế tiếp
+    Api-->>Box: lệnh UNLOCK kèm phase, mã chạm mới
+```
+
+- Cách mở `PHONE` khi đặt: không có mật mã, không phải đăng ký gì. Điện thoại của chủ tài khoản mở được **mọi** lượt đặt của
+  người đó ở hộp vừa chạm, dù lượt đặt chọn mật mã, thẻ hay vân tay (đăng nhập và mã chạm mạnh hơn một mật mã 6 số).
+- Mã chạm chứng minh người bấm đang đứng ở hộp: ai chép liên kết mang đi thì sau 5 phút, hoặc sau một lần mở, liên kết hết tác dụng.
+  `CHOOSE` không dùng mã, nên sau "Mở tủ" / "Trả tủ" mới tính một lần.
+- Mã sai, cũ hoặc đã dùng là `TAP_EXPIRED`; chưa đăng nhập là HTTP 401 `NOT_SIGNED_IN`. Không lý do nào tính vào giới hạn 5 lần
+  sai, và lần chạm cũng không bị khóa bởi bộ đếm mật mã của trang điện thoại (người lạ đoán mật mã không chặn được chủ tủ).
+- Nhật ký `AuthAttempt` ghi `method = TAP`; lệnh `RemoteCommand` có lý do "Chạm điện thoại".
+- Hộp demo (`"demo":true`) không có đầu đọc: trang `/k/{mã hộp}` của nó cho chủ tủ bấm "Mở tủ của tôi" không cần mã.
+  Trên bản đồ, ngăn của mình có nút "Mở tủ bằng điện thoại" dẫn tới trang này.
+- Firmware gửi `"nfc":true` chỉ khi PN532 trả lời; hộp cũ không gửi thì máy chủ không cấp mã.
+
 ### 2.4 Bảng tình huống
 
 | Tình huống | Điều kiện | Hệ thống làm gì | Kết quả |
@@ -208,7 +242,7 @@ sequenceDiagram
 | Đặt thành công | Đủ tiền, ngăn trống, hộp hoạt động | Trừ giá theo cỡ, giữ chỗ 15 phút, ghi audit `RESERVE` | Lượt `RESERVED`, ngăn `RESERVED` |
 | Đặt tự chọn | Gói "Tự chọn": số giờ nguyên 1–23 hoặc số ngày nguyên 1–7 | `fn_CustomPrice` tính giá theo cỡ, lưu `custom_min`, audit `RESERVE` ghi `custom_min` | Như đặt thành công; hạn trả = lúc mở lần đầu + `custom_min` |
 | Tự chọn sai | Số phút không phải giờ/ngày nguyên trong giới hạn; không còn gói trọn ngày | `THROW 50050` / `50051`, không đổi gì | Báo lỗi |
-| Thiếu tiền | Số dư nhỏ hơn giá (và cọc thẻ nếu có) | `THROW 50030` / `50041`, không đổi gì | Báo lỗi |
+| Thiếu tiền | Số dư nhỏ hơn giá | `THROW 50030`, không đổi gì | Báo lỗi |
 | Dưới mức đệm | Đủ giá nhưng sau khi đặt còn dưới 10.000 đ | `THROW 50046`, không đổi gì | Báo lỗi |
 | Đang có lượt gửi | Đã có lượt `RESERVED` hoặc `ACTIVE` | `THROW 50032` | Báo lỗi |
 | Hay không đến | 3 lần `NO_SHOW` trong 7 ngày | `THROW 50031` | Tạm cấm đặt |

@@ -21,6 +21,17 @@ import util.Web;
 @WebServlet(name = "LoginController", urlPatterns = {"/LoginController"})
 public class LoginController extends HttpServlet {
 
+    private static final int MAX_LOGGED_USERNAME = 100;
+
+    /** What a LOGIN_FAIL row stores: the account's own name, never what was typed (it may be a password or 2 MB of junk). */
+    public static String loginFailDiff(String knownUsername) {
+        if (knownUsername == null) {
+            return null;
+        }
+        return "username=" + (knownUsername.length() > MAX_LOGGED_USERNAME
+                ? knownUsername.substring(0, MAX_LOGGED_USERNAME) : knownUsername);
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         // a signed-in user goes to the map, everybody else gets the map with the sign-in popup
@@ -37,11 +48,13 @@ public class LoginController extends HttpServlet {
         String username = Web.trimmed(req, "username");
         String password = req.getParameter("password") == null ? "" : req.getParameter("password");
         try {
-            User user = new UserDao().checkLogin(username, password);
+            UserDao users = new UserDao();
+            User user = users.checkLogin(username, password);
             String error = null;
             if (user == null) {
                 error = "Sai tên đăng nhập hoặc mật khẩu";
-                new AuditDao().append(AuditDao.SYSTEM_USER_ID, "LOGIN_FAIL", "USER", 0, "username=" + username);
+                new AuditDao().append(AuditDao.SYSTEM_USER_ID, "LOGIN_FAIL", "USER", 0,
+                        loginFailDiff(users.findUsername(username)));
             } else if (user.isLocked()) {
                 error = "Tài khoản đang bị khóa, hãy liên hệ nhân viên vận hành để mở khóa";
             } else if (!"ACTIVE".equals(user.getStatus())) {

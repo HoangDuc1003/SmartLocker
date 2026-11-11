@@ -95,7 +95,7 @@ public class DepositDao {
     }
 
     /** The open methods a booking may choose (spec v2, Q9). */
-    public static final java.util.List<String> OPEN_METHODS = java.util.Arrays.asList("PIN", "CARD", "FINGERPRINT");
+    public static final java.util.List<String> OPEN_METHODS = java.util.Arrays.asList("PIN", "CARD", "PHONE", "FINGERPRINT");
 
     /** v2: the open method decides the code (a PIN or an enroll code); the price depends on the plan and the size only. */
     public long reserve(int userId, int slotId, int planId, String openMethod) throws SQLException {

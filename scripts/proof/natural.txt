@@ -1,0 +1,7 @@
+# Table.Column pairs that differ between two builds of the same scripts; their values print as <natural:length>.
+# selftest.ps1 fails when this list is not exactly what differs, so no line may stay here "to be safe".
+# Deposit.pin_code: seed PINs come from NEWID(). The hashes cover AuditLog.ts, which is the moment of the build.
+AuditLog.row_hash
+Deposit.pin_code
+HashChain.chain_hash
+HashChain.prev_hash

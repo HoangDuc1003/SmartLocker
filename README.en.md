@@ -11,7 +11,7 @@
 ![TestNG](https://img.shields.io/badge/TestNG-FF6C37?style=for-the-badge&logo=testng&logoColor=white)
 ![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)
 
-**A Java web application for renting lockers: book a slot on a map, open it with a PIN, an RFID card or a fingerprint,
+**A Java web application for renting lockers: book a slot on a map, open it with a PIN, an RFID card, a phone (NFC tap) or a fingerprint,
 pay from a wallet, with a real ESP32 box that talks to the server through a per-device API key.**
 
 *PRJ301 course project (FALL2026). The web interface is in Vietnamese; the submitted Vietnamese README is [README.md](./README.md).*
@@ -58,7 +58,7 @@ pay from a wallet, with a real ESP32 box that talks to the server through a per-
 - **My locker ("Tủ của tôi"):** PIN (show/hide), card or fingerprint enrollment code, hold and cancel countdowns, extension, overdue
   panel with the debt, a due reminder e-mail 15 minutes before the due time (address confirmed by a code), registered cards and fingers,
   how many times the slot was opened during the rental, history.
-- **Open many times during a rental:** the first auth stores (CHECK_IN). After that, every PIN / card / finger makes the box ask
+- **Open many times during a rental:** the first auth stores (CHECK_IN). After that, every PIN / card / phone tap / finger makes the box ask
   `A: Mo tu` / `B: Tra tu`: A opens to take or add things (the rental goes on, phase `ACCESS`), B takes everything and ends the rental
   (PICKUP); `*` or 15 seconds without a key cancels. An overdue-locked booking can only be returned.
 - **Phone page** `/k/{device_code}`: scan the QR on the box and type the PIN (5 wrong tries lock the page for 2 minutes); a rented
@@ -139,6 +139,7 @@ Or by hand, **in this order** (always `-I`; SQL files with Vietnamese text must 
 sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\01_schema.sql
 sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\02_data_v1.sql
 sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\03_v2_v3.sql
+sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\04_phone.sql
 sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_box.sql
 ```
 
@@ -147,6 +148,7 @@ sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_b
 | `sql/01_schema.sql` | Database, tables, views, triggers, `Audit_Append`, base permissions |
 | `sql/02_data_v1.sql` | Sample data (accounts, areas, banks, slots, history), scenario procedures, wallet and top-up |
 | `sql/03_v2_v3.sql` | Open methods (PIN, card, finger), lockout, `Device_Authorize`, `Enroll_*`, `AppConfig`, S/M/L sizes, size prices, Custom, 5-minute cancel, overdue, reminders, the VNU-HCM areas (approximate coordinates, editable on the Areas page) |
+| `sql/04_phone.sql` | v7: adds open method `PHONE` and the NFC tap token (`DeviceTap`, `Device_TapIssue`), removes the card deposit (`CARD_DEPOSIT`); safe to run again |
 | `sql/demo_box.sql` | The real box, the banks it manages and its physical slot ([below](#demo-hardware-one-main-box-many-slots)); safe to run again |
 | `sql/test_setup.sql` | Test accounts and prepared bookings for Postman (not demo data) |
 | `sql/test_overdue.sql` | Moves the due time of one `ACTIVE` booking into the past to demo the overdue lock, fee and escalation |
@@ -154,7 +156,8 @@ sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_b
 
 Notes:
 
-- Running `02_data_v1.sql` again restores the old booking procedures, so run `03_v2_v3.sql` after it.
+- Running `02_data_v1.sql` again restores the old booking procedures, so run `03_v2_v3.sql` and `04_phone.sql` after it.
+- Running `03_v2_v3.sql` again restores the older `Device_Authorize` and other procedures, so run `04_phone.sql` after it.
 - `03_v2_v3.sql` resets the `LOCKER-01` key to the public sample key. Create your own secret key (kept in
   `config/device-keys.local.properties`, never committed) and store its SHA-256 in the DB:
 
@@ -198,7 +201,7 @@ Shared password: `123456`. These are the accounts created by `sql/02_data_v1.sql
 ## Demo hardware: one main box, many slots
 
 There is **one real ESP32 box** (`LOCKER-01` by default) with **one slot that has a servo lock**. The box manages every slot of
-the banks attached to it: users may book any slot of those banks, and typing the PIN / swiping the card / placing the finger at the
+the banks attached to it: users may book any slot of those banks, and typing the PIN / swiping the card / tapping the phone / placing the finger at the
 box moves the booking through CHECK_IN and PICKUP as usual. The `UNLOCK` reply (of `/api/device/auth` and of the `UNLOCK` command in
 the `/api/health` heartbeat) carries a `"physical"` flag:
 
@@ -240,7 +243,7 @@ and use at the box: [firmware/SmartLocker_Online/README.md](./firmware/SmartLock
 
 | Part | ESP32 pins |
 |---|---|
-| RC522 (RFID) | SS 4, SCK 16, MOSI 17, MISO 34, RST to 3V3 |
+| PN532 (cards and NFC tap, I2C mode) | SDA 21, SCL 22 shared with the LCD, address 0x24 |
 | AS608 (fingerprint) | TX → 35, RX → 15 |
 | LCD 1602 I2C | SDA 21, SCL 22, address 0x27 |
 | Bolt servo | 32 |
@@ -248,8 +251,16 @@ and use at the box: [firmware/SmartLocker_Online/README.md](./firmware/SmartLock
 | SRF05 | TRIG 5, ECHO 18 (through a voltage divider) |
 | 4x4 keypad | Rows 13, 14, 25, 26; columns 33, 19, 23, 27 |
 
-At the box: `0-9` + `#` sends the 6-digit PIN; `B` + enrollment code enrolls a card; `C` + enrollment code enrolls a finger;
-`D` shows the IP and server status. The box never decides on its own: every PIN, card and finger goes to the server.
+At the box: `0-9` + `#` sends the 6-digit PIN; `B` + enrollment code enrolls a card; `C` + enrollment code enrolls a finger; `D` shows the IP and server status;
+swipe a card or tap a phone on the PN532. The box never decides on its own: every PIN, card and finger goes to the server.
+
+**Cards and phones on one PN532 (v7).** Each firmware loop gives the PN532 one job: read a card, then emulate an NFC tag. A phone with an HCE wallet answers with a random UID starting `08`; the firmware ignores it, so a tap never counts as an unknown card.
+
+**Phone tap.** The PN532 emulates an NFC tag that holds `/k/LOCKER-01?n=<token>`. The server
+hands the token out with the heartbeat (`"nfc":true` → `tap_path`); it changes every minute and after each use and works for
+5 minutes. A signed-in user with a booking on that box presses "Mở tủ của tôi"; the server checks the token is fresh (the
+phone is at the box) and queues the UNLOCK for the next heartbeat. The phone opens every booking of its owner on that box,
+whatever open method it was booked with. A demo box has no reader, so its page opens without a token.
 
 ---
 
@@ -257,8 +268,7 @@ At the box: `0-9` + `#` sends the 6-digit PIN; `B` + enrollment code enrolls a c
 
 Every number lives in the `AppConfig`, `SlotSize` and `StoragePlan` tables (`sql/03_v2_v3.sql`); `util.Pricing` mirrors the SQL
 (`dbo.fn_SizePrice`, `fn_HourRate`, `fn_OverdueRate`, `fn_CustomPrice`). Price = plan price × size factor (S 100%, M 130%, L 169%),
-rounded up to 100 VND. PIN, RFID card and fingerprint cost the same; a card only adds a 10,000 VND deposit (`CARD_DEPOSIT`), taken once
-when the card is enrolled at the box. Amounts in VND:
+rounded up to 100 VND. PIN, RFID card, phone and fingerprint cost the same, with no deposit (v7 dropped `CARD_DEPOSIT`; enrolling a card is free). Amounts in VND:
 
 | Plan (grace) | S | M | L |
 |---|---:|---:|---:|
@@ -313,7 +323,7 @@ sequenceDiagram
     S->>D: Deposit_Reserve (UPDLOCK, HOLDLOCK)
     D-->>S: RESERVED, wallet charged (or error 500xx)
     S-->>W: Slot held 15 minutes, PIN in My locker
-    U->>B: Type the PIN (or swipe the card, place the finger)
+    U->>B: Type the PIN (or swipe the card, place the finger, tap the phone)
     B->>S: POST /api/device/auth (X-API-Key)
     S->>D: Device_Authorize
     D-->>S: UNLOCK CHECK_IN, booking ACTIVE, due_at = first open + plan time
@@ -375,7 +385,7 @@ sh scripts/test.sh
 One class: `sh scripts/test.sh test.PricingTest`. Classes: `PricingTest`, `PricingDatabaseIntegrationTest` (compares `util.Pricing`
 with the SQL, Custom included), `AuditChainDatabaseIntegrationTest`, `RuleEngineTest`, `RiskScorerTest`, `SecurityUtilsTest`, `MailTemplatesTest`.
 
-**Postman + newman** (17 scenarios: PIN, phone, card, fingerprint, wrong code and 5-try lockout, no-show, overdue, top-up, cancel,
+**Postman + newman** (18 scenarios: PIN, phone page, NFC tap, card, fingerprint, wrong code and 5-try lockout, no-show, overdue, top-up, cancel,
 buffer, escalation, extension). Run the setup script first, because every wrong guess at the box counts toward the 5-try lockout:
 
 ```bash
@@ -429,7 +439,7 @@ SmartLocker/
 ├── firmware/      # SmartLocker_Online (ESP32 talking to the web), SmartLocker_Local
 ├── lib/           # JDBC, Gson, jBCrypt, Weka (in the WAR); TestNG, JCommander, SLF4J (tests only)
 ├── scripts/       # build-dev.sh, test.sh, set-device-key.ps1, update-tunnel-link.ps1, mail-preview.sh
-├── sql/           # 01_schema, 02_data_v1, 03_v2_v3, demo_box and the test_* scripts
+├── sql/           # 01_schema, 02_data_v1, 03_v2_v3, 04_phone, demo_box and the test_* scripts
 ├── src/java/
 │   ├── api/       # JSON APIs: devices, phone, dashboard, locker map, My locker
 │   ├── controller/# MVC2 servlets, one per page
@@ -453,11 +463,11 @@ SmartLocker/
 | `GET` | `/api/locker-map` | Areas, banks, slots, size prices, Custom (visitors may read) |
 | `GET` | `/api/my-locker` | Open booking, cards, fingers, history of the user |
 | `POST` | `/TopupController` | VietQR top-up request; staff approve or reject |
-| `POST` | `/api/health` | Box heartbeat; returns pending commands (`UNLOCK` with `physical`) |
-| `POST` | `/api/device/auth` | PIN, card or finger at the box → `UNLOCK` / `DENY` |
+| `POST` | `/api/health` | Box heartbeat; returns pending commands (`UNLOCK` with `physical`) and `tap_path` for the NFC tag |
+| `POST` | `/api/device/auth` | PIN, card or finger at the box → `UNLOCK` / `CHOOSE` / `CONFIRM_EMAIL` / `DENY` |
 | `POST` | `/api/device/enroll/start`, `/finish` | Card or finger enrollment for the open booking |
 | `POST` | `/api/locker/batch` | Open/close history of the box |
-| `POST` | `/api/kiosk/unlock` | Open from the phone page `/k/{device_code}` |
+| `POST` | `/api/kiosk/unlock` | Open from the page of the box `/k/{device_code}`: a PIN, or a phone tap (`method: PHONE`, tap token, needs a login) |
 | `GET` | `/api/dashboard`, `/api/dashboard/stats` | Dashboard and chart data |
 
 Device API contract: [docs/spec/smart-locker-v2.md](./docs/spec/smart-locker-v2.md) section 4.

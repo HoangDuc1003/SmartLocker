@@ -122,8 +122,7 @@ public class Web {
             {"Ticket not found or already closed", "Không tìm thấy phiếu hoặc phiếu đã đóng"},
             {"Alert not found or already resolved", "Không tìm thấy cảnh báo hoặc cảnh báo đã xử lý"},
             // v2 (sql/03_v2_v3.sql)
-            {"Insufficient balance for the price and the card deposit", "Số dư không đủ cho giá gói và tiền cọc thẻ. Hãy nạp thêm tiền."},
-            {"Choose how to open the locker: PIN, card or fingerprint", "Hãy chọn cách mở tủ: mật mã, thẻ từ hoặc vân tay"},
+            {"Choose how to open the locker: PIN, card, phone or fingerprint", "Hãy chọn cách mở tủ: mật mã, thẻ từ, điện thoại hoặc vân tay"},
             {"Could not create a unique code, try again", "Không tạo được mã, hãy thử lại"},
             {"This booking has nothing to enroll", "Lượt đặt này không cần đăng ký thẻ hoặc vân tay"},
             {"Fingerprint not found or not yours", "Không tìm thấy vân tay hoặc vân tay không phải của bạn"},

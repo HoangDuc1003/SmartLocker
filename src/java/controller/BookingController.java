@@ -34,7 +34,7 @@ public class BookingController extends HttpServlet {
         DepositDao dao = new DepositDao();
         try {
             if ("reserve".equals(action)) {
-                // v2: openMethod = PIN (default, keeps the old form working), CARD or FINGERPRINT
+                // v2: openMethod = PIN (default, keeps the old form working), CARD, PHONE (v7) or FINGERPRINT
                 String method = Web.trimmed(req, "openMethod").toUpperCase();
                 if (method.isEmpty()) {
                     method = "PIN";
@@ -89,6 +89,9 @@ public class BookingController extends HttpServlet {
             return "Đã giữ ngăn. Hãy tới " + box + " đăng ký "
                     + ("CARD".equals(d.getOpenMethod()) ? "thẻ từ" : "vân tay")
                     + " bằng mã " + d.getEnrollCode() + " (hạn 10 phút), rồi mở tủ trong vòng " + hold + " phút.";
+        }
+        if (d != null && "PHONE".equals(d.getOpenMethod())) {
+            return "Đã giữ ngăn. Hãy chạm điện thoại vào đầu đọc NFC của " + box + " trong vòng " + hold + " phút.";
         }
         if (d != null && "CARD".equals(d.getOpenMethod())) {
             return "Đã giữ ngăn. Hãy quẹt thẻ tại " + box + " trong vòng " + hold + " phút.";

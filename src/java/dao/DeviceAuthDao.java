@@ -40,7 +40,7 @@ public class DeviceAuthDao {
         return row;
     }
 
-    /** method = PIN, CARD or FINGERPRINT; source = DEVICE (the box itself) or PHONE (the /k page). */
+    /** method = PIN, CARD or FINGERPRINT (a phone tap is authorizeTap); source = DEVICE (the box itself) or PHONE (the /k page). */
     public Map<String, Object> authorize(int deviceId, String method, String pin, String cardUid,
                                          Integer sensorSlot, String source) throws SQLException {
         return authorize(deviceId, method, pin, cardUid, sensorSlot, source, null);
@@ -61,8 +61,21 @@ public class DeviceAuthDao {
      */
     public Map<String, Object> authorize(int deviceId, String method, String pin, String cardUid,
                                          Integer sensorSlot, String source, String intent, String confirmHash) throws SQLException {
+        return call(deviceId, method, pin, cardUid, sensorSlot, source, intent, confirmHash, null, null);
+    }
+
+    /**
+     * v7: the signed-in owner tapped the box with a phone (method PHONE). tap is the token of the box's NFC tag
+     * (Device_TapIssue); a demo box needs none. Opens any open booking of the user on this box, as a phone command.
+     */
+    public Map<String, Object> authorizeTap(int deviceId, int userId, String tap, String intent) throws SQLException {
+        return call(deviceId, "PHONE", null, null, null, "PHONE", intent, null, userId, tap);
+    }
+
+    private Map<String, Object> call(int deviceId, String method, String pin, String cardUid, Integer sensorSlot, String source,
+                                     String intent, String confirmHash, Integer userId, String tap) throws SQLException {
         try (Connection conn = DbContext.getConnection();
-             CallableStatement cs = conn.prepareCall("{call Device_Authorize(?, ?, ?, ?, ?, ?, ?, ?)}")) {
+             CallableStatement cs = conn.prepareCall("{call Device_Authorize(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}")) {
             cs.setInt(1, deviceId);
             cs.setString(2, method);
             cs.setString(3, pin);
@@ -75,7 +88,23 @@ public class DeviceAuthDao {
             cs.setString(6, source);
             cs.setString(7, intent);
             cs.setString(8, confirmHash);
+            if (userId == null) {
+                cs.setNull(9, Types.INTEGER);
+            } else {
+                cs.setInt(9, userId);
+            }
+            cs.setString(10, tap);
             return firstRow(cs);
+        }
+    }
+
+    /** The token the box writes into its NFC tag; a new one each minute and after each use (Device_TapIssue). */
+    public String tapToken(int deviceId) throws SQLException {
+        try (Connection conn = DbContext.getConnection();
+             CallableStatement cs = conn.prepareCall("{call Device_TapIssue(?)}")) {
+            cs.setInt(1, deviceId);
+            Object token = firstRow(cs).get("token");
+            return token == null ? null : token.toString().trim();
         }
     }
 
@@ -133,7 +162,7 @@ public class DeviceAuthDao {
         }
     }
 
-    /** Stores the finger slot, or the card UID and its one-time card deposit. */
+    /** Stores the finger slot, or the card UID and the box it was enrolled at. */
     public Map<String, Object> enrollFinish(int deviceId, String type, String code, Integer sensorSlot, String cardUid)
             throws SQLException {
         try (Connection conn = DbContext.getConnection();
@@ -161,10 +190,12 @@ public class DeviceAuthDao {
         }
     }
 
-    /** device_id, device_code, location, status of a box by its code (the /k/{device_code} page), or null. */
+    /** device_id, device_code, location, status, bank_code, area_name, demo of a box by its code (the /k page), or null. */
     public Map<String, Object> findDeviceByCode(String deviceCode) throws SQLException {
         // one box may manage several banks (sql/demo_box.sql): list them all, the area of the first
-        String sql = "SELECT v.device_id, v.device_code, v.location, v.status, bk.bank_code, bk.area_name "
+        String sql = "SELECT v.device_id, v.device_code, v.location, v.status, bk.bank_code, bk.area_name, "
+                + "CASE WHEN EXISTS (SELECT 1 FROM (SELECT TOP 1 p.params_json FROM OperatingProfile p WHERE p.device_id = v.device_id "
+                + "ORDER BY p.profile_id DESC) p WHERE p.params_json LIKE N'%\"demo\":true%') THEN 1 ELSE 0 END AS demo "
                 + "FROM Device v OUTER APPLY (SELECT STRING_AGG(b.bank_code, ', ') WITHIN GROUP (ORDER BY b.bank_code) AS bank_code, "
                 + "MIN(a.name) AS area_name FROM LockerBank b JOIN LockerArea a ON a.area_id = b.area_id "
                 + "WHERE b.device_id = v.device_id) bk WHERE v.device_code = ?";
@@ -181,14 +212,37 @@ public class DeviceAuthDao {
                 row.put("status", rs.getString("status"));
                 row.put("bank_code", rs.getString("bank_code"));
                 row.put("area_name", rs.getString("area_name"));
+                row.put("demo", rs.getInt("demo") == 1);   // a demo box has no NFC reader: its page opens without a tap
                 return row;
             }
         }
     }
 
-    /** The registered cards of a user (newest first). Keys: card_id, card_uid, status, deposit_amount, registered_device. */
+    /** The open booking (RESERVED or ACTIVE) of a user on a box: slot_code, bank_code, status, open_method; or null. */
+    public Map<String, Object> openBookingAt(int userId, int deviceId) throws SQLException {
+        String sql = "SELECT TOP 1 s.slot_code, b.bank_code, d.status, d.open_method FROM Deposit d "
+                + "JOIN LockerSlot s ON s.locker_slot_id = d.slot_id JOIN LockerBank b ON b.bank_id = s.bank_id "
+                + "WHERE d.user_id = ? AND b.device_id = ? AND d.status IN (N'RESERVED', N'ACTIVE')";
+        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, deviceId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("slot_code", rs.getString("slot_code"));
+                row.put("bank_code", rs.getString("bank_code"));
+                row.put("status", rs.getString("status"));
+                row.put("open_method", rs.getString("open_method"));
+                return row;
+            }
+        }
+    }
+
+    /** The registered cards of a user (newest first). Keys: card_id, card_uid, status, registered_device, registered. */
     public List<Map<String, Object>> cardsOf(int userId) throws SQLException {
-        String sql = "SELECT c.card_id, c.card_uid, c.status, c.deposit_amount, v.device_code, c.issued_at "
+        String sql = "SELECT c.card_id, c.card_uid, c.status, v.device_code, c.issued_at "
                 + "FROM UserCard c LEFT JOIN Device v ON v.device_id = c.registered_device_id "
                 + "WHERE c.user_id = ? ORDER BY c.card_id DESC";
         List<Map<String, Object>> list = new ArrayList<>();
@@ -200,9 +254,8 @@ public class DeviceAuthDao {
                     row.put("card_id", rs.getInt("card_id"));
                     row.put("card_uid", rs.getString("card_uid"));
                     row.put("status", rs.getString("status"));
-                    row.put("deposit_amount", rs.getLong("deposit_amount"));
                     row.put("registered_device", rs.getString("device_code"));
-                    row.put("registered", rs.getString("device_code") != null || rs.getLong("deposit_amount") > 0);
+                    row.put("registered", rs.getString("device_code") != null);
                     list.add(row);
                 }
             }
@@ -230,17 +283,5 @@ public class DeviceAuthDao {
             }
         }
         return list;
-    }
-
-    /** True when the user has a card enrolled at a box (or marked so by staff): no card deposit is due. */
-    public boolean hasRegisteredCard(int userId) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM UserCard WHERE user_id = ? AND status = N'ACTIVE' "
-                + "AND (registered_device_id IS NOT NULL OR deposit_amount > 0)";
-        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() && rs.getInt(1) > 0;
-            }
-        }
     }
 }

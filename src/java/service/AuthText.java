@@ -80,6 +80,9 @@ public final class AuthText {
         if ("CARD".equals(method)) {
             return "Hay quet the";
         }
+        if ("PHONE".equals(method)) {
+            return "Cham dien thoai";
+        }
         if ("FINGERPRINT".equals(method)) {
             return "Hay dung van tay";
         }
@@ -118,9 +121,18 @@ public final class AuthText {
                 return "Tủ đã quá hạn và đang bị khóa. Bạn còn nợ " + vnd(lng(row, "debt"))
                         + ". Hãy nạp tiền vào ví rồi mở lại.";
             case "DEVICE_OFFLINE":
-                return "Hộp đang mất kết nối nên chưa mở được. Hãy nhập mật mã trên bàn phím của hộp.";
+                return "Hộp đang mất kết nối nên chưa mở được. Hãy thử lại sau ít phút hoặc báo nhân viên.";
             case "METHOD_MISMATCH":
-                return "Lượt đặt này không dùng mật mã.";
+                return "Lượt đặt này không dùng mật mã. Hãy dùng đúng cách mở đã chọn, hoặc đăng nhập rồi chạm điện thoại vào hộp.";
+            case "TAP_EXPIRED":
+                return "Mã chạm đã hết hạn hoặc đã dùng. Hãy chạm điện thoại vào đầu đọc NFC của hộp lần nữa.";
+            case "NOT_SIGNED_IN":
+                return "Hãy đăng nhập để mở tủ bằng điện thoại.";
+            case "NO_BOOKING":
+                return "Bạn không có lượt đặt nào đang mở ở hộp này.";
+            case "WRONG_PLACE":
+                return "Tủ của bạn không ở hộp này mà ở ngăn " + str(row, "right_slot") + ", dãy " + str(row, "right_bank")
+                        + " (" + str(row, "right_area") + ").";
             default:
                 return "Không mở được tủ.";
         }
@@ -143,8 +155,6 @@ public final class AuthText {
                 return "The da thuoc\nnguoi khac";
             case "SENSOR_FULL":
                 return "Bo nho van tay\nda day";
-            case "INSUFFICIENT_BALANCE":
-                return "Khong du tien\ncoc the 10000d";
             case "BAD_SLOT":
                 return "Vi tri van tay\nkhong hop le";
             case "BAD_UID":

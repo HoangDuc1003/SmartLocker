@@ -21,7 +21,7 @@ Write-Host "Target Server: $Server / $Database" -ForegroundColor Yellow
 Write-Host "User:          $User" -ForegroundColor Yellow
 
 $sqlDir = Join-Path $PSScriptRoot "sql"
-$scripts = @("01_schema.sql", "02_data_v1.sql", "03_v2_v3.sql")
+$scripts = @("01_schema.sql", "02_data_v1.sql", "03_v2_v3.sql", "04_phone.sql")
 $conn = @("-S", $Server, "-U", $User, "-P", $Password)
 if ($Azure) { $conn += @("-d", $Database, "-N", "-l", "60") }
 
@@ -46,6 +46,12 @@ foreach ($s in $scripts) {
     if (-not (Test-Path $filePath)) {
         Write-Error "Script file not found: $filePath"
         exit 1
+    }
+    if ($Database -ne "PRJ301_LOCKER" -and -not $Azure) {
+        # the scripts name PRJ301_LOCKER: without this, -Database SL_X would still drop and rebuild the real database
+        $text = [IO.File]::ReadAllText($filePath, [Text.Encoding]::UTF8).Replace("PRJ301_LOCKER", $Database)
+        $filePath = Join-Path $tmpDir $s
+        [IO.File]::WriteAllText($filePath, $text, $utf8Bom)
     }
     if ($Azure) {
         $text = [IO.File]::ReadAllText($filePath, [Text.Encoding]::UTF8)

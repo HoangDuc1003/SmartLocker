@@ -425,6 +425,10 @@ canvas { display: block; max-width: 100%; }
               letter-spacing: .4em; font-variant-numeric: tabular-nums;
               font-family: Consolas, "Cascadia Mono", ui-monospace, monospace; }
 .kiosk__submit { width: 100%; min-height: 50px; margin-top: 14px; font-size: 16px; }
+/* v7: the phone tap above the PIN form */
+.kiosk__tap { margin: 0 0 18px; padding: 0 0 18px; border-bottom: 1px solid var(--border); }
+.kiosk__tap h2 { margin: 0 0 4px; font-size: 17px; line-height: 1.35; }
+.kiosk__tap .hint { margin: 0; }
 .kiosk__choice .hint { margin: 6px 2px 0; }
 .kiosk__choice .link { display: block; margin: 16px auto 0; }
 .kiosk__result { margin: 16px 0 0; padding: 12px 14px; border-radius: var(--radius); border-left: 4px solid var(--border-strong);

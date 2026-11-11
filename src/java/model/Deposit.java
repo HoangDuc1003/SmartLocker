@@ -20,7 +20,7 @@ public class Deposit {
     private java.sql.Timestamp dueAt;
     private java.sql.Timestamp endedAt;
     private int extendCount;
-    private String openMethod;   // PIN, CARD or FINGERPRINT
+    private String openMethod;   // PIN, CARD, PHONE or FINGERPRINT
     private String pinCode;      // 6 digits, only for PIN; shown to the owner only
     private String enrollCode;   // 6 digits while a card or finger still has to be enrolled at the box
     private java.sql.Timestamp enrollExpires;
