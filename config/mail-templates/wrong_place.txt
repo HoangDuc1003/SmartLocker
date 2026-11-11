@@ -1,0 +1,12 @@
+Subject: Smart Locker: bạn đang ở sai hộp tủ, ngăn {{slot_code}} ở {{area_name}}
+
+Chào {{name}},
+
+Thẻ của bạn vừa được quét tại một hộp tủ khác, nên tủ không mở. Đồ của bạn ở:
+
+Ngăn: {{slot_code}}, dãy {{bank_code}}
+Khu vực: {{area_name}}
+
+?Xem vị trí trên bản đồ (khu có tủ của bạn có hiệu ứng sóng): {{map_url}}
+
+Nếu không phải bạn quét thẻ, hãy báo nhân viên để khóa thẻ.

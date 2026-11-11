@@ -39,6 +39,9 @@ public final class AuthText {
         if ("CHOOSE".equals(str(row, "result"))) {
             return "A: Mo tu  * huy\nB: Tra tu " + str(row, "slot_code");
         }
+        if ("CONFIRM_EMAIL".equals(str(row, "result"))) {
+            return "Mo Gmail/web de\nxac nhan mo tu";
+        }
         if ("UNLOCK".equals(str(row, "result"))) {
             String slot = str(row, "slot_code");
             String phase = str(row, "phase");
@@ -48,6 +51,8 @@ public final class AuthText {
         switch (reason) {
             case "WRONG_CODE":
                 return num(row, "attempts_left") > 0 ? "Sai ma\nCon " + num(row, "attempts_left") + " lan" : "Sai ma\nKhoa 2 phut";
+            case "UNKNOWN_CARD":
+                return num(row, "attempts_left") > 0 ? "The chua dang ky" : "The chua dang ky\nKhoa 2 phut";
             case "UNKNOWN_FINGER":
                 return num(row, "attempts_left") > 0 ? "Van tay chua\ndang ky" : "Van tay chua DK\nKhoa 2 phut";
             case "LOCKED_OUT":
@@ -58,6 +63,8 @@ public final class AuthText {
                 return "Sai cho! Tu o\n" + str(row, "right_bank");
             case "METHOD_MISMATCH":
                 return "Sai cach mo\n" + oledMethod(str(row, "open_method"));
+            case "CARD_BLOCKED":
+                return "The da bi khoa";
             case "EXPIRED":
                 return "Luot dat\nda het han";
             case "ACCOUNT_LOCKED":
@@ -70,6 +77,9 @@ public final class AuthText {
     }
 
     private static String oledMethod(String method) {
+        if ("CARD".equals(method)) {
+            return "Hay quet the";
+        }
         if ("PHONE".equals(method)) {
             return "Cham dien thoai";
         }
@@ -113,7 +123,7 @@ public final class AuthText {
             case "DEVICE_OFFLINE":
                 return "Hộp đang mất kết nối nên chưa mở được. Hãy thử lại sau ít phút hoặc báo nhân viên.";
             case "METHOD_MISMATCH":
-                return "Lượt đặt này không dùng mật mã. Hãy đăng nhập rồi chạm điện thoại vào hộp.";
+                return "Lượt đặt này không dùng mật mã. Hãy dùng đúng cách mở đã chọn, hoặc đăng nhập rồi chạm điện thoại vào hộp.";
             case "TAP_EXPIRED":
                 return "Mã chạm đã hết hạn hoặc đã dùng. Hãy chạm điện thoại vào đầu đọc NFC của hộp lần nữa.";
             case "NOT_SIGNED_IN":
@@ -134,17 +144,21 @@ public final class AuthText {
             if (finish) {
                 return "Dang ky xong";
             }
-            return "Dat ngon tay\n2 lan";
+            return "CARD".equals(type) ? "Quet the" : "Dat ngon tay\n2 lan";
         }
         switch (str(row, "reason")) {
             case "BAD_CODE":
                 return num(row, "attempts_left") > 0 ? "Ma dang ky sai" : "Ma dang ky sai\nKhoa 2 phut";
             case "CODE_EXPIRED":
                 return "Ma da het han";
+            case "CARD_IN_USE":
+                return "The da thuoc\nnguoi khac";
             case "SENSOR_FULL":
                 return "Bo nho van tay\nda day";
             case "BAD_SLOT":
                 return "Vi tri van tay\nkhong hop le";
+            case "BAD_UID":
+                return "Doc the loi";
             case "LOCKED_OUT":
                 return "Tam khoa\nCho " + num(row, "retry_after_sec") + " giay";
             default:

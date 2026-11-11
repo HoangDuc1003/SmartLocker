@@ -38,8 +38,7 @@ nên cả lượt chạy mất khoảng 2 phút 40 giây.
 npm install -g newman
 newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<khóa LOCKER-01>
 ```
-Kết quả lần chạy ngày 23/10/2026: 201 request, 422 assertion, 0 lỗi. Từ v7 bộ có 203 request (xem kết quả mới nhất trong
-`docs/handoff/refactor-phone.md`).
+Kết quả lần chạy ngày 23/10/2026: 201 request, 422 assertion, 0 lỗi. Kết quả mới nhất nằm trong `docs/handoff/refactor-phone.md`.
 
 ## Thư mục v3
 Chạy theo thứ tự 11, 16, 17, 12, 13, 14, 15: kịch bản 16 và phần đầu của 17 dùng lượt bị khóa của 11, trước khi 12 nạp tiền
@@ -72,14 +71,14 @@ nên vẫn nhận `PICKUP` như trước.
 ## Lưu ý
 
 - **Sau khi chạy Postman, trước buổi demo**: chạy `sql/test_cleanup.sql`. Các script setup để lại lượt đặt của tài khoản kiểm thử trên CANT-A (hộp thật LOCKER-01): ngăn đang giữ chỗ, ngăn khóa quá hạn, ngăn đã chuyển xử lý và một cảnh báo `OVERDUE_ESCALATED` đang mở. Script cleanup đóng các lượt đó, trả ngăn về trống và xử lý cảnh báo; không đụng tài khoản demo.
-- Mọi lần đoán sai (sai mật mã, vân tay chưa đăng ký, mã đăng ký sai) đều tính vào giới hạn 5 lần trong 5 phút
+- Mọi lần đoán sai (sai mật mã, thẻ hoặc vân tay chưa đăng ký, mã đăng ký sai) đều tính vào giới hạn 5 lần trong 5 phút
   của hộp. Kịch bản 5 cần bộ đếm bằng 0, nên phải chạy `test_setup.sql` ngay trước. Thư mục v3 không có bước đoán sai;
   `OVERDUE_UNPAID` không tính là lần sai.
-- **v7, không còn thẻ từ.** Kịch bản 3 nay là chạm điện thoại: `v2card` (tên giữ nguyên) đặt cách mở `PHONE`, heartbeat gửi
-  `"nfc":true` để nhận `tap_path` (`/k/LOCKER-01?n=<mã>`), rồi `/api/kiosk/unlock` với `method: PHONE` và mã đó, trong phiên
-  đăng nhập. Mã sai hoặc đã dùng trả `TAP_EXPIRED` và **không** tính vào giới hạn 5 lần, nên kịch bản 3 vẫn chạy được
-  trước kịch bản 5. Kịch bản 8 (báo mất thẻ) và 9 (đặt bằng mật mã nhưng quẹt thẻ) đã bỏ; thư mục Auth và Enroll có thêm
-  bước kiểm tra `CARD` bị từ chối với 400. Kịch bản 7 thử lại mã đăng ký vân tay đã dùng của kịch bản 4.
+- Kịch bản 3 tạo một UID thẻ ngẫu nhiên mỗi lần chạy; kịch bản 8 báo mất chính thẻ đó.
+- **v7, thẻ không còn cọc.** Kịch bản 3 đăng ký thẻ tại hộp và kiểm tra ví không bị trừ thêm.
+- **v7, kịch bản 19: chạm điện thoại.** `v2card` đặt cách mở `PHONE`, heartbeat gửi `"nfc":true` để nhận `tap_path`
+  (`/k/LOCKER-01?n=<mã>`), rồi `/api/kiosk/unlock` với `method: PHONE` và mã đó, trong phiên đăng nhập. Mã sai hoặc đã dùng trả
+  `TAP_EXPIRED` và **không** tính vào giới hạn 5 lần, nên kịch bản này chạy được trước kịch bản 5.
 - Kịch bản 6 (v3): không đến thì không hoàn tiền; ví còn 200.000 đ trừ giá lượt đặt.
 - Phụ phí của `v3overdue` tính theo giờ bắt đầu kể từ `due_at`: chạy collection quá 50 phút sau `test_setup.sql` thì
   số giờ trễ thành 4 (các kiểm tra vẫn đúng vì tính theo số giờ API trả), nhưng nên chạy lại script ngay trước mỗi lần chạy.

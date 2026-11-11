@@ -11,7 +11,7 @@
 ![TestNG](https://img.shields.io/badge/TestNG-FF6C37?style=for-the-badge&logo=testng&logoColor=white)
 ![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)
 
-**Ứng dụng web Java để thuê tủ gửi đồ: đặt ngăn trên bản đồ, mở bằng mật mã, điện thoại (chạm NFC) hoặc vân tay, trả tiền bằng ví,
+**Ứng dụng web Java để thuê tủ gửi đồ: đặt ngăn trên bản đồ, mở bằng mật mã, thẻ từ, điện thoại (chạm NFC) hoặc vân tay, trả tiền bằng ví,
 với hộp tủ ESP32 thật giao tiếp qua API có khóa riêng cho từng hộp.**
 
 *Đồ án môn PRJ301 (FALL2026). Bản tiếng Anh: [README.en.md](./README.en.md).*
@@ -54,9 +54,9 @@ với hộp tủ ESP32 thật giao tiếp qua API có khóa riêng cho từng h�
 - **Quá hạn:** ngăn không bao giờ tự giải phóng (đồ vẫn ở trong). Quá ân hạn thì tủ khóa, mỗi giờ trễ trừ phụ phí, ví có thể âm;
   hộp từ chối mở (`OVERDUE_UNPAID`) tới khi nạp đủ tiền. Quá 48 giờ, lượt gửi được chuyển cho nhân viên kèm cảnh báo.
 - **Ví:** nạp tiền bằng mã VietQR, nhân viên duyệt rồi mới cộng tiền.
-- **Tủ của tôi:** mật mã (ẩn/hiện), mã đăng ký vân tay, đếm ngược hủy và giữ chỗ, gia hạn, khung quá hạn và số nợ,
-  email nhắc hạn 15 phút trước giờ trả (email được xác nhận bằng mã), vân tay đã đăng ký, số lần đã mở tủ trong lượt, lịch sử.
-- **Mở nhiều lần trong một lượt thuê:** lần xác thực đầu cất đồ (CHECK_IN). Sau đó mỗi lần nhập mật mã / chạm điện thoại / đặt vân tay,
+- **Tủ của tôi:** mật mã (ẩn/hiện), mã đăng ký thẻ hoặc vân tay, đếm ngược hủy và giữ chỗ, gia hạn, khung quá hạn và số nợ,
+  email nhắc hạn 15 phút trước giờ trả (email được xác nhận bằng mã), thẻ và vân tay đã đăng ký, số lần đã mở tủ trong lượt, lịch sử.
+- **Mở nhiều lần trong một lượt thuê:** lần xác thực đầu cất đồ (CHECK_IN). Sau đó mỗi lần nhập mật mã / quẹt thẻ / chạm điện thoại / đặt vân tay,
   màn hộp hỏi `A: Mo tu` / `B: Tra tu`: phím A mở để lấy hoặc cất thêm đồ (lượt vẫn chạy, phase `ACCESS`), phím B lấy hết đồ và
   kết thúc lượt (PICKUP); `*` hoặc 15 giây không bấm thì hủy. Lượt đã bị khóa quá hạn chỉ trả tủ được.
 - **Trang điện thoại** `/k/{device_code}`: quét QR dán trên hộp, nhập mật mã để mở (sai 5 lần thì trang tạm khóa 2 phút);
@@ -64,7 +64,7 @@ với hộp tủ ESP32 thật giao tiếp qua API có khóa riêng cho từng h�
 
 ### Nhân viên
 
-- **OPERATOR:** bản đồ tủ cho nhân viên, lệnh mở từ xa, duyệt nạp tiền, quản lý khu, dãy, ngăn, gói gửi, lượt gửi, người dùng.
+- **OPERATOR:** bản đồ tủ cho nhân viên, lệnh mở từ xa, duyệt nạp tiền, quản lý khu, dãy, ngăn, gói gửi, thẻ, lượt gửi, người dùng.
 - **TECHNICIAN:** cảnh báo, phiếu bảo trì, hiệu chuẩn cảm biến, trạng thái ngăn và thiết bị.
 - **AUDITOR:** chỉ đọc; kiểm tra chuỗi băm của nhật ký audit.
 - **ADMIN:** toàn quyền, gồm vai trò và phân quyền.
@@ -146,8 +146,8 @@ sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_b
 |---|---|
 | `sql/01_schema.sql` | Database, bảng, view, trigger, `Audit_Append`, quyền cơ bản |
 | `sql/02_data_v1.sql` | Dữ liệu mẫu (tài khoản, khu, dãy, ngăn, lịch sử), procedure của các tình huống, ví và nạp tiền |
-| `sql/03_v2_v3.sql` | Cách mở (mật mã, vân tay), khóa nhập sai, `Device_Authorize`, `Enroll_*`, `AppConfig`, cỡ S/M/L, giá theo cỡ, Tự chọn, hủy 5 phút, quá hạn, nhắc hạn, các khu trong ĐHQG-HCM (tọa độ gần đúng, sửa ở trang Khu vực) |
-| `sql/04_phone.sql` | v7: bỏ thẻ từ (bảng `UserCard`, cọc thẻ, xác nhận thẻ qua email), thêm cách mở `PHONE` và mã chạm NFC (`DeviceTap`, `Device_TapIssue`); chạy lại được |
+| `sql/03_v2_v3.sql` | Cách mở (mật mã, thẻ, vân tay), khóa nhập sai, `Device_Authorize`, `Enroll_*`, `AppConfig`, cỡ S/M/L, giá theo cỡ, Tự chọn, hủy 5 phút, quá hạn, nhắc hạn, các khu trong ĐHQG-HCM (tọa độ gần đúng, sửa ở trang Khu vực) |
+| `sql/04_phone.sql` | v7: thêm cách mở `PHONE` và mã chạm NFC (`DeviceTap`, `Device_TapIssue`), bỏ cọc thẻ (`CARD_DEPOSIT`); chạy lại được |
 | `sql/demo_box.sql` | Hộp thật, các dãy nó quản lý và ngăn có khóa thật ([xem dưới](#phần-cứng-demo-một-hộp-chính-nhiều-ngăn)); chạy lại được nhiều lần |
 | `sql/test_setup.sql` | Tài khoản và lượt gửi dựng sẵn cho Postman (không phải dữ liệu demo) |
 | `sql/test_overdue.sql` | Dời hạn trả của một lượt `ACTIVE` về quá khứ để demo khóa quá hạn, phụ phí, chuyển xử lý |
@@ -156,8 +156,7 @@ sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_b
 Lưu ý:
 
 - Chạy lại `02_data_v1.sql` đưa các procedure đặt tủ về bản cũ, nên khi đó phải chạy lại `03_v2_v3.sql` rồi `04_phone.sql`.
-- Sau khi đã chạy `04_phone.sql`, `03_v2_v3.sql` không chạy lại được nữa (nó cần bảng `UserCard` đã bị xóa): dựng lại cả DB
-  bằng `run_demo_db.ps1`, hoặc chỉ chạy khối cần đổi.
+- Chạy lại `03_v2_v3.sql` đưa `Device_Authorize` và các procedure khác về bản cũ, nên sau đó phải chạy lại `04_phone.sql`.
 - `03_v2_v3.sql` đặt khóa của `LOCKER-01` về khóa mẫu công khai. Tạo khóa bí mật riêng (lưu trong
   `config/device-keys.local.properties`, không commit) và ghi SHA-256 của nó vào DB:
 
@@ -201,7 +200,7 @@ Mật khẩu chung: `123456`. Bảng dưới là tài khoản do `sql/02_data_v1
 ## Phần cứng demo: một hộp chính, nhiều ngăn
 
 Chỉ có **một hộp ESP32 thật** (mặc định `LOCKER-01`) với **một ngăn có servo khóa**. Hộp này quản lý mọi ngăn của các dãy được
-gắn với nó: người dùng đặt ngăn nào của các dãy đó cũng được, nhập mật mã / chạm điện thoại / đặt vân tay tại hộp thì lượt gửi vẫn
+gắn với nó: người dùng đặt ngăn nào của các dãy đó cũng được, nhập mật mã / quẹt thẻ / chạm điện thoại / đặt vân tay tại hộp thì lượt gửi vẫn
 chuyển CHECK_IN rồi PICKUP như thường. Câu trả lời `UNLOCK` (của `/api/device/auth` và lệnh `UNLOCK` trong heartbeat `/api/health`)
 có thêm cờ `"physical"`:
 
@@ -243,7 +242,7 @@ và thao tác tại hộp: [firmware/SmartLocker_Online/README.md](./firmware/Sm
 
 | Thiết bị | Chân ESP32 |
 |---|---|
-| PN532 (NFC, chế độ I2C) | SDA 21, SCL 22 chung với LCD, địa chỉ 0x24 |
+| PN532 (đọc thẻ và chạm NFC, chế độ I2C) | SDA 21, SCL 22 chung với LCD, địa chỉ 0x24 |
 | AS608 (vân tay) | TX → 35, RX → 15 |
 | LCD 1602 I2C | SDA 21, SCL 22, địa chỉ 0x27 |
 | Servo chốt | 32 |
@@ -251,10 +250,12 @@ và thao tác tại hộp: [firmware/SmartLocker_Online/README.md](./firmware/Sm
 | SRF05 | TRIG 5, ECHO 18 (qua mạch chia áp) |
 | Keypad 4x4 | Hàng 13, 14, 25, 26; cột 33, 19, 23, 27 |
 
-Tại hộp: `0-9` + `#` gửi mật mã 6 số; `C` + mã đăng ký đăng ký vân tay; `D` xem IP và tình trạng máy chủ;
-chạm điện thoại vào PN532 để mở trang của hộp. Hộp không tự quyết định mở: mọi mật mã, vân tay đều gửi lên máy chủ.
+Tại hộp: `0-9` + `#` gửi mật mã 6 số; `B` + mã đăng ký đăng ký thẻ; `C` + mã đăng ký đăng ký vân tay; `D` xem IP và tình trạng máy chủ;
+quẹt thẻ hoặc chạm điện thoại vào PN532. Hộp không tự quyết định mở: mọi mật mã, thẻ, vân tay đều gửi lên máy chủ.
 
-**Chạm điện thoại (v7, thay thẻ từ).** PN532 giả làm một thẻ NFC chứa link `/k/LOCKER-01?n=<mã>`. Mã do máy chủ cấp qua
+**Thẻ và điện thoại trên cùng một PN532 (v7).** Mỗi vòng lặp firmware cho PN532 làm một việc: đọc thẻ, rồi giả làm thẻ NFC. Điện thoại có ví HCE trả UID ngẫu nhiên bắt đầu bằng `08`, firmware bỏ qua để lần chạm không bị tính là thẻ lạ.
+
+**Chạm điện thoại.** PN532 giả làm một thẻ NFC chứa link `/k/LOCKER-01?n=<mã>`. Mã do máy chủ cấp qua
 heartbeat (`"nfc":true` → `tap_path`), đổi mỗi phút và sau mỗi lần mở, dùng được 5 phút. Chạm điện thoại là trang của hộp mở
 ra; người đã đăng nhập và có lượt đặt ở hộp đó bấm "Mở tủ của tôi", máy chủ kiểm tra mã còn mới (đang đứng ở hộp) rồi gửi
 lệnh mở qua heartbeat. Điện thoại mở được mọi lượt đặt của chủ tài khoản ở hộp đó, dù lượt đặt chọn cách mở nào. Hộp demo
@@ -266,7 +267,7 @@ không có đầu đọc nên trang của nó mở được không cần mã.
 
 Mọi con số nằm trong bảng `AppConfig`, `SlotSize`, `StoragePlan` (`sql/03_v2_v3.sql`); `util.Pricing` tính giống hệt SQL
 (`dbo.fn_SizePrice`, `fn_HourRate`, `fn_OverdueRate`, `fn_CustomPrice`). Giá = giá gói × hệ số cỡ (S 100%, M 130%, L 169%),
-làm tròn lên 100 đ. Mật mã, điện thoại và vân tay cùng một giá, không có tiền cọc (v7 bỏ thẻ từ và cọc thẻ `CARD_DEPOSIT`).
+làm tròn lên 100 đ. Mật mã, thẻ từ, điện thoại và vân tay cùng một giá, không có tiền cọc (v7 bỏ cọc thẻ `CARD_DEPOSIT`; đăng ký thẻ miễn phí).
 
 | Gói (ân hạn) | S | M | L |
 |---|---:|---:|---:|
@@ -321,7 +322,7 @@ sequenceDiagram
     S->>D: Deposit_Reserve (UPDLOCK, HOLDLOCK)
     D-->>S: RESERVED, đã trừ ví (hoặc lỗi 500xx)
     S-->>W: Giữ chỗ 15 phút, mật mã ở Tủ của tôi
-    U->>B: Nhập mật mã (hoặc vân tay, chạm điện thoại)
+    U->>B: Nhập mật mã (hoặc quẹt thẻ, vân tay, chạm điện thoại)
     B->>S: POST /api/device/auth (X-API-Key)
     S->>D: Device_Authorize
     D-->>S: UNLOCK CHECK_IN, lượt ACTIVE, due_at = lúc mở + thời gian gói
@@ -363,7 +364,7 @@ flowchart LR
     HB["Heartbeat /api/health (3 giây)"] --> LM["LockerMonitor"]
     LM -->|"im lặng quá 90 giây"| OFF["Device_MarkOffline: hộp OFFLINE, dãy không đặt được, cảnh báo DEVICE_OFFLINE"]
     EV["Sự kiện mở/đóng /api/locker/batch"] --> RE["RuleEngine (luật cố định)"]
-    RE --> AL["Cảnh báo: SUSPECTED_SPOOF, SENSOR_FAULT, FORCED_OPEN..."]
+    RE --> AL["Cảnh báo: SUSPECTED_SPOOF, SENSOR_FAULT, LOST_CARD_USED..."]
     RS["RiskScorer (Weka)"] -.->|"chỉ cho điểm rủi ro"| AL
     AL --> T["TECHNICIAN: xem bằng chứng, phiếu bảo trì, đánh dấu đã xử lý"]
 ```
@@ -383,7 +384,7 @@ sh scripts/test.sh
 Chạy một lớp: `sh scripts/test.sh test.PricingTest`. Các lớp: `PricingTest`, `PricingDatabaseIntegrationTest` (so `util.Pricing` với
 SQL, gồm Tự chọn), `AuditChainDatabaseIntegrationTest`, `RuleEngineTest`, `RiskScorerTest`, `SecurityUtilsTest`, `MailTemplatesTest`.
 
-**Postman + newman** (15 kịch bản: mật mã, trang điện thoại, chạm NFC, vân tay, sai mã và khóa 5 lần, không đến, quá hạn, nạp tiền,
+**Postman + newman** (18 kịch bản: mật mã, trang điện thoại, chạm NFC, thẻ, vân tay, sai mã và khóa 5 lần, không đến, quá hạn, nạp tiền,
 hủy, mức đệm, chuyển xử lý, gia hạn). Chạy script dựng dữ liệu trước, vì mỗi lần đoán sai ở hộp đều tính vào khóa 5 lần:
 
 ```bash
@@ -459,11 +460,11 @@ SmartLocker/
 |---|---|---|
 | `POST` | `/BookingController` | `action=reserve` (gói `planId` hoặc Tự chọn `customMin`), `cancel` (`expectedRefund`: số popup đã hiện), `extend` |
 | `GET` | `/api/locker-map` | Khu, dãy, ngăn, giá theo cỡ, Tự chọn (khách xem được, chỉ đọc) |
-| `GET` | `/api/my-locker` | Lượt đang mở, vân tay, lịch sử của người dùng |
+| `GET` | `/api/my-locker` | Lượt đang mở, thẻ, vân tay, lịch sử của người dùng |
 | `POST` | `/TopupController` | Yêu cầu nạp tiền VietQR; nhân viên duyệt hoặc từ chối |
 | `POST` | `/api/health` | Heartbeat của hộp; trả lệnh đang chờ (`UNLOCK` có `physical`) và `tap_path` cho thẻ NFC |
-| `POST` | `/api/device/auth` | Mật mã hoặc vân tay tại hộp → `UNLOCK` / `CHOOSE` / `DENY` |
-| `POST` | `/api/device/enroll/start`, `/finish` | Đăng ký vân tay cho lượt đang mở |
+| `POST` | `/api/device/auth` | Mật mã, thẻ hoặc vân tay tại hộp → `UNLOCK` / `CHOOSE` / `CONFIRM_EMAIL` / `DENY` |
+| `POST` | `/api/device/enroll/start`, `/finish` | Đăng ký thẻ hoặc vân tay cho lượt đang mở |
 | `POST` | `/api/locker/batch` | Lịch sử mở/đóng của hộp |
 | `POST` | `/api/kiosk/unlock` | Mở từ trang của hộp `/k/{device_code}`: mật mã, hoặc chạm điện thoại (`method: PHONE`, mã chạm, cần đăng nhập) |
 | `GET` | `/api/dashboard`, `/api/dashboard/stats` | Số liệu dashboard và biểu đồ |

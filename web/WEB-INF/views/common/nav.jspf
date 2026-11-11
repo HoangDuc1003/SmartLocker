@@ -40,6 +40,7 @@
     <c:when test="${activeNav == 'banks'}"><c:set var="navTitle" value="Dãy tủ"/></c:when>
     <c:when test="${activeNav == 'slots'}"><c:set var="navTitle" value="Ngăn tủ"/></c:when>
     <c:when test="${activeNav == 'plans'}"><c:set var="navTitle" value="Gói gửi đồ"/></c:when>
+    <c:when test="${activeNav == 'cards'}"><c:set var="navTitle" value="Thẻ RFID"/></c:when>
     <c:when test="${activeNav == 'deposits'}"><c:set var="navTitle" value="Lượt gửi đồ"/></c:when>
     <c:when test="${activeNav == 'commands'}"><c:set var="navTitle" value="Mở khóa từ xa"/></c:when>
     <c:when test="${activeNav == 'calibration'}"><c:set var="navTitle" value="Hiệu chuẩn"/></c:when>
@@ -95,7 +96,7 @@
         <c:if test="${perms.contains('BOOKING:READ') or perms.contains('TOPUP:READ')}">
         <div class="side-group">
             <div class="side-group__title">Cá nhân</div>
-            <%-- v2: "Lượt đặt của tôi" became "Tủ của tôi"; the old URL redirects to it --%>
+            <%-- v2: "Lượt đặt của tôi" and "Thẻ của tôi" became one page; the old URLs redirect to it --%>
             <c:if test="${perms.contains('BOOKING:READ')}">
                 <a class="side-link ${activeNav == 'mylocker' ? 'on' : ''}" href="${ctx}/MyLockerController" ${activeNav == 'mylocker' ? 'aria-current="page"' : ''}>
                     <svg class="ico" aria-hidden="true"><use href="#i-box"/></svg>Tủ của tôi</a>
@@ -108,7 +109,7 @@
         </c:if>
 
         <c:if test="${perms.contains('AREA:READ') or perms.contains('LOCKERBANK:READ') or perms.contains('LOCKERSLOT:READ')
-                      or perms.contains('STORAGEPLAN:READ') or perms.contains('DEPOSIT:READ')
+                      or perms.contains('STORAGEPLAN:READ') or perms.contains('USERCARD:READ') or perms.contains('DEPOSIT:READ')
                       or perms.contains('COMMAND:READ') or perms.contains('CALIBRATION:READ') or perms.contains('MAINTENANCE:READ')
                       or isTopupStaff}">
         <div class="side-group">
@@ -128,6 +129,10 @@
             <c:if test="${perms.contains('STORAGEPLAN:READ')}">
                 <a class="side-link ${activeNav == 'plans' ? 'on' : ''}" href="${ctx}/StoragePlanController">
                     <svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>Gói gửi đồ</a>
+            </c:if>
+            <c:if test="${perms.contains('USERCARD:READ')}">
+                <a class="side-link ${activeNav == 'cards' ? 'on' : ''}" href="${ctx}/UserCardController">
+                    <svg class="ico" aria-hidden="true"><use href="#i-card"/></svg>Thẻ RFID</a>
             </c:if>
             <c:if test="${perms.contains('DEPOSIT:READ')}">
                 <a class="side-link ${activeNav == 'deposits' ? 'on' : ''}" href="${ctx}/DepositController">

@@ -1,0 +1,13 @@
+Subject: Smart Locker: xác nhận mở ngăn {{slot_code}}
+
+Chào {{name}},
+
+Thẻ của bạn vừa được quét tại hộp tủ để {{action}}.
+
+Ngăn: {{slot_code}}, dãy {{bank_code}}
+Khu vực: {{area_name}}
+
+Mở liên kết này rồi bấm "Xác nhận mở tủ" để hộp mở ngăn (hiệu lực {{expires_min}} phút):
+{{confirm_url}}
+
+Nếu không phải bạn quét thẻ, hãy mở liên kết và bấm "Không phải tôi", rồi báo nhân viên để khóa thẻ.

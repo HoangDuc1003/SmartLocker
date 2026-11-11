@@ -33,6 +33,7 @@
         {"LOCKERBANK:READ", "banks", "LockerBankController", "i-bank", "Dãy tủ"},
         {"LOCKERSLOT:READ", "slots", "LockerSlotController", "i-slot", "Ngăn tủ"},
         {"STORAGEPLAN:READ", "plans", "StoragePlanController", "i-clock", "Gói gửi đồ"},
+        {"USERCARD:READ", "cards", "UserCardController", "i-card", "Thẻ RFID"},
         {"DEPOSIT:READ", "deposits", "DepositController", "i-box", "Lượt gửi đồ"},
         {"COMMAND:READ", "commands", "RemoteCommandController", "i-unlock", "Mở khóa từ xa"},
         {"CALIBRATION:READ", "calibration", "CalibrationController", "i-sliders", "Hiệu chuẩn"},

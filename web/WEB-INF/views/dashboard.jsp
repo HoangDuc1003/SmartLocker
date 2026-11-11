@@ -209,7 +209,7 @@
                             <td class="r num"><fmt:formatNumber value="${s.door_open_sec}" maxFractionDigits="1"/> s</td>
                             <td class="r num"><fmt:formatNumber value="${s.weight_delta_g}" maxFractionDigits="0"/> g</td>
                             <td><span class="tag ${s.rfid_ok ? 'ok' : 'bad'}">${s.rfid_ok ? 'Hợp lệ' : 'Từ chối'}</span></td>
-                            <td><c:out value="${not empty s.open_source ? s.open_source : '–'}"/></td>
+                            <td><c:out value="${not empty s.open_source ? s.open_source : 'CARD'}"/></td>
                             <td><ui:dt value="${s.measured_at}"/></td>
                         </tr>
                     </c:forEach>

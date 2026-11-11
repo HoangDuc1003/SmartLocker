@@ -28,7 +28,7 @@ public class RuleEngine {
     }
 
     public Verdict evaluate(LockerSession s, SessionContext ctx) {
-        // 1 sensor fault, 2 remote open, 3 the behaviour labels (v7: the card is gone, so no LOST_CARD_USED and no card owner)
+        // 1 sensor fault, 2 remote open, 3 lost card, 4 the six behaviour labels
         // 1. SENSOR_FAULT: data we cannot trust, blame the sensor and not the user
         String fault = findSensorFault(s, ctx);
         if (fault != null) {
@@ -42,10 +42,21 @@ public class RuleEngine {
             return Verdict.alert("SUSPECTED_SPOOF", "reason", "remote open without a valid command")
                     .with("command_id", String.valueOf(s.getCommandId()));
         }
-        // 3. The behaviour labels
+        // 3. A card reported lost or blocked was used
+        if (ctx.getCardStatus() != null && !"ACTIVE".equals(ctx.getCardStatus())) {
+            return Verdict.alert("LOST_CARD_USED", "card_uid", s.getCardUid())
+                    .with("card_status", ctx.getCardStatus())
+                    .with("card_owner_id", String.valueOf(ctx.getCardOwnerId()));
+        }
+        // 4. The six behaviour labels
         if (!s.isRfidOk() && s.getDoorOpenSec() > 0) {
             return Verdict.alert("FORCED_OPEN", "door_open_sec", String.valueOf(s.getDoorOpenSec()))
                     .with("rfid_ok", "false");
+        }
+        if (s.isRfidOk() && ctx.getCardOwnerId() != null && ctx.getDepositOwnerId() != null
+                && !ctx.getCardOwnerId().equals(ctx.getDepositOwnerId())) {
+            return Verdict.alert("WRONG_USER", "card_owner_id", String.valueOf(ctx.getCardOwnerId()))
+                    .with("deposit_owner_id", String.valueOf(ctx.getDepositOwnerId()));
         }
         if (s.getDoorOpenSec() == 0 && Math.abs(s.getWeightDeltaG()) > SPOOF_WEIGHT_G) {
             return Verdict.alert("SUSPECTED_SPOOF", "reason", "weight changed while the door sensor reported closed")

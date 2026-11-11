@@ -56,7 +56,7 @@ flowchart TD
     Reserve -- "50035 hộp mất kết nối" --> Err
     Reserve -- "50050 / 50051 thời gian tự chọn không hợp lệ hoặc chưa có gói trọn ngày" --> Err
     Reserve -- "Thành công" --> Held["RESERVED, giữ chỗ 15 phút, đã trừ tiền"]
-    Held --> Mine["Tủ của tôi: mật mã hoặc mã đăng ký vân tay"]
+    Held --> Mine["Tủ của tôi: mật mã hoặc mã đăng ký thẻ/vân tay"]
     Mine --> Open1{"Mở lần 1 tại hộp (auth) hoặc điện thoại (/k/LOCKER-01)"}
     Open1 -- "CHECK_IN" --> Active["ACTIVE, ngăn OCCUPIED, due_at = lúc mở + thời gian của gói (hoặc custom_min)"]
     Held -- "Hủy trong 5 phút đầu" --> Cancel["CANCELLED, hoàn 100%"]
@@ -111,7 +111,7 @@ sequenceDiagram
     Api->>Db: device_id lấy từ khóa, không lấy từ body
     Db-->>Api: UNLOCK (CHECK_IN / ACCESS / PICKUP), CHOOSE hoặc DENY + reason
     Api-->>Box: message ASCII cho màn LCD, open_sec, attempts_left, retry_after_sec
-    Note over Box: CHOOSE: LCD "A: Mo tu / B: Tra tu", giữ PIN / ô vân tay vừa đọc
+    Note over Box: CHOOSE: LCD "A: Mo tu / B: Tra tu", giữ PIN / UID thẻ / ô vân tay vừa đọc
     Box->>Api: cùng body, "intent":"OPEN" (phím A) hoặc "CHECKOUT" (phím B)
     Api-->>Box: UNLOCK ACCESS (lượt vẫn ACTIVE) hoặc UNLOCK PICKUP (kết thúc lượt)
 ```
@@ -129,14 +129,14 @@ là đoán sai. Hộp hiện `A: Mo tu` / `B: Tra tu`, giữ thông tin vừa đ
 | `CHECKOUT` | `UNLOCK CHECK_IN` | `UNLOCK PICKUP` | `UNLOCK PICKUP` | `DENY OVERDUE_UNPAID` |
 
 - `ACCESS`: lượt vẫn `ACTIVE`, ngăn vẫn `OCCUPIED`, hạn trả không đổi; mỗi lần mở ghi một dòng audit `ACCESS`
-  (`{"method":"PIN"}`, `FINGERPRINT` hoặc `PHONE`). "Tủ của tôi" đếm các dòng này: "Đã mở tủ N lần".
+  (`{"method":"PIN"}`, `CARD`, `FINGERPRINT` hoặc `PHONE`). "Tủ của tôi" đếm các dòng này: "Đã mở tủ N lần".
 - Hộp mở cho `ACCESS` giống `CHECK_IN`: nhả chốt, bấm D để khóa, tự khóa sau thời gian mở cửa; vẫn theo cờ `physical`.
 - Trang điện thoại `/k/{device_code}` làm giống hệt: gửi mật mã với `ASK`, lượt đang thuê hiện hai nút "Mở tủ" / "Trả tủ",
   rồi gửi lại cùng mật mã với `OPEN` / `CHECKOUT`. Lệnh `UNLOCK` trong heartbeat có thêm `"phase"` (`CHECK_IN`, `ACCESS`,
   `PICKUP`); dòng audit `ACCESS` của điện thoại chỉ ghi khi hộp nhận lệnh. Lệnh `ACCESS` của lượt vừa bị khóa quá hạn bị bỏ
   (audit `PHONE_ACCESS_DROPPED`).
 
-- Lý do từ chối thường gặp: `WRONG_CODE`, `UNKNOWN_FINGER`, `METHOD_MISMATCH`, `LOCKED_OUT`, `TAP_EXPIRED`, `NO_BOOKING`, `WRONG_PLACE`,
+- Lý do từ chối thường gặp: `WRONG_CODE`, `UNKNOWN_CARD`, `UNKNOWN_FINGER`, `CARD_BLOCKED`, `METHOD_MISMATCH`, `LOCKED_OUT`, `TAP_EXPIRED`, `NO_BOOKING`, `WRONG_PLACE`,
   `OVERDUE_UNPAID` (v3: lượt bị khóa quá hạn và ví đang âm; trả thêm `debt` và `overdue_fee`).
 - Với lượt `ACTIVE`, `Device_Authorize` gọi `Deposit_ChargeOverdue` cho lượt đó trước khi quyết định, nên phụ phí luôn tính tới
   lúc mở, không phải chờ `LockerMonitor`. Chạy lại không thu trùng. `PICKUP` thành công trả `overdue_fee` (0 nếu đúng hạn).
@@ -163,9 +163,47 @@ thành OFFLINE trên bản đồ), giữ `"demo":false` cho hộp thật, lưu `
 không đổi khóa API, ghi nhật ký `DEMO_BOX` và in bảng dãy → hộp → ngăn vật lý. Các dãy cùng một hộp phải có mã ngăn khác
 nhau (ví dụ `CANT-A` A01–A15 và `CANT-B` B01–B12), vì hộp nhận lượt gửi theo mã ngăn; script từ chối nếu trùng.
 
-### 2.3 Chạm điện thoại (v7, thay thẻ từ)
+### 2.3 Thẻ từ và vân tay
+- Mọi cách mở (mật mã, thẻ RFID, điện thoại, vân tay) cùng một giá. Thẻ không có tiền cọc (v7): đăng ký miễn phí, thẻ được coi là đã đăng ký khi có `registered_device_id`.
+- Đăng ký tại hộp: bấm B/C, nhập mã đăng ký 6 số (hết hạn sau 10 phút, lấy mã mới ở "Tủ của tôi").
+- Báo mất thẻ: thẻ chuyển `LOST`, UID nằm trong `blocked_cards` của heartbeat; dùng lại sẽ bị `CARD_BLOCKED`.
+- Xóa vân tay: máy chủ xếp lệnh `DELETE_FP` cho hộp; nếu đang có lượt gửi bằng vân tay trên hộp đó, lượt đó nhận mã đăng ký mới.
 
-Hộp không còn đầu đọc thẻ RFID. Đầu PN532 giả làm một thẻ NFC chứa liên kết của hộp; điện thoại chạm vào thì tự mở liên kết đó.
+### 2.4 Quét thẻ, xác nhận qua Gmail, rồi mở tủ
+Áp dụng khi máy chủ có cấu hình email và chủ thẻ có địa chỉ thật (địa chỉ mẫu `@smartlocker.edu.vn` không nhận được thư nên thẻ của các tài khoản mẫu vẫn mở ngay như cũ, thiếu cấu hình email cũng vậy).
+
+```mermaid
+sequenceDiagram
+    participant Box as Hộp tủ
+    participant API as /api/device/auth
+    participant Mail as Gmail
+    participant Page as Trang /c/{token}
+    Box->>API: CARD + UID (intent OPEN, CHECKOUT, hoặc lượt RESERVED)
+    API-->>Box: CONFIRM_EMAIL, LCD "Mo Gmail/web de xac nhan mo tu"
+    Note over API: RemoteCommand trạng thái AWAITING_EMAIL, 5 phút, chỉ lưu SHA-256 của liên kết
+    API->>Mail: card_confirm, chứa liên kết một lần
+    Mail->>Page: chủ thẻ mở liên kết (GET không đổi gì)
+    Page->>API: POST approve, lệnh thành PENDING trong 2 phút
+    Box->>API: heartbeat
+    API-->>Box: UNLOCK kèm phase, lượt thuê đổi trạng thái lúc này
+```
+
+- Quét lại trong lúc chờ: không gửi thêm thư. Chọn thao tác khác (Mở tủ rồi lại Trả tủ): thư mới, liên kết cũ hết hiệu lực.
+- Bấm "Không phải tôi": lệnh hết hiệu lực, ghi `CARD_CONFIRM_REJECTED` vào nhật ký, tủ không mở.
+- Không có thư (gõ sai địa chỉ, máy chủ thư lỗi): chủ tủ đăng nhập rồi xác nhận ngay trên bản đồ, cùng một thủ tục `CardConfirm_Decide`. Nếu gửi thư lỗi, lần quét sau gửi lại thư mới.
+- Hộp mất kết nối lúc xác nhận: yêu cầu vẫn chờ, xác nhận lại được khi hộp có kết nối.
+- Thời gian chờ xác nhận không trừ vào giờ giữ chỗ: quét thẻ đúng hạn thì `hold_until` được kéo tới hết thời gian chờ, nên không bị tính là không đến.
+- Địa chỉ email được lưu như người dùng gõ, chưa có bước xác minh: gõ nhầm địa chỉ của người khác thì người đó nhận được thư và liên kết.
+
+### 2.5 Đi sai chỗ: cảnh báo trên bản đồ
+- Bản đồ (`/api/locker-map` trả `my_booking`) cho ghim khu có tủ của người dùng phát sóng và gắn nhãn "Tủ của bạn".
+- Quét thẻ ở hộp khác: `DENY` lý do `WRONG_PLACE`, LCD ghi dãy đúng, không tính vào lượt khóa 5 lần sai; chủ thẻ nhận thư `wrong_place` (tối đa một thư mỗi 10 phút) và bản đồ hiện "Bạn quét thẻ sai hộp tủ" trong 10 phút hoặc đến khi quét đúng.
+- Theo GPS (vị trí chỉ nằm trong trình duyệt, không gửi đi): đứng trong 120 m của khu khác là "Bạn đang đi sai chỗ" kèm đường nối và nút Chỉ đường; đứng đúng khu là "Bạn đến đúng chỗ rồi". GPS sai số trên 300 m thì không kết luận đúng hay sai.
+- Nền bản đồ: Mapbox khi có `config/mapbox.local.properties` (token `pk.*`); thiếu token, token sai hoặc mất mạng thì tự về Leaflet và OpenStreetMap, ghim và sóng giữ nguyên.
+
+### 2.6 Chạm điện thoại (v7)
+
+Cùng đầu PN532 đọc thẻ từ còn giả làm một thẻ NFC chứa liên kết của hộp, hai việc luân phiên trong mỗi vòng lặp của firmware. Điện thoại chạm vào thì tự mở liên kết đó. Điện thoại có ví HCE trả lời lệnh đọc thẻ bằng UID ngẫu nhiên 4 byte bắt đầu bằng `08`; firmware bỏ qua, nên lần chạm không bị tính là `UNKNOWN_CARD`.
 
 ```mermaid
 sequenceDiagram
@@ -187,7 +225,7 @@ sequenceDiagram
 ```
 
 - Cách mở `PHONE` khi đặt: không có mật mã, không phải đăng ký gì. Điện thoại của chủ tài khoản mở được **mọi** lượt đặt của
-  người đó ở hộp vừa chạm, dù lượt đặt chọn mật mã hay vân tay (đăng nhập và mã chạm mạnh hơn một mật mã 6 số).
+  người đó ở hộp vừa chạm, dù lượt đặt chọn mật mã, thẻ hay vân tay (đăng nhập và mã chạm mạnh hơn một mật mã 6 số).
 - Mã chạm chứng minh người bấm đang đứng ở hộp: ai chép liên kết mang đi thì sau 5 phút, hoặc sau một lần mở, liên kết hết tác dụng.
   `CHOOSE` không dùng mã, nên sau "Mở tủ" / "Trả tủ" mới tính một lần.
 - Mã sai, cũ hoặc đã dùng là `TAP_EXPIRED`; chưa đăng nhập là HTTP 401 `NOT_SIGNED_IN`. Không lý do nào tính vào giới hạn 5 lần
@@ -196,16 +234,6 @@ sequenceDiagram
 - Hộp demo (`"demo":true`) không có đầu đọc: trang `/k/{mã hộp}` của nó cho chủ tủ bấm "Mở tủ của tôi" không cần mã.
   Trên bản đồ, ngăn của mình có nút "Mở tủ bằng điện thoại" dẫn tới trang này.
 - Firmware gửi `"nfc":true` chỉ khi PN532 trả lời; hộp cũ không gửi thì máy chủ không cấp mã.
-
-### 2.4 Vân tay
-- Đăng ký tại hộp: bấm C, nhập mã đăng ký 6 số (hết hạn sau 10 phút, lấy mã mới ở "Tủ của tôi"), đặt cùng ngón tay 2 lần.
-- Xóa vân tay: máy chủ xếp lệnh `DELETE_FP` cho hộp; nếu đang có lượt gửi bằng vân tay trên hộp đó, lượt đó nhận mã đăng ký mới.
-
-### 2.5 Đi sai chỗ: cảnh báo trên bản đồ
-- Bản đồ (`/api/locker-map` trả `my_booking`) cho ghim khu có tủ của người dùng phát sóng và gắn nhãn "Tủ của bạn".
-- Đặt vân tay hoặc chạm điện thoại ở hộp khác: `DENY` lý do `WRONG_PLACE`, LCD (hoặc trang điện thoại) ghi ngăn và dãy đúng, không tính vào lượt khóa 5 lần sai; bản đồ hiện "Bạn mở nhầm hộp tủ" trong 10 phút hoặc đến khi mở đúng.
-- Theo GPS (vị trí chỉ nằm trong trình duyệt, không gửi đi): đứng trong 120 m của khu khác là "Bạn đang đi sai chỗ" kèm đường nối và nút Chỉ đường; đứng đúng khu là "Bạn đến đúng chỗ rồi". GPS sai số trên 300 m thì không kết luận đúng hay sai.
-- Nền bản đồ: Mapbox khi có `config/mapbox.local.properties` (token `pk.*`); thiếu token, token sai hoặc mất mạng thì tự về Leaflet và OpenStreetMap, ghim và sóng giữ nguyên.
 
 ### 2.4 Bảng tình huống
 

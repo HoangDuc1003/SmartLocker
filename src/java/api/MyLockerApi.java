@@ -21,9 +21,9 @@ import util.Web;
 
 /**
  * "Tủ của tôi" as JSON for the signed-in user (BOOKING resource): the open booking with its PIN or enroll code,
- * fingerprints, prices and the recent history. The Postman collection reads it to chain steps.
+ * cards, fingerprints, prices by open method and the recent history. The Postman collection reads it to chain steps.
  *
- * GET  -> {"username","balance","booking":{...}|null,"fingerprints":[...],"plans":[...],"history":[...]}
+ * GET  -> {"username","balance","booking":{...}|null,"cards":[...],"fingerprints":[...],"plans":[...],"history":[...]}
  * POST action=newEnrollCode&depositId=..  -> {"ok":true,"enroll_code":"123456"}
  * POST action=deleteFingerprint&fpId=..   -> {"ok":true}
  */
@@ -84,6 +84,7 @@ public class MyLockerApi extends HttpServlet {
             reply.addProperty("hold_min", config.getInt("HOLD_MIN", Pricing.HOLD_MIN));
             Deposit open = deposits.findOpenByUser(me.getUserId());
             reply.add("booking", open == null ? com.google.gson.JsonNull.INSTANCE : booking(open));
+            reply.add("cards", ApiJson.GSON.toJsonTree(auth.cardsOf(me.getUserId())));
             reply.add("fingerprints", ApiJson.GSON.toJsonTree(auth.fingerprintsOf(me.getUserId())));
             JsonArray plans = new JsonArray();
             java.util.List<dao.AppConfigDao.SlotSize> sizes = config.sizes();

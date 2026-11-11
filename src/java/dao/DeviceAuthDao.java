@@ -40,19 +40,28 @@ public class DeviceAuthDao {
         return row;
     }
 
-    /** method = PIN or FINGERPRINT; source = DEVICE (the box itself) or PHONE (the /k page). */
-    public Map<String, Object> authorize(int deviceId, String method, String pin, Integer sensorSlot, String source)
-            throws SQLException {
-        return authorize(deviceId, method, pin, sensorSlot, source, null);
+    /** method = PIN, CARD or FINGERPRINT (a phone tap is authorizeTap); source = DEVICE (the box itself) or PHONE (the /k page). */
+    public Map<String, Object> authorize(int deviceId, String method, String pin, String cardUid,
+                                         Integer sensorSlot, String source) throws SQLException {
+        return authorize(deviceId, method, pin, cardUid, sensorSlot, source, null);
     }
 
     /**
      * v6: intent = ASK (an ACTIVE booking answers CHOOSE), OPEN (UNLOCK phase ACCESS), CHECKOUT or null (PICKUP).
      * A RESERVED booking always checks in, an overdue-locked one always picks up.
      */
-    public Map<String, Object> authorize(int deviceId, String method, String pin, Integer sensorSlot, String source,
-                                         String intent) throws SQLException {
-        return call(deviceId, method, pin, sensorSlot, source, intent, null, null);
+    public Map<String, Object> authorize(int deviceId, String method, String pin, String cardUid,
+                                         Integer sensorSlot, String source, String intent) throws SQLException {
+        return authorize(deviceId, method, pin, cardUid, sensorSlot, source, intent, null);
+    }
+
+    /**
+     * confirmHash (the card at the box, when e-mail works): the owner of a card with a real address gets CONFIRM_EMAIL
+     * and the slot opens only after the link in the e-mail, which hashes to this value.
+     */
+    public Map<String, Object> authorize(int deviceId, String method, String pin, String cardUid,
+                                         Integer sensorSlot, String source, String intent, String confirmHash) throws SQLException {
+        return call(deviceId, method, pin, cardUid, sensorSlot, source, intent, confirmHash, null, null);
     }
 
     /**
@@ -60,29 +69,31 @@ public class DeviceAuthDao {
      * (Device_TapIssue); a demo box needs none. Opens any open booking of the user on this box, as a phone command.
      */
     public Map<String, Object> authorizeTap(int deviceId, int userId, String tap, String intent) throws SQLException {
-        return call(deviceId, "PHONE", null, null, "PHONE", intent, userId, tap);
+        return call(deviceId, "PHONE", null, null, null, "PHONE", intent, null, userId, tap);
     }
 
-    private Map<String, Object> call(int deviceId, String method, String pin, Integer sensorSlot, String source,
-                                     String intent, Integer userId, String tap) throws SQLException {
+    private Map<String, Object> call(int deviceId, String method, String pin, String cardUid, Integer sensorSlot, String source,
+                                     String intent, String confirmHash, Integer userId, String tap) throws SQLException {
         try (Connection conn = DbContext.getConnection();
-             CallableStatement cs = conn.prepareCall("{call Device_Authorize(?, ?, ?, ?, ?, ?, ?, ?)}")) {
+             CallableStatement cs = conn.prepareCall("{call Device_Authorize(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}")) {
             cs.setInt(1, deviceId);
             cs.setString(2, method);
             cs.setString(3, pin);
+            cs.setString(4, cardUid);
             if (sensorSlot == null) {
-                cs.setNull(4, Types.INTEGER);
+                cs.setNull(5, Types.INTEGER);
             } else {
-                cs.setInt(4, sensorSlot);
+                cs.setInt(5, sensorSlot);
             }
-            cs.setString(5, source);
-            cs.setString(6, intent);
+            cs.setString(6, source);
+            cs.setString(7, intent);
+            cs.setString(8, confirmHash);
             if (userId == null) {
-                cs.setNull(7, Types.INTEGER);
+                cs.setNull(9, Types.INTEGER);
             } else {
-                cs.setInt(7, userId);
+                cs.setInt(9, userId);
             }
-            cs.setString(8, tap);
+            cs.setString(10, tap);
             return firstRow(cs);
         }
     }
@@ -97,7 +108,50 @@ public class DeviceAuthDao {
         }
     }
 
-    /** type = FINGERPRINT (the only thing left to enroll). A finger gets a free AS608 slot in "sensor_slot". */
+    /** What a link stands for (status, phase, left_sec, slot_code, bank_code, area_name, location, device_code); empty when unknown. */
+    public Map<String, Object> confirmFind(String hash) throws SQLException {
+        try (Connection conn = DbContext.getConnection();
+             CallableStatement cs = conn.prepareCall("{call CardConfirm_Find(?)}")) {
+            cs.setString(1, hash);
+            return firstRow(cs);
+        }
+    }
+
+    /** The answer on the page behind the link. Returns OK, REJECTED, EXPIRED, DONE_BEFORE, NOT_FOUND or DEVICE_OFFLINE. */
+    public String confirmDecide(String hash, boolean approve) throws SQLException {
+        return decide(hash, approve, null);
+    }
+
+    /** The answer of the signed-in owner on the map, for when the e-mail does not come. Same results. */
+    public String confirmDecideMine(int userId, boolean approve) throws SQLException {
+        return decide(null, approve, userId);
+    }
+
+    private String decide(String hash, boolean approve, Integer userId) throws SQLException {
+        try (Connection conn = DbContext.getConnection();
+             CallableStatement cs = conn.prepareCall("{call CardConfirm_Decide(?, ?, ?)}")) {
+            cs.setString(1, hash);
+            cs.setBoolean(2, approve);
+            if (userId == null) {
+                cs.setNull(3, Types.INTEGER);
+            } else {
+                cs.setInt(3, userId);
+            }
+            return String.valueOf(firstRow(cs).get("result"));
+        }
+    }
+
+    /** The e-mail could not be sent: the owner can still answer on the map, and the next scan sends a new e-mail. */
+    public void mailFailed(long commandId) throws SQLException {
+        try (Connection conn = DbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE RemoteCommand SET confirm_hash = NULL WHERE command_id = ? AND status = N'AWAITING_EMAIL'")) {
+            ps.setLong(1, commandId);
+            ps.executeUpdate();
+        }
+    }
+
+    /** type = CARD or FINGERPRINT. A finger gets a free AS608 slot in "sensor_slot". */
     public Map<String, Object> enrollStart(int deviceId, String type, String code) throws SQLException {
         try (Connection conn = DbContext.getConnection();
              CallableStatement cs = conn.prepareCall("{call Enroll_Start(?, ?, ?)}")) {
@@ -108,10 +162,11 @@ public class DeviceAuthDao {
         }
     }
 
-    /** Stores the finger slot. */
-    public Map<String, Object> enrollFinish(int deviceId, String type, String code, Integer sensorSlot) throws SQLException {
+    /** Stores the finger slot, or the card UID and the box it was enrolled at. */
+    public Map<String, Object> enrollFinish(int deviceId, String type, String code, Integer sensorSlot, String cardUid)
+            throws SQLException {
         try (Connection conn = DbContext.getConnection();
-             CallableStatement cs = conn.prepareCall("{call Enroll_Finish(?, ?, ?, ?)}")) {
+             CallableStatement cs = conn.prepareCall("{call Enroll_Finish(?, ?, ?, ?, ?)}")) {
             cs.setInt(1, deviceId);
             cs.setString(2, type);
             cs.setString(3, code);
@@ -120,6 +175,7 @@ public class DeviceAuthDao {
             } else {
                 cs.setInt(4, sensorSlot);
             }
+            cs.setString(5, cardUid);
             return firstRow(cs);
         }
     }
@@ -182,6 +238,29 @@ public class DeviceAuthDao {
                 return row;
             }
         }
+    }
+
+    /** The registered cards of a user (newest first). Keys: card_id, card_uid, status, registered_device, registered. */
+    public List<Map<String, Object>> cardsOf(int userId) throws SQLException {
+        String sql = "SELECT c.card_id, c.card_uid, c.status, v.device_code, c.issued_at "
+                + "FROM UserCard c LEFT JOIN Device v ON v.device_id = c.registered_device_id "
+                + "WHERE c.user_id = ? ORDER BY c.card_id DESC";
+        List<Map<String, Object>> list = new ArrayList<>();
+        try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("card_id", rs.getInt("card_id"));
+                    row.put("card_uid", rs.getString("card_uid"));
+                    row.put("status", rs.getString("status"));
+                    row.put("registered_device", rs.getString("device_code"));
+                    row.put("registered", rs.getString("device_code") != null);
+                    list.add(row);
+                }
+            }
+        }
+        return list;
     }
 
     /** The ACTIVE fingerprints of a user, one per box. Keys: fp_id, device_code, sensor_slot, created_at. */

@@ -13,6 +13,8 @@ public class SessionContext {
     private boolean calibrationValid = true;
     private long uploadDelaySec;          // ingested_at minus measured_at, negative = the device clock is ahead
     private boolean commandValid;         // a REMOTE open matches a SENT command for this slot
+    private String cardStatus;            // ACTIVE, LOST, BLOCKED, or null when the card is unknown
+    private Integer cardOwnerId;
     private Integer depositOwnerId;
     private double allowedMin;            // plan + extensions + grace of the active booking, 0 = no booking
 
@@ -32,6 +34,10 @@ public class SessionContext {
     public void setUploadDelaySec(long uploadDelaySec) { this.uploadDelaySec = uploadDelaySec; }
     public boolean isCommandValid() { return commandValid; }
     public void setCommandValid(boolean commandValid) { this.commandValid = commandValid; }
+    public String getCardStatus() { return cardStatus; }
+    public void setCardStatus(String cardStatus) { this.cardStatus = cardStatus; }
+    public Integer getCardOwnerId() { return cardOwnerId; }
+    public void setCardOwnerId(Integer cardOwnerId) { this.cardOwnerId = cardOwnerId; }
     public Integer getDepositOwnerId() { return depositOwnerId; }
     public void setDepositOwnerId(Integer depositOwnerId) { this.depositOwnerId = depositOwnerId; }
     public double getAllowedMin() { return allowedMin; }

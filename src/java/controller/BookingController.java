@@ -34,7 +34,7 @@ public class BookingController extends HttpServlet {
         DepositDao dao = new DepositDao();
         try {
             if ("reserve".equals(action)) {
-                // v2: openMethod = PIN (default, keeps the old form working), PHONE (v7) or FINGERPRINT
+                // v2: openMethod = PIN (default, keeps the old form working), CARD, PHONE (v7) or FINGERPRINT
                 String method = Web.trimmed(req, "openMethod").toUpperCase();
                 if (method.isEmpty()) {
                     method = "PIN";
@@ -86,10 +86,15 @@ public class BookingController extends HttpServlet {
     private static String reservedMessage(model.Deposit d, int hold) {
         String box = d == null || d.getDeviceCode() == null ? "hộp tủ" : "hộp " + d.getDeviceCode();
         if (d != null && d.getEnrollCode() != null) {
-            return "Đã giữ ngăn. Hãy tới " + box + " đăng ký vân tay bằng mã " + d.getEnrollCode() + " (hạn 10 phút), rồi mở tủ trong vòng " + hold + " phút.";
+            return "Đã giữ ngăn. Hãy tới " + box + " đăng ký "
+                    + ("CARD".equals(d.getOpenMethod()) ? "thẻ từ" : "vân tay")
+                    + " bằng mã " + d.getEnrollCode() + " (hạn 10 phút), rồi mở tủ trong vòng " + hold + " phút.";
         }
         if (d != null && "PHONE".equals(d.getOpenMethod())) {
             return "Đã giữ ngăn. Hãy chạm điện thoại vào đầu đọc NFC của " + box + " trong vòng " + hold + " phút.";
+        }
+        if (d != null && "CARD".equals(d.getOpenMethod())) {
+            return "Đã giữ ngăn. Hãy quẹt thẻ tại " + box + " trong vòng " + hold + " phút.";
         }
         if (d != null && "FINGERPRINT".equals(d.getOpenMethod())) {
             return "Đã giữ ngăn. Hãy đặt vân tay tại " + box + " trong vòng " + hold + " phút.";

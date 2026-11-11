@@ -64,7 +64,7 @@ public class KioskApi extends HttpServlet {
             int deviceId = (Integer) device.get("device_id");
             Map<String, Object> row = phone
                     ? dao.authorizeTap(deviceId, me.getUserId(), tap, intent)
-                    : dao.authorize(deviceId, "PIN", pin, null, "PHONE", intent);
+                    : dao.authorize(deviceId, "PIN", pin, null, null, "PHONE", intent);
             JsonObject reply = DeviceAuthApi.reply(row, AuthText.phone(row));
             ApiJson.copyInt(row, "command_id", reply);
             ApiJson.write(res, 200, reply);

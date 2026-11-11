@@ -35,11 +35,11 @@ public class SecurityFilter implements Filter {
     /** Reachable without signing in. */
     private static final Set<String> PUBLIC_PATHS = new HashSet<>(Arrays.asList(
             "/favicon.ico", "/LoginController", "/RegisterController", "/LogoutController",
-            "/k", "/api/kiosk/unlock"));   // v2 phone page (a /k/* servlet has servlet path "/k"): the PIN is the secret and the box
-                                           // lockout limits guesses; v7: the phone tap also needs the signed-in owner
+            "/k", "/api/kiosk/unlock",                   // v2 phone page (a /k/* servlet has servlet path "/k"): the PIN is the secret, the box lockout limits guesses
+            "/c"));                                      // the link of the card e-mail (/c/*): the 256-bit token is the secret
     /** v4: a visitor who is not signed in may open the map (GET only); the booking forms need a login (popup on the page). */
     private static final Set<String> GUEST_PATHS = new HashSet<>(Arrays.asList("/LockerMapController", "/api/locker-map"));
-    private static final String[] PUBLIC_PREFIXES = {"/css/", "/js/", "/img/", "/k/"};
+    private static final String[] PUBLIC_PREFIXES = {"/css/", "/js/", "/img/", "/k/", "/c/"};
 
     /** The device signs with an X-API-Key header instead of a login. */
     private static final Set<String> DEVICE_API_PATHS = new HashSet<>(Arrays.asList(
@@ -62,11 +62,13 @@ public class SecurityFilter implements Filter {
         RESOURCE_BY_PATH.put("/LockerBankController", "LOCKERBANK");
         RESOURCE_BY_PATH.put("/LockerSlotController", "LOCKERSLOT");
         RESOURCE_BY_PATH.put("/StoragePlanController", "STORAGEPLAN");
+        RESOURCE_BY_PATH.put("/UserCardController", "USERCARD");
         RESOURCE_BY_PATH.put("/DepositController", "DEPOSIT");
         RESOURCE_BY_PATH.put("/RemoteCommandController", "COMMAND");
         RESOURCE_BY_PATH.put("/BookingController", "BOOKING");
         RESOURCE_BY_PATH.put("/api/my-locker", "BOOKING");
         RESOURCE_BY_PATH.put("/MyLockerController", "BOOKING");
+        RESOURCE_BY_PATH.put("/MyCardController", "MYCARD");
         RESOURCE_BY_PATH.put("/UserController", "USER");
         RESOURCE_BY_PATH.put("/RoleController", "ROLE");
         RESOURCE_BY_PATH.put("/AuditController", "AUDIT");

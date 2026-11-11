@@ -21,8 +21,9 @@ import util.Pricing;
 import util.Web;
 
 /**
- * v2 "Tủ của tôi" (spec 5.2): the open booking with its PIN or enroll code, the fingerprints and the history.
- * It replaces "Lượt đặt của tôi" (BookingController GET). Cancel and extend post to BookingController and come back here.
+ * v2 "Tủ của tôi" (spec 5.2): the open booking with its PIN or enroll code, the cards, the fingerprints and
+ * the history. It replaces "Lượt đặt của tôi" (BookingController GET) and "Thẻ của tôi" (MyCardController GET).
+ * Cancel and extend post to BookingController, report lost to MyCardController; both come back here.
  */
 @WebServlet(name = "MyLockerController", urlPatterns = {"/MyLockerController"})
 public class MyLockerController extends HttpServlet {
@@ -57,6 +58,7 @@ public class MyLockerController extends HttpServlet {
             req.setAttribute("open", open);
             req.setAttribute("history", history);
             req.setAttribute("refunds", refunds);
+            req.setAttribute("cards", auth.cardsOf(me.getUserId()));
             req.setAttribute("fingerprints", auth.fingerprintsOf(me.getUserId()));
             // v3: the rules the page counts down (cancel 5 minutes, hold 15), the wallet that may be in debt,
             // and the size of the open booking (measures, late fee of one hour)
@@ -86,6 +88,13 @@ public class MyLockerController extends HttpServlet {
         String action = Web.trimmed(req, "action");
         String anchor = "";
         try {
+            if ("cardConfirm".equals(action)) {
+                // the map answers a card scan waiting for its e-mail, for when the e-mail does not come
+                String result = new DeviceAuthDao().confirmDecideMine(me.getUserId(), "approve".equals(Web.trimmed(req, "decision")));
+                res.setContentType("application/json;charset=UTF-8");
+                res.getWriter().write("{\"result\":\"" + result + "\"}");
+                return;
+            }
             if ("newEnrollCode".equals(action)) {
                 String code = new DepositDao().newEnrollCode(Web.longParam(req, "depositId", 0), me.getUserId());
                 Web.flash(req.getSession(), "Đã tạo mã đăng ký mới " + code + ", có hạn 10 phút.", false);

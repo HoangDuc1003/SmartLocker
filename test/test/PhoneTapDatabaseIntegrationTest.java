@@ -19,7 +19,7 @@ import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 /**
- * v7 phone tap (sql/04_phone.sql): Device_TapIssue and Device_Authorize with method PHONE. Each test books a PHONE slot
+ * v7 phone tap and card (sql/04_phone.sql): Device_TapIssue, Device_Authorize with method PHONE or CARD, Enroll_Finish. Each test books a PHONE slot
  * for a user without an open booking, in one transaction that is rolled back. Skipped when the database or 04 is missing.
  */
 public class PhoneTapDatabaseIntegrationTest {
@@ -77,15 +77,17 @@ public class PhoneTapDatabaseIntegrationTest {
     }
 
     private static Map<String, Object> tap(Connection conn, int device, int user, String token, String intent) throws SQLException {
-        try (CallableStatement cs = conn.prepareCall("{call Device_Authorize(?, ?, ?, ?, ?, ?, ?, ?)}")) {
+        try (CallableStatement cs = conn.prepareCall("{call Device_Authorize(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}")) {
             cs.setInt(1, device);
             cs.setString(2, "PHONE");
             cs.setNull(3, Types.NVARCHAR);
-            cs.setNull(4, Types.INTEGER);
-            cs.setString(5, "PHONE");
-            cs.setString(6, intent);
-            cs.setInt(7, user);
-            cs.setString(8, token);
+            cs.setNull(4, Types.NVARCHAR);
+            cs.setNull(5, Types.INTEGER);
+            cs.setString(6, "PHONE");
+            cs.setString(7, intent);
+            cs.setNull(8, Types.CHAR);
+            cs.setInt(9, user);
+            cs.setString(10, token);
             return row(cs);
         }
     }
@@ -97,26 +99,31 @@ public class PhoneTapDatabaseIntegrationTest {
         }
     }
 
-    /** A user with money and no open booking; books a free slot of the device with PHONE. Returns the user id. */
     private static int bookPhone(Connection conn, int device) throws SQLException {
+        return book(conn, device, "PHONE");
+    }
+
+    /** A user with money, no open booking and no enrolled card; books a free slot of the device. Returns the user id. */
+    private static int book(Connection conn, int device, String method) throws SQLException {
         Integer user = intOrNull(conn, "SELECT TOP 1 u.user_id FROM Users u JOIN UserRole ur ON ur.user_id = u.user_id "
                 + "JOIN Roles r ON r.role_id = ur.role_id WHERE r.role_name = N'END_USER' AND u.balance >= 100000 "
                 + "AND ISNULL(u.status, N'ACTIVE') = N'ACTIVE' "
                 + "AND NOT EXISTS (SELECT 1 FROM Deposit d WHERE d.user_id = u.user_id AND d.status IN (N'RESERVED', N'ACTIVE')) "
+                + "AND NOT EXISTS (SELECT 1 FROM UserCard c WHERE c.user_id = u.user_id AND c.registered_device_id IS NOT NULL) "
                 + "AND (SELECT COUNT(*) FROM Deposit d WHERE d.user_id = u.user_id AND d.status = N'NO_SHOW' "
                 + "     AND d.reserved_at > DATEADD(DAY, -7, SYSUTCDATETIME())) < 3 ORDER BY u.user_id");
         Integer slot = intOrNull(conn, "SELECT TOP 1 s.locker_slot_id FROM LockerSlot s JOIN LockerBank b ON b.bank_id = s.bank_id "
                 + "WHERE b.device_id = " + device + " AND s.status = N'AVAILABLE' ORDER BY s.locker_slot_id");
         Integer plan = intOrNull(conn, "SELECT TOP 1 plan_id FROM StoragePlan WHERE is_active = 1 AND price > 0 ORDER BY duration_min");
         if (user == null || slot == null || plan == null) {
-            throw new SkipException("No user, free slot or plan for a PHONE booking on device " + device);
+            throw new SkipException("No user, free slot or plan for a booking on device " + device);
         }
         try (CallableStatement cs = conn.prepareCall("{call Deposit_Reserve(?, ?, ?, ?, ?)}")) {
             cs.setInt(1, user);
             cs.setInt(2, slot);
             cs.setInt(3, plan);
             cs.registerOutParameter(4, Types.BIGINT);
-            cs.setString(5, "PHONE");
+            cs.setString(5, method);
             cs.execute();
         }
         return user;
@@ -156,6 +163,60 @@ public class PhoneTapDatabaseIntegrationTest {
 
                 assertEquals(tap(conn, dev, user, t1, "ASK").get("reason"), "TAP_EXPIRED", "a used token");
                 assertNotEquals(issue(conn, dev), t1, "a new token after the use");
+            } finally {
+                conn.rollback();
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+
+    /** The card lives beside the phone: a first card enrolls at the box for free and then opens, a phone opens a CARD booking. */
+    @Test
+    public void aCardEnrollsWithoutADepositAndOpens() throws SQLException {
+        try (Connection conn = open()) {
+            Integer dev = realBox(conn);
+            if (dev == null) {
+                throw new SkipException("No real (non-demo) box with a bank");
+            }
+            conn.setAutoCommit(false);
+            try {
+                heartbeat(conn, dev);
+                int user = book(conn, dev, "CARD");
+                int balance = intOrNull(conn, "SELECT balance FROM Users WHERE user_id = " + user);
+                String code;
+                try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(
+                        "SELECT enroll_code FROM Deposit WHERE user_id = " + user + " AND status = N'RESERVED'")) {
+                    rs.next();
+                    code = rs.getString(1);
+                }
+                assertNotNull(code, "a first card needs an enroll code");
+                String uid = "E2E" + Long.toHexString(System.nanoTime()).toUpperCase();
+                uid = uid.length() > 20 ? uid.substring(0, 20) : uid;
+                try (CallableStatement cs = conn.prepareCall("{call Enroll_Finish(?, ?, ?, ?, ?)}")) {
+                    cs.setInt(1, dev);
+                    cs.setString(2, "CARD");
+                    cs.setString(3, code);
+                    cs.setNull(4, Types.INTEGER);
+                    cs.setString(5, uid);
+                    assertEquals(row(cs).get("result"), "OK");
+                }
+                assertEquals(intOrNull(conn, "SELECT balance FROM Users WHERE user_id = " + user).intValue(), balance, "no card deposit");
+                assertEquals(intOrNull(conn, "SELECT registered_device_id FROM UserCard WHERE card_uid = N'" + uid + "'"), dev);
+                assertEquals(intOrNull(conn, "SELECT deposit_amount FROM UserCard WHERE card_uid = N'" + uid + "'").intValue(), 0);
+                try (CallableStatement cs = conn.prepareCall("{call Device_Authorize(?, ?, ?, ?, ?, ?, ?)}")) {
+                    cs.setInt(1, dev);
+                    cs.setString(2, "CARD");
+                    cs.setNull(3, Types.NVARCHAR);
+                    cs.setString(4, uid);
+                    cs.setNull(5, Types.INTEGER);
+                    cs.setString(6, "DEVICE");
+                    cs.setString(7, "ASK");
+                    Map<String, Object> r = row(cs);
+                    assertEquals(r.get("result"), "UNLOCK", String.valueOf(r.get("reason")));
+                    assertEquals(r.get("phase"), "CHECK_IN");
+                }
+                Map<String, Object> tapped = tap(conn, dev, user, issue(conn, dev), "ASK");
+                assertEquals(tapped.get("result"), "CHOOSE", "the owner's phone also opens a CARD booking");
             } finally {
                 conn.rollback();
                 conn.setAutoCommit(true);

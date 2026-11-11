@@ -304,6 +304,13 @@ body.map-page {
   text-decoration: none;
 }
 
+.place-alert__do .place-alert__yes,
+.place-alert__do .place-alert__yes:hover {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-ink);
+}
+
 .place-alert__close {
   align-self: start;
 }

@@ -1,13 +1,14 @@
 ﻿-- ============================================================
--- 04_phone.sql  Smart Locker v7: the phone replaces the RFID card.
--- Run after 03_v2_v3.sql. Safe to run again, also on a live database (it keeps every booking and audit row).
---   Part A  card bookings become PHONE, the card e-mail waits expire
+-- 04_phone.sql  Smart Locker v7: the box opens with a phone tap and with an RFID card, both on one PN532.
+-- Run after 03_v2_v3.sql (and again whenever 03 is run again). Safe to run again, also on a live database.
+--   Part A  open method PHONE beside PIN, CARD and FINGERPRINT
 --   Part B  the NFC tap token (DeviceTap)
---   Part C  procedures: Device_TapIssue, Device_Authorize, Deposit_Reserve, Enroll_Finish, Auth_Log, RemoteCommand_Expire
---   Part D  the card goes: UserCard, Deposit.card_id, the card deposit, confirm_hash, CardConfirm_*
--- The box has a PN532 that emulates an NFC tag. The tag holds the link /k/{device_code}?n={token}; the token comes
--- with the heartbeat and changes every minute. A phone that taps the box opens that link, the signed-in owner presses
--- "Mở tủ", and Device_Authorize (method PHONE) checks the token is fresh: the owner stands at the box.
+--   Part C  procedures: Device_TapIssue, Auth_Log, Device_Authorize, Deposit_Reserve, Enroll_Finish
+--   Part D  no card deposit any more: a card is enrolled once registered_device_id is set
+-- The PN532 emulates an NFC tag holding the link /k/{device_code}?n={token}; the token comes with the heartbeat and
+-- changes every minute. A phone that taps the box opens that link, the signed-in owner presses "Mở tủ", and
+-- Device_Authorize (method PHONE) checks the token is fresh: the owner stands at the box.
+-- Between two emulation slices the same PN532 reads cards, which go to /api/device/auth as before.
 -- ============================================================
 USE PRJ301_LOCKER;
 GO
@@ -15,20 +16,11 @@ SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
 
--- ===== Part A. Card bookings become PHONE =====
+-- ===== Part A. Open method PHONE =====
 
--- a card scan waiting for its e-mail can no longer be answered
-UPDATE dbo.RemoteCommand SET status = N'EXPIRED' WHERE status = N'AWAITING_EMAIL';
-GO
-
--- the old check (PIN, CARD, FINGERPRINT) goes first, or the update below breaks it (error 547)
 IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_Deposit_open_method')
     ALTER TABLE dbo.Deposit DROP CONSTRAINT CK_Deposit_open_method;
-GO
--- open card bookings open with the phone of their owner; nothing is left to enroll for them
-UPDATE dbo.Deposit SET open_method = N'PHONE', enroll_code = NULL, enroll_expires = NULL
-WHERE open_method = N'CARD';
-ALTER TABLE dbo.Deposit ADD CONSTRAINT CK_Deposit_open_method CHECK (open_method IN (N'PIN', N'PHONE', N'FINGERPRINT'));
+ALTER TABLE dbo.Deposit ADD CONSTRAINT CK_Deposit_open_method CHECK (open_method IN (N'PIN', N'CARD', N'PHONE', N'FINGERPRINT'));
 GO
 
 -- ===== Part B. The NFC tap token =====
@@ -81,7 +73,7 @@ BEGIN
 END;
 GO
 
--- logs one try. Only guesses (a code or a finger nobody has) count towards the lockout of its channel.
+-- logs one try. Only guesses (a code, a card or a finger nobody has) count towards the lockout of its channel.
 CREATE OR ALTER PROCEDURE Auth_Log
     @device_id INT, @channel NVARCHAR(5), @method NVARCHAR(12), @ok BIT, @reason NVARCHAR(20), @deposit_id BIGINT,
     @left INT OUTPUT, @retry INT OUTPUT
@@ -97,12 +89,12 @@ BEGIN
       AND (reason = N'COUNTER_RESET' OR (reason = N'LOCK_START' AND method = @lock_method));
     SELECT @fails = COUNT(*) FROM AuthAttempt
     WHERE device_id = @device_id AND ok = 0
-      AND reason IN (N'WRONG_CODE', N'UNKNOWN_FINGER', N'BAD_CODE')
+      AND reason IN (N'WRONG_CODE', N'UNKNOWN_CARD', N'UNKNOWN_FINGER', N'BAD_CODE')
       AND ((@channel = N'PHONE' AND method = N'PHONE') OR (@channel <> N'PHONE' AND method NOT IN (N'PHONE', N'TAP')))
       AND at > DATEADD(MINUTE, -5, @now) AND at > ISNULL(@mark, '19000101');
     SET @left = CASE WHEN 5 - @fails < 0 THEN 0 ELSE 5 - @fails END;
     SET @retry = 0;
-    IF @ok = 0 AND @left = 0 AND @reason IN (N'WRONG_CODE', N'UNKNOWN_FINGER', N'BAD_CODE')
+    IF @ok = 0 AND @left = 0 AND @reason IN (N'WRONG_CODE', N'UNKNOWN_CARD', N'UNKNOWN_FINGER', N'BAD_CODE')
     BEGIN
         INSERT INTO AuthAttempt (device_id, at, method, ok, reason) VALUES (@device_id, @now, @lock_method, 0, N'LOCK_START');
         SET @retry = 120;
@@ -110,7 +102,7 @@ BEGIN
 END;
 GO
 
--- ===== Device_Authorize (v7: the phone tap): one decision for the keypad, the phone page and the finger =====
+-- ===== Device_Authorize (v7: the phone tap): one decision for the keypad, the phone page, the card and the finger =====
 -- First good try: RESERVED -> ACTIVE (CHECK_IN). Next good try: ACTIVE -> COMPLETED (PICKUP).
 -- @source = PHONE queues an UNLOCK instead; the booking changes when the box takes it (RemoteCommand_TakePending).
 -- @method = PHONE is the signed-in @user_id with the @tap token of the box's NFC tag (logged as TAP, never a guess,
@@ -123,8 +115,9 @@ GO
 --   OPEN             UNLOCK phase ACCESS: the booking stays ACTIVE, the slot OCCUPIED; an ACCESS audit row per open
 -- An overdue-locked booking (wallet >= 0) only checks out: every intent is PICKUP. A RESERVED one always checks in.
 CREATE OR ALTER PROCEDURE Device_Authorize
-    @device_id INT, @method NVARCHAR(12), @pin NVARCHAR(10) = NULL, @sensor_slot INT = NULL,
-    @source NVARCHAR(10) = N'DEVICE', @intent NVARCHAR(10) = NULL, @user_id INT = NULL, @tap NVARCHAR(16) = NULL
+    @device_id INT, @method NVARCHAR(12), @pin NVARCHAR(10) = NULL, @card_uid NVARCHAR(32) = NULL,
+    @sensor_slot INT = NULL, @source NVARCHAR(10) = N'DEVICE', @intent NVARCHAR(10) = NULL, @confirm_hash CHAR(64) = NULL,
+    @user_id INT = NULL, @tap NVARCHAR(16) = NULL
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
@@ -134,7 +127,9 @@ BEGIN
             @booked NVARCHAR(12), @hold DATETIME2;
     DECLARE @debt BIGINT = NULL, @fee BIGINT = NULL, @balance BIGINT;   -- v3: overdue lock
     DECLARE @locked BIT = 0, @choose BIT = 0;                         -- v6: open many times
-    DECLARE @tap_id BIGINT = NULL, @log_deposit BIGINT;               -- v7: the phone tap
+    DECLARE @confirm BIT = 0, @mail_to NVARCHAR(150) = NULL, @mail_name NVARCHAR(150) = NULL, @log_deposit BIGINT,
+            @sent_hash CHAR(64) = NULL, @waiting BIT = 0;                                       -- e-mail step
+    DECLARE @tap_id BIGINT = NULL;                                    -- v7: the phone tap
     DECLARE @right_deposit BIGINT = NULL, @right_slot NVARCHAR(20) = NULL, @right_bank NVARCHAR(20) = NULL,
             @right_area NVARCHAR(150) = NULL, @right_area_code NVARCHAR(20) = NULL;             -- the box where the booking is
     IF @method = N'PHONE' SET @source = N'PHONE';
@@ -187,6 +182,13 @@ BEGIN
             IF @tap_id IS NULL SET @reason = N'TAP_EXPIRED';   -- no tap, an old tap or one already used
         END
     END
+    ELSE IF @method = N'CARD'
+    BEGIN
+        DECLARE @card_status NVARCHAR(20);
+        SELECT @user = user_id, @card_status = status FROM UserCard WHERE card_uid = @card_uid;
+        IF @user IS NULL SET @reason = N'UNKNOWN_CARD';
+        ELSE IF @card_status <> N'ACTIVE' SET @reason = N'CARD_BLOCKED';
+    END
     ELSE IF @method = N'FINGERPRINT'
     BEGIN
         SELECT @user = user_id FROM Fingerprint
@@ -196,8 +198,8 @@ BEGIN
     ELSE
         SET @reason = N'BAD_METHOD';
 
-    -- a phone or a finger: the open booking of its owner on this box
-    IF @reason IS NULL AND @method IN (N'PHONE', N'FINGERPRINT')
+    -- a phone, a card or a finger: the open booking of its owner on this box
+    IF @reason IS NULL AND @method IN (N'PHONE', N'CARD', N'FINGERPRINT')
     BEGIN
         SELECT TOP 1 @deposit = d.deposit_id
         FROM Deposit d WITH (UPDLOCK, HOLDLOCK) JOIN LockerSlot s ON s.locker_slot_id = d.slot_id JOIN LockerBank b ON b.bank_id = s.bank_id
@@ -256,6 +258,11 @@ BEGIN
         END
     END
 
+    -- the seed accounts have made-up addresses (@smartlocker.edu.vn): no mail can reach them, so their cards open as before
+    IF @user IS NOT NULL AND @method = N'CARD'
+        SELECT @mail_to = email, @mail_name = full_name FROM Users
+        WHERE user_id = @user AND email IS NOT NULL AND email NOT LIKE N'%@smartlocker.edu.vn';
+
     IF @reason IS NULL
     BEGIN
         SET @phase = CASE WHEN @status = N'RESERVED' THEN N'CHECK_IN'
@@ -265,6 +272,42 @@ BEGIN
                           ELSE N'PICKUP' END;
         IF @phase IS NULL
             SET @choose = 1;                              -- v6: nothing opens, nothing changes, the next call says what to do
+        ELSE IF @confirm_hash IS NOT NULL AND @method = N'CARD' AND @source = N'DEVICE' AND @mail_to IS NOT NULL
+        BEGIN
+            -- nothing opens yet: the command waits for the link in the e-mail, then goes the way of a phone command.
+            -- A second scan during the wait sends no second e-mail, unless the first could not be sent (DeviceAuthDao.mailFailed
+            -- cleared its hash); another choice (OPEN after CHECKOUT) replaces the wait. A scan just after the answer, before
+            -- the box took the command (one heartbeat), gets that command too.
+            SET @confirm = 1;
+            UPDATE RemoteCommand SET status = N'EXPIRED'
+            WHERE deposit_id = @deposit AND status = N'AWAITING_EMAIL' AND (phase <> @phase OR expires_at <= @now);
+            SELECT TOP 1 @command = command_id, @sent_hash = confirm_hash,
+                   @waiting = CASE WHEN status = N'AWAITING_EMAIL' THEN 1 ELSE 0 END
+            FROM RemoteCommand
+            WHERE deposit_id = @deposit AND phase = @phase AND expires_at > @now AND status IN (N'AWAITING_EMAIL', N'PENDING')
+            ORDER BY command_id DESC;
+            IF @command IS NULL
+            BEGIN
+                INSERT INTO RemoteCommand (device_id, slot_id, action, reason, requested_by, status, expires_at, source, deposit_id,
+                                           phase, confirm_hash)
+                VALUES (@device_id, @slot_id, N'UNLOCK', N'Quét thẻ, xác nhận qua email', @user, N'AWAITING_EMAIL',
+                        DATEADD(MINUTE, 5, @now), N'PHONE', @deposit, @phase, @confirm_hash);
+                SET @command = SCOPE_IDENTITY();
+            END
+            ELSE IF @waiting = 1 AND @sent_hash IS NULL
+                UPDATE RemoteCommand SET confirm_hash = @confirm_hash, expires_at = DATEADD(MINUTE, 5, @now) WHERE command_id = @command;
+            ELSE
+                SET @mail_to = NULL;                      -- already sent
+            IF @mail_to IS NOT NULL
+            BEGIN
+                SELECT @right_bank = b.bank_code, @right_area = a.name, @right_area_code = a.area_code
+                FROM LockerSlot s JOIN LockerBank b ON b.bank_id = s.bank_id JOIN LockerArea a ON a.area_id = b.area_id
+                WHERE s.locker_slot_id = @slot_id;
+                -- the time to answer does not come out of the hold: a scan in time must not end as a no-show without a refund
+                UPDATE Deposit SET hold_until = DATEADD(MINUTE, 5, @now)
+                WHERE deposit_id = @deposit AND status = N'RESERVED' AND hold_until < DATEADD(MINUTE, 5, @now);
+            END
+        END
         ELSE IF @source = N'PHONE'
         BEGIN
             -- a second good try before the box took the first command gets the same command
@@ -308,12 +351,15 @@ BEGIN
     END
     COMMIT;
 
-    SELECT CASE WHEN @reason IS NOT NULL THEN N'DENY' WHEN @choose = 1 THEN N'CHOOSE' ELSE N'UNLOCK' END AS result,
+    SELECT CASE WHEN @reason IS NOT NULL THEN N'DENY' WHEN @choose = 1 THEN N'CHOOSE' WHEN @confirm = 1 THEN N'CONFIRM_EMAIL'
+                ELSE N'UNLOCK' END AS result,
            @phase AS phase, @reason AS reason,
            CASE WHEN @reason IS NULL OR @reason IN (N'METHOD_MISMATCH', N'EXPIRED', N'ACCOUNT_LOCKED', N'OVERDUE_UNPAID') THEN @deposit END AS deposit_id,
            CASE WHEN @reason IS NULL THEN @slot_code END AS slot_code,
            @left AS attempts_left, @retry AS retry_after_sec, @command AS command_id, @booked AS open_method,
            @debt AS debt, CASE WHEN @phase = N'PICKUP' OR @reason = N'OVERDUE_UNPAID' THEN ISNULL(@fee, 0) END AS overdue_fee,
+           -- for the server only (DeviceAuthApi sends the e-mail): never copied to the box
+           CASE WHEN @confirm = 1 OR @reason = N'WRONG_PLACE' THEN @mail_to END AS mail_to, @mail_name AS mail_name,
            @right_deposit AS right_deposit, @right_slot AS right_slot, @right_bank AS right_bank,
            @right_area AS right_area, @right_area_code AS right_area_code;
 END;
@@ -323,6 +369,7 @@ GO
 
 -- v3: price by size; after paying, BOOKING_BUFFER (10,000 VND) must stay in the wallet. The late fee of the size is fixed now.
 -- v7: PHONE needs nothing at the box (no PIN, no enrollment): the owner taps the box with a signed-in phone.
+-- A card has no deposit any more: a first card only gets an enroll code.
 -- "Tự chọn": @custom_min (whole hours or whole days, priced by fn_CustomPrice) replaces @plan_id; the booking
 -- keeps the longest active plan not longer than it (the day pass for days) for its grace time, and its minutes.
 CREATE OR ALTER PROCEDURE Deposit_Reserve
@@ -331,8 +378,8 @@ CREATE OR ALTER PROCEDURE Deposit_Reserve
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
-    IF @open_method IS NULL OR @open_method NOT IN (N'PIN', N'PHONE', N'FINGERPRINT')
-        THROW 50042, N'Choose how to open the locker: PIN, phone or fingerprint', 1;
+    IF @open_method IS NULL OR @open_method NOT IN (N'PIN', N'CARD', N'PHONE', N'FINGERPRINT')
+        THROW 50042, N'Choose how to open the locker: PIN, card, phone or fingerprint', 1;
     IF @custom_min IS NOT NULL AND NOT (
            (@custom_min % 60 = 0 AND @custom_min < 1440
             AND @custom_min BETWEEN 60 AND 60 * ISNULL(dbo.fn_Config(N'CUSTOM_MAX_HOURS'), 23))
@@ -350,6 +397,9 @@ BEGIN
     SELECT @device_id = b.device_id, @pct = ISNULL(z.price_pct, 100)
     FROM LockerSlot s JOIN LockerBank b ON b.bank_id = s.bank_id LEFT JOIN SlotSize z ON z.size_code = s.size_code
     WHERE s.locker_slot_id = @slot_id;
+    -- a card counts once it was enrolled at a box
+    DECLARE @card_id INT = (SELECT TOP 1 card_id FROM UserCard WHERE user_id = @user_id AND status = N'ACTIVE'
+                            AND registered_device_id IS NOT NULL ORDER BY card_id DESC);
     DECLARE @has_finger BIT = CASE WHEN EXISTS (SELECT 1 FROM Fingerprint WHERE user_id = @user_id
                                    AND device_id = @device_id AND status = N'ACTIVE') THEN 1 ELSE 0 END;
     DECLARE @buffer BIGINT = ISNULL(dbo.fn_Config(N'BOOKING_BUFFER'), 0);
@@ -403,12 +453,12 @@ BEGIN
 
         IF @open_method = N'PIN'
             EXEC Code_NewSix @pin OUTPUT;
-        IF @open_method = N'FINGERPRINT' AND @has_finger = 0
+        IF (@open_method = N'CARD' AND @card_id IS NULL) OR (@open_method = N'FINGERPRINT' AND @has_finger = 0)
             EXEC Code_NewSix @enroll OUTPUT;
 
-        INSERT INTO Deposit (user_id, slot_id, plan_id, paid_amount, status, hold_until,
+        INSERT INTO Deposit (user_id, slot_id, plan_id, card_id, paid_amount, status, hold_until,
                              open_method, pin_code, enroll_code, enroll_expires, size_pct, overdue_rate, custom_min)
-        VALUES (@user_id, @slot_id, @plan_id, @price, N'RESERVED',
+        VALUES (@user_id, @slot_id, @plan_id, CASE WHEN @open_method = N'CARD' THEN @card_id END, @price, N'RESERVED',
                 DATEADD(MINUTE, @hold, SYSUTCDATETIME()), @open_method, @pin, @enroll,
                 CASE WHEN @enroll IS NOT NULL THEN DATEADD(MINUTE, 10, SYSUTCDATETIME()) END,
                 @pct, dbo.fn_OverdueRate(@pct), @custom_min);
@@ -425,13 +475,13 @@ BEGIN
 END;
 GO
 
--- a finger: stores the template slot (v7: the card is gone, FINGERPRINT is the only thing to enroll)
+-- a finger: stores the template slot. A card: stores the UID and the box it was enrolled at (v7: no card deposit).
 CREATE OR ALTER PROCEDURE Enroll_Finish
-    @device_id INT, @type NVARCHAR(12), @code NVARCHAR(10), @sensor_slot INT = NULL
+    @device_id INT, @type NVARCHAR(12), @code NVARCHAR(10), @sensor_slot INT = NULL, @card_uid NVARCHAR(32) = NULL
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
-    DECLARE @deposit BIGINT, @user INT, @reason NVARCHAR(20), @left INT = 5, @retry INT = 0;
+    DECLARE @deposit BIGINT, @user INT, @reason NVARCHAR(20), @left INT = 5, @retry INT = 0, @card_id INT = NULL;
     DECLARE @lock_name NVARCHAR(40) = CONCAT(N'auth-device-', @device_id);
     BEGIN TRAN;
     EXEC sp_getapplock @Resource = @lock_name, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 10000;
@@ -460,8 +510,27 @@ BEGIN
             EXEC Audit_Append @user, N'ENROLL_FINGER', N'DEPOSIT', @deposit, @sensor_slot;
         END
     END
-    ELSE IF @reason IS NULL
-        SET @reason = N'BAD_CODE';
+    ELSE IF @reason IS NULL AND @type = N'CARD'
+    BEGIN
+        DECLARE @owner INT, @owner_status NVARCHAR(20);
+        SELECT @card_id = card_id, @owner = user_id, @owner_status = status FROM UserCard WHERE card_uid = @card_uid;
+        IF @card_uid IS NULL OR LEN(@card_uid) < 4
+            SET @reason = N'BAD_UID';
+        ELSE IF @owner IS NOT NULL AND (@owner <> @user OR @owner_status <> N'ACTIVE')
+            SET @reason = N'CARD_IN_USE';
+        ELSE
+        BEGIN
+            IF @card_id IS NULL
+            BEGIN
+                INSERT INTO UserCard (card_uid, user_id, registered_device_id) VALUES (@card_uid, @user, @device_id);
+                SET @card_id = SCOPE_IDENTITY();
+            END
+            ELSE
+                UPDATE UserCard SET registered_device_id = @device_id WHERE card_id = @card_id;
+            UPDATE Deposit SET card_id = @card_id WHERE deposit_id = @deposit;
+            EXEC Audit_Append @user, N'ENROLL_CARD', N'USERCARD', @card_id, @device_id;
+        END
+    END
     IF @reason IS NULL
         UPDATE Deposit SET enroll_code = NULL, enroll_expires = NULL WHERE deposit_id = @deposit;
 
@@ -474,49 +543,13 @@ BEGIN
     END
     COMMIT;
     SELECT CASE WHEN @reason IS NULL THEN N'OK' ELSE N'ERROR' END AS result, @reason AS reason,
-           @left AS attempts_left, @retry AS retry_after_sec;
+           @card_id AS card_id, @left AS attempts_left, @retry AS retry_after_sec;
 END;
 GO
 
--- only those not yet on the device: a SENT command waits for its session
-CREATE OR ALTER PROCEDURE RemoteCommand_Expire
-AS
-BEGIN
-    SET NOCOUNT ON;
-    UPDATE RemoteCommand SET status = N'EXPIRED'
-    WHERE status = N'PENDING' AND expires_at < SYSUTCDATETIME();
-END;
-GO
-
--- ===== Part D. The card objects go, after the procedures that used them were replaced =====
--- (a run stopped before this point leaves the old objects in place and the new procedures working)
-
-IF COL_LENGTH('dbo.RemoteCommand', 'confirm_hash') IS NOT NULL
-    ALTER TABLE dbo.RemoteCommand DROP COLUMN confirm_hash;
-GO
-
-DROP PROCEDURE IF EXISTS dbo.CardConfirm_Find, dbo.CardConfirm_Decide, dbo.UserCard_Replace, dbo.UserCard_ReportLost;
-GO
-
--- Deposit.card_id and its foreign key (an auto-generated name), then the table itself
-DECLARE @fk SYSNAME, @sql NVARCHAR(400);
-SELECT @fk = fk.name FROM sys.foreign_keys fk
-JOIN sys.foreign_key_columns c ON c.constraint_object_id = fk.object_id
-WHERE fk.parent_object_id = OBJECT_ID(N'dbo.Deposit') AND COL_NAME(c.parent_object_id, c.parent_column_id) = N'card_id';
-IF @fk IS NOT NULL
-BEGIN
-    SET @sql = N'ALTER TABLE dbo.Deposit DROP CONSTRAINT ' + QUOTENAME(@fk);
-    EXEC sp_executesql @sql;
-END
-IF COL_LENGTH('dbo.Deposit', 'card_id') IS NOT NULL
-    ALTER TABLE dbo.Deposit DROP COLUMN card_id;
-GO
-DROP TABLE IF EXISTS dbo.UserCard;
-GO
+-- ===== Part D. No card deposit =====
 
 DELETE FROM dbo.AppConfig WHERE config_key = N'CARD_DEPOSIT';
-DELETE rp FROM dbo.RolePerm rp JOIN dbo.Permissions p ON p.perm_id = rp.perm_id WHERE p.resource IN (N'USERCARD', N'MYCARD');
-DELETE FROM dbo.Permissions WHERE resource IN (N'USERCARD', N'MYCARD');
 GO
 
 SELECT open_method, COUNT(*) AS bookings FROM dbo.Deposit GROUP BY open_method ORDER BY open_method;

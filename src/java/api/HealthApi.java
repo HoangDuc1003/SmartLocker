@@ -2,9 +2,11 @@ package api;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import dao.DepositDao;
 import dao.DeviceAuthDao;
 import dao.DeviceDao;
 import dao.RemoteCommandDao;
+import dao.UserCardDao;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map;
@@ -25,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
  *                         "phase":"ACCESS"},   (v6: phone opens carry CHECK_IN, ACCESS or PICKUP; staff opens have no phase)
  *                        {"command_id":16,"action":"DELETE_FP","sensor_slot":7}],
  *            "server_time":"2026-10-17 07:03:00",
+ *            "blocked_cards":["04A1B2C3"], "reserved":[{"slot_code":"A02","card_uid":"0499AABB"}],   (v1 keys, kept for ScenarioSender)
  *            "tap_path":"/k/LOCKER-01?n=Ab3dEf7hJk2m"}   (only with "nfc":true: the box writes base URL + this path into its NFC tag)
  * v2 checks in through /api/device/auth, so "slots" of the v1 body is ignored.
  */
@@ -93,6 +96,8 @@ public class HealthApi extends HttpServlet {
             reply.addProperty("interval_sec", INTERVAL_SEC);
             reply.add("commands", commands);
             reply.addProperty("server_time", serverTime());
+            reply.add("blocked_cards", ApiJson.COMPACT.toJsonTree(new UserCardDao().blockedUids()));          // case 3, v1
+            reply.add("reserved", ApiJson.COMPACT.toJsonTree(new DepositDao().reservedFor(deviceId)));         // case 4, v1
             boolean nfc = body.has("nfc") && body.get("nfc").isJsonPrimitive()
                     && body.get("nfc").getAsJsonPrimitive().isBoolean() && body.get("nfc").getAsBoolean();
             if (nfc) {

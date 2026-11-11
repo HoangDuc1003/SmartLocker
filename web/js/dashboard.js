@@ -130,7 +130,7 @@
                 '<td class="r num">' + door.toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' s</td>' +
                 '<td class="r num">' + (w > 0 ? '+' : '') + Math.round(w).toLocaleString('vi-VN') + ' g</td>' +
                 '<td><span class="tag ' + (ok ? 'ok' : 'bad') + '">' + (ok ? 'Hợp lệ' : 'Từ chối') + '</span></td>' +
-                '<td>' + esc(s.open_source || '–') + '</td>' +
+                '<td>' + esc(s.open_source || 'CARD') + '</td>' +
                 '<td>' + esc(fmtTime(s.measured_at)) + '</td></tr>';
         }).join('');
         applySessionFilter();

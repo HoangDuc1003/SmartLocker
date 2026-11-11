@@ -18,6 +18,7 @@ import java.util.TimeZone;
  *   heartbeat  case 1: 6 beats, then silence; the device turns OFFLINE about 60 s later
  *   remote     case 2: click Remote unlock on slot A01 in the web first
  *   spoof      case 2: a REMOTE open with a command the server never issued
+ *   lostcard   case 3: report card 04A1B2C3 lost in the web first
  *   checkin    case 4: reserve A04 in the web, then run this within 15 minutes
  *   sensor     case 5: a weight no real slot can have
  */
@@ -26,7 +27,7 @@ public class ScenarioSender {
     private static final String BASE_URL = "http://localhost:8080/SmartLocker/api";
     // LOCKER-01 has a secret key (scripts/set-device-key.ps1): -Dsmartlocker.apiKey=..., else the local key file
     private static final String API_KEY = DeviceKey.locker01();
-    private static final String SCENARIO = "remote";   // heartbeat | remote | spoof | checkin | sensor
+    private static final String SCENARIO = "remote";   // heartbeat | remote | spoof | lostcard | checkin | sensor
 
     // a new range of numbers on every run, so UNIQUE(device_id, device_seq) never drops our sessions
     private static int seq = (int) (System.currentTimeMillis() / 1000);
@@ -64,6 +65,10 @@ public class ScenarioSender {
                 System.out.println(postBatch(s));
                 break;
             }
+            case "lostcard":    // case 3: report card 04A1B2C3 lost in the web first
+                System.out.println(post("/health", heartbeat("A01", false)));   // blocked_cards lists it now
+                System.out.println(postBatch(session("A01", "04A1B2C3", true, 6, 2, 30)));
+                break;
             case "checkin":     // case 4: reserve A04 in the web, then run this within the hold time
                 System.out.println(post("/health", heartbeat("A04", true)));
                 break;

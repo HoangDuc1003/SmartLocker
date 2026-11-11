@@ -6,8 +6,8 @@ package util;
  * PricingDatabaseIntegrationTest compares the two. The numbers themselves (5 minutes, 10,000 VND...) live in
  * the AppConfig table; the constants below are only the defaults the tests use.
  *
- * Price of a booking: plan price x size factor, rounded up to 100 VND. Every open method (PIN, phone, finger)
- * costs the same.
+ * Price of a booking: plan price x size factor, rounded up to 100 VND. Every open method (PIN, card, phone, finger)
+ * costs the same, with no card deposit.
  */
 public final class Pricing {
 
