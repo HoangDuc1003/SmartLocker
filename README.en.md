@@ -49,7 +49,10 @@ pay from a wallet, with a real ESP32 box that talks to the server through a per-
 - **Clear booking:** a confirm popup shows the amount taken now, the balance left, the cancel rule and the late fee. The slot is held
   15 minutes; after booking the wallet must keep at least 10,000 VND for late fees.
 - **Cancel:** a full refund in the first 5 minutes; after that, until the 15-minute hold ends, a cancel still works and gives back 50%
-  (so the slot frees up early for someone else). No-show after the hold: no refund; 3 no-shows in 7 days block booking for a while.
+  (so the slot frees up early for someone else). When the hold ends the booking **checks in by itself** (v7.1, `sql/05_auto_checkin.sql`):
+  no more cancel, the slot stays locked for its owner, who may come early, late or never and opens it any time in the paid time
+  (counted from the auto check-in); nothing is refunded. A booking that started by itself and was never opened ends at its due time
+  (`NO_SHOW`), the slot is free again and no late fee is charged; 3 of those in 7 days block booking for a while.
 - **Extension:** up to 3 times, each started hour at the size's hourly rate.
 - **Overdue:** a slot is never freed on its own (the user's things are inside). After the grace period the slot locks, each late hour
   is charged, and the wallet may go negative; the box refuses to open (`OVERDUE_UNPAID`) until the debt is paid. After 48 hours the
@@ -140,6 +143,7 @@ sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\01_schema.sql
 sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\02_data_v1.sql
 sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\03_v2_v3.sql
 sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\04_phone.sql
+sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\05_auto_checkin.sql
 sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_box.sql
 ```
 
@@ -149,6 +153,7 @@ sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_b
 | `sql/02_data_v1.sql` | Sample data (accounts, areas, banks, slots, history), scenario procedures, wallet and top-up |
 | `sql/03_v2_v3.sql` | Open methods (PIN, card, finger), lockout, `Device_Authorize`, `Enroll_*`, `AppConfig`, S/M/L sizes, size prices, Custom, 5-minute cancel, overdue, reminders, the VNU-HCM areas (approximate coordinates, editable on the Areas page) |
 | `sql/04_phone.sql` | v7: adds open method `PHONE` and the NFC tap token (`DeviceTap`, `Device_TapIssue`), removes the card deposit (`CARD_DEPOSIT`); safe to run again |
+| `sql/05_auto_checkin.sql` | v7.1: the booking checks in by itself when the 15-minute hold ends instead of becoming `NO_SHOW` (`Deposit_ExpireNoShow`, `Deposit_ExpireOverdue`, a patch of `Device_Authorize`); safe to run again, runs after 03/04 |
 | `sql/demo_box.sql` | The real box, the banks it manages and its physical slot ([below](#demo-hardware-one-main-box-many-slots)); safe to run again |
 | `sql/test_setup.sql` | Test accounts and prepared bookings for Postman (not demo data) |
 | `sql/test_overdue.sql` | Moves the due time of one `ACTIVE` booking into the past to demo the overdue lock, fee and escalation |
@@ -298,8 +303,7 @@ rounded up to 100 VND. PIN, RFID card, phone and fingerprint cost the same, with
 | 7 days (80%) | 140,000 | 182,000 | 236,600 |
 
 Other rules (`AppConfig`): 15-minute hold (`HOLD_MIN`), full refund within 5 minutes (`CANCEL_FREE_MIN`), 50% after that until the hold ends, rounded down to 100 VND
-(`CANCEL_LATE_REFUND_PCT`), 0% refund on no-show
-(`NO_SHOW_REFUND_PCT`), 10,000 VND minimum left after booking (`BOOKING_BUFFER`), reminder 15 minutes before due (`DUE_REMINDER_MIN`),
+(`CANCEL_LATE_REFUND_PCT`), no refund for a no-show (v7.1: the booking starts by itself, `NO_SHOW_REFUND_PCT` is unused), 10,000 VND minimum left after booking (`BOOKING_BUFFER`), reminder 15 minutes before due (`DUE_REMINDER_MIN`),
 escalation after 48 hours (`ESCALATE_HOURS`). To change a number, change both the SQL and `util.Pricing`, then run `PricingDatabaseIntegrationTest`.
 
 ---

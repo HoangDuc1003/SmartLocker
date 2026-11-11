@@ -53,7 +53,7 @@ IP laptop: `ipconfig` → mục đang dùng (Wi-Fi, hoặc "Local Area Connectio
    | AS608 | TX → 35, RX → 15 (tắt bằng `USE_FINGERPRINT = false` nếu cảm biến lỗi) |
    | LCD 1602 I2C | SDA 21, SCL 22, địa chỉ 0x27 (một số module là 0x3F) |
    | Servo chốt | 32 (khóa 0°, mở 85°) |
-   | Servo cửa | 2 (đóng 0°, mở 180°) |
+   | Servo kéo tủ | 2 (đóng 0°, kéo ra 70°). Đã bật trong sketch (`USE_DOOR_SERVO = true`, `DOOR_OPEN_DEG = 70`). Chân 2 là chân khởi động của ESP32: cắm dây tín hiệu servo sau khi nạp xong. Cấp nguồn servo riêng 5 V, chung GND với ESP32 |
    | SRF05 | TRIG 5, ECHO 18 qua mạch chia áp |
    | Keypad | R1–R4: 13, 14, 25, 26; C1–C4: 33, 19, 23, 27 |
 
@@ -88,7 +88,7 @@ tự khóa như lần cất đồ), bấm `B` gửi lại với `"intent":"CHECK
 (ví âm thì từ chối `OVERDUE_UNPAID`). Máy chủ cũ bỏ qua `intent` và trả PICKUP như trước. Lệnh `UNLOCK` trong heartbeat có
 thêm `phase` (in ra Serial); hộp mở như nhau cho mọi phase và vẫn theo cờ `physical`.
 
-Khi mở: servo chốt nhả (và servo cửa mở, nếu `USE_DOOR_SERVO = true`). Người dùng bấm `D` để khóa lại; quên khóa thì
+Khi mở: servo chốt nhả, rồi servo kéo tủ kéo ra 70° (nếu `USE_DOOR_SERVO = true`). Khi khóa thì servo kéo tủ về 0° trước, rồi chốt mới hạ. Người dùng bấm `D` để khóa lại; quên khóa thì
 sau 30 giây (`DOOR_OPEN_MS`) hộp tự khóa. LCD hiện `Bam D de khoa / Tu khoa sau ..s`.
 SRF05 chỉ dùng cho màn hình: có người trong 50 cm thì bật đèn LCD, không có ai và không bấm gì 1 phút (`SCREEN_OFF_MS`)
 thì tắt. Hộp không còn LED xanh/đỏ. Câu trên LCD do máy chủ viết (không dấu), ví dụ `Sai ma / Con 3 lan`, `Tam khoa / Cho 120 giay`.

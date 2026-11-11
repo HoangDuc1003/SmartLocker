@@ -21,7 +21,7 @@ Các file:
      | Tài khoản | Lượt chuẩn bị | Dùng ở |
      |---|---|---|
      | `v3overdue` | `ACTIVE` (đã mở lần 1), `due_at` cách đây 130 phút, ví 5.000 đ | 11, 16, 17, 12 |
-     | `v3late` | `RESERVED`, đặt từ 6 phút trước (giữ chỗ kéo dài tới 30 phút để không thành `NO_SHOW` giữa chừng) | 13 |
+     | `v3late` | `RESERVED`, đặt từ 6 phút trước (giữ chỗ kéo dài tới 30 phút để không tự check-in giữa chừng) | 13 |
      | `v3esc` | `ACTIVE`, `due_at` cách đây 49 giờ | 15 |
      | `v3poor` | không có lượt, ví 12.000 đ (từ `test_setup.sql`) | 14 |
 
@@ -79,6 +79,6 @@ nên vẫn nhận `PICKUP` như trước.
 - **v7, kịch bản 19: chạm điện thoại.** `v2card` đặt cách mở `PHONE`, heartbeat gửi `"nfc":true` để nhận `tap_path`
   (`/k/LOCKER-01?n=<mã>`), rồi `/api/kiosk/unlock` với `method: PHONE` và mã đó, trong phiên đăng nhập. Mã sai hoặc đã dùng trả
   `TAP_EXPIRED` và **không** tính vào giới hạn 5 lần, nên kịch bản này chạy được trước kịch bản 5.
-- Kịch bản 6 (v3): không đến thì không hoàn tiền; ví còn 200.000 đ trừ giá lượt đặt.
+- Kịch bản 6 (v7.1): hết 15 phút không check-in thì lượt tự check-in (`ACTIVE`), không hoàn tiền; ví còn 200.000 đ trừ giá lượt đặt.
 - Phụ phí của `v3overdue` tính theo giờ bắt đầu kể từ `due_at`: chạy collection quá 50 phút sau `test_setup.sql` thì
   số giờ trễ thành 4 (các kiểm tra vẫn đúng vì tính theo số giờ API trả), nhưng nên chạy lại script ngay trước mỗi lần chạy.

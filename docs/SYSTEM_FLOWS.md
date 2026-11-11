@@ -2,8 +2,8 @@
 
 Tài liệu mô tả đường đi của dữ liệu và vòng đời một lượt gửi đồ, đúng với code hiện tại (v3).
 Hợp đồng API chi tiết của thiết bị nằm ở [spec/smart-locker-v2.md](spec/smart-locker-v2.md) mục 4; phần thay đổi của v3
-(giá theo cỡ, hủy 5 phút hoàn đủ rồi hoàn 50% tới hết giữ chỗ, không đến mất toàn bộ, khóa quá hạn và nợ, chuyển xử lý) ở [spec/smart-locker-v3.md](spec/smart-locker-v3.md).
-Mọi con số (15 phút giữ chỗ, 5 phút hủy hoàn đủ, 50% khi hủy muộn, 0% hoàn khi không đến, đệm 10.000 đ, phụ phí 150%, 48 giờ) nằm trong bảng `AppConfig`.
+(giá theo cỡ, hủy 5 phút hoàn đủ rồi hoàn 50% tới hết giữ chỗ, hết giữ chỗ thì tự check-in (không hoàn), khóa quá hạn và nợ, chuyển xử lý) ở [spec/smart-locker-v3.md](spec/smart-locker-v3.md).
+Mọi con số (15 phút giữ chỗ, 5 phút hủy hoàn đủ, 50% khi hủy muộn, không hoàn khi hết giữ chỗ (lượt tự check-in), đệm 10.000 đ, phụ phí 150%, 48 giờ) nằm trong bảng `AppConfig`.
 
 ---
 
@@ -63,7 +63,7 @@ flowchart TD
     Held -- "Hủy sau 5 phút, còn giữ chỗ" --> CancelLate["CANCELLED, hoàn 50% (làm tròn xuống 100 đ)"]
     Held -- "Popup cũ vẫn ghi hoàn đủ" --> Err2["50052: chưa hủy, hiện lại số mới"]
     Err2 --> Held
-    Held -- "Hết 15 phút" --> NoShow["NO_SHOW, không hoàn (0%)"]
+    Held -- "Hết 15 phút, chưa check-in" --> Active["Tự check-in (AUTO_CHECK_IN): ACTIVE, ngăn khóa cho người đặt, không hoàn"]
     Active -- "Gia hạn trả tiền (tối đa 3 lần)" --> Active
     Active --> Open2{"Mở trong lúc thuê: hộp hỏi A: Mở tủ / B: Trả tủ (CHOOSE)"}
     Open2 -- "A: OPEN -> ACCESS, audit ACCESS" --> Active
@@ -245,13 +245,14 @@ sequenceDiagram
 | Thiếu tiền | Số dư nhỏ hơn giá | `THROW 50030`, không đổi gì | Báo lỗi |
 | Dưới mức đệm | Đủ giá nhưng sau khi đặt còn dưới 10.000 đ | `THROW 50046`, không đổi gì | Báo lỗi |
 | Đang có lượt gửi | Đã có lượt `RESERVED` hoặc `ACTIVE` | `THROW 50032` | Báo lỗi |
-| Hay không đến | 3 lần `NO_SHOW` trong 7 ngày | `THROW 50031` | Tạm cấm đặt |
+| Hay không đến | 3 lần `NO_SHOW` trong 7 ngày (lượt tự check-in rồi không mở lần nào tới hạn trả) | `THROW 50031` | Tạm cấm đặt |
 | Hộp mất kết nối | Hộp `OFFLINE` | `THROW 50035` | Báo lỗi |
-| Không đến | Hết 15 phút giữ chỗ | `Deposit_ExpireNoShow`: không hoàn (0%), audit `NO_SHOW` ghi số hoàn 0 | Lượt `NO_SHOW`, ngăn trống |
+| Không đến | Hết 15 phút giữ chỗ | `Deposit_ExpireNoShow` (v7.1): lượt thành `ACTIVE`, `started_at = hold_until`, hạn trả = `hold_until` + thời gian đã trả, ngăn `OCCUPIED` và vẫn khóa, audit `AUTO_CHECK_IN`, không hoàn | Người đặt dùng lúc nào cũng được tới hạn trả |
+| Không đến, không mở lần nào | Lượt tự check-in, tới hạn trả + ân hạn mà chưa có dòng audit `ACCESS` | `Deposit_ExpireOverdue`: kết thúc `NO_SHOW`, không phụ phí | Ngăn trống |
 | Hủy | Người dùng hủy trong 5 phút đầu, chưa mở lần đầu | Hoàn đủ số đã trả | Lượt `CANCELLED`, ngăn trống |
 | Hủy muộn | Quá 5 phút nhưng còn trong 15 phút giữ chỗ | Hoàn `CANCEL_LATE_REFUND_PCT` (50%) số đã trả, làm tròn xuống 100 đ; nút hủy trên web tự đổi số tiền khi qua mốc 5 phút | Lượt `CANCELLED`, ngăn trống ngay cho người khác |
 | Hủy với số tiền cũ | Popup đang ghi "hoàn đủ" thì qua mốc 5 phút (form gửi `expectedRefund`) | `THROW 50052`, không đổi gì | Lượt vẫn `RESERVED`, người dùng hủy lại với số mới |
-| Hủy sau giờ giữ chỗ | `hold_until` đã qua (trước khi `LockerMonitor` kịp chuyển `NO_SHOW`) | `THROW 50047` | Lượt thành `NO_SHOW` ở chu kỳ kế tiếp |
+| Hủy sau giờ giữ chỗ | `hold_until` đã qua (trước khi `LockerMonitor` kịp tự check-in) | `THROW 50047` | Lượt tự check-in ở chu kỳ kế tiếp |
 | Mở trong lúc thuê | Lượt `ACTIVE`, chưa khóa; hộp/điện thoại gửi `ASK` rồi `OPEN` | `CHOOSE` (không đổi gì), rồi `UNLOCK ACCESS`, audit `ACCESS` | Lượt vẫn `ACTIVE`, "Tủ của tôi" tăng số lần mở |
 | Trả tủ | Lượt `ACTIVE`, chưa khóa; `ASK` rồi `CHECKOUT` (hoặc không gửi `intent`) | `Deposit_Complete`, audit `COMPLETE` | Lượt `COMPLETED`, ngăn trống |
 | Gia hạn | Lượt `ACTIVE`, chưa khóa, dưới 3 lần | Trừ giá một giờ của cỡ × số giờ bắt đầu thêm; thiếu tiền `50049` | `due_at` lùi, audit `EXTEND` |
@@ -269,7 +270,9 @@ sequenceDiagram
 stateDiagram-v2
     [*] --> AVAILABLE
     AVAILABLE --> RESERVED : Deposit_Reserve
-    RESERVED --> AVAILABLE : hủy / không đến
+    RESERVED --> AVAILABLE : hủy
+    RESERVED --> OCCUPIED : hết 15 phút giữ chỗ (tự check-in)
+    OCCUPIED --> AVAILABLE : tới hạn mà chưa từng mở (NO_SHOW, không phụ phí)
     RESERVED --> OCCUPIED : mở lần 1 (CHECK_IN)
     OCCUPIED --> AVAILABLE : mở lần 2 (PICKUP), sau khi trả hết nợ nếu bị khóa
     OCCUPIED --> OCCUPIED : quá hạn, khóa và tính phụ phí (không tự giải phóng)

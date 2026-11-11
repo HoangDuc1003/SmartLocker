@@ -5784,7 +5784,7 @@
           ]
         },
         {
-          "name": "6. Không đến: NO_SHOW, không hoàn tiền",
+          "name": "6. Không đến: sau 15 phút tự check-in, không hoàn tiền (v7.1)",
           "item": [
             {
               "name": "Đăng xuất",
@@ -5885,7 +5885,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đã NO_SHOW (chờ LockerMonitor)",
+              "name": "Tủ của tôi: lượt đã tự check-in (chờ LockerMonitor)",
               "event": [
                 {
                   "listen": "prerequest",
@@ -5906,19 +5906,18 @@
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
                       "const me = pm.response.json();",
                       "const tries = (pm.environment.get('noshow_tries') || 0) + 1;",
-                      "if (me.booking && tries < 6) {",
+                      "if ((!me.booking || me.booking.status !== 'ACTIVE') && tries < 6) {",
                       "    pm.environment.set('noshow_tries', tries);",
-                      "    postman.setNextRequest(pm.info.requestName);   // not expired yet, ask again in 5 s",
+                      "    postman.setNextRequest(pm.info.requestName);   // not started yet, ask again in 5 s",
                       "} else {",
                       "    pm.environment.unset('noshow_tries');",
-                      "    const h = me.history[0];",
-                      "    pm.test('no open booking', () => pm.expect(me.booking).to.be.null);",
-                      "    pm.test('v3: last booking NO_SHOW, nothing back (0%)', () => {",
-                      "        pm.expect(h.status).to.eql('NO_SHOW');",
-                      "        pm.expect(h.refund).to.eql(0);",
+                      "    const b = me.booking;",
+                      "    pm.test('v7.1: the booking started by itself (ACTIVE), it was not ended as NO_SHOW', () => {",
+                      "        pm.expect(b).to.be.an('object');",
+                      "        pm.expect(b.status).to.eql('ACTIVE');",
                       "    });",
-                      "    // test_setup.sql: 200,000 VND, then the booking price (A15 is size M since 03_v2_v3.sql: 6,500 VND)",
-                      "    pm.test('wallet: 200,000 - price, no refund', () => pm.expect(me.balance).to.eql(200000 - h.paid_amount));",
+                      "    // test_setup.sql: 200,000 VND, then the booking price: nothing is refunded and nothing more is charged",
+                      "    pm.test('wallet: 200,000 - price, no refund', () => pm.expect(me.balance).to.eql(200000 - b.paid_amount));",
                       "}"
                     ]
                   }

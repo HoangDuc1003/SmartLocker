@@ -78,7 +78,7 @@ WHERE device_id = @dev;
 INSERT INTO AuthAttempt (device_id, method, ok, reason) VALUES (@dev, N'ADMIN', 1, N'COUNTER_RESET');
 COMMIT;
 
--- scenario 6: a PIN booking whose 15 minutes are already over; LockerMonitor makes it NO_SHOW (v3: no refund).
+-- scenario 6: a PIN booking whose 15 minutes are already over; LockerMonitor starts it by itself (v7.1: auto check-in, no refund).
 -- The slot is the last free one of CANT-A (A15, size M since 03_v2_v3.sql: 6,500 VND).
 DECLARE @user INT = (SELECT user_id FROM Users WHERE username = N'v2noshow');
 DECLARE @slot INT = (SELECT TOP 1 s.locker_slot_id FROM LockerSlot s JOIN LockerBank b ON b.bank_id = s.bank_id

@@ -469,7 +469,7 @@
       case 'AVAILABLE':
         return 'Chọn gói gửi và cách mở để đặt ngăn này.';
       case 'RESERVED':
-        return mine ? 'Ngăn đang giữ cho bạn. Hãy đến gửi đồ trước khi hết thời gian giữ chỗ.'
+        return mine ? 'Ngăn đang giữ cho bạn. Hết giờ giữ chỗ lượt tự bắt đầu: bạn đến sớm hay muộn đều dùng được trong thời gian đã trả.'
                     : 'Ngăn này đã có người đặt.';
       case 'OCCUPIED':
         return mine ? 'Đồ của bạn đang ở trong ngăn.' : 'Đang có người dùng.';

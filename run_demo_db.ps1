@@ -21,7 +21,7 @@ Write-Host "Target Server: $Server / $Database" -ForegroundColor Yellow
 Write-Host "User:          $User" -ForegroundColor Yellow
 
 $sqlDir = Join-Path $PSScriptRoot "sql"
-$scripts = @("01_schema.sql", "02_data_v1.sql", "03_v2_v3.sql", "04_phone.sql")
+$scripts = @("01_schema.sql", "02_data_v1.sql", "03_v2_v3.sql", "04_phone.sql", "05_auto_checkin.sql")
 $conn = @("-S", $Server, "-U", $User, "-P", $Password)
 if ($Azure) { $conn += @("-d", $Database, "-N", "-l", "60") }
 

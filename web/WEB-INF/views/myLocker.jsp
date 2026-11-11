@@ -102,9 +102,9 @@
 
                 <c:if test="${d.status == 'RESERVED' and not empty d.holdUntil}">
                     <div>
-                        <div class="muted">Giữ chỗ đến <ui:dt value="${d.holdUntil}"/></div>
-                        <div class="countdown-big" data-countdown="<c:out value='${d.holdUntil}'/>" data-late-text="Đã hết thời gian giữ chỗ" aria-live="off">&nbsp;</div>
-                        <p class="hint">Giữ chỗ ${holdMin} phút từ lúc đặt. Không đến trong thời gian này sẽ mất toàn bộ số tiền đã trả.</p>
+                        <div class="muted">Tự bắt đầu lúc <ui:dt value="${d.holdUntil}"/></div>
+                        <div class="countdown-big" data-countdown="<c:out value='${d.holdUntil}'/>" data-late-text="Lượt đã tự bắt đầu, tải lại trang" aria-live="off">&nbsp;</div>
+                        <p class="hint">Giữ chỗ ${holdMin} phút từ lúc đặt. Hết giờ này lượt tự bắt đầu tính giờ và không hủy được nữa: ngăn vẫn khóa cho bạn, bạn đến sớm, muộn hay không đến đều dùng được trong thời gian đã trả. Không hoàn tiền.</p>
                     </div>
                 </c:if>
 

@@ -2,3 +2,4 @@
 02_data_v1.sql
 03_v2_v3.sql
 04_phone.sql
+05_auto_checkin.sql

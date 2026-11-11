@@ -49,7 +49,9 @@ với hộp tủ ESP32 thật giao tiếp qua API có khóa riêng cho từng h�
 - **Đặt rõ ràng:** popup xác nhận ghi số tiền trừ ngay, số dư còn lại, luật hủy và phụ phí. Giữ chỗ 15 phút; sau khi đặt ví phải
   còn ít nhất 10.000 đ dự phòng phụ phí.
 - **Hủy:** trong 5 phút đầu hoàn đủ; sau đó, tới hết 15 phút giữ chỗ, vẫn hủy được và hoàn 50% (để ngăn trống sớm cho người khác).
-  Không đến trong 15 phút giữ chỗ thì không hoàn; 3 lần không đến trong 7 ngày bị tạm cấm đặt.
+  Hết 15 phút giữ chỗ lượt **tự check-in** (v7.1, `sql/05_auto_checkin.sql`): không hủy được nữa, ngăn vẫn khóa cho người đặt, đến sớm,
+  muộn hay không đến đều dùng được lúc nào cũng được trong thời gian đã trả (tính từ lúc tự check-in), không hoàn tiền. Lượt tự
+  check-in mà chưa từng mở thì tới hạn trả tự kết thúc (`NO_SHOW`), ngăn trống lại và không tính phụ phí; 3 lần như vậy trong 7 ngày bị tạm cấm đặt.
 - **Gia hạn** tối đa 3 lần, mỗi giờ bắt đầu tính theo giá một giờ của cỡ ngăn.
 - **Quá hạn:** ngăn không bao giờ tự giải phóng (đồ vẫn ở trong). Quá ân hạn thì tủ khóa, mỗi giờ trễ trừ phụ phí, ví có thể âm;
   hộp từ chối mở (`OVERDUE_UNPAID`) tới khi nạp đủ tiền. Quá 48 giờ, lượt gửi được chuyển cho nhân viên kèm cảnh báo.
@@ -139,6 +141,7 @@ sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\01_schema.sql
 sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\02_data_v1.sql
 sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\03_v2_v3.sql
 sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\04_phone.sql
+sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\05_auto_checkin.sql
 sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_box.sql
 ```
 
@@ -148,6 +151,7 @@ sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_b
 | `sql/02_data_v1.sql` | Dữ liệu mẫu (tài khoản, khu, dãy, ngăn, lịch sử), procedure của các tình huống, ví và nạp tiền |
 | `sql/03_v2_v3.sql` | Cách mở (mật mã, thẻ, vân tay), khóa nhập sai, `Device_Authorize`, `Enroll_*`, `AppConfig`, cỡ S/M/L, giá theo cỡ, Tự chọn, hủy 5 phút, quá hạn, nhắc hạn, các khu trong ĐHQG-HCM (tọa độ gần đúng, sửa ở trang Khu vực) |
 | `sql/04_phone.sql` | v7: thêm cách mở `PHONE` và mã chạm NFC (`DeviceTap`, `Device_TapIssue`), bỏ cọc thẻ (`CARD_DEPOSIT`); chạy lại được |
+| `sql/05_auto_checkin.sql` | v7.1: hết 15 phút giữ chỗ lượt tự check-in thay vì `NO_SHOW` (`Deposit_ExpireNoShow`, `Deposit_ExpireOverdue`, vá `Device_Authorize`); chạy lại được, chạy sau 03/04 |
 | `sql/demo_box.sql` | Hộp thật, các dãy nó quản lý và ngăn có khóa thật ([xem dưới](#phần-cứng-demo-một-hộp-chính-nhiều-ngăn)); chạy lại được nhiều lần |
 | `sql/test_setup.sql` | Tài khoản và lượt gửi dựng sẵn cho Postman (không phải dữ liệu demo) |
 | `sql/test_overdue.sql` | Dời hạn trả của một lượt `ACTIVE` về quá khứ để demo khóa quá hạn, phụ phí, chuyển xử lý |
@@ -297,8 +301,7 @@ làm tròn lên 100 đ. Mật mã, thẻ từ, điện thoại và vân tay cùn
 | 7 ngày (80%) | 140.000 | 182.000 | 236.600 |
 
 Các luật khác (`AppConfig`): giữ chỗ 15 phút (`HOLD_MIN`), hủy và hoàn 100% trong 5 phút (`CANCEL_FREE_MIN`), hủy sau đó tới hết giữ chỗ hoàn 50% làm tròn xuống 100 đ
-(`CANCEL_LATE_REFUND_PCT`), không đến hoàn 0%
-(`NO_SHOW_REFUND_PCT`), dư tối thiểu sau khi đặt 10.000 đ (`BOOKING_BUFFER`), email nhắc trước 15 phút (`DUE_REMINDER_MIN`),
+(`CANCEL_LATE_REFUND_PCT`), không hoàn tiền khi không đến (v7.1 không còn `NO_SHOW_REFUND_PCT`: lượt tự check-in), dư tối thiểu sau khi đặt 10.000 đ (`BOOKING_BUFFER`), email nhắc trước 15 phút (`DUE_REMINDER_MIN`),
 chuyển xử lý sau 48 giờ (`ESCALATE_HOURS`). Đổi một con số thì sửa cả SQL và `util.Pricing`, rồi chạy `PricingDatabaseIntegrationTest`.
 
 ---

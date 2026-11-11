@@ -653,7 +653,7 @@
       case 'AVAILABLE':
         return 'Chọn gói gửi và cách mở để đặt ngăn này.';
       case 'RESERVED':
-        return mine ? 'Ngăn đang giữ cho bạn. Hãy đến gửi đồ trước khi hết thời gian giữ chỗ.'
+        return mine ? 'Ngăn đang giữ cho bạn. Hết giờ giữ chỗ lượt tự bắt đầu: bạn đến sớm hay muộn đều dùng được trong thời gian đã trả.'
                     : 'Ngăn này đã có người đặt.';
       case 'OCCUPIED':
         return mine ? 'Đồ của bạn đang ở trong ngăn.' : 'Đang có người dùng.';
@@ -869,11 +869,9 @@
   }
 
   function rulesHint() {
-    var refund = rule('no_show_refund_pct', 0);
     return 'Giữ chỗ ' + holdMinutes() + ' phút · hủy trong ' + cancelMinutes() + ' phút đầu được hoàn đủ, sau đó tới hết giờ giữ chỗ hoàn ' +
-      cancelLatePct() + '%; ' +
-      (refund > 0 ? 'không đến chỉ được hoàn ' + refund + '%. ' : 'không đến sẽ mất toàn bộ số tiền. ') +
-      'Không đến 3 lần trong 7 ngày sẽ bị tạm khóa đặt trực tuyến.';
+      cancelLatePct() + '%. Hết giờ giữ chỗ lượt tự bắt đầu tính giờ và không hủy được nữa: ngăn vẫn khóa cho bạn, ' +
+      'bạn đến sớm, muộn hay không đến đều dùng được trong thời gian đã trả, không hoàn tiền.';
   }
 
   // the segmented controls are radios, so the form posts planId and openMethod as before
@@ -989,11 +987,10 @@
       ['Trừ ngay', '<strong class="dlg__total money">' + (choice.price ? esc(money(choice.price)) : 'Miễn phí') + '</strong>']
     ]);
     rows.push(['Số dư còn lại', '<span class="money">' + esc(money(choice.after)) + '</span>']);
-    var refund = rule('no_show_refund_pct', 0);
     var rules = [
       ['check', 'Hủy trong ' + cancelMinutes() + ' phút đầu: hoàn đủ. Sau đó tới hết giờ giữ chỗ: hoàn ' + cancelLatePct() + '%.'],
-      ['clock', 'Giữ chỗ ' + holdMinutes() + ' phút từ lúc đặt.'],
-      ['alert', refund > 0 ? 'Không đến chỉ được hoàn ' + refund + '% số tiền.' : 'Không đến sẽ mất toàn bộ số tiền.']
+      ['clock', 'Sau ' + holdMinutes() + ' phút không hủy được nữa: lượt tự bắt đầu tính giờ, ngăn vẫn khóa cho bạn.'],
+      ['alert', 'Bạn đến sớm, muộn hay không đến đều dùng được lúc nào cũng được trong thời gian đã trả. Không hoàn tiền.']
     ];
     if (z.overdue_rate) {
       rules.push(['lock', 'Quá hạn: tủ khóa, phụ phí ' + money(z.overdue_rate) + ' mỗi giờ trễ (cỡ ' + choice.size + '), trừ vào ví.']);
@@ -1254,7 +1251,7 @@
     }
     var phase = bookingPhase(slot);
     if ((slot.status === 'RESERVED' || phase === 'RESERVED') && slot.hold_until && phase !== 'ACTIVE') {
-      facts.push(fact(slot.mine ? 'Giữ cho bạn đến' : 'Giữ đến', formatTime(slot.hold_until) + countdownHtml(slot.hold_until)));
+      facts.push(fact(slot.mine ? 'Tự bắt đầu lúc' : 'Giữ đến', formatTime(slot.hold_until) + countdownHtml(slot.hold_until)));
     }
     if ((slot.status === 'OCCUPIED' || slot.status === 'OVERDUE' || phase === 'ACTIVE' || slot.locked) && slot.due_at) {
       facts.push(fact('Hạn trả', formatTime(slot.due_at) + countdownHtml(slot.due_at)));
