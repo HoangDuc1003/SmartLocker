@@ -40,7 +40,7 @@ Azure SQL không cho dùng `USE` và `CREATE DATABASE`. Với cờ `-Azure`, `ru
 powershell -ExecutionPolicy Bypass -File .\run_demo_db.ps1 -Azure -Server smartlocker-<tên-bạn>.database.windows.net -User lockeradmin -Password "<mật khẩu>"
 ```
 
-Script chạy lần lượt `01_schema.sql`, `02_data_v1.sql`, `03_v2_v3.sql`, rồi in số tài khoản theo từng vai trò (ADMIN, OPERATOR...). Chạy lại script bất cứ lúc nào để có dữ liệu sạch: script xóa mọi bảng cũ của DB đó trước khi tạo lại.
+Script chạy lần lượt `01_schema.sql`, `02_data_v1.sql`, `03_v2_v3.sql`, `04_phone.sql`, `05_auto_checkin.sql`, rồi in số tài khoản theo từng vai trò (ADMIN, OPERATOR...). Chạy lại script bất cứ lúc nào để có dữ liệu sạch: script xóa mọi bảng cũ của DB đó trước khi tạo lại.
 
 Nếu báo lỗi `Cannot open server ... Client with IP address ... is not allowed`: thêm IP đó vào Firewall rules (Bước 1, mục 6), chờ khoảng 1 phút rồi chạy lại.
 

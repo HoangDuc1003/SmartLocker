@@ -11,10 +11,10 @@
 ![TestNG](https://img.shields.io/badge/TestNG-FF6C37?style=for-the-badge&logo=testng&logoColor=white)
 ![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)
 
-**Ứng dụng web Java để thuê tủ gửi đồ: đặt ngăn trên bản đồ, mở bằng mật mã, thẻ từ, điện thoại (chạm NFC) hoặc vân tay, trả tiền bằng ví,
-với hộp tủ ESP32 thật giao tiếp qua API có khóa riêng cho từng hộp.**
+**Thuê tủ gửi đồ trên web: chọn ngăn trên bản đồ, trả tiền bằng ví, mở tủ bằng mật mã, thẻ RFID, điện thoại (chạm NFC) hoặc vân tay.
+Hộp tủ ESP32 thật nói chuyện với máy chủ qua API có khóa riêng cho từng hộp.**
 
-*Đồ án môn PRJ301 (FALL2026). Bản tiếng Anh: [README.en.md](./README.en.md).*
+*Đồ án môn PRJ301 (FALL2026). English version: [README.en.md](./README.en.md).*
 
 </div>
 
@@ -22,82 +22,87 @@ với hộp tủ ESP32 thật giao tiếp qua API có khóa riêng cho từng h�
 
 ## Mục lục
 
-1. [Chức năng](#chức-năng)
-2. [Ảnh chụp màn hình](#ảnh-chụp-màn-hình)
-3. [Cài đặt nhanh](#cài-đặt-nhanh)
-4. [Phần cứng demo: một hộp chính, nhiều ngăn](#phần-cứng-demo-một-hộp-chính-nhiều-ngăn)
-5. [Bảng giá](#bảng-giá)
-6. [Luồng hoạt động](#luồng-hoạt-động)
-7. [Kiểm thử](#kiểm-thử)
-8. [Kiến trúc và cấu trúc thư mục](#kiến-trúc-và-cấu-trúc-thư-mục)
-9. [Bảo mật](#bảo-mật)
-10. [Tài liệu liên quan](#tài-liệu-liên-quan)
+1. [Hệ thống gồm những gì](#hệ-thống-gồm-những-gì)
+2. [Chức năng](#chức-năng)
+3. [Ảnh chụp màn hình](#ảnh-chụp-màn-hình)
+4. [Cài đặt và chạy](#cài-đặt-và-chạy)
+5. [Hộp tủ ESP32](#hộp-tủ-esp32)
+6. [Bảng giá và luật](#bảng-giá-và-luật)
+7. [Luồng hoạt động](#luồng-hoạt-động)
+8. [Kiểm thử](#kiểm-thử)
+9. [Triển khai lên Internet](#triển-khai-lên-internet)
+10. [Kiến trúc và mã nguồn](#kiến-trúc-và-mã-nguồn)
+11. [Bảo mật và hạn chế đã biết](#bảo-mật-và-hạn-chế-đã-biết)
+12. [Tài liệu liên quan](#tài-liệu-liên-quan)
 
 ---
+
+## Hệ thống gồm những gì
+
+| Thành phần | Công nghệ | Vai trò |
+|---|---|---|
+| Web | Java 8, Servlet/JSP (MVC2), Tomcat 9 | Bản đồ tủ, đặt ngăn, ví, trang nhân viên, API cho hộp tủ |
+| Cơ sở dữ liệu | SQL Server | Toàn bộ luật về tiền và thời gian nằm trong stored procedure |
+| Hộp tủ | ESP32, PN532, AS608, keypad, LCD, servo | Nhận mật mã, thẻ, vân tay, chạm điện thoại; máy chủ quyết định có mở hay không |
+| Bản đồ | Leaflet đặt sẵn trong repo, Mapbox nếu có token | Mất Internet vẫn thấy các ghim trên nền lưới |
+| Cảnh báo | Luật cố định (`RuleEngine`) và mô hình Weka (`RiskScorer`) | Luật quyết định, mô hình chỉ cho thêm điểm rủi ro |
+
+Trang web không dùng CDN, chữ hiển thị là tiếng Việt, có giao diện sáng và tối.
 
 ## Chức năng
 
 ### Người dùng
 
-- **Bản đồ tủ là trang chính:** vào địa chỉ của web là tới thẳng bản đồ, khách xem được không cần đăng nhập. Đăng nhập và
-  đăng ký nằm trong popup trên bản đồ (không có trang đăng nhập riêng). Mật khẩu băm BCrypt.
-- **Khu, dãy, ngăn:** 5 khu trong ĐHQG-HCM trên bản đồ Leaflet (đặt sẵn trong repo, không CDN), tự làm mới 10 giây một lần.
-  Mỗi dãy vẽ thành một khối tủ, cửa cao theo cỡ ngăn; ngăn quá hạn hiện ổ khóa. Mất Internet thì bản đồ vẫn hiện các ghim trên nền lưới.
-- **Tìm tủ gần tôi:** sắp khu theo khoảng cách và mở chỉ đường đi bộ; vị trí chỉ tính trên trình duyệt.
-- **Ba cỡ ngăn:** S 20x20x20, M 40x40x40, L 60x60x60 cm; giá theo cỡ, như nhau cho mọi cách mở ([Bảng giá](#bảng-giá)).
-- **Gói gửi:** 2 giờ, 4 giờ, Trọn ngày, hoặc **Tự chọn** 1-23 giờ / 1-7 ngày (giờ không vượt giá trọn ngày, nhiều ngày được giảm).
-- **Đặt rõ ràng:** popup xác nhận ghi số tiền trừ ngay, số dư còn lại, luật hủy và phụ phí. Giữ chỗ 15 phút; sau khi đặt ví phải
-  còn ít nhất 10.000 đ dự phòng phụ phí.
-- **Hủy:** trong 5 phút đầu hoàn đủ; sau đó, tới hết 15 phút giữ chỗ, vẫn hủy được và hoàn 50% (để ngăn trống sớm cho người khác).
-  Hết 15 phút giữ chỗ lượt **tự check-in** (v7.1, `sql/05_auto_checkin.sql`): không hủy được nữa, ngăn vẫn khóa cho người đặt, đến sớm,
-  muộn hay không đến đều dùng được lúc nào cũng được trong thời gian đã trả (tính từ lúc tự check-in), không hoàn tiền. Lượt tự
-  check-in mà chưa từng mở thì tới hạn trả tự kết thúc (`NO_SHOW`), ngăn trống lại và không tính phụ phí; 3 lần như vậy trong 7 ngày bị tạm cấm đặt.
-- **Gia hạn** tối đa 3 lần, mỗi giờ bắt đầu tính theo giá một giờ của cỡ ngăn.
-- **Quá hạn:** ngăn không bao giờ tự giải phóng (đồ vẫn ở trong). Quá ân hạn thì tủ khóa, mỗi giờ trễ trừ phụ phí, ví có thể âm;
-  hộp từ chối mở (`OVERDUE_UNPAID`) tới khi nạp đủ tiền. Quá 48 giờ, lượt gửi được chuyển cho nhân viên kèm cảnh báo.
-- **Ví:** nạp tiền bằng mã VietQR, nhân viên duyệt rồi mới cộng tiền.
-- **Tủ của tôi:** mật mã (ẩn/hiện), mã đăng ký thẻ hoặc vân tay, đếm ngược hủy và giữ chỗ, gia hạn, khung quá hạn và số nợ,
-  email nhắc hạn 15 phút trước giờ trả (email được xác nhận bằng mã), thẻ và vân tay đã đăng ký, số lần đã mở tủ trong lượt, lịch sử.
-- **Mở nhiều lần trong một lượt thuê:** lần xác thực đầu cất đồ (CHECK_IN). Sau đó mỗi lần nhập mật mã / quẹt thẻ / chạm điện thoại / đặt vân tay,
-  màn hộp hỏi `A: Mo tu` / `B: Tra tu`: phím A mở để lấy hoặc cất thêm đồ (lượt vẫn chạy, phase `ACCESS`), phím B lấy hết đồ và
-  kết thúc lượt (PICKUP); `*` hoặc 15 giây không bấm thì hủy. Lượt đã bị khóa quá hạn chỉ trả tủ được.
-- **Trang điện thoại** `/k/{device_code}`: quét QR dán trên hộp, nhập mật mã để mở (sai 5 lần thì trang tạm khóa 2 phút);
-  lượt đang thuê có hai nút "Mở tủ" / "Trả tủ" như trên hộp.
+- **Bản đồ là trang chính.** Khách xem được không cần đăng nhập. Đăng nhập và đăng ký nằm trong popup trên bản đồ, không có trang riêng.
+- **Khu, dãy, ngăn.** 5 khu trong ĐHQG-HCM, tự làm mới 10 giây một lần. "Tìm tủ gần tôi" sắp khu theo khoảng cách, vị trí chỉ tính trên trình duyệt.
+- **Ba cỡ ngăn:** S 20x20x20, M 40x40x40, L 60x60x60 cm.
+- **Gói gửi:** 2 giờ, 4 giờ, Trọn ngày, hoặc Tự chọn 1-23 giờ / 1-7 ngày.
+- **Bốn cách mở, cùng một giá, không tiền cọc:** mật mã 6 số, thẻ RFID, chạm điện thoại, vân tay.
+- **Đặt rõ ràng.** Popup ghi số tiền trừ ngay, số dư còn lại, luật hủy và phụ phí. Sau khi đặt, ví phải còn ít nhất 10.000 đ dự phòng phụ phí.
+- **Hủy.** Trong 5 phút đầu hoàn đủ, sau đó tới hết 15 phút giữ chỗ hoàn 50%.
+- **Tự check-in.** Hết 15 phút giữ chỗ, lượt tự bắt đầu tính giờ và không hủy được nữa. Ngăn vẫn khóa cho người đặt. Nếu tới hạn trả mà chưa từng mở, lượt kết thúc `NO_SHOW`, ngăn trống lại, không tính phụ phí, không hoàn tiền; 3 lần như vậy trong 7 ngày thì bị tạm cấm đặt.
+- **Mở nhiều lần trong một lượt.** Lần đầu cất đồ (CHECK_IN). Các lần sau hộp hỏi `A: Mo tu` / `B: Tra tu`: phím A mở tủ, lượt vẫn chạy; phím B lấy đồ và kết thúc lượt.
+- **Gia hạn** tối đa 3 lần, tính theo giá một giờ của cỡ ngăn.
+- **Quá hạn.** Ngăn không tự giải phóng vì đồ còn trong đó. Quá ân hạn thì tủ khóa, mỗi giờ trễ trừ phụ phí, ví có thể âm, hộp từ chối mở (`OVERDUE_UNPAID`) tới khi nạp đủ tiền. Quá 48 giờ, lượt được chuyển cho nhân viên kèm cảnh báo.
+- **Ví.** Nạp tiền bằng mã VietQR, nhân viên duyệt rồi mới cộng tiền.
+- **Tủ của tôi.** Mật mã (ẩn/hiện), mã đăng ký thẻ hoặc vân tay, đếm ngược, gia hạn, số nợ, số lần đã mở, lịch sử, email nhắc hạn 15 phút trước giờ trả.
+- **Thẻ từ.** Đăng ký tại hộp bằng mã 6 số, báo mất, đổi thẻ. Quẹt thẻ của người có email thật cần bấm xác nhận qua email hoặc trên bản đồ.
+- **Trang điện thoại** `/k/{device_code}`: quét QR dán trên hộp rồi nhập mật mã, hoặc chạm điện thoại vào đầu đọc rồi bấm "Mở tủ của tôi".
 
 ### Nhân viên
 
-- **OPERATOR:** bản đồ tủ cho nhân viên, lệnh mở từ xa, duyệt nạp tiền, quản lý khu, dãy, ngăn, gói gửi, thẻ, lượt gửi, người dùng.
-- **TECHNICIAN:** cảnh báo, phiếu bảo trì, hiệu chuẩn cảm biến, trạng thái ngăn và thiết bị.
-- **AUDITOR:** chỉ đọc; kiểm tra chuỗi băm của nhật ký audit.
-- **ADMIN:** toàn quyền, gồm vai trò và phân quyền.
-- **Dashboard:** trạng thái ngăn, mức dùng theo khu, thiết bị, cảnh báo, lượt đặt theo giờ, khung giờ đông, doanh thu 7 ngày
-  (doanh thu chỉ cho ADMIN và OPERATOR).
+| Vai trò | Quyền chính |
+|---|---|
+| OPERATOR | Bản đồ nhân viên, mở từ xa, duyệt nạp tiền, quản lý khu, dãy, ngăn, gói gửi, thẻ, lượt gửi, người dùng |
+| TECHNICIAN | Cảnh báo, phiếu bảo trì, hiệu chuẩn cảm biến, trạng thái ngăn và thiết bị |
+| AUDITOR | Chỉ đọc, kiểm tra chuỗi băm của nhật ký audit |
+| ADMIN | Toàn quyền, gồm vai trò và phân quyền |
+
+Trang **Tổng quan** có trạng thái ngăn, mức dùng theo khu, thiết bị, cảnh báo, lượt đặt theo giờ và doanh thu 7 ngày (doanh thu chỉ cho ADMIN và OPERATOR).
+Trang **Dữ liệu cảm biến** liệt kê các phiên mở/đóng do hộp gửi lên, có tìm kiếm, lọc theo hộp và ngày, sắp xếp, phân trang.
 
 ### Thiết bị
 
-- **Khóa API riêng cho mỗi hộp:** máy chủ chỉ lưu SHA-256 của khóa; `device_id` lấy từ khóa, không tin nội dung gửi lên.
-- **Một hộp quản lý nhiều dãy:** hộp thật xác thực mọi ngăn của các dãy được gắn với nó, servo chỉ mở ở ngăn vật lý
-  ([chi tiết](#phần-cứng-demo-một-hộp-chính-nhiều-ngăn)).
-- **Heartbeat:** hộp im lặng quá 90 giây thì chuyển OFFLINE và các dãy của nó không đặt được.
-- **Khóa nhập sai:** 5 lần đoán sai trên một hộp thì hộp tạm khóa 2 phút.
-- **Cảnh báo:** luật cố định (`RuleEngine`) quyết định; mô hình Weka (`RiskScorer`) chỉ cho thêm điểm rủi ro.
+- **Khóa API riêng cho mỗi hộp.** Máy chủ chỉ lưu SHA-256 của khóa; `device_id` lấy từ khóa, không tin nội dung gửi lên.
+- **Một hộp quản lý nhiều dãy.** Servo chỉ mở ở ngăn vật lý, các ngăn khác chỉ báo trên LCD.
+- **Heartbeat.** Hộp im lặng quá 90 giây thì chuyển OFFLINE và các dãy của nó không đặt được.
+- **Khóa nhập sai.** 5 lần đoán sai trên một hộp thì hộp tạm khóa 2 phút.
 
 ---
 
 ## Ảnh chụp màn hình
 
-Chụp từ bản chạy thật tại `http://localhost:8080/SmartLocker` (giao diện sáng). Dữ liệu là tài khoản demo và tài khoản test của
-`sql/test_setup.sql`, không có dữ liệu cá nhân thật.
+Chụp từ bản chạy thật trên dữ liệu demo, không có dữ liệu cá nhân thật.
 
 | Bản đồ tủ (khách, chưa đăng nhập) | Bản đồ trên điện thoại |
 |---|---|
 | ![Bản đồ tủ cho khách](docs/images/map-visitor.png) | <img src="docs/images/map-phone.png" alt="Bản đồ trên điện thoại" width="260"> |
 
-| Một khu: các dãy, ngăn khóa quá hạn (A04, A12) | Thẻ ngăn: gói cố định, giá theo cỡ M |
+| Một khu: các dãy và ngăn khóa quá hạn | Thẻ ngăn: gói gửi và bốn cách mở |
 |---|---|
-| ![Khu Căng tin với ngăn quá hạn](docs/images/map-area.png) | ![Thẻ đặt ngăn với gói 2 giờ](docs/images/booking-plan.png) |
+| ![Khu Căng tin với ngăn quá hạn](docs/images/map-area.png) | ![Thẻ đặt ngăn](docs/images/booking-plan.png) |
 
-| Tự chọn theo giờ (5 giờ) | Tự chọn theo ngày (3 ngày, giảm 10%) |
+| Tự chọn theo giờ | Tự chọn theo ngày |
 |---|---|
 | ![Tự chọn theo giờ](docs/images/booking-custom-hours.png) | ![Tự chọn theo ngày](docs/images/booking-custom-days.png) |
 
@@ -109,169 +114,135 @@ Chụp từ bản chạy thật tại `http://localhost:8080/SmartLocker` (giao 
 |---|---|
 | ![Gia hạn](docs/images/my-locker-extend.png) | ![Lượt quá hạn bị khóa](docs/images/my-locker-overdue.png) |
 
-| Dashboard nhân viên | Cảnh báo chuyển xử lý sau 48 giờ |
+| Tổng quan cho nhân viên | Dữ liệu cảm biến |
 |---|---|
-| ![Dashboard](docs/images/dashboard.png) | ![Cảnh báo OVERDUE_ESCALATED](docs/images/alert-escalated.png) |
+| ![Dashboard](docs/images/dashboard.png) | ![Dữ liệu cảm biến](docs/images/sensor-data.png) |
 
-| Danh sách cảnh báo | Dãy tủ: hộp thật và ngăn có khóa thật |
+| Cảnh báo chuyển xử lý sau 48 giờ | Danh sách cảnh báo |
 |---|---|
-| ![Danh sách cảnh báo](docs/images/alerts.png) | ![Trang Dãy tủ](docs/images/locker-banks.png) |
+| ![Cảnh báo OVERDUE_ESCALATED](docs/images/alert-escalated.png) | ![Danh sách cảnh báo](docs/images/alerts.png) |
 
-<p align="center"><img src="docs/images/kiosk-phone.png" alt="Trang mở tủ trên điện thoại" width="260"><br>
-<em>Trang mở tủ bằng điện thoại <code>/k/LOCKER-01</code> (đích của mã QR dán trên hộp)</em></p>
+| Dãy tủ: hộp thật và ngăn có khóa thật | Trang mở tủ trên điện thoại |
+|---|---|
+| ![Trang Dãy tủ](docs/images/locker-banks.png) | <img src="docs/images/kiosk-phone.png" alt="Trang mở tủ trên điện thoại" width="260"> |
 
 ---
 
-## Cài đặt nhanh
+## Cài đặt và chạy
 
-Yêu cầu: JDK 8, Apache Tomcat 9, SQL Server 2019/2022 (có `sqlcmd`), Git Bash (cho các script `.sh`). NetBeans là tùy chọn.
+Cần có JDK 8, Apache Tomcat 9, SQL Server 2019/2022 kèm `sqlcmd`, Git Bash cho các script `.sh`. NetBeans là tùy chọn.
 
-### 1. Cơ sở dữ liệu
+### 1. Tạo cơ sở dữ liệu
 
-Cách nhanh, chạy cả 3 file (file `01` xóa và tạo lại database `PRJ301_LOCKER`):
+Chạy một lệnh (lệnh này **xóa và tạo lại** database `PRJ301_LOCKER`):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\run_demo_db.ps1
 ```
 
-Hoặc chạy tay theo **đúng thứ tự** (luôn có `-I`, file SQL có chữ Việt phải giữ UTF-8 BOM):
-
-```powershell
-sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\01_schema.sql
-sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\02_data_v1.sql
-sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\03_v2_v3.sql
-sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\04_phone.sql
-sqlcmd -S localhost -U sa -P 12345 -I -b -f 65001 -i sql\05_auto_checkin.sql
-sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_box.sql
-```
+Script chạy lần lượt các file `01` tới `05` dưới đây. Tham số mặc định là `localhost`, `sa`, `12345`.
 
 | File | Nội dung |
 |---|---|
 | `sql/01_schema.sql` | Database, bảng, view, trigger, `Audit_Append`, quyền cơ bản |
-| `sql/02_data_v1.sql` | Dữ liệu mẫu (tài khoản, khu, dãy, ngăn, lịch sử), procedure của các tình huống, ví và nạp tiền |
-| `sql/03_v2_v3.sql` | Cách mở (mật mã, thẻ, vân tay), khóa nhập sai, `Device_Authorize`, `Enroll_*`, `AppConfig`, cỡ S/M/L, giá theo cỡ, Tự chọn, hủy 5 phút, quá hạn, nhắc hạn, các khu trong ĐHQG-HCM (tọa độ gần đúng, sửa ở trang Khu vực) |
-| `sql/04_phone.sql` | v7: thêm cách mở `PHONE` và mã chạm NFC (`DeviceTap`, `Device_TapIssue`), bỏ cọc thẻ (`CARD_DEPOSIT`); chạy lại được |
-| `sql/05_auto_checkin.sql` | v7.1: hết 15 phút giữ chỗ lượt tự check-in thay vì `NO_SHOW` (`Deposit_ExpireNoShow`, `Deposit_ExpireOverdue`, vá `Device_Authorize`); chạy lại được, chạy sau 03/04 |
-| `sql/demo_box.sql` | Hộp thật, các dãy nó quản lý và ngăn có khóa thật ([xem dưới](#phần-cứng-demo-một-hộp-chính-nhiều-ngăn)); chạy lại được nhiều lần |
-| `sql/test_setup.sql` | Tài khoản và lượt gửi dựng sẵn cho Postman (không phải dữ liệu demo) |
-| `sql/test_overdue.sql` | Dời hạn trả của một lượt `ACTIVE` về quá khứ để demo khóa quá hạn, phụ phí, chuyển xử lý |
-| `sql/test_cleanup.sql` | Đóng các lượt gửi và cảnh báo mà tài khoản test để lại |
+| `sql/02_data_v1.sql` | Dữ liệu mẫu, procedure của các tình huống, ví và nạp tiền |
+| `sql/03_v2_v3.sql` | Cách mở, khóa nhập sai, `Device_Authorize`, `AppConfig`, cỡ S/M/L, giá, Tự chọn, hủy, quá hạn, nhắc hạn, các khu trong ĐHQG-HCM |
+| `sql/04_phone.sql` | Cách mở `PHONE`, mã chạm NFC, bỏ cọc thẻ |
+| `sql/05_auto_checkin.sql` | Hết giờ giữ chỗ thì tự check-in |
+| `sql/demo_box.sql` | Chọn hộp thật, các dãy nó quản lý và ngăn có servo (chạy riêng, xem [Hộp tủ ESP32](#hộp-tủ-esp32)) |
+| `sql/upgrade_main_2026-11.sql` | Nâng cấp DB đang chạy, dùng khi [triển khai](#triển-khai-lên-internet) |
+| `sql/test_setup.sql`, `test_overdue.sql`, `test_cleanup.sql` | Dữ liệu cho Postman, demo quá hạn, dọn dữ liệu test |
 
-Lưu ý:
+Lưu ý khi chạy lại từng file:
 
-- Chạy lại `02_data_v1.sql` đưa các procedure đặt tủ về bản cũ, nên khi đó phải chạy lại `03_v2_v3.sql` rồi `04_phone.sql`.
-- Chạy lại `03_v2_v3.sql` đưa `Device_Authorize` và các procedure khác về bản cũ, nên sau đó phải chạy lại `04_phone.sql`.
-- `03_v2_v3.sql` đặt khóa của `LOCKER-01` về khóa mẫu công khai. Tạo khóa bí mật riêng (lưu trong
-  `config/device-keys.local.properties`, không commit) và ghi SHA-256 của nó vào DB:
+- Luôn dùng `sqlcmd -I -b -f 65001`. File có chữ Việt phải giữ UTF-8 BOM.
+- Chạy lại `02` phải chạy lại `03`, `04`, `05`. Chạy lại `03` phải chạy lại `04`, `05`. Chạy lại `04` phải chạy lại `05`.
+- `03_v2_v3.sql` đặt khóa của `LOCKER-01` về khóa mẫu công khai. Trước khi cắm hộp thật, tạo khóa riêng bằng lệnh sau (khóa lưu trong `config/device-keys.local.properties`, không commit):
 
   ```powershell
   powershell -ExecutionPolicy Bypass -File scripts\set-device-key.ps1
   ```
 
-- Muốn đổi một object trên DB đang chạy, chỉ chạy khối `CREATE OR ALTER` đó, đừng chạy lại cả `03_v2_v3.sql` (nó đặt lại khóa hộp).
-- Kết nối DB nằm ở `src/java/dao/DbContext.java` (mặc định `localhost:1433`, `sa` / `12345`).
+### 2. Build và chạy
 
-### 2. Build và chạy trên Tomcat
+**NetBeans:** Clean and Build, rồi Run trên Tomcat 9.
 
-- **Git Bash:** biên dịch `src/java` vào `build/web`, chép `web/` và các jar cần khi chạy, rồi báo Tomcat tải lại context
-  (`TOMCAT` mặc định `E:/apache-tomcat-9.0.113`, `JAVAC` mặc định JDK 1.8.0_202; đổi bằng biến môi trường):
+**Git Bash:** biên dịch vào `build/web`, rồi báo Tomcat tải lại. Đổi đường dẫn bằng biến `TOMCAT` và `JAVAC` nếu máy bạn khác mặc định.
 
-  ```bash
-  sh scripts/build-dev.sh
-  ```
+```bash
+sh scripts/build-dev.sh
+```
 
-  Context `SmartLocker` trỏ tới `build/web` (file `conf/Catalina/localhost/SmartLocker.xml` của Tomcat). Chờ khoảng 15 giây
-  rồi mở `http://localhost:8080/SmartLocker/`. Nên chạy Tomcat trong cửa sổ riêng bằng `bin\startup.bat`.
-- **NetBeans:** Clean and Build, rồi Run (Tomcat 9).
+Context `SmartLocker` của Tomcat trỏ tới `build/web` (file `conf/Catalina/localhost/SmartLocker.xml`). Chờ khoảng 15 giây rồi mở <http://localhost:8080/SmartLocker/>.
 
-Email nhắc hạn cần `config/mail.local.properties` (chép từ `mail.local.properties.example`); không có file này thì việc gửi email tắt.
+Kết nối DB mặc định là `localhost:1433`, `sa` / `12345`. Đổi bằng biến môi trường `DB_URL`, `DB_USER`, `DB_PASSWORD`.
+
+Hai tính năng tùy chọn, chép file `.example` trong `config/` thành file `.local.properties` rồi điền:
+
+| File | Tác dụng khi có file |
+|---|---|
+| `config/mail.local.properties` | Gửi email nhắc hạn và xác nhận thẻ; không có thì tắt gửi mail |
+| `config/mapbox.local.properties` | Dùng bản đồ Mapbox (`pk.*`); không có thì dùng Leaflet |
 
 ### 3. Tài khoản demo
 
-Mật khẩu chung: `123456`. Bảng dưới là tài khoản do `sql/02_data_v1.sql` tạo.
+Mật khẩu chung: `123456`.
 
-| Vai trò | Tài khoản | Ghi chú |
+| Vai trò | Tài khoản | Không đăng nhập được |
 |---|---|---|
-| ADMIN | `admin`, `admin_ops`, `admin_lib`, `admin_doma`, `admin_cant`, `admin_gym`, `sysadmin1`, `manager1`, `manager2` | `sysadmin2` bị vô hiệu hóa |
-| OPERATOR | `operator1` ... `operator22` | `operator20` bị khóa, `operator22` bị vô hiệu hóa |
-| TECHNICIAN | `tech1` ... `tech22` | `tech20` bị khóa, `tech22` bị vô hiệu hóa |
-| AUDITOR | `auditor1` ... `auditor16` | `auditor15` bị khóa, `auditor16` bị vô hiệu hóa |
-| END_USER | `student1` ... `student28`, `user1` | `locked1`, `student28` bị khóa; `student27` bị vô hiệu hóa |
-| END_USER (Postman) | `v2pin`, `v2card`, `v2fp`, `v2noshow`, `v3overdue`, `v3poor`, `v3late`, `v3esc` | Tạo bởi `sql/test_setup.sql` |
+| ADMIN | `admin`, `admin_ops`, `admin_lib`, `admin_doma`, `admin_cant`, `admin_gym`, `sysadmin1`, `manager1`, `manager2` | `sysadmin2` |
+| OPERATOR | `operator1` ... `operator22` | `operator20`, `operator22` |
+| TECHNICIAN | `tech1` ... `tech22` | `tech20`, `tech22` |
+| AUDITOR | `auditor1` ... `auditor16` | `auditor15`, `auditor16` |
+| END_USER | `student1` ... `student28`, `user1` | `locked1`, `student27`, `student28` |
+
+Một số tài khoản mẫu đã có sẵn lượt gửi. Muốn thử đặt ngăn mới, dùng tài khoản chưa có lượt đang mở, ví dụ `student10`.
 
 ---
 
-## Phần cứng demo: một hộp chính, nhiều ngăn
+## Hộp tủ ESP32
 
-Chỉ có **một hộp ESP32 thật** (mặc định `LOCKER-01`) với **một ngăn có servo khóa**. Hộp này quản lý mọi ngăn của các dãy được
-gắn với nó: người dùng đặt ngăn nào của các dãy đó cũng được, nhập mật mã / quẹt thẻ / chạm điện thoại / đặt vân tay tại hộp thì lượt gửi vẫn
-chuyển CHECK_IN rồi PICKUP như thường. Câu trả lời `UNLOCK` (của `/api/device/auth` và lệnh `UNLOCK` trong heartbeat `/api/health`)
-có thêm cờ `"physical"`:
+Bản demo có **một hộp ESP32 thật** (`LOCKER-01`) với **một ngăn có servo**. Hộp này quản lý mọi ngăn của các dãy gắn với nó. Mở ngăn nào lượt gửi cũng chạy đúng, nhưng phản hồi `UNLOCK` có cờ `physical`:
 
-- `true`: đúng ngăn vật lý (hoặc chưa cấu hình ngăn nào), servo mở cửa;
-- `false`: ngăn khác, hộp không động servo, màn LCD chỉ báo `Ngan A03 OK` / `Da gui do` (hoặc `Da lay do`).
+- `true`: đúng ngăn vật lý, servo mở cửa.
+- `false`: ngăn khác, servo không chạy, LCD chỉ báo kết quả.
 
-Firmware 3.2 (`firmware/SmartLocker_Online`) đọc cờ này; firmware cũ không đọc cờ thì mở servo như trước. Lệnh mở từ xa của nhân viên
-và lệnh từ trang điện thoại cũng theo cờ này. Các dãy còn lại gắn với hộp minh họa (`"demo":true`), được `LockerMonitor` giả
-heartbeat nên luôn trực tuyến trên bản đồ. Trang **Dãy tủ** của nhân viên ghi "Hộp thật" và "Ngăn có khóa thật: A01" (ảnh ở trên).
+Các dãy còn lại gắn với hộp minh họa (`"demo":true`), được máy chủ giả heartbeat nên luôn trực tuyến.
 
-### Đặt hộp, các dãy và ngăn vật lý
-
-Sửa 4 biến ở đầu `sql/demo_box.sql` rồi chạy lại script:
+**Chọn dãy cho hộp thật:** sửa 4 biến ở đầu `sql/demo_box.sql` rồi chạy trong database của app. Mặc định hộp quản lý dãy `LIB-A`, ngăn servo `A01`.
 
 ```sql
-DECLARE @device_code   NVARCHAR(30)  = N'LOCKER-01';  -- hộp ESP32 thật
-DECLARE @banks         NVARCHAR(400) = N'CANT-A';     -- các dãy nó quản lý, cách nhau bằng dấu phẩy, ví dụ N'CANT-A,CANT-B'
-DECLARE @physical_bank NVARCHAR(20)  = N'CANT-A';     -- dãy + ngăn có servo;
-DECLARE @physical_slot NVARCHAR(20)  = N'A01';        --   cả hai NULL: mọi ngăn của hộp đều mở servo
+DECLARE @device_code   NVARCHAR(30)  = N'LOCKER-01';
+DECLARE @banks         NVARCHAR(400) = N'LIB-A';     -- nhiều dãy thì cách nhau bằng dấu phẩy
+DECLARE @physical_bank NVARCHAR(20)  = N'LIB-A';
+DECLARE @physical_slot NVARCHAR(20)  = N'A01';       -- cả hai NULL: mọi ngăn đều mở servo
 ```
 
-```powershell
-sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_box.sql
-```
+Các dãy cùng một hộp phải có mã ngăn khác nhau. Khi hộp thật tắt, sau 90 giây các dãy của nó thành OFFLINE; muốn thử chỉ trên trình duyệt thì đặt ở dãy minh họa như `CANT-B`.
 
-Script gắn các dãy vào hộp, giao dãy bị hộp bỏ ra cho một thiết bị `"demo":true` (để không thành OFFLINE), lưu `physical_slot_id`
-trong `OperatingProfile` của hộp, không đổi khóa API, ghi nhật ký `DEMO_BOX` và in bảng dãy → hộp → ngăn vật lý. Các dãy cùng một hộp
-phải có mã ngăn khác nhau (ví dụ `CANT-A` A01-A15 và `CANT-B` B01-B12) vì hộp nhận lượt gửi theo mã ngăn; script từ chối nếu trùng,
-và từ chối bỏ một dãy còn lượt gửi đang mở.
-
-Hộp thật không gửi heartbeat (tắt máy) thì sau 90 giây các dãy của nó chuyển OFFLINE và không đặt được: khi chỉ thử trên trình duyệt,
-hãy đặt ở một dãy minh họa (ví dụ `CANT-B`), hoặc giả hộp bằng `test/tool/ScenarioSender`.
-
-### Firmware và sơ đồ chân
-
-Sketch `firmware/SmartLocker_Online/SmartLocker_Online.ino` (ESP32 Dev Module). Hướng dẫn nạp, nối mạng (LAN hoặc Cloudflare tunnel)
-và thao tác tại hộp: [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md).
-`secrets.h` (Wi-Fi, địa chỉ máy chủ, khóa API) nằm trong `.gitignore`.
+**Firmware** là `firmware/SmartLocker_Online` (bản 4.1, board ESP32 Dev Module). Chép `secrets.example.h` thành `secrets.h` rồi điền Wi-Fi, địa chỉ máy chủ và khóa hộp. Hướng dẫn nạp đầy đủ: [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md).
 
 | Thiết bị | Chân ESP32 |
 |---|---|
-| PN532 (đọc thẻ và chạm NFC, chế độ I2C) | SDA 21, SCL 22 chung với LCD, địa chỉ 0x24 |
+| PN532 (thẻ và chạm NFC, I2C, địa chỉ 0x24) | SDA 21, SCL 22 |
+| LCD 1602 I2C (địa chỉ 0x27) | SDA 21, SCL 22 |
 | AS608 (vân tay) | TX → 35, RX → 15 |
-| LCD 1602 I2C | SDA 21, SCL 22, địa chỉ 0x27 |
 | Servo chốt | 32 |
-| Servo cửa | 2 |
+| Servo kéo ngăn | 2 (cắm dây tín hiệu sau khi nạp xong) |
 | SRF05 | TRIG 5, ECHO 18 (qua mạch chia áp) |
 | Keypad 4x4 | Hàng 13, 14, 25, 26; cột 33, 19, 23, 27 |
 
-Tại hộp: `0-9` + `#` gửi mật mã 6 số; `B` + mã đăng ký đăng ký thẻ; `C` + mã đăng ký đăng ký vân tay; `D` xem IP và tình trạng máy chủ;
-quẹt thẻ hoặc chạm điện thoại vào PN532. Hộp không tự quyết định mở: mọi mật mã, thẻ, vân tay đều gửi lên máy chủ.
+Thao tác tại hộp: `0-9` + `#` gửi mật mã; `B` + mã đăng ký để đăng ký thẻ; `C` + mã đăng ký để đăng ký vân tay; `D` xem IP và tình trạng máy chủ.
 
-**Thẻ và điện thoại trên cùng một PN532 (v7).** Mỗi vòng lặp firmware cho PN532 làm một việc: đọc thẻ, rồi giả làm thẻ NFC. Điện thoại có ví HCE trả UID ngẫu nhiên bắt đầu bằng `08`, firmware bỏ qua để lần chạm không bị tính là thẻ lạ.
+**Chạm điện thoại:** PN532 giả làm một thẻ NFC chứa link `/k/LOCKER-01?n=<mã>`. Mã do máy chủ cấp qua heartbeat, đổi mỗi phút và sau mỗi lần mở, dùng được 5 phút. Điện thoại chạm vào là mở trang của hộp; người đã đăng nhập bấm "Mở tủ của tôi". Mỗi vòng lặp PN532 luân phiên đọc thẻ và giả lập thẻ NFC. Một số iPhone không đọc được thẻ giả lập, khi đó dùng QR.
 
-**Chạm điện thoại.** PN532 giả làm một thẻ NFC chứa link `/k/LOCKER-01?n=<mã>`. Mã do máy chủ cấp qua
-heartbeat (`"nfc":true` → `tap_path`), đổi mỗi phút và sau mỗi lần mở, dùng được 5 phút. Chạm điện thoại là trang của hộp mở
-ra; người đã đăng nhập và có lượt đặt ở hộp đó bấm "Mở tủ của tôi", máy chủ kiểm tra mã còn mới (đang đứng ở hộp) rồi gửi
-lệnh mở qua heartbeat. Điện thoại mở được mọi lượt đặt của chủ tài khoản ở hộp đó, dù lượt đặt chọn cách mở nào. Hộp demo
-không có đầu đọc nên trang của nó mở được không cần mã.
+`firmware/SmartLocker_Local` là bản thử phần cứng không nối mạng và vẫn dùng đầu đọc RC522.
 
 ---
 
-## Bảng giá
+## Bảng giá và luật
 
-Mọi con số nằm trong bảng `AppConfig`, `SlotSize`, `StoragePlan` (`sql/03_v2_v3.sql`); `util.Pricing` tính giống hệt SQL
-(`dbo.fn_SizePrice`, `fn_HourRate`, `fn_OverdueRate`, `fn_CustomPrice`). Giá = giá gói × hệ số cỡ (S 100%, M 130%, L 169%),
-làm tròn lên 100 đ. Mật mã, thẻ từ, điện thoại và vân tay cùng một giá, không có tiền cọc (v7 bỏ cọc thẻ `CARD_DEPOSIT`; đăng ký thẻ miễn phí).
+Giá = giá gói × hệ số cỡ (S 100%, M 130%, L 169%), làm tròn lên 100 đ. Đơn vị là đồng.
 
 | Gói (ân hạn) | S | M | L |
 |---|---:|---:|---:|
@@ -281,28 +252,31 @@ làm tròn lên 100 đ. Mật mã, thẻ từ, điện thoại và vân tay cùn
 | Giá một giờ (gia hạn, Tự chọn theo giờ) | 2.500 | 3.300 | 4.300 |
 | Phụ phí mỗi giờ trễ (150% giá một giờ) | 3.800 | 4.900 | 6.400 |
 
-**Tự chọn** (số nguyên giờ 1-23 hoặc số nguyên ngày 1-7; giá do server tính lại, trang chỉ hiển thị):
+**Tự chọn** do máy chủ tính lại, trang chỉ hiển thị:
 
-- Theo giờ: `min(giá một giờ × N, giá trọn ngày)` của cỡ ngăn.
-- Theo ngày: `giá trọn ngày × N × hệ số`, hệ số 100% cho 1 ngày, 90% cho 2-6 ngày (`CUSTOM_MULTI_DAY_PCT`),
-  80% cho 7 ngày (`CUSTOM_WEEK_PCT`), làm tròn lên 100 đ.
-- Ân hạn lấy theo gói dài nhất không vượt thời gian chọn; gia hạn và phụ phí trễ giữ luật chung.
+- Theo giờ (1-23): `min(giá một giờ × N, giá trọn ngày)`.
+- Theo ngày (1-7): `giá trọn ngày × N × hệ số`. Hệ số 100% cho 1 ngày, 90% cho 2-6 ngày, 80% cho 7 ngày, làm tròn lên 100 đ.
 
 | Tự chọn | S | M | L |
 |---|---:|---:|---:|
-| 1 giờ | 2.500 | 3.300 | 4.300 |
 | 3 giờ | 7.500 | 9.900 | 12.900 |
 | 9 giờ | 22.500 | 29.700 | 38.700 |
-| 10-23 giờ (bằng giá trọn ngày) | 25.000 | 32.500 | 42.300 |
-| 1 ngày | 25.000 | 32.500 | 42.300 |
-| 2 ngày (90%) | 45.000 | 58.500 | 76.100 |
-| 3 ngày (90%) | 67.500 | 87.800 | 114.100 |
-| 6 ngày (90%) | 135.000 | 175.500 | 228.200 |
-| 7 ngày (80%) | 140.000 | 182.000 | 236.600 |
+| 10-23 giờ | 25.000 | 32.500 | 42.300 |
+| 2 ngày | 45.000 | 58.500 | 76.100 |
+| 3 ngày | 67.500 | 87.800 | 114.100 |
+| 6 ngày | 135.000 | 175.500 | 228.200 |
+| 7 ngày | 140.000 | 182.000 | 236.600 |
 
-Các luật khác (`AppConfig`): giữ chỗ 15 phút (`HOLD_MIN`), hủy và hoàn 100% trong 5 phút (`CANCEL_FREE_MIN`), hủy sau đó tới hết giữ chỗ hoàn 50% làm tròn xuống 100 đ
-(`CANCEL_LATE_REFUND_PCT`), không hoàn tiền khi không đến (v7.1 không còn `NO_SHOW_REFUND_PCT`: lượt tự check-in), dư tối thiểu sau khi đặt 10.000 đ (`BOOKING_BUFFER`), email nhắc trước 15 phút (`DUE_REMINDER_MIN`),
-chuyển xử lý sau 48 giờ (`ESCALATE_HOURS`). Đổi một con số thì sửa cả SQL và `util.Pricing`, rồi chạy `PricingDatabaseIntegrationTest`.
+| Luật | Giá trị | Khóa trong `AppConfig` |
+|---|---|---|
+| Giữ chỗ | 15 phút | `HOLD_MIN` |
+| Hủy hoàn đủ | 5 phút đầu | `CANCEL_FREE_MIN` |
+| Hủy muộn, tới hết giữ chỗ | hoàn 50%, làm tròn xuống 100 đ | `CANCEL_LATE_REFUND_PCT` |
+| Số dư tối thiểu sau khi đặt | 10.000 đ | `BOOKING_BUFFER` |
+| Email nhắc trước hạn | 15 phút | `DUE_REMINDER_MIN` |
+| Chuyển nhân viên xử lý | 48 giờ | `ESCALATE_HOURS` |
+
+Các con số nằm trong `AppConfig`, `SlotSize`, `StoragePlan`, và `util.Pricing` tính giống hệt SQL. Đổi một con số thì sửa cả hai nơi rồi chạy `PricingDatabaseIntegrationTest`.
 
 ---
 
@@ -313,187 +287,224 @@ chuyển xử lý sau 48 giờ (`ESCALATE_HOURS`). Đổi một con số thì s�
 ```mermaid
 sequenceDiagram
     participant U as Người dùng
-    participant W as Trình duyệt (bản đồ)
-    participant S as Tomcat (Servlet)
+    participant W as Trình duyệt
+    participant S as Tomcat
     participant D as SQL Server
-    participant B as Hộp ESP32 LOCKER-01
+    participant B as Hộp ESP32
 
-    U->>W: Chọn ngăn, gói (hoặc Tự chọn), cách mở
-    W->>U: Popup: trừ ngay, số dư còn lại, luật hủy và phụ phí
+    U->>W: Chọn ngăn, gói, cách mở
+    W->>U: Popup: trừ ngay, số dư còn lại, luật hủy
     U->>W: Xác nhận
     W->>S: POST /BookingController (action=reserve)
     S->>D: Deposit_Reserve (UPDLOCK, HOLDLOCK)
-    D-->>S: RESERVED, đã trừ ví (hoặc lỗi 500xx)
+    D-->>S: RESERVED, đã trừ ví
     S-->>W: Giữ chỗ 15 phút, mật mã ở Tủ của tôi
-    U->>B: Nhập mật mã (hoặc quẹt thẻ, vân tay, chạm điện thoại)
+    U->>B: Mật mã, thẻ, vân tay hoặc chạm điện thoại
     B->>S: POST /api/device/auth (X-API-Key)
     S->>D: Device_Authorize
-    D-->>S: UNLOCK CHECK_IN, lượt ACTIVE, due_at = lúc mở + thời gian gói
-    S-->>B: UNLOCK + physical (true: mở servo, false: LCD báo OK)
-    Note over U,B: Gia hạn (tối đa 3 lần) ở Tủ của tôi
-    U->>B: Nhập lại mật mã
+    D-->>S: UNLOCK CHECK_IN, lượt ACTIVE
+    S-->>B: UNLOCK + physical
+    U->>B: Xác thực lại
     B->>S: POST /api/device/auth (intent ASK)
-    S-->>B: CHOOSE (không đổi gì), LCD "A: Mo tu / B: Tra tu"
-    alt Phím A: mở tủ, lượt vẫn chạy (lặp lại bao nhiêu lần cũng được)
-        B->>S: POST /api/device/auth (intent OPEN)
-        S-->>B: UNLOCK ACCESS, lượt vẫn ACTIVE, audit ACCESS
+    S-->>B: CHOOSE, LCD "A: Mo tu / B: Tra tu"
+    alt Phím A: mở tủ, lượt vẫn chạy
+        B->>S: intent OPEN
+        S-->>B: UNLOCK ACCESS
     else Phím B: trả tủ
-        B->>S: POST /api/device/auth (intent CHECKOUT)
-        S-->>B: UNLOCK PICKUP, lượt COMPLETED, ngăn AVAILABLE
+        B->>S: intent CHECKOUT
+        S-->>B: UNLOCK PICKUP, lượt COMPLETED, ngăn trống
     end
 ```
 
-### Quá hạn, khóa, chuyển xử lý và cảnh báo
+### Quá hạn
 
 ```mermaid
 flowchart TD
-    A["Lượt ACTIVE"] -->|"quá due_at + ân hạn"| L["Khóa quá hạn: locked_at, phụ phí mỗi giờ trễ, ví có thể âm"]
-    L -->|"gia hạn"| E1["Từ chối 50048"]
-    L -->|"mở tại hộp khi ví âm"| E2["DENY OVERDUE_UNPAID kèm số nợ"]
-    E2 -->|"nạp tiền VietQR, nhân viên duyệt"| L
-    L -->|"mở khi ví không âm"| P["PICKUP, overdue_fee, COMPLETED"]
-    L -->|"quá due_at 48 giờ"| X["Chuyển xử lý: escalated_at"]
-    X --> AL["Cảnh báo OVERDUE_ESCALATED kèm bằng chứng"]
-    AL --> ST["Nhân viên OPERATOR / ADMIN liên hệ người dùng, mở từ xa, kết thúc lượt ở trang Lượt gửi"]
+    A["Lượt ACTIVE"] -->|"quá hạn trả + ân hạn"| L["Tủ khóa, phụ phí mỗi giờ trễ, ví có thể âm"]
+    L -->|"mở khi ví âm"| E["Từ chối OVERDUE_UNPAID kèm số nợ"]
+    E -->|"nạp tiền, nhân viên duyệt"| L
+    L -->|"mở khi ví không âm"| P["PICKUP, COMPLETED"]
+    L -->|"quá hạn 48 giờ"| X["Cảnh báo OVERDUE_ESCALATED"]
+    X --> ST["Nhân viên liên hệ, mở từ xa, kết thúc lượt"]
     ST --> P
-    M["LockerMonitor, 15 giây một lần"] -.->|"Deposit_ExpireOverdue, Deposit_Escalate"| L
-    M -.-> X
 ```
 
-### Cảnh báo từ thiết bị
+### Cảnh báo
 
 ```mermaid
 flowchart LR
-    HB["Heartbeat /api/health (3 giây)"] --> LM["LockerMonitor"]
-    LM -->|"im lặng quá 90 giây"| OFF["Device_MarkOffline: hộp OFFLINE, dãy không đặt được, cảnh báo DEVICE_OFFLINE"]
-    EV["Sự kiện mở/đóng /api/locker/batch"] --> RE["RuleEngine (luật cố định)"]
-    RE --> AL["Cảnh báo: SUSPECTED_SPOOF, SENSOR_FAULT, LOST_CARD_USED..."]
+    HB["Heartbeat /api/health"] --> LM["LockerMonitor"]
+    LM -->|"im lặng quá 90 giây"| OFF["Hộp OFFLINE, cảnh báo DEVICE_OFFLINE"]
+    EV["Phiên mở/đóng /api/locker/batch"] --> RE["RuleEngine"]
+    RE --> AL["SUSPECTED_SPOOF, SENSOR_FAULT, LOST_CARD_USED..."]
     RS["RiskScorer (Weka)"] -.->|"chỉ cho điểm rủi ro"| AL
-    AL --> T["TECHNICIAN: xem bằng chứng, phiếu bảo trì, đánh dấu đã xử lý"]
+    AL --> T["Kỹ thuật viên xem bằng chứng, mở phiếu bảo trì"]
 ```
 
-Chi tiết từng tình huống, mã lỗi và sơ đồ trạng thái ngăn: [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md).
+Firmware hiện không gửi `/api/locker/batch` vì hộp không có cảm biến cửa và cân. Dữ liệu cho luồng này đến từ dữ liệu mẫu, `scripts/send-demo.ps1` hoặc công cụ `ScenarioSender`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\send-demo.ps1 -Count 5 -Fault -Bad
+```
+
+Chi tiết từng tình huống và mã lỗi: [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md).
 
 ---
 
 ## Kiểm thử
 
-**Unit test và integration test** (TestNG; các lớp `*DatabaseIntegrationTest` cần SQL Server đang chạy):
+Kết quả trên database dựng sạch từ script, ngày 11/11/2026:
 
-```bash
-sh scripts/test.sh
-```
+| Bộ kiểm thử | Kết quả |
+|---|---|
+| TestNG, 14 lớp | 83/83 đạt, không bỏ qua |
+| Postman + newman, 19 kịch bản | 241 request, 514 assertion, 0 lỗi |
+| Trình duyệt: khách, đặt và hủy, mở tủ, quá hạn, trang điện thoại, 17 trang nhân viên | 36/36 mục đạt, không có lỗi JavaScript hay HTTP 500 |
 
-Chạy một lớp: `sh scripts/test.sh test.PricingTest`. Các lớp: `PricingTest`, `PricingDatabaseIntegrationTest` (so `util.Pricing` với
-SQL, gồm Tự chọn), `AuditChainDatabaseIntegrationTest`, `RuleEngineTest`, `RiskScorerTest`, `SecurityUtilsTest`, `MailTemplatesTest`.
-
-**Postman + newman** (18 kịch bản: mật mã, trang điện thoại, chạm NFC, thẻ, vân tay, sai mã và khóa 5 lần, không đến, quá hạn, nạp tiền,
-hủy, mức đệm, chuyển xử lý, gia hạn). Chạy script dựng dữ liệu trước, vì mỗi lần đoán sai ở hộp đều tính vào khóa 5 lần:
-
-```bash
-sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql/test_setup.sql
-newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<khóa LOCKER-01>
-sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql/test_cleanup.sql
-```
-
-Hướng dẫn chi tiết: [docs/postman/README.md](./docs/postman/README.md).
-
-**Demo quá hạn không cần chờ:** đặt và mở tủ một lần (CHECK_IN), sửa `@username` trong `sql/test_overdue.sql` rồi chạy;
-`LockerMonitor` khóa, tính phụ phí và (với `@minutes_late` trên 48 giờ) chuyển xử lý trong 15 giây. Dọn bằng `sql/test_cleanup.sql`.
-
-**Công cụ chạy tay** (`test/tool`, không đóng gói vào WAR): `ScenarioSender` (giả hộp ESP32), `DataReplayer`, `ModelTrainer`
-(train mô hình Weka vào `src/java/ml`), `TransferCheck`, `DeviceKey`. Chạy bằng Run File trong NetBeans, hoặc:
+Test ghi vào database nên chỉ chạy trên database có tiền tố `SL_`, không chạy trên `PRJ301_LOCKER`. Lệnh PowerShell dưới đây dùng đường dẫn tuyệt đối tới thư mục repo:
 
 ```powershell
-javac -encoding UTF-8 -cp "build/web/WEB-INF/classes;lib/*" -d build/tools test/tool/*.java
-java -cp "build/tools;build/web/WEB-INF/classes;lib/*" tool.ScenarioSender remote
+powershell -ExecutionPolicy Bypass -File scripts\proof\build-db.ps1 -Repo "$PWD" -Database SL_TEST -TestSetup
+```
+
+```bash
+DB_URL='jdbc:sqlserver://localhost:1433;databaseName=SL_TEST;encrypt=false' sh scripts/test.sh
+```
+
+Chạy Postman trên một Tomcat test riêng ở cổng 8081, trên một database mới dựng và chưa chạy `demo_box.sql`. Hai script dưới đây dừng lại nếu thấy `config/mail.local.properties`, để test không gửi mail thật:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\proof\test-stack.ps1 start -Database SL_TEST -Build
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\proof\newman.ps1 -Database SL_TEST
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\proof\test-stack.ps1 clean
+```
+
+Thêm: [docs/postman/README.md](./docs/postman/README.md) và [scripts/proof/README.md](./scripts/proof/README.md).
+
+**Demo quá hạn không cần chờ:** mở tủ một lần để lượt thành ACTIVE, sửa `@username` trong `sql/test_overdue.sql` rồi chạy. Trong 15 giây hệ thống khóa tủ và tính phụ phí. Dọn bằng `sql/test_cleanup.sql`.
+
+**Công cụ chạy tay** trong `test/tool`, không đóng gói vào WAR: `ScenarioSender` (giả hộp ESP32), `DataReplayer`, `ModelTrainer`, `TransferCheck`, `DeviceKey`.
+
+---
+
+## Triển khai lên Internet
+
+| Cách | Tài liệu |
+|---|---|
+| Render (Docker) + Azure SQL Database. **Mỗi lần push lên `main`, Render tự build và deploy lại** | [docs/deploy-render.md](./docs/deploy-render.md) |
+| Chạy trên máy cá nhân qua Cloudflare tunnel, dùng khi demo | [docs/deploy.md](./docs/deploy.md) |
+
+**Cập nhật database đang chạy** mà giữ nguyên dữ liệu: chỉ chạy các file sau, theo đúng thứ tự, bỏ qua bước đã làm. Đừng chạy lại `03_v2_v3.sql` vì nó đặt lại khóa của hộp.
+
+| Database đang ở bản | Chạy |
+|---|---|
+| Dựng từ `main` tại commit `da95f43` | `upgrade_main_2026-11.sql`, `04_phone.sql`, `05_auto_checkin.sql` |
+| Đã có `upgrade_main_2026-11.sql` | `04_phone.sql`, `05_auto_checkin.sql` |
+| Đã có `04_phone.sql` | `05_auto_checkin.sql` |
+
+```bash
+sqlcmd -I -b -f 65001 -S <server> -d PRJ301_LOCKER -U <user> -P <password> -i sql/05_auto_checkin.sql
 ```
 
 ---
 
-## Kiến trúc và cấu trúc thư mục
+## Kiến trúc và mã nguồn
 
 ```mermaid
 flowchart TD
     ESP["Hộp ESP32"] -->|X-API-Key| API["api/*: HealthApi, DeviceAuthApi, DeviceEnrollApi, LockerSessionApi"]
     Phone["Điện thoại /k/LOCKER-01"] --> Kiosk["api/KioskApi"]
-    Browser["Trình duyệt"] --> Filter["filter/SecurityFilter (quyền theo vai trò)"]
-    Filter --> Ctrl["controller/* (MVC2)"]
+    Browser["Trình duyệt"] --> Filter["filter/SecurityFilter"]
+    Filter --> Ctrl["controller/*"]
     Ctrl --> Views["WEB-INF/views/*.jsp"]
-    API --> DAO["dao/* (JDBC, DbContext)"]
+    API --> DAO["dao/*, DbContext"]
     Kiosk --> DAO
     Ctrl --> DAO
     API --> Svc["service/AlertService, RuleEngine, RiskScorer"]
-    Monitor["service/LockerMonitor"] -->|"ảnh chụp 2 giây"| DashApi["api/DashboardApi"]
-    DAO --> DB[("SQL Server PRJ301_LOCKER")]
+    Monitor["service/LockerMonitor"] --> DashApi["api/DashboardApi"]
+    DAO --> DB[("SQL Server")]
 ```
 
-- `DbContext` là nơi duy nhất mở kết nối JDBC và giữ một pool nhỏ; DAO đóng kết nối bằng try-with-resources (`close()` trả về pool).
-- Mọi quy tắc về tiền và thời gian nằm trong procedure SQL; Java chỉ gọi và dịch lỗi sang tiếng Việt (`Web.sqlMessage`).
-- View nằm trong `WEB-INF/views`, chỉ vào được qua controller. Dữ liệu người dùng in bằng `<c:out>`; JavaScript dựng HTML qua `esc()`.
-- Một stylesheet `web/css/app.css` (sáng/tối); `js/theme.js` đặt theme trước khi vẽ; không dùng CDN.
-- `/api/dashboard` đọc ảnh chụp trong bộ nhớ của `LockerMonitor` (không truy vấn DB); số liệu biểu đồ ở `/api/dashboard/stats`, nhớ 60 giây.
+- `DbContext` là nơi duy nhất mở kết nối JDBC và giữ một pool nhỏ; DAO đóng kết nối bằng try-with-resources.
+- Luật về tiền và thời gian nằm trong procedure SQL; Java gọi procedure và dịch lỗi sang tiếng Việt (`Web.sqlMessage`).
+- View nằm trong `WEB-INF/views`, chỉ vào được qua controller.
+- `/api/dashboard` đọc ảnh chụp trong bộ nhớ của `LockerMonitor`, không truy vấn DB; số liệu biểu đồ ở `/api/dashboard/stats`.
 
 ```
 SmartLocker/
-├── config/        # Khóa hộp thật, cấu hình email (*.local.properties, không commit)
-├── docs/          # SYSTEM_FLOWS, spec v2/v3, deploy, Postman, images (ảnh README)
-├── firmware/      # SmartLocker_Online (ESP32 nối web), SmartLocker_Local
-├── lib/           # JDBC, Gson, jBCrypt, Weka (vào WAR); TestNG, JCommander, SLF4J (chỉ để test)
-├── scripts/       # build-dev.sh, test.sh, set-device-key.ps1, update-tunnel-link.ps1, mail-preview.sh
-├── sql/           # 01_schema, 02_data_v1, 03_v2_v3, 04_phone, demo_box và các script test_*
+├── config/        # Mẫu email, file cấu hình mẫu (*.local.properties không commit)
+├── docs/          # SYSTEM_FLOWS, spec, deploy, Postman, ảnh, bài báo (paper)
+├── firmware/      # SmartLocker_Online (ESP32 nối web), SmartLocker_Local (thử phần cứng)
+├── lib/           # JDBC, Gson, jBCrypt, Weka; TestNG, JCommander, SLF4J chỉ dùng để test
+├── scripts/       # build-dev, test, set-device-key, send-demo, proof/ (DB và Tomcat test)
+├── sql/           # 01-05, demo_box, upgrade, test_*
 ├── src/java/
-│   ├── api/       # API JSON: thiết bị, điện thoại, dashboard, bản đồ tủ, Tủ của tôi
-│   ├── controller/# Servlet MVC2, mỗi trang một controller
-│   ├── dao/       # JDBC; DbContext
+│   ├── api/       # API JSON: thiết bị, điện thoại, dashboard, bản đồ, Tủ của tôi
+│   ├── controller/# Servlet MVC2
+│   ├── dao/       # JDBC
 │   ├── filter/    # SecurityFilter: đăng nhập, phân quyền, khóa API thiết bị
 │   ├── ml/        # Mô hình Weka đã train
 │   ├── model/     # Lớp dữ liệu
 │   ├── service/   # LockerMonitor, DueReminder, MailService, RuleEngine, RiskScorer, AuditVerifier
 │   └── util/      # Web, Pricing, Csv, SecurityUtils, SlotImages
-├── test/
-│   ├── test/      # Unit test và integration test (TestNG)
-│   └── tool/      # Công cụ chạy tay, không đóng gói vào WAR
-└── web/           # JSP, css, js, Leaflet đặt sẵn
+├── test/          # test/ (TestNG), tool/ (chạy tay), support/
+└── web/           # JSP, CSS, JS, Leaflet
 ```
 
 ### API chính
 
 | Method | Endpoint | Mô tả |
 |---|---|---|
-| `POST` | `/BookingController` | `action=reserve` (gói `planId` hoặc Tự chọn `customMin`), `cancel` (`expectedRefund`: số popup đã hiện), `extend` |
-| `GET` | `/api/locker-map` | Khu, dãy, ngăn, giá theo cỡ, Tự chọn (khách xem được, chỉ đọc) |
-| `GET` | `/api/my-locker` | Lượt đang mở, thẻ, vân tay, lịch sử của người dùng |
-| `POST` | `/TopupController` | Yêu cầu nạp tiền VietQR; nhân viên duyệt hoặc từ chối |
-| `POST` | `/api/health` | Heartbeat của hộp; trả lệnh đang chờ (`UNLOCK` có `physical`) và `tap_path` cho thẻ NFC |
-| `POST` | `/api/device/auth` | Mật mã, thẻ hoặc vân tay tại hộp → `UNLOCK` / `CHOOSE` / `CONFIRM_EMAIL` / `DENY` |
-| `POST` | `/api/device/enroll/start`, `/finish` | Đăng ký thẻ hoặc vân tay cho lượt đang mở |
-| `POST` | `/api/locker/batch` | Lịch sử mở/đóng của hộp |
-| `POST` | `/api/kiosk/unlock` | Mở từ trang của hộp `/k/{device_code}`: mật mã, hoặc chạm điện thoại (`method: PHONE`, mã chạm, cần đăng nhập) |
-| `GET` | `/api/dashboard`, `/api/dashboard/stats` | Số liệu dashboard và biểu đồ |
+| `POST` | `/BookingController` | `action=reserve`, `cancel`, `extend` |
+| `GET` | `/api/locker-map` | Khu, dãy, ngăn, giá; khách xem được |
+| `GET` | `/api/my-locker` | Lượt đang mở, thẻ, vân tay, lịch sử |
+| `POST` | `/TopupController` | Yêu cầu nạp tiền; nhân viên duyệt hoặc từ chối |
+| `POST` | `/api/health` | Heartbeat; trả lệnh đang chờ và `tap_path` cho thẻ NFC |
+| `POST` | `/api/device/auth` | Mật mã, thẻ, vân tay → `UNLOCK` / `CHOOSE` / `CONFIRM_EMAIL` / `DENY` |
+| `POST` | `/api/device/enroll/start`, `/finish` | Đăng ký thẻ hoặc vân tay |
+| `POST` | `/api/locker/batch` | Phiên mở/đóng của hộp |
+| `POST` | `/api/kiosk/unlock` | Mở từ trang điện thoại bằng mật mã hoặc chạm NFC |
+| `GET` | `/api/dashboard`, `/api/dashboard/stats` | Số liệu tổng quan và biểu đồ |
 
 Hợp đồng API thiết bị: [docs/spec/smart-locker-v2.md](./docs/spec/smart-locker-v2.md) mục 4.
 
 ---
 
-## Bảo mật
+## Bảo mật và hạn chế đã biết
 
-- `SecurityFilter`: đường dẫn chưa khai báo bị từ chối; GET cần quyền READ, các phương thức khác cần WRITE của tài nguyên.
-  Chỉ bản đồ và `/api/locker-map` (GET) mở cho khách.
-- Người dùng được nạp lại ở mỗi request: tài khoản bị khóa bị đăng xuất ngay, đổi vai trò có hiệu lực ngay.
+**Đã có:**
+
+- `SecurityFilter`: đường dẫn chưa khai báo bị từ chối; GET cần quyền READ, phương thức khác cần WRITE. Chỉ bản đồ và `/api/locker-map` (GET) mở cho khách.
+- Mật khẩu băm BCrypt. Người dùng được nạp lại ở mỗi request, tài khoản bị khóa bị đăng xuất ngay.
 - Đặt tủ chống tranh chấp bằng khóa trong procedure (`UPDLOCK, HOLDLOCK`).
-- Nhật ký audit chỉ thêm, nối chuỗi băm SHA-256; AUDITOR chỉ đọc.
-- Khóa API hộp lưu SHA-256; email chỉ lưu sau khi mã gửi tới email đó được nhập lại; cookie phiên SameSite=Lax.
-- Hạn chế đã biết: chưa có CSRF token (dựa vào SameSite=Lax), tài khoản `sa` nằm trong `DbContext`.
+- Nhật ký audit chỉ thêm, nối chuỗi băm SHA-256.
+- Khóa API của hộp lưu dạng SHA-256. Cookie phiên SameSite=Lax. Dữ liệu người dùng in bằng `<c:out>` và `esc()`.
+
+**Chưa có, vì đây là đồ án demo.** Cần xử lý trước khi dùng thật:
+
+- Chưa giới hạn số lần đăng nhập sai và chưa có trang đổi mật khẩu. Tài khoản mới do nhân viên tạo hoặc đặt lại đều dùng mật khẩu `123456`.
+- Email lưu ngay khi nhập, chưa xác minh bằng mã.
+- Chưa có CSRF token, hiện dựa vào SameSite=Lax.
+- Chưa có trang lỗi 500 riêng.
+- `DbContext` có sẵn mặc định `sa` / `12345` cho máy local; khi triển khai phải đặt `DB_URL`, `DB_USER`, `DB_PASSWORD`.
+- Firmware dùng `setInsecure()`, không ghim chứng chỉ TLS.
+
+---
 
 ## Tài liệu liên quan
 
-- [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md): luồng nghiệp vụ, bảng tình huống, sơ đồ trạng thái.
-- [docs/spec/smart-locker-v2.md](./docs/spec/smart-locker-v2.md): đặc tả v2 và hợp đồng API thiết bị.
-- [docs/spec/smart-locker-v3.md](./docs/spec/smart-locker-v3.md): v3 (cỡ ngăn, giá, hủy, quá hạn, nhắc hạn).
-- [docs/deploy.md](./docs/deploy.md): demo qua Cloudflare tunnel, link cố định GitHub Pages, QR cho hộp.
-- [docs/postman/README.md](./docs/postman/README.md): Postman collection và cách chạy bằng newman.
+- [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md): luồng nghiệp vụ, tình huống, sơ đồ trạng thái.
+- [docs/spec/smart-locker-v2.md](./docs/spec/smart-locker-v2.md), [docs/spec/smart-locker-v3.md](./docs/spec/smart-locker-v3.md): đặc tả.
+- [docs/deploy.md](./docs/deploy.md), [docs/deploy-render.md](./docs/deploy-render.md): triển khai.
+- [docs/postman/README.md](./docs/postman/README.md): Postman và newman.
 - [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md): nạp firmware và dùng hộp thật.
+- [docs/paper/smartlocker.tex](./docs/paper/smartlocker.tex): bài báo, số đo ở [docs/paper/evidence](./docs/paper/evidence/README.md).
 
 ## Giấy phép
 

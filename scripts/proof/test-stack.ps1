@@ -46,7 +46,8 @@ if ($Build) {
     try {
         $env:TOMCAT = $TomcatHome
         # sh of Git for Windows: it is not on the PATH of PowerShell
-        & (Join-Path (Split-Path (Split-Path (Get-Command git).Source)) "bin\sh.exe") scripts/build-dev.sh --no-reload
+        $gitRoot = (Get-Command git).Source -replace '\\(mingw64\\bin|cmd|bin)\\git\.exe$', ''
+        & (Join-Path $gitRoot "bin\sh.exe") scripts/build-dev.sh --no-reload
         if ($LASTEXITCODE -ne 0) { throw "Build failed." }
     } finally { Pop-Location }
 }

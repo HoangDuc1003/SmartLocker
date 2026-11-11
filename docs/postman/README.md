@@ -1,13 +1,13 @@
 # Postman: Smart Locker v2 và v3
 
 Các file:
-- `SmartLocker-v2.postman_collection.json`: thư mục Heartbeat, Auth, Enroll, Kiosk (điện thoại), Batch, Scenarios (10 kịch bản
-  của spec v2 mục 6.2) và thư mục **v3** (kịch bản 11–17 của `docs/spec/smart-locker-v3.md` mục 7.3). Một collection duy nhất.
+- `SmartLocker-v2.postman_collection.json`: thư mục Heartbeat, Auth, Enroll, Kiosk (điện thoại), Batch, Scenarios (12 kịch bản: 1–10 của spec v2 mục 6.2, 18 mở nhiều lần, 19 chạm điện thoại) và thư mục **v3** (7 kịch bản 11–17 của
+  `docs/spec/smart-locker-v3.md` mục 7.3). Một collection duy nhất.
 - `SmartLocker-local.postman_environment.json`: `base_url` = `http://localhost:8080/SmartLocker`.
 - `SmartLocker-tunnel.postman_environment.json`: thay `REPLACE-ME` bằng địa chỉ Cloudflare tunnel hiện tại.
 
 ## Trước mỗi lần chạy
-1. Tomcat và SQL Server đang chạy, đã chạy `sql/03_v2_v3.sql`.
+1. Tomcat và SQL Server đang chạy, đã chạy đủ `sql/01` tới `sql/05` và **chưa** chạy `sql/demo_box.sql` (các kịch bản cần `LOCKER-01` ở dãy `CANT-A`).
 2. Chạy script dựng dữ liệu, ngay trước khi chạy collection:
    ```
    sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\test_setup.sql
