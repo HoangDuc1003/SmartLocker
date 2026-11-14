@@ -33,7 +33,8 @@ A real ESP32 box talks to the server through an API with its own key per box.**
 9. [Deploying to the Internet](#deploying-to-the-internet)
 10. [Architecture and source](#architecture-and-source)
 11. [Security and known limits](#security-and-known-limits)
-12. [Related documents](#related-documents)
+12. [Research paper](#research-paper)
+13. [Related documents](#related-documents)
 
 ---
 
@@ -510,6 +511,35 @@ Device API contract (Vietnamese): [docs/spec/smart-locker-v2.md](./docs/spec/sma
 
 ---
 
+## Research paper
+
+The paper *Smart Locker with Anomalous Access Detection Based on IoT Device Telemetry* is
+[docs/paper/smartlocker-10p.tex](./docs/paper/smartlocker-10p.tex): IEEE template (`IEEEtran`, one column, about 10
+pages), six authors from FPT University, Ho Chi Minh Campus; the corresponding author is Kieu Trong Khanh.
+
+| Part | Content |
+|---|---|
+| System | Three-tier architecture, workflow figure, hardware block diagram, sequence diagram of the box protocol, slot state diagram |
+| Anomaly detection | Table of 8 priority-ordered rules, risk score (Eq. 1), alert rule (Eq. 2), two-tier flowchart |
+| Evaluation | 4 Weka classifiers on 480 synthetic sessions (IBk, F1 = 0.977), 66 TestNG tests, 472 newman assertions, 6 detection scenarios, 6–31 ms response time |
+| Limitations | Synthetic sessions (no door sensor or load cell yet), one physically locked slot, no CSRF token or certificate check |
+
+**Compiling on Overleaf:** upload the `.tex` file (as `main.tex`) and the `docs/paper/images/` folder. The 22
+references are embedded in the file (`filecontents*`), so no separate `references.bib` is needed. If the reference
+count does not change, use *Recompile from scratch*.
+
+**The workflow figure** (`images/workflow.pdf`, `workflow.png`) is drawn by a script; the parts are redrawn after the
+real box, no copyrighted photo is used:
+
+```bash
+python -I docs/paper/tools/make_workflow.py
+```
+
+The measurements and the commands that produced them are in [docs/paper/evidence](./docs/paper/evidence/README.md).
+The earlier long version is still [docs/paper/smartlocker.tex](./docs/paper/smartlocker.tex).
+
+---
+
 ## Related documents
 
 The documents below are in Vietnamese.
@@ -519,7 +549,7 @@ The documents below are in Vietnamese.
 - [docs/deploy.md](./docs/deploy.md), [docs/deploy-render.md](./docs/deploy-render.md): deployment.
 - [docs/postman/README.md](./docs/postman/README.md): Postman and newman.
 - [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md): flashing the firmware and using the real box.
-- [docs/paper/smartlocker.tex](./docs/paper/smartlocker.tex): the paper, with measurements in [docs/paper/evidence](./docs/paper/evidence/README.md).
+- [docs/paper/smartlocker-10p.tex](./docs/paper/smartlocker-10p.tex): the paper (see [Research paper](#research-paper)), with measurements in [docs/paper/evidence](./docs/paper/evidence/README.md).
 
 ## License
 

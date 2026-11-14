@@ -33,7 +33,8 @@ Hộp tủ ESP32 thật nói chuyện với máy chủ qua API có khóa riêng 
 9. [Triển khai lên Internet](#triển-khai-lên-internet)
 10. [Kiến trúc và mã nguồn](#kiến-trúc-và-mã-nguồn)
 11. [Bảo mật và hạn chế đã biết](#bảo-mật-và-hạn-chế-đã-biết)
-12. [Tài liệu liên quan](#tài-liệu-liên-quan)
+12. [Bài báo khoa học](#bài-báo-khoa-học)
+13. [Tài liệu liên quan](#tài-liệu-liên-quan)
 
 ---
 
@@ -510,6 +511,35 @@ Hợp đồng API thiết bị: [docs/spec/smart-locker-v2.md](./docs/spec/smart
 
 ---
 
+## Bài báo khoa học
+
+Bài báo *Smart Locker with Anomalous Access Detection Based on IoT Device Telemetry* nằm ở
+[docs/paper/smartlocker-10p.tex](./docs/paper/smartlocker-10p.tex): mẫu IEEE (`IEEEtran`, một cột, khoảng 10 trang),
+6 tác giả của FPT University cơ sở TP. Hồ Chí Minh, tác giả liên hệ là thầy Kieu Trong Khanh.
+
+| Phần | Nội dung |
+|---|---|
+| Hệ thống | Kiến trúc ba tầng, sơ đồ workflow, sơ đồ khối phần cứng, sơ đồ tuần tự của giao thức hộp, sơ đồ trạng thái ngăn |
+| Phát hiện bất thường | Bảng 8 luật theo thứ tự ưu tiên, điểm rủi ro (công thức 1), luật ra cảnh báo (công thức 2), lưu đồ hai tầng |
+| Đánh giá | 4 bộ phân loại Weka trên 480 phiên tổng hợp (IBk, F1 = 0,977), 66 test TestNG, 472 assertion newman, 6 kịch bản phát hiện, thời gian phản hồi 6–31 ms |
+| Hạn chế | Dữ liệu phiên là tổng hợp (hộp chưa có cảm biến cửa và loadcell), một ngăn có khóa thật, chưa có CSRF token và kiểm tra chứng chỉ |
+
+**Biên dịch trên Overleaf:** tải lên file `.tex` (làm `main.tex`) và thư mục `docs/paper/images/`. Danh mục 22 tài liệu
+tham khảo đã nhúng sẵn trong file (`filecontents*`), không cần tải `references.bib` riêng. Nếu số tài liệu chưa đổi,
+chọn *Recompile from scratch*.
+
+**Hình workflow** (`images/workflow.pdf`, `workflow.png`) được vẽ bằng script, linh kiện vẽ lại theo hộp thật, không
+dùng ảnh có bản quyền:
+
+```bash
+python -I docs/paper/tools/make_workflow.py
+```
+
+Số đo của bài và lệnh tạo ra chúng ở [docs/paper/evidence](./docs/paper/evidence/README.md). Bản dài trước đó vẫn ở
+[docs/paper/smartlocker.tex](./docs/paper/smartlocker.tex).
+
+---
+
 ## Tài liệu liên quan
 
 - [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md): luồng nghiệp vụ, tình huống, sơ đồ trạng thái.
@@ -517,7 +547,7 @@ Hợp đồng API thiết bị: [docs/spec/smart-locker-v2.md](./docs/spec/smart
 - [docs/deploy.md](./docs/deploy.md), [docs/deploy-render.md](./docs/deploy-render.md): triển khai.
 - [docs/postman/README.md](./docs/postman/README.md): Postman và newman.
 - [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md): nạp firmware và dùng hộp thật.
-- [docs/paper/smartlocker.tex](./docs/paper/smartlocker.tex): bài báo, số đo ở [docs/paper/evidence](./docs/paper/evidence/README.md).
+- [docs/paper/smartlocker-10p.tex](./docs/paper/smartlocker-10p.tex): bài báo (xem [Bài báo khoa học](#bài-báo-khoa-học)), số đo ở [docs/paper/evidence](./docs/paper/evidence/README.md).
 
 ## Giấy phép
 
