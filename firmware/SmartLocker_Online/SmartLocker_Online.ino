@@ -1,43 +1,37 @@
 /*
  * SmartLocker - online box LOCKER-01 (ESP32 DevKit, ESP32 core 3.x)
- * Hardware: LCD 1602 I2C, 2 servos (bolt + door), SRF05, keypad 4x4, PN532 (NFC), AS608.
+ * Hardware: LCD 1602 I2C, 2 servos (bolt + pull-out door), SRF05, keypad 4x4, PN532 (NFC), AS608.
  *
- * The box never decides on its own: every PIN, card and finger goes to the web (POST /api/device/auth), and the box
- * opens only on "UNLOCK". A heartbeat every 3 s (POST /api/health) keeps LOCKER-01 ONLINE and brings the commands queued
- * by the web: UNLOCK (phone tap, phone page, staff), DELETE_FP.
+ * The box never decides: every PIN, card and finger goes to the web (POST /api/device/auth) and the box opens only on
+ * "UNLOCK". A heartbeat every 3 s (POST /api/health) keeps LOCKER-01 ONLINE and brings the queued commands: UNLOCK
+ * (phone tap, phone page, staff) and DELETE_FP.
  *
- * v7, one PN532 (I2C mode, on the bus of the LCD) does two jobs in turns, one short slice per loop():
- *  - it reads RFID cards (readPassiveTargetID); a UID goes to /api/device/auth like before. A phone with an HCE wallet
- *    answers this poll with a random 4-byte UID starting 0x08: those are ignored silently, or a tap would count as an
- *    unknown card towards the 5-try lockout.
- *  - it emulates an NFC Type 4 tag holding one URL record: base URL + "tap_path" of the heartbeat reply, e.g.
- *    .../SmartLocker/k/LOCKER-01?n=Ab3dEf7hJk2m. The token changes every minute and after each use, so the tag is
- *    rewritten when the path changes. A phone that taps the box opens that page; the signed-in owner presses
- *    "Mo tu cua toi" and the UNLOCK comes with the next heartbeat. The box never sees who the phone belongs to.
- * No emulation while a PIN is typed or a card is being enrolled.
+ * One PN532 (I2C, shared with the LCD) takes turns, one short slice per loop():
+ *  - card reader: a UID goes to /api/device/auth. A 4-byte UID starting 0x08 is random (a phone HCE wallet): ignored,
+ *    or a phone tap would count as an unknown card towards the 5-try lockout.
+ *  - NFC tag: one URL record, base URL + "tap_path" of the heartbeat (/k/LOCKER-01?n=<token>). The token changes every
+ *    minute and after each use, so the tag is rewritten when it changes. The phone opens the page, the signed-in owner
+ *    presses "Mo tu cua toi", the UNLOCK comes with the next heartbeat. No tag while a PIN is typed or a card enrolled.
  *
- * Keypad:  0-9 PIN (6 digits)   # send   * clear / cancel
- *          B  enroll a card     C  enroll a finger   (then the 6-digit enroll code from "Tu cua toi", #)
- *          D  door closed: show IP / server status;  door open: lock now
- *          A / B after "A: Mo tu / B: Tra tu": open the rented slot / return it
+ * Keypad: 0-9 PIN (6 digits), # send, * clear / cancel. B enroll a card, C enroll a finger (then the 6-digit code from
+ * "Tu cua toi", #). D: door closed = IP / server status, door open = lock now. Every auth goes first with intent ASK;
+ * a rented slot answers CHOOSE ("A: Mo tu / B: Tra tu"): A sends it again with OPEN (the rental goes on), B with
+ * CHECKOUT (the rental ends), * or CHOOSE_MS cancels. An older server ignores the intent and answers PICKUP.
  *
- * Open many times (v6): every auth goes with "intent":"ASK". A rented slot answers CHOOSE and the LCD shows
- * "A: Mo tu" / "B: Tra tu"; the box keeps the PIN / card UID / finger slot it just read and sends the same auth
- * again with "intent":"OPEN" (UNLOCK phase ACCESS, the rental goes on) or "CHECKOUT" (PICKUP, the rental ends).
- * '*' or CHOOSE_MS without a key cancels. An older server ignores the intent and answers PICKUP as before.
+ * Only one compartment has the servos: an UNLOCK with "physical":false only shows "Ngan B08 OK" (sql/demo_box.sql);
+ * no "physical" (an older server) means every slot is the real one. Opening releases the bolt, then turns the door
+ * servo. D locks at once. Otherwise: while the SRF05 sees someone within DOORWAY_CM nothing counts; once nobody is
+ * there a DOOR_OPEN_MS countdown runs and locks the door (someone coming back stops it, leaving starts it again from
+ * the top). DOOR_OPEN_MAX_MS after opening it locks anyway, so a blocked sensor cannot leave the slot open.
+ * The SRF05 also drives the LCD backlight: on while someone is near, off SCREEN_OFF_MS after the last person and input.
  *
- * One box serves every slot of the banks it manages, but only one compartment has the servos: an UNLOCK with
- * "physical":false (another slot, see sql/demo_box.sql) only shows "Ngan A07 OK" on the LCD. A reply without
- * "physical" (an older server) means every slot is the real one.
+ * Speed (4.3): one kept-alive HTTP(S) connection (no TCP/TLS handshake per request), the LCD is written only when its
+ * text changes (the I2C bus is shared with the PN532), the PN532 is reconfigured only when it changes role, and the
+ * sonar waits for an echo of at most SONAR_MAX_CM.
  *
- * After an unlock the bolt servo releases (and the door servo opens, if fitted). The user locks it with D;
- * a door left open locks by itself after DOOR_OPEN_MS. The SRF05 only drives the LCD backlight: on while
- * someone is near, off SCREEN_OFF_MS after the last person and the last input.
- *
- * Arduino IDE libraries: Keypad, Adafruit Fingerprint Sensor Library, ArduinoJson 7, LiquidCrystal I2C (Frank de
- * Brabander), and PN532-Arduino of Seeed-Studio (github.com/Seeed-Studio/PN532: PN532, PN532_I2C, EmulateTag). The NDEF
- * record of the tag is built here, so no NDEF library is needed. Servos use the ESP32 LEDC, no library.
- * Copy secrets.example.h to secrets.h first.
+ * Libraries: Keypad, Adafruit Fingerprint Sensor Library, ArduinoJson 7, LiquidCrystal I2C (Frank de Brabander) and
+ * PN532-Arduino of Seeed-Studio (PN532, PN532_I2C, EmulateTag). No NDEF library: the record is built here. Servos use
+ * the ESP32 LEDC. Copy secrets.example.h to secrets.h first.
  */
 
 #include <WiFi.h>
@@ -58,99 +52,79 @@
 #error "Copy secrets.example.h to secrets.h and fill in Wi-Fi, server and API key"
 #endif
 
-static const char FIRMWARE[] = "4.1-esp32";
+static const char FIRMWARE[] = "4.3-esp32";
 
-// ---- Pin map of the box ----
-// PN532 in I2C mode (switches I0=1, I1=0) on SDA 21 / SCL 22 next to the LCD; it answers at 0x24, the LCD at 0x27.
-static constexpr bool USE_NFC = true;           // false: no cards and no tag; phones open only through the /k page (QR) or staff
-static constexpr uint16_t NFC_LISTEN_MS = 5;    // an emulation slice waits this long for a phone. The library polls the PN532 over I2C
-                                                // many times per timeout, so a turn really blocks the loop about 10x longer than this: keep it small
-static constexpr uint16_t CARD_POLL_MS = 30;    // a card slice waits this long for a card
-byte rowPins[4] = {13, 14, 25, 26};             // R1..R4
-byte colPins[4] = {33, 19, 23, 27};             // C1..C4
-static constexpr int FP_RX_PIN = 35;            // ESP32 <- AS608 TX
-static constexpr int FP_TX_PIN = 15;            // ESP32 -> AS608 RX
+// ---- Switches and pins ----
+// PN532 in I2C mode (switches I0=1, I1=0) on SDA 21 / SCL 22 with the LCD: the PN532 answers at 0x24, the LCD at 0x27.
+static constexpr bool USE_NFC = true;              // false: no cards and no tag (phones open through the /k page or staff)
+static constexpr bool USE_FINGERPRINT = true;      // false: skip the AS608
+static constexpr bool USE_DOOR_SERVO = true;       // false: only the bolt moves, GPIO2 stays untouched
+static constexpr bool USE_SONAR = true;            // false: backlight always on, the door locks right at DOOR_OPEN_MS
+static constexpr int I2C_SDA = 21, I2C_SCL = 22;
+static constexpr uint8_t LCD_ADDR = 0x27;          // some 1602 backpacks use 0x3F
+static constexpr int FP_RX_PIN = 35, FP_TX_PIN = 15;   // ESP32 RX <- AS608 TX, ESP32 TX -> AS608 RX
 static constexpr uint32_t FP_BAUD = 57600;
-static constexpr bool USE_FINGERPRINT = true;   // false: skip the AS608 (e.g. while it is faulty)
-static constexpr int I2C_SDA = 21;
-static constexpr int I2C_SCL = 22;
-static constexpr uint8_t LCD_ADDR = 0x27;       // some 1602 backpacks use 0x3F
 static constexpr int SERVO_BOLT_PIN = 32;
-static constexpr int SERVO_DOOR_PIN = 2;        // the servo that pulls the drawer out. GPIO2 is a boot strap pin: plug its signal wire in only after the upload
-static constexpr int BOLT_LOCKED_DEG = 0;
-static constexpr int BOLT_UNLOCKED_DEG = 85;
-static constexpr int DOOR_CLOSED_DEG = 0;
-static constexpr int DOOR_OPEN_DEG = 70;         // pulls the drawer out by 70 degrees
-static constexpr bool USE_DOOR_SERVO = true;    // false: only the bolt servo moves, GPIO2 stays untouched (no pull-out servo fitted)
-static constexpr bool USE_SONAR = true;         // false: the backlight stays on (the SRF05 only drives the backlight)
-static constexpr int SONAR_TRIG = 5;
-static constexpr int SONAR_ECHO = 18;           // through the 1k / 2k divider (SRF05 echo is 5 V)
+static constexpr int SERVO_DOOR_PIN = 2;           // GPIO2 is a boot strap pin: plug the signal wire in after the upload
+static constexpr int BOLT_LOCKED_DEG = 0, BOLT_UNLOCKED_DEG = 85;
+static constexpr int DOOR_CLOSED_DEG = 0, DOOR_OPEN_DEG = 180;   // 180: the largest angle servoWrite() sends (2400 us)
+static constexpr int SONAR_TRIG = 5, SONAR_ECHO = 18;  // ECHO through the 1k / 2k divider (the SRF05 echo is 5 V)
+byte rowPins[4] = {13, 14, 25, 26};                // R1..R4
+byte colPins[4] = {33, 19, 23, 27};                // C1..C4
 
-static constexpr int NEAR_CM = 50;              // someone in front of the box wakes the backlight
-static constexpr uint32_t DOOR_OPEN_MS = 20000; // a door nobody locks with D locks by itself after this
-static constexpr uint32_t SCREEN_OFF_MS = 60000;    // backlight off this long after the last person and input
-static constexpr uint32_t ONLINE_MS = 10000;    // no good heartbeat for this long: "mat ket noi"
-static constexpr uint32_t CHOOSE_MS = 15000;    // A / B after a CHOOSE reply; the server's choose_sec wins when sent
+// ---- Timing ----
+static constexpr uint16_t NFC_LISTEN_MS = 5;       // a tag slice; the library polls I2C many times per timeout: keep it small
+static constexpr uint16_t CARD_POLL_MS = 30;       // a card slice
+static constexpr int NEAR_CM = 50;                 // someone this close wakes the backlight
+static constexpr int DOORWAY_CM = 50;              // someone this close still uses the open box: the lock countdown waits
+static constexpr int SONAR_MAX_CM = 100;           // farther, or no echo, is nobody; it bounds the pulseIn() wait (~7 ms)
+static constexpr uint32_t DOOR_OPEN_MS = 20000;    // the automatic lock comes this long after the last person left...
+static constexpr uint32_t DOOR_OPEN_MAX_MS = 120000;  // ...and never later than this after opening (a blocked sensor)
+static constexpr uint32_t SCREEN_OFF_MS = 60000;   // backlight off this long after the last person and input
+static constexpr uint32_t ONLINE_MS = 10000;       // no good heartbeat for this long: "mat ket noi"
+static constexpr uint32_t CHOOSE_MS = 15000;       // A / B after a CHOOSE reply; the server's choose_sec wins when sent
+static constexpr uint32_t CARD_ENROLL_MS = 30000;  // time to scan the card being enrolled
+static constexpr uint32_t CARD_REPEAT_MS = 1500;   // the same card still on the reader is not sent again
 static constexpr uint16_t HTTP_TIMEOUT_MS = 6000;
+static constexpr uint32_t IDLE_SOCKET_MS = 15000;  // a kept-alive socket idle longer is not trusted (Tomcat drops it at 20 s)
 
-char keys[4][4] = {
-  {'1', '2', '3', 'A'},
-  {'4', '5', '6', 'B'},
-  {'7', '8', '9', 'C'},
-  {'*', '0', '#', 'D'}
-};
+char keys[4][4] = {{'1', '2', '3', 'A'}, {'4', '5', '6', 'B'}, {'7', '8', '9', 'C'}, {'*', '0', '#', 'D'}};
 
 PN532_I2C pn532i2c(Wire);
-PN532 reader(pn532i2c);       // the card role
-EmulateTag nfc(pn532i2c);     // the tag role
-Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, 4, 4);
-HardwareSerial FingerSerial(2);
-Adafruit_Fingerprint finger(&FingerSerial);
+PN532 reader(pn532i2c);        // the card role
+EmulateTag tag(pn532i2c);      // the tag role
+Keypad keypad(makeKeymap(keys), rowPins, colPins, 4, 4);
+HardwareSerial fingerSerial(2);
+Adafruit_Fingerprint finger(&fingerSerial);
 LiquidCrystal_I2C lcd(LCD_ADDR, 16, 2);
+WiFiClient plainClient;        // all three kept between requests: HTTP keep-alive (a local HTTPClient
+WiFiClientSecure secureClient; // would close the socket in its destructor)
+HTTPClient server;
 
 enum Mode { MODE_IDLE, MODE_ENROLL_CODE, MODE_ENROLL_CARD, MODE_CHOOSE };
+enum NfcRole { ROLE_NONE, ROLE_READER, ROLE_TAG };
 Mode mode = MODE_IDLE;
-JsonDocument chooseBody;    // the auth that answered CHOOSE, sent again with OPEN or CHECKOUT
-String chooseSlot;
-uint32_t chooseDeadline = 0;
-String enrollType;          // "CARD" or "FINGERPRINT" while an enrollment runs
-String enrollCode;
-uint32_t enrollDeadline = 0;
-
-String baseUrl;             // e.g. http://192.168.1.10:8080/SmartLocker
-String pinBuffer;
-bool fingerOk = false;
-bool lcdOk = false;
+NfcRole nfcRole = ROLE_NONE;
+JsonDocument chooseBody;       // the auth that answered CHOOSE, sent again with OPEN or CHECKOUT
+String chooseSlot, enrollType, enrollCode, pinBuffer, baseUrl, tapPath, lastCardUid, shown1, shown2;
+uint32_t chooseDeadline, enrollDeadline, lastHeartbeat, lastGoodHeartbeat, holdMs, openedAt, clearSince,
+    lastDoorDraw, messageUntil, lastFingerScan, fingerQuietUntil, lastCardAt, lastActivity, lastSonar, lastHttpMs;
 uint32_t heartbeatEveryMs = 3000;
-uint32_t lastHeartbeat = 0;
-uint32_t lastGoodHeartbeat = 0;
 uint8_t heartbeatFails = 0;
 int lastHttpCode = 0;
-
-bool doorOpen = false;
-uint32_t holdUntil = 0;     // the door locks by itself at this time unless D locks it first
-uint32_t lastDoorDraw = 0;
-uint32_t messageUntil = 0;  // a result stays on screen until then, then the idle screen comes back
-bool idleDrawn = false;
-
-uint32_t lastFingerScan = 0;
-uint32_t fingerQuietUntil = 0;
-bool fingerWaitLift = true;   // read again only after the sensor saw no finger (a stuck or ghost image never repeats)
-String lastCardUid;
-uint32_t lastCardAt = 0;
-bool nfcOk = false;
-String tapPath;             // "/k/LOCKER-01?n=..." from the last heartbeat; empty: no tag is emulated
-uint8_t ndefBuf[128];       // the encoded NDEF message (EmulateTag copies it; NDEF_MAX_LENGTH is 128 there too)
-
+long lastCm = -1;              // last SRF05 distance; -1: nobody within SONAR_MAX_CM
+bool fingerOk, lcdOk, nfcOk, doorOpen, idleDrawn;
 bool screenOn = true;
-uint32_t lastActivity = 0;  // last key, card, finger, tap, message, or person seen by the SRF05
-uint32_t lastSonar = 0;
-long lastCm = -1;
+bool fingerWaitLift = true;    // read again only after the sensor saw no finger (a stuck or ghost image never repeats)
+uint8_t ndefBuf[128];          // the NDEF message of the tag (EmulateTag's NDEF_MAX_LENGTH is 128 too)
+
+// A millis() deadline that survives the 49-day wrap.
+static bool reached(uint32_t t) { return (int32_t) (millis() - t) >= 0; }
 
 // ---------------------------------------------------------------- screen (LCD 1602: 2 lines of 16)
 
 bool isOnline() {
-  return WiFi.status() == WL_CONNECTED && lastGoodHeartbeat != 0 && millis() - lastGoodHeartbeat < ONLINE_MS;
+  return WiFi.status() == WL_CONNECTED && lastGoodHeartbeat && millis() - lastGoodHeartbeat < ONLINE_MS;
 }
 
 void setScreen(bool on) {
@@ -164,41 +138,44 @@ void wake() {
   setScreen(true);
 }
 
-// '\n' starts the second line; each line is cut to 16 characters.
+// One line padded to 16 characters (no lcd.clear() flicker), written only when it changed. True when it changed.
+bool lcdLine(uint8_t row, String text, String& shown) {
+  text = text.substring(0, 16);
+  while (text.length() < 16) text += ' ';
+  if (text == shown) return false;
+  shown = text;
+  if (lcdOk) {
+    lcd.setCursor(0, row);
+    lcd.print(text);
+  }
+  return true;
+}
+
+// '\n' starts the second line. holdMs > 0 keeps the text that long, then the idle screen comes back.
 void show(const String& text, uint32_t holdMs = 0) {
-  Serial.print(F("[LCD] ")); Serial.println(text);
   messageUntil = holdMs ? millis() + holdMs : 0;
   idleDrawn = false;
-  if (!lcdOk) return;
   int nl = text.indexOf('\n');
-  String l1 = nl < 0 ? text : text.substring(0, nl);
-  String l2 = nl < 0 ? "" : text.substring(nl + 1);
-  l1 = l1.substring(0, 16);
-  l2 = l2.substring(0, 16);
-  while (l1.length() < 16) l1 += ' ';       // overwrite the old text without lcd.clear() flicker
-  while (l2.length() < 16) l2 += ' ';
-  lcd.setCursor(0, 0);
-  lcd.print(l1);
-  lcd.setCursor(0, 1);
-  lcd.print(l2);
+  bool changed = lcdLine(0, nl < 0 ? text : text.substring(0, nl), shown1);
+  changed |= lcdLine(1, nl < 0 ? String() : text.substring(nl + 1), shown2);
+  if (changed) {
+    Serial.print(F("[LCD] "));
+    Serial.println(text);
+  }
+}
+
+// A servo current dip can garble the LCD: forget what it shows, so the next show() writes every character again.
+void redrawLcd() {
+  shown1 = shown2 = String();
 }
 
 void drawIdle() {
-  if (mode == MODE_ENROLL_CODE) {
-    show(String(enrollType == "CARD" ? "Ma DK the:" : "Ma DK van tay:") + "\n" + pinBuffer + "_");
-  } else if (mode == MODE_ENROLL_CARD) {
-    show(F("Quet the dang ky\n(* de huy)"));
-  } else if (mode == MODE_CHOOSE) {
-    show("A: Mo tu  * huy\nB: Tra tu " + chooseSlot);
-  } else if (pinBuffer.length() > 0) {
-    String stars;
-    for (size_t i = 0; i < pinBuffer.length(); i++) stars += '*';
-    show("PIN: " + stars + "\n# gui  * xoa");
-  } else if (!isOnline()) {
-    show(WiFi.status() == WL_CONNECTED ? F("Mat ket noi\nDang thu lai...") : F("Mat Wi-Fi\nDang noi lai..."));
-  } else {
-    show(F("PIN + # / van tay\nthe / cham NFC"));
-  }
+  if (mode == MODE_ENROLL_CODE) show(String(enrollType == "CARD" ? "Ma DK the:" : "Ma DK van tay:") + "\n" + pinBuffer + "_");
+  else if (mode == MODE_ENROLL_CARD) show(F("Quet the dang ky\n(* de huy)"));
+  else if (mode == MODE_CHOOSE) show("A: Mo tu  * huy\nB: Tra tu " + chooseSlot);
+  else if (pinBuffer.length()) show("PIN: " + String("******").substring(0, pinBuffer.length()) + "\n# gui  * xoa");
+  else if (!isOnline()) show(WiFi.status() == WL_CONNECTED ? F("Mat ket noi\nDang thu lai...") : F("Mat Wi-Fi\nDang noi lai..."));
+  else show(F("PIN + # / van tay\nthe / cham NFC"));
   idleDrawn = true;
 }
 
@@ -206,94 +183,140 @@ void drawIdle() {
 
 void initNfc() {
   if (!USE_NFC) return;
-  nfc.setTagWriteable(false);           // a phone may read the tag, never change it
-  static uint8_t uid[3] = {0x53, 0x4C, 0x01};  // "SL", box 1; static: EmulateTag keeps the pointer and reads it later
-  nfc.setUid(uid);
-  nfcOk = nfc.init();
+  static uint8_t uid[3] = {0x53, 0x4C, 0x01};    // "SL", box 1; static: EmulateTag keeps the pointer and reads it later
+  tag.setTagWriteable(false);                    // a phone may read the tag, never change it
+  tag.setUid(uid);
+  nfcOk = tag.init();
+  nfcRole = ROLE_NONE;
   if (nfcOk) reader.setPassiveActivationRetries(0x01);   // one try per slice, or a poll blocks the keypad
   Serial.println(nfcOk ? F("PN532 OK (cards + tag)") : F("PN532 not found: I2C switches, SDA 21 / SCL 22, 0x24"));
 }
 
-// Writes base URL + tapPath into the tag. Called when the heartbeat brings another path or the base URL moved.
+// Writes base URL + tapPath into the tag: when the heartbeat brings another path or the base URL moved.
 void setTagUrl() {
   if (!nfcOk || tapPath.isEmpty()) return;
   String url = baseUrl + tapPath;
-  // one NDEF short record: MB+ME+SR+well-known, type length 1, payload length, type "U", URI code 0 (no prefix), the URL
-  int size = 5 + url.length();
-  if (size > (int) sizeof(ndefBuf) - 2) {   // EmulateTag keeps 2 bytes of its 128 for the length
+  int size = 5 + url.length();               // one NDEF short record: header, type length, payload length, 'U', 0x00
+  if (size > (int) sizeof(ndefBuf) - 2) {    // EmulateTag keeps 2 bytes of its 128 for the length
     Serial.printf("Tag URL too long (%d bytes): %s\n", size, url.c_str());
     return;
   }
-  ndefBuf[0] = 0xD1;
-  ndefBuf[1] = 1;
-  ndefBuf[2] = url.length() + 1;
-  ndefBuf[3] = 'U';
-  ndefBuf[4] = 0x00;
+  ndefBuf[0] = 0xD1;                         // MB + ME + SR + well-known type
+  ndefBuf[1] = 1;                            // type length
+  ndefBuf[2] = url.length() + 1;             // payload: URI code + URL
+  ndefBuf[3] = 'U';                          // type: URI
+  ndefBuf[4] = 0x00;                         // URI code 0: the URL is written in full
   memcpy(ndefBuf + 5, url.c_str(), url.length());
-  nfc.setNdefFile(ndefBuf, size);
-  Serial.print(F("NFC tag: ")); Serial.println(url);
+  tag.setNdefFile(ndefBuf, size);
+  Serial.print(F("NFC tag: "));
+  Serial.println(url);
 }
 
-// True when this loop may give its slice to the tag: never while a PIN is typed or a card is being enrolled.
-bool canEmulate() {
-  return nfcOk && !tapPath.isEmpty() && mode == MODE_IDLE && pinBuffer.length() == 0;
+// The PN532 needs SAMConfig when it changes between the reader and the tag role; staying in one role needs nothing.
+void nfcRoleTo(NfcRole role) {
+  if (nfcRole == role) return;
+  if (reader.SAMConfig()) nfcRole = role;   // on a failure (a PN532 brownout) the next slice tries again
 }
 
-// Lets a phone read the tag for NFC_LISTEN_MS. The phone opens the link itself; the box only shows that it was read.
-void emulateSlice() {
-  reader.SAMConfig();       // back from the reader role
-  if (nfc.emulate(NFC_LISTEN_MS)) {
-    wake();
-    show(F("Da gui lien ket\nXem dien thoai"), 3000);
-    Serial.println(F("NFC tag read by a phone"));
+String hexUid(const uint8_t* uid, uint8_t size) {
+  String text;
+  char b[3];
+  for (uint8_t i = 0; i < size; i++) {
+    snprintf(b, sizeof b, "%02X", uid[i]);
+    text += b;
+  }
+  return text;
+}
+
+void authorize(JsonDocument& body);
+void finishCardEnroll(const String& uid);
+
+// One short poll for a card. A UID goes to the enrollment that waits for it, or to the server as an open.
+void cardSlice() {
+  nfcRoleTo(ROLE_READER);
+  uint8_t uid[10];
+  uint8_t size = 0;
+  if (!reader.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &size, CARD_POLL_MS)) return;
+  if (size == 4 && uid[0] == 0x08) return;   // a random UID: a phone with an HCE wallet, no card (see the header)
+  String text = hexUid(uid, size);
+  if (text == lastCardUid && millis() - lastCardAt < CARD_REPEAT_MS) {   // the same card still on the reader
+    lastCardAt = millis();
+    return;
+  }
+  lastCardUid = text;
+  Serial.print(F("Card UID: "));
+  Serial.println(text);
+  wake();
+  if (mode == MODE_ENROLL_CARD) {
+    finishCardEnroll(text);
+  } else {
+    JsonDocument body;
+    body["method"] = "CARD";
+    body["card_uid"] = text;
+    authorize(body);
+  }
+  lastCardAt = millis();    // counted from the end of the HTTP call, or a card still held is sent again
+}
+
+// One PN532 job per loop(), so the keypad stays responsive: the card poll and the tag take turns.
+void nfcSlice() {
+  if (!nfcOk) return;
+  static bool tagTurn = false;
+  tagTurn = !tagTurn;
+  if (tagTurn && !tapPath.isEmpty() && mode == MODE_IDLE && pinBuffer.isEmpty()) {
+    nfcRoleTo(ROLE_TAG);
+    if (tag.emulate(NFC_LISTEN_MS)) {          // the phone opens the link itself; the box only says it was read
+      wake();
+      show(F("Da gui lien ket\nXem dien thoai"), 3000);
+      Serial.println(F("NFC tag read by a phone"));
+    }
+  } else if (mode == MODE_IDLE || mode == MODE_ENROLL_CARD) {
+    cardSlice();
   }
 }
 
 // ---------------------------------------------------------------- sonar
 
-long readDistanceCm() {
+void sampleSonar() {
+  if (!USE_SONAR || millis() - lastSonar < 150) return;
+  lastSonar = millis();
   digitalWrite(SONAR_TRIG, LOW);
   delayMicroseconds(2);
   digitalWrite(SONAR_TRIG, HIGH);
   delayMicroseconds(10);
   digitalWrite(SONAR_TRIG, LOW);
-  long us = pulseIn(SONAR_ECHO, HIGH, 25000);   // 25 ms ~ 4 m
+  // 58 us per cm, plus the SRF05's delay before the echo starts (the timeout counts from the call); farther: nobody
+  long us = pulseIn(SONAR_ECHO, HIGH, SONAR_MAX_CM * 58UL + 2500);
   long cm = us / 58;
-  return (us == 0 || cm < 2) ? -1 : cm;
+  lastCm = (us == 0 || cm < 2) ? -1 : cm;
 }
 
-void sampleSonar() {
-  if (!USE_SONAR || millis() - lastSonar < 150) return;
-  lastSonar = millis();
-  lastCm = readDistanceCm();
-}
-
-bool personNear() {
-  return USE_SONAR && lastCm > 0 && lastCm <= NEAR_CM;
+bool someoneWithin(int cm) {
+  return USE_SONAR && lastCm > 0 && lastCm <= cm;
 }
 
 // ---------------------------------------------------------------- bolt and door
 
-void servoWrite(int pin, int deg) {
-  // 50 Hz, 14-bit duty: 500 us (0 deg) .. 2400 us (180 deg) out of 20000 us
-  uint32_t us = 500 + (uint32_t) deg * 1900 / 180;
-  ledcWrite(pin, us * 16383 / 20000);
+void servoWrite(int pin, int deg) {   // 50 Hz, 14-bit duty: 500 us (0 deg) .. 2400 us (180 deg) of 20000 us
+  ledcWrite(pin, (500 + (uint32_t) deg * 1900 / 180) * 16383 / 20000);
 }
 
 void openDoor(int seconds, const String& message) {
   wake();
   show(message, 3000);
-  servoWrite(SERVO_BOLT_PIN, BOLT_UNLOCKED_DEG);   // release the bolt first, then push the door
+  servoWrite(SERVO_BOLT_PIN, BOLT_UNLOCKED_DEG);   // release the bolt first, then turn the door
   delay(1000);
   if (USE_DOOR_SERVO) {
     servoWrite(SERVO_DOOR_PIN, DOOR_OPEN_DEG);
     delay(500);
   }
   doorOpen = true;
-  // the server's open_sec only makes the door stay open longer than DOOR_OPEN_MS, never shorter
-  uint32_t openMs = seconds > 0 ? (uint32_t) seconds * 1000 : 0;
-  holdUntil = millis() + (openMs > DOOR_OPEN_MS ? openMs : DOOR_OPEN_MS);
+  openedAt = millis();
+  uint32_t ms = seconds > 0 ? (uint32_t) seconds * 1000 : 0;   // the server's open_sec only makes the countdown longer
+  holdMs = ms > DOOR_OPEN_MS ? ms : DOOR_OPEN_MS;
+  clearSince = 0;
   lastDoorDraw = 0;
+  redrawLcd();
 }
 
 // A slot without a servo: the server already moved the booking on, the LCD only confirms it.
@@ -305,7 +328,7 @@ void showSlotOk(const String& slotCode, const String& second) {
 
 void closeDoor() {
   if (USE_DOOR_SERVO) {
-    servoWrite(SERVO_DOOR_PIN, DOOR_CLOSED_DEG);   // door first, then the bolt
+    servoWrite(SERVO_DOOR_PIN, DOOR_CLOSED_DEG);   // the door first, then the bolt
     delay(1500);
   }
   servoWrite(SERVO_BOLT_PIN, BOLT_LOCKED_DEG);
@@ -315,86 +338,105 @@ void closeDoor() {
     initNfc();
     setTagUrl();
   }
+  redrawLcd();
   wake();
   show(F("Da khoa cua"), 1500);
   Serial.println(F("Door closed"));
 }
 
-// The door stays open until D locks it (handleKeypadDoorOpen) or the timeout locks it here.
+// The door stays open until D locks it (loop) or the countdown locks it here. The countdown runs only while nobody is
+// within DOORWAY_CM: someone there stops it, and it starts again from holdMs when they leave. Without the sonar nobody
+// is ever seen, so it simply locks holdMs after opening. DOOR_OPEN_MAX_MS after opening it locks whatever the sonar says.
 void doorTick() {
   if (!doorOpen) return;
   uint32_t now = millis();
-  if ((int32_t) (now - holdUntil) >= 0) {
+  if (someoneWithin(DOORWAY_CM)) clearSince = 0;
+  else if (!clearSince) clearSince = now;
+  if ((clearSince && now - clearSince >= holdMs) || now - openedAt >= DOOR_OPEN_MAX_MS) {
     closeDoor();
     return;
   }
-  if (messageUntil == 0 && now - lastDoorDraw >= 1000) {
-    lastDoorDraw = now;
-    long left = max(0L, (long) (int32_t) (holdUntil - now));
-    show("Bam D de khoa\nTu khoa sau " + String((left + 999) / 1000) + "s");
+  if (messageUntil || now - lastDoorDraw < 1000) return;
+  lastDoorDraw = now;
+  if (!clearSince) {
+    show(F("Bam D de khoa\nCo nguoi, cho..."));
+    return;
   }
+  uint32_t left = holdMs - (now - clearSince);
+  show("Bam D de khoa\nTu khoa sau " + String((left + 999) / 1000) + "s");
 }
 
 // ---------------------------------------------------------------- network
 
-bool startsWithHttps(const String& url) {
-  return url.startsWith("https://");
+// Closes the kept-alive sockets: on a new base URL (they still point at the old address) or after an error.
+void dropConnection() {
+  plainClient.stop();
+  secureClient.stop();
+}
+
+int postOnce(const String& url, const String& payload, JsonDocument& reply) {
+  if (!server.begin(url.startsWith("https://") ? (WiFiClient&) secureClient : plainClient, url)) return -1;
+  server.addHeader("Content-Type", "application/json");
+  server.addHeader("X-API-Key", DEVICE_API_KEY);
+  int code = server.POST(payload);
+  if (code > 0) {
+    String text = server.getString();
+    reply.clear();
+    deserializeJson(reply, text);
+    if (code != 200) Serial.printf("POST %s -> HTTP %d %s\n", url.c_str(), code, text.c_str());
+  }
+  server.end();             // keeps the socket open when the server allows keep-alive
+  return code;
 }
 
 // POST {path} with the device key. Returns the HTTP code (<= 0: no connection) and fills reply.
 int postJson(const char* path, const JsonDocument& body, JsonDocument& reply) {
   if (WiFi.status() != WL_CONNECTED || baseUrl.isEmpty()) return -1;
-  String url = baseUrl + "/api" + path;
-  String payload;
+  String url = baseUrl + "/api" + path, payload;
   serializeJson(body, payload);
-  WiFiClient plain;
-  WiFiClientSecure secure;
-  secure.setInsecure();     // demo: the tunnel certificate is not pinned
-  HTTPClient http;
-  http.setTimeout(HTTP_TIMEOUT_MS);
-  http.setConnectTimeout(HTTP_TIMEOUT_MS);
-  if (!http.begin(startsWithHttps(url) ? (WiFiClient&) secure : plain, url)) return -1;
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("X-API-Key", DEVICE_API_KEY);
-  int code = http.POST(payload);
-  if (code > 0) {
-    String text = http.getString();
-    reply.clear();
-    deserializeJson(reply, text);
-    if (code != 200) {
-      Serial.printf("POST %s -> HTTP %d %s\n", path, code, text.c_str());
-    }
-  } else {
-    Serial.printf("POST %s -> %s\n", path, http.errorToString(code).c_str());
+  // Tomcat closes an idle kept-alive socket after 20 s, and this core still reports it connected (a finger enrollment
+  // blocks the loop up to 50 s): after 15 s of silence, start on a new connection.
+  if (millis() - lastHttpMs > IDLE_SOCKET_MS) dropConnection();
+  int code = postOnce(url, payload, reply);
+  // The server closed the kept-alive socket before the request went out: send it once more on a new connection.
+  // Never after a read error: the server may have acted on it already (a check-in, a counted PIN).
+  if (code == HTTPC_ERROR_SEND_HEADER_FAILED || code == HTTPC_ERROR_SEND_PAYLOAD_FAILED || code == HTTPC_ERROR_NOT_CONNECTED) {
+    dropConnection();
+    code = postOnce(url, payload, reply);
   }
-  http.end();
+  if (code <= 0) {
+    Serial.printf("POST %s -> %s\n", path, HTTPClient::errorToString(code).c_str());
+    dropConnection();
+  }
+  lastHttpMs = millis();
   lastHttpCode = code;
   return code;
 }
 
 // Mode 2: read base_url from CONFIG_URL (the fixed link on GitHub Pages points at the current tunnel).
 void loadBaseUrl() {
+  dropConnection();          // the address may change, and only one TLS session at a time (heap)
   String configUrl = CONFIG_URL;
   if (configUrl.isEmpty()) {
     baseUrl = SERVER_BASE;
-    return;
-  }
-  WiFiClientSecure secure;
-  secure.setInsecure();
-  HTTPClient http;
-  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-  http.setTimeout(HTTP_TIMEOUT_MS);
-  // a query string skips the GitHub Pages cache after the tunnel moved
-  if (http.begin(secure, configUrl + "?t=" + String(millis())) && http.GET() == 200) {
-    JsonDocument doc;
-    if (!deserializeJson(doc, http.getString()) && doc["base_url"].is<const char*>()) {
-      baseUrl = doc["base_url"].as<String>();
-      while (baseUrl.endsWith("/")) baseUrl.remove(baseUrl.length() - 1);
+  } else {
+    WiFiClientSecure secure;   // GitHub Pages, not the app server: a short connection of its own
+    secure.setInsecure();
+    HTTPClient http;
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+    http.setTimeout(HTTP_TIMEOUT_MS);
+    if (http.begin(secure, configUrl + "?t=" + String(millis())) && http.GET() == 200) {   // ?t= skips the Pages cache
+      JsonDocument doc;
+      if (!deserializeJson(doc, http.getString()) && doc["base_url"].is<const char*>()) {
+        baseUrl = doc["base_url"].as<String>();
+        while (baseUrl.endsWith("/")) baseUrl.remove(baseUrl.length() - 1);
+      }
     }
+    http.end();
+    if (baseUrl.isEmpty()) baseUrl = SERVER_BASE;
+    Serial.print(F("Server: "));
+    Serial.println(baseUrl);
   }
-  http.end();
-  if (baseUrl.isEmpty()) baseUrl = SERVER_BASE;
-  Serial.print(F("Server: ")); Serial.println(baseUrl);
 }
 
 void connectWifi() {
@@ -406,7 +448,8 @@ void connectWifi() {
   uint32_t start = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - start < 15000) delay(250);
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.print(F("Wi-Fi OK, IP ")); Serial.println(WiFi.localIP());
+    Serial.print(F("Wi-Fi OK, IP "));
+    Serial.println(WiFi.localIP());
   }
 }
 
@@ -414,14 +457,12 @@ void runCommands(JsonArray commands) {
   for (JsonObject cmd : commands) {
     String action = cmd["action"] | "";
     Serial.printf("Command %ld: %s\n", (long) (cmd["command_id"] | 0L), action.c_str());
-    bool physical = cmd["physical"] | true;           // an old server sends no flag: every slot is the real one
-    if (action == "UNLOCK" && (!doorOpen || !physical)) {
-      // server text is "Mo tu\n(dien thoai)": line 1 gets the slot, line 2 keeps the source
-      String m = cmd["message"] | "Mo tu";
-      int nl = m.indexOf('\n');
-      String second = nl >= 0 ? m.substring(nl + 1) : "";
-      String slot = cmd["slot_code"] | "";
-      // a phone ACCESS (v6) or CHECK_IN opens like a keypad one; PICKUP too, the server already ended the rental
+    if (action == "UNLOCK") {
+      bool physical = cmd["physical"] | true;   // an old server sends no flag: every slot is the real one
+      if (doorOpen && physical) continue;       // already open
+      String message = cmd["message"] | "Mo tu", slot = cmd["slot_code"] | "";
+      int nl = message.indexOf('\n');           // "Mo tu\n(dien thoai)": line 1 gets the slot, line 2 keeps the source
+      String second = nl >= 0 ? message.substring(nl + 1) : "";
       Serial.printf("  phase %s, physical %d\n", (const char*) (cmd["phase"] | "-"), physical);
       if (physical) openDoor(cmd["open_sec"] | 8, "Mo tu ngan " + slot + "\n" + second);
       else showSlotOk(slot, second);
@@ -446,7 +487,7 @@ void heartbeatIfDue() {
   JsonDocument body, reply;
   body["firmware"] = FIRMWARE;
   body["uptime_sec"] = millis() / 1000;
-  body["nfc"] = nfcOk;      // v7: the server answers "tap_path" only to a box with a working tag
+  body["nfc"] = nfcOk;      // the server answers "tap_path" only to a box with a working tag
   bool wasOnline = isOnline();
   int code = postJson("/health", body, reply);
   if (code == 200) {
@@ -463,11 +504,11 @@ void heartbeatIfDue() {
     if (code == 401) Serial.println(F("HTTP 401: DEVICE_API_KEY is wrong"));
     if (++heartbeatFails >= 5 && String(CONFIG_URL).length() > 0) {
       heartbeatFails = 0;
-      loadBaseUrl();        // the tunnel may have a new address
-      setTagUrl();          // and the tag must point there
+      loadBaseUrl();        // the tunnel may have a new address...
+      setTagUrl();          // ...and the tag must point there
     }
   }
-  if (wasOnline != isOnline() && mode == MODE_IDLE && messageUntil == 0) idleDrawn = false;
+  if (wasOnline != isOnline() && mode == MODE_IDLE && !messageUntil) idleDrawn = false;
 }
 
 // ---------------------------------------------------------------- open and enroll
@@ -478,9 +519,8 @@ void showServerError(int code) {
   else show("Loi may chu\nHTTP " + String(code), 3000);
 }
 
-// One request decides: UNLOCK opens the door, CHOOSE asks A / B, DENY shows the reason the server wrote for the screen.
+// One request decides: UNLOCK opens, CHOOSE asks A / B, CONFIRM_EMAIL waits for the e-mail, DENY shows the server's text.
 // body: {"method":"PIN","pin":"482913"} | {"method":"CARD","card_uid":"04A1B2C3"} | {"method":"FINGERPRINT","sensor_slot":7}
-// A body without "intent" goes as ASK; the A / B keys send the kept body again with OPEN or CHECKOUT.
 void authorize(JsonDocument& body) {
   wake();
   if (!body["intent"].is<const char*>()) body["intent"] = "ASK";
@@ -491,8 +531,7 @@ void authorize(JsonDocument& body) {
     showServerError(code);
     return;
   }
-  String message = reply["message"] | "";
-  String result = reply["result"] | "";
+  String message = reply["message"] | "", result = reply["result"] | "";
   if (result == "CHOOSE") {
     chooseBody = body;
     chooseSlot = reply["slot_code"] | "";
@@ -509,38 +548,35 @@ void authorize(JsonDocument& body) {
   } else if (result == "UNLOCK") {
     String phase = reply["phase"] | "";
     if (reply["physical"] | true) {
-      openDoor(reply["open_sec"] | 8, message);   // CHECK_IN, ACCESS and PICKUP all release the bolt; D locks it again
-    } else {   // the booking moved on at the server; this slot has no servo
+      openDoor(reply["open_sec"] | 8, message);   // CHECK_IN, ACCESS and PICKUP all release the bolt
+    } else {                                      // the booking moved on at the server; this slot has no servo
       showSlotOk(reply["slot_code"] | "", phase == "PICKUP" ? "Da lay do" : phase == "ACCESS" ? "Da mo tu" : "Da gui do");
     }
   } else {
-    Serial.print(F("DENY ")); Serial.println(reply["reason"] | "");
+    Serial.print(F("DENY "));
+    Serial.println(reply["reason"] | "");
     show(message, 3000);
   }
 }
 
-// Returns the OK reply, or shows the error and returns false.
+// The OK reply of an enroll call, or false after showing the error.
 bool enrollCall(const char* path, JsonDocument& body, JsonDocument& reply) {
   int code = postJson(path, body, reply);
   if (code != 200) {
     showServerError(code);
     return false;
   }
-  if (String(reply["result"] | "") != "OK") {
-    show(reply["message"] | "Loi dang ky", 3000);
-    return false;
-  }
-  return true;
+  if (String(reply["result"] | "") == "OK") return true;
+  show(reply["message"] | "Loi dang ky", 3000);
+  return false;
 }
 
 // Waits for a finger image (want=true) or for the finger to leave (want=false); false on timeout or '*'.
 bool waitFinger(bool want, uint32_t timeoutMs) {
-  uint32_t start = millis();
-  while (millis() - start < timeoutMs) {
+  for (uint32_t start = millis(); millis() - start < timeoutMs; delay(50)) {
     uint8_t r = finger.getImage();
     if (want ? r == FINGERPRINT_OK : r == FINGERPRINT_NOFINGER) return true;
     if (keypad.getKey() == '*') return false;
-    delay(50);
   }
   return false;
 }
@@ -563,10 +599,9 @@ void startEnroll() {
   mode = MODE_IDLE;
   show(F("Kiem tra ma..."));
   if (!enrollCall("/device/enroll/start", body, reply)) return;
-
   if (enrollType == "CARD") {
     mode = MODE_ENROLL_CARD;
-    enrollDeadline = millis() + 30000;
+    enrollDeadline = millis() + CARD_ENROLL_MS;
     idleDrawn = false;
     return;
   }
@@ -580,15 +615,9 @@ void startEnroll() {
     show(F("Lay van tay loi\nBam C lam lai"), 3000);
     return;
   }
-  JsonDocument fin;
-  fin["type"] = "FINGERPRINT";
-  fin["enroll_code"] = enrollCode;
-  fin["sensor_slot"] = slot;
-  if (enrollCall("/device/enroll/finish", fin, reply)) {
-    show(reply["message"] | "Dang ky xong", 3000);
-  } else {
-    finger.deleteModel(slot);
-  }
+  body["sensor_slot"] = slot;   // the same type and code, plus the slot
+  if (enrollCall("/device/enroll/finish", body, reply)) show(reply["message"] | "Dang ky xong", 3000);
+  else finger.deleteModel(slot);
 }
 
 void finishCardEnroll(const String& uid) {
@@ -602,15 +631,6 @@ void finishCardEnroll(const String& uid) {
 
 // ---------------------------------------------------------------- inputs
 
-// While the door is open only D works: lock now.
-void handleKeypadDoorOpen() {
-  char key = keypad.getKey();
-  if (key != 'D') return;
-  wake();
-  closeDoor();
-}
-
-// A rented slot answered CHOOSE: A opens (the rental goes on), B returns the slot, * cancels. Other keys wait.
 void endChoose() {
   mode = MODE_IDLE;
   chooseBody.clear();
@@ -618,25 +638,21 @@ void endChoose() {
   idleDrawn = false;
 }
 
-void handleChooseKey(char key) {
-  if (key == '*') {
-    endChoose();
-    show(F("Da huy"), 1500);
-  } else if (key == 'A' || key == 'B') {
-    JsonDocument body = chooseBody;
-    body["intent"] = key == 'A' ? "OPEN" : "CHECKOUT";
-    endChoose();
-    authorize(body);
-  }
-}
-
 void handleKeypad() {
   char key = keypad.getKey();
   if (!key) return;
   wake();
   messageUntil = 0;
-  if (mode == MODE_CHOOSE) {
-    handleChooseKey(key);
+  if (mode == MODE_CHOOSE) {   // A opens (the rental goes on), B returns the slot, * cancels; other keys wait
+    if (key == '*') {
+      endChoose();
+      show(F("Da huy"), 1500);
+    } else if (key == 'A' || key == 'B') {
+      JsonDocument body = chooseBody;
+      body["intent"] = key == 'A' ? "OPEN" : "CHECKOUT";
+      endChoose();
+      authorize(body);
+    }
     return;
   }
   if (key == '*') {
@@ -644,20 +660,14 @@ void handleKeypad() {
     mode = MODE_IDLE;
     pinBuffer = "";
     idleDrawn = false;
-    return;
-  }
-  if (key == 'B' || key == 'C') {
+  } else if (key == 'B' || key == 'C') {
     mode = MODE_ENROLL_CODE;
     enrollType = key == 'B' ? "CARD" : "FINGERPRINT";
     pinBuffer = "";
     idleDrawn = false;
-    return;
-  }
-  if (key == 'D') {
+  } else if (key == 'D') {
     show(WiFi.localIP().toString() + "\n" + (isOnline() ? "May chu OK" : "HTTP " + String(lastHttpCode)), 4000);
-    return;
-  }
-  if (key == '#') {
+  } else if (key == '#') {
     if (pinBuffer.length() != 6) {
       show(F("Can du 6 so"), 1500);
     } else if (mode == MODE_ENROLL_CODE) {
@@ -671,65 +681,15 @@ void handleKeypad() {
       pinBuffer = "";
       authorize(body);
     }
-    return;
-  }
-  if (key >= '0' && key <= '9' && pinBuffer.length() < 6 && mode != MODE_ENROLL_CARD) {
+  } else if (key >= '0' && key <= '9' && pinBuffer.length() < 6 && mode != MODE_ENROLL_CARD) {
     pinBuffer += key;
     idleDrawn = false;
   }
 }
 
-String cardUidToString(const uint8_t* uid, uint8_t size) {
-  String result;
-  for (uint8_t i = 0; i < size; i++) {
-    if (uid[i] < 0x10) result += '0';
-    result += String(uid[i], HEX);
-  }
-  result.toUpperCase();
-  return result;
-}
-
-// One short poll for a card. A UID goes to the enrollment that waits for it, or to the server as an open.
-void cardSlice() {
-  if (!nfcOk || (mode != MODE_IDLE && mode != MODE_ENROLL_CARD)) return;
-  reader.SAMConfig();       // back from the tag role
-  uint8_t uid[10];
-  uint8_t size = 0;
-  if (!reader.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &size, CARD_POLL_MS)) return;
-  // ISO 14443: a 4-byte UID starting 0x08 is random, which is what a phone with an HCE wallet sends. It is no card:
-  // nothing on screen, nothing to the server, or a phone tap counts as UNKNOWN_CARD towards the 5-try lockout.
-  if (size == 4 && uid[0] == 0x08) return;
-  String text = cardUidToString(uid, size);
-  if (text == lastCardUid && millis() - lastCardAt < 1500) {   // the same card still on the reader
-    lastCardAt = millis();
-    return;
-  }
-  lastCardUid = text;
-  lastCardAt = millis();
-  Serial.print(F("Card UID: ")); Serial.println(text);
-  wake();
-  if (mode == MODE_ENROLL_CARD) {
-    finishCardEnroll(text);
-  } else {
-    JsonDocument body;
-    body["method"] = "CARD";
-    body["card_uid"] = text;
-    authorize(body);
-  }
-  lastCardAt = millis();    // the debounce counts from the end of the HTTP call, or a card still held is sent again
-}
-
-// One PN532 job per loop(), so the keypad stays responsive: the card poll and the tag take turns.
-void nfcSlice() {
-  static bool tagTurn = false;
-  tagTurn = !tagTurn;
-  if (tagTurn && canEmulate()) emulateSlice();
-  else cardSlice();
-}
-
 void handleFingerprint() {
   if (!fingerOk || mode != MODE_IDLE) return;
-  if (millis() - lastFingerScan < 250 || (int32_t) (millis() - fingerQuietUntil) < 0) return;
+  if (millis() - lastFingerScan < 250 || !reached(fingerQuietUntil)) return;
   lastFingerScan = millis();
   uint8_t img = finger.getImage();
   if (fingerWaitLift) {
@@ -762,7 +722,7 @@ void handleFingerprint() {
 // Backlight on while someone is near; off SCREEN_OFF_MS after the last person and the last input.
 void handleScreen() {
   if (!USE_SONAR) return;
-  if (personNear()) {
+  if (someoneWithin(NEAR_CM)) {
     lastActivity = millis();
     if (!screenOn) {
       setScreen(true);
@@ -805,15 +765,18 @@ void setup() {
   show(F("SmartLocker\nKhoi dong..."));
 
   initNfc();
-
   if (USE_FINGERPRINT) {
-    FingerSerial.begin(FP_BAUD, SERIAL_8N1, FP_RX_PIN, FP_TX_PIN);
+    fingerSerial.begin(FP_BAUD, SERIAL_8N1, FP_RX_PIN, FP_TX_PIN);
     finger.begin(FP_BAUD);
     delay(100);
     fingerOk = finger.verifyPassword();
   }
   Serial.println(fingerOk ? F("AS608 OK") : F("AS608 off or not found: check V+, VA, TX->35, RX->15"));
 
+  secureClient.setInsecure();   // demo: the tunnel certificate is not pinned
+  server.setReuse(true);
+  server.setTimeout(HTTP_TIMEOUT_MS);
+  server.setConnectTimeout(HTTP_TIMEOUT_MS);
   connectWifi();
   loadBaseUrl();
   lastHeartbeat = millis() - heartbeatEveryMs;   // first heartbeat right away
@@ -826,25 +789,28 @@ void loop() {
   heartbeatIfDue();
   sampleSonar();
   doorTick();
-  if (mode == MODE_ENROLL_CARD && (int32_t) (millis() - enrollDeadline) >= 0) {
+  if (mode == MODE_ENROLL_CARD && reached(enrollDeadline)) {
     mode = MODE_IDLE;
     show(F("Het thoi gian\nquet the"), 2000);
   }
-  if (mode == MODE_CHOOSE && (int32_t) (millis() - chooseDeadline) >= 0) {
+  if (mode == MODE_CHOOSE && reached(chooseDeadline)) {
     endChoose();
     show(F("Het thoi gian\nchon, da huy"), 2000);
   }
   if (doorOpen) {
-    handleKeypadDoorOpen();
+    if (keypad.getKey() == 'D') {   // while the door is open only D works: lock now
+      wake();
+      closeDoor();
+    }
   } else {
     handleKeypad();
     handleFingerprint();
     nfcSlice();
   }
   handleScreen();
-  if (messageUntil && (int32_t) (millis() - messageUntil) >= 0) {
+  if (messageUntil && reached(messageUntil)) {
     messageUntil = 0;
     idleDrawn = false;
   }
-  if (!idleDrawn && messageUntil == 0 && !doorOpen) drawIdle();
+  if (!idleDrawn && !messageUntil && !doorOpen) drawIdle();
 }

@@ -16,3 +16,5 @@ firmware/*/secrets.h
 
 # run results of the paper (about 90 MB): kept on the machine, not in git
 docs/paper/evidence/newman*.json
+/java-core/common/target/
+/java-core/week01/target/

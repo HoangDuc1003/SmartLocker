@@ -229,7 +229,7 @@ DECLARE @physical_slot NVARCHAR(20)  = N'A01';       -- cả hai NULL: mọi ng�
 
 Các dãy cùng một hộp phải có mã ngăn khác nhau. Khi hộp thật tắt, sau 90 giây các dãy của nó thành OFFLINE; muốn thử chỉ trên trình duyệt thì đặt ở dãy minh họa như `CANT-B`.
 
-**Firmware** là `firmware/SmartLocker_Online` (bản 4.1, board ESP32 Dev Module). Chép `secrets.example.h` thành `secrets.h` rồi điền Wi-Fi, địa chỉ máy chủ và khóa hộp. Hướng dẫn nạp đầy đủ: [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md).
+**Firmware** là `firmware/SmartLocker_Online` (bản 4.3, board ESP32 Dev Module). Chép `secrets.example.h` thành `secrets.h` rồi điền Wi-Fi, địa chỉ máy chủ và khóa hộp. Hướng dẫn nạp đầy đủ: [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md).
 
 | Thiết bị | Chân ESP32 |
 |---|---|
