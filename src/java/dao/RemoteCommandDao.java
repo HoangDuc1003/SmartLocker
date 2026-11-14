@@ -14,6 +14,25 @@ import java.util.Map;
 /** Case 2: unlock commands from staff to a device. */
 public class RemoteCommandDao {
 
+    /**
+     * The reasons the stored procedures write themselves (sql/03_v2_v3.sql, 04_phone.sql) are Vietnamese data;
+     * the history page shows them in English. A reason typed by staff is shown as typed.
+     */
+    private static final Map<String, String> SYSTEM_REASONS = new java.util.HashMap<>();
+    static {
+        SYSTEM_REASONS.put("Mở bằng điện thoại", "Opened with the phone");
+        SYSTEM_REASONS.put("Chạm điện thoại", "Phone tap");
+        SYSTEM_REASONS.put("Quét thẻ, xác nhận qua email", "Card scan, confirmed by e-mail");
+        SYSTEM_REASONS.put("Thay vân tay", "Fingerprint replaced");
+        SYSTEM_REASONS.put("Xóa vân tay", "Fingerprint deleted");
+    }
+
+    /** The English text of a reason written by a procedure; any other reason unchanged. */
+    public static String reasonText(String reason) {
+        String english = reason == null ? null : SYSTEM_REASONS.get(reason.trim());
+        return english != null ? english : reason;
+    }
+
     /** Queues an UNLOCK for the slot. Returns the command id. The procedure refuses an offline device (50011). */
     public long create(int slotId, String reason, int actorId) throws SQLException {
         try (Connection conn = DbContext.getConnection();
@@ -101,7 +120,7 @@ public class RemoteCommandDao {
                     map.put("slot_code", rs.getString("slot_code"));
                     map.put("action", rs.getString("action"));
                     map.put("status", rs.getString("status"));
-                    map.put("reason", rs.getString("reason"));
+                    map.put("reason", reasonText(rs.getString("reason")));
                     map.put("requested_by_name", rs.getString("requested_by_name"));
                     map.put("created_at", rs.getTimestamp("created_at"));
                     map.put("sent_at", rs.getTimestamp("sent_at"));

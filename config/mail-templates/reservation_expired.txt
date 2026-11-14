@@ -1,10 +1,10 @@
-Subject: Smart Locker: lượt đặt ngăn {{slot_code}} đã hết hạn giữ chỗ
+Subject: Smart Locker: the hold of slot {{slot_code}} has ended
 
-Chào {{name}},
+Hello {{name}},
 
-Ngăn {{slot_code}} ({{area_name}}) đã được giữ cho bạn {{hold_min}} phút nhưng bạn chưa tới gửi đồ, nên lượt đặt đã bị hủy và ngăn được trả lại.
-Số tiền hoàn lại: {{refund_amount}} ({{refund_pct}}% giá đã thanh toán).
+Slot {{slot_code}} ({{area_name}}) was held for you for {{hold_min}} min but you did not come to store your things, so the booking was cancelled and the slot is free again.
+Refund: {{refund_amount}} ({{refund_pct}}% of the price you paid).
 
-Nếu không tới nhiều lần trong 7 ngày, bạn sẽ tạm thời chưa đặt được tủ mới. Bạn có thể đặt lại bất cứ lúc nào khi còn ngăn trống.
+After several no-shows within 7 days you cannot book a new locker for a while. You can book again at any time while slots are free.
 
-?Đặt lại: {{map_url}}
+?Book again: {{map_url}}

@@ -79,16 +79,16 @@ bool cardIsAllowed(const String& uid) {
 void checkIn(const char* method, const String& identity) {
   Serial.println();
   Serial.println(F("===== CHECK-IN LOCAL: OK ====="));
-  Serial.print(F("Phuong thuc: ")); Serial.println(method);
-  Serial.print(F("Ma/ID: ")); Serial.println(identity);
+  Serial.print(F("Method: ")); Serial.println(method);
+  Serial.print(F("Code/ID: ")); Serial.println(identity);
   Serial.println(F("=============================="));
 }
 
 void deny(const char* method, const String& identity) {
   Serial.println();
-  Serial.println(F("===== TU CHOI ====="));
-  Serial.print(F("Phuong thuc: ")); Serial.println(method);
-  Serial.print(F("Ma/ID: ")); Serial.println(identity);
+  Serial.println(F("====== DENIED ====="));
+  Serial.print(F("Method: ")); Serial.println(method);
+  Serial.print(F("Code/ID: ")); Serial.println(identity);
   Serial.println(F("==================="));
 }
 
@@ -98,12 +98,12 @@ void handleKeypad() {
 
   if (key == '*') {
     pinBuffer = "";
-    Serial.println(F("PIN da xoa."));
+    Serial.println(F("PIN cleared."));
     return;
   }
   if (key == '#') {
     if (pinBuffer.length() == 0) {
-      Serial.println(F("Nhap PIN truoc, sau do bam #."));
+      Serial.println(F("Enter the PIN first, then press #."));
     } else if (pinBuffer == LOCAL_PIN) {
       checkIn("KEYPAD/PIN", pinBuffer);
     } else {
@@ -142,7 +142,7 @@ void handleFingerprint() {
 
   result = finger.image2Tz();
   if (result != FINGERPRINT_OK) {
-    Serial.println(F("Van tay: khong doc duoc anh, thu lai."));
+    Serial.println(F("Fingerprint: could not read the image, try again."));
     return;
   }
 
@@ -150,11 +150,11 @@ void handleFingerprint() {
   if (result == FINGERPRINT_OK) {
     const String id = String(finger.fingerID);
     checkIn("FINGERPRINT", id);
-    Serial.print(F("Do khop: ")); Serial.println(finger.confidence);
+    Serial.print(F("Confidence: ")); Serial.println(finger.confidence);
   } else if (result == FINGERPRINT_NOTFOUND) {
-    deny("FINGERPRINT", F("khong co mau da dang ky"));
+    deny("FINGERPRINT", F("no enrolled template matches"));
   } else {
-    Serial.println(F("Loi khi tim mau van tay."));
+    Serial.println(F("Fingerprint search error."));
   }
 }
 
@@ -163,26 +163,26 @@ void setup() {
   delay(500);
   Serial.println();
   Serial.println(F("SmartLocker LOCAL test - ESP32"));
-  Serial.println(F("PIN demo: 1234, nhap tren keypad va bam #; bam * de xoa."));
-  Serial.println(F("Quet the de xem UID; sua ALLOWED_CARD_UIDS de cho phep the."));
+  Serial.println(F("Demo PIN: 1234, type it on the keypad and press #; press * to clear."));
+  Serial.println(F("Scan a card to see its UID; edit ALLOWED_CARD_UIDS to allow it."));
 
   SPI.begin(18, 19, 23, RFID_SS_PIN);
   rfid.PCD_Init();
-  Serial.println(F("RC522 da khoi tao."));
+  Serial.println(F("RC522 ready."));
 
   FingerSerial.begin(FP_BAUD, SERIAL_8N1, FP_RX_PIN, FP_TX_PIN);
   finger.begin(FP_BAUD);
   if (finger.verifyPassword()) {
-    Serial.println(F("Cam bien van tay da ket noi."));
+    Serial.println(F("Fingerprint sensor connected."));
     if (finger.getTemplateCount() == FINGERPRINT_OK) {
-      Serial.print(F("So mau van tay da luu trong cam bien: "));
+      Serial.print(F("Fingerprint templates stored in the sensor: "));
       Serial.println(finger.templateCount);
     }
   } else {
-    Serial.println(F("Khong thay cam bien van tay. Kiem tra nguon, TX/RX va baud."));
+    Serial.println(F("Fingerprint sensor not found. Check power, TX/RX and baud."));
   }
 
-  Serial.println(F("San sang. Mo Serial Monitor 9600 baud."));
+  Serial.println(F("Ready. Open the Serial Monitor at 9600 baud."));
 }
 
 void loop() {

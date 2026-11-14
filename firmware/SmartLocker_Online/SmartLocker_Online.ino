@@ -11,14 +11,14 @@
  *    or a phone tap would count as an unknown card towards the 5-try lockout.
  *  - NFC tag: one URL record, base URL + "tap_path" of the heartbeat (/k/LOCKER-01?n=<token>). The token changes every
  *    minute and after each use, so the tag is rewritten when it changes. The phone opens the page, the signed-in owner
- *    presses "Mo tu cua toi", the UNLOCK comes with the next heartbeat. No tag while a PIN is typed or a card enrolled.
+ *    presses "Open my locker", the UNLOCK comes with the next heartbeat. No tag while a PIN is typed or a card enrolled.
  *
  * Keypad: 0-9 PIN (6 digits), # send, * clear / cancel. B enroll a card, C enroll a finger (then the 6-digit code from
- * "Tu cua toi", #). D: door closed = IP / server status, door open = lock now. Every auth goes first with intent ASK;
- * a rented slot answers CHOOSE ("A: Mo tu / B: Tra tu"): A sends it again with OPEN (the rental goes on), B with
+ * "My locker", #). D: door closed = IP / server status, door open = lock now. Every auth goes first with intent ASK;
+ * a rented slot answers CHOOSE ("A: Open / B: Checkout"): A sends it again with OPEN (the rental goes on), B with
  * CHECKOUT (the rental ends), * or CHOOSE_MS cancels. An older server ignores the intent and answers PICKUP.
  *
- * Only one compartment has the servos: an UNLOCK with "physical":false only shows "Ngan B08 OK" (sql/demo_box.sql);
+ * Only one compartment has the servos: an UNLOCK with "physical":false only shows "Slot B08 OK" (sql/demo_box.sql);
  * no "physical" (an older server) means every slot is the real one. Opening releases the bolt, then turns the door
  * servo. D locks at once. Otherwise: while the SRF05 sees someone within DOORWAY_CM nothing counts; once nobody is
  * there a DOOR_OPEN_MS countdown runs and locks the door (someone coming back stops it, leaving starts it again from
@@ -81,7 +81,7 @@ static constexpr int SONAR_MAX_CM = 100;           // farther, or no echo, is no
 static constexpr uint32_t DOOR_OPEN_MS = 20000;    // the automatic lock comes this long after the last person left...
 static constexpr uint32_t DOOR_OPEN_MAX_MS = 120000;  // ...and never later than this after opening (a blocked sensor)
 static constexpr uint32_t SCREEN_OFF_MS = 60000;   // backlight off this long after the last person and input
-static constexpr uint32_t ONLINE_MS = 10000;       // no good heartbeat for this long: "mat ket noi"
+static constexpr uint32_t ONLINE_MS = 10000;       // no good heartbeat for this long: "Offline"
 static constexpr uint32_t CHOOSE_MS = 15000;       // A / B after a CHOOSE reply; the server's choose_sec wins when sent
 static constexpr uint32_t CARD_ENROLL_MS = 30000;  // time to scan the card being enrolled
 static constexpr uint32_t CARD_REPEAT_MS = 1500;   // the same card still on the reader is not sent again
@@ -170,12 +170,12 @@ void redrawLcd() {
 }
 
 void drawIdle() {
-  if (mode == MODE_ENROLL_CODE) show(String(enrollType == "CARD" ? "Ma DK the:" : "Ma DK van tay:") + "\n" + pinBuffer + "_");
-  else if (mode == MODE_ENROLL_CARD) show(F("Quet the dang ky\n(* de huy)"));
-  else if (mode == MODE_CHOOSE) show("A: Mo tu  * huy\nB: Tra tu " + chooseSlot);
-  else if (pinBuffer.length()) show("PIN: " + String("******").substring(0, pinBuffer.length()) + "\n# gui  * xoa");
-  else if (!isOnline()) show(WiFi.status() == WL_CONNECTED ? F("Mat ket noi\nDang thu lai...") : F("Mat Wi-Fi\nDang noi lai..."));
-  else show(F("PIN + # / van tay\nthe / cham NFC"));
+  if (mode == MODE_ENROLL_CODE) show(String(enrollType == "CARD" ? "Enroll card:" : "Enroll finger:") + "\n" + pinBuffer + "_");
+  else if (mode == MODE_ENROLL_CARD) show(F("Scan the card\n(* to cancel)"));
+  else if (mode == MODE_CHOOSE) show("A: Open * cancel\nB: Checkout " + chooseSlot);
+  else if (pinBuffer.length()) show("PIN: " + String("******").substring(0, pinBuffer.length()) + "\n# send  * clear");
+  else if (!isOnline()) show(WiFi.status() == WL_CONNECTED ? F("Offline\nRetrying...") : F("No Wi-Fi\nReconnecting..."));
+  else show(F("PIN + # / finger\ncard / phone tap"));
   idleDrawn = true;
 }
 
@@ -267,7 +267,7 @@ void nfcSlice() {
     nfcRoleTo(ROLE_TAG);
     if (tag.emulate(NFC_LISTEN_MS)) {          // the phone opens the link itself; the box only says it was read
       wake();
-      show(F("Da gui lien ket\nXem dien thoai"), 3000);
+      show(F("Link sent\nCheck your phone"), 3000);
       Serial.println(F("NFC tag read by a phone"));
     }
   } else if (mode == MODE_IDLE || mode == MODE_ENROLL_CARD) {
@@ -322,7 +322,7 @@ void openDoor(int seconds, const String& message) {
 // A slot without a servo: the server already moved the booking on, the LCD only confirms it.
 void showSlotOk(const String& slotCode, const String& second) {
   wake();
-  show("Ngan " + slotCode + " OK\n" + second, 3000);
+  show("Slot " + slotCode + " OK\n" + second, 3000);
   Serial.printf("Slot %s OK (no servo)\n", slotCode.c_str());
 }
 
@@ -340,7 +340,7 @@ void closeDoor() {
   }
   redrawLcd();
   wake();
-  show(F("Da khoa cua"), 1500);
+  show(F("Door locked"), 1500);
   Serial.println(F("Door closed"));
 }
 
@@ -359,11 +359,11 @@ void doorTick() {
   if (messageUntil || now - lastDoorDraw < 1000) return;
   lastDoorDraw = now;
   if (!clearSince) {
-    show(F("Bam D de khoa\nCo nguoi, cho..."));
+    show(F("Press D to lock\nSomeone near..."));
     return;
   }
   uint32_t left = holdMs - (now - clearSince);
-  show("Bam D de khoa\nTu khoa sau " + String((left + 999) / 1000) + "s");
+  show("Press D to lock\nLocks in " + String((left + 999) / 1000) + "s");
 }
 
 // ---------------------------------------------------------------- network
@@ -441,7 +441,7 @@ void loadBaseUrl() {
 
 void connectWifi() {
   if (WiFi.status() == WL_CONNECTED) return;
-  show(F("Noi Wi-Fi..."));
+  show(F("Joining Wi-Fi..."));
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -460,11 +460,11 @@ void runCommands(JsonArray commands) {
     if (action == "UNLOCK") {
       bool physical = cmd["physical"] | true;   // an old server sends no flag: every slot is the real one
       if (doorOpen && physical) continue;       // already open
-      String message = cmd["message"] | "Mo tu", slot = cmd["slot_code"] | "";
-      int nl = message.indexOf('\n');           // "Mo tu\n(dien thoai)": line 1 gets the slot, line 2 keeps the source
+      String message = cmd["message"] | "Open", slot = cmd["slot_code"] | "";
+      int nl = message.indexOf('\n');           // "Open\n(phone)": line 1 gets the slot, line 2 keeps the source
       String second = nl >= 0 ? message.substring(nl + 1) : "";
       Serial.printf("  phase %s, physical %d\n", (const char*) (cmd["phase"] | "-"), physical);
-      if (physical) openDoor(cmd["open_sec"] | 8, "Mo tu ngan " + slot + "\n" + second);
+      if (physical) openDoor(cmd["open_sec"] | 8, "Open slot " + slot + "\n" + second);
       else showSlotOk(slot, second);
     } else if (action == "DELETE_FP" && fingerOk) {
       int slot = cmd["sensor_slot"] | 0;
@@ -472,7 +472,7 @@ void runCommands(JsonArray commands) {
     } else if (action == "CANCEL_ENROLL" && mode != MODE_IDLE) {
       mode = MODE_IDLE;
       pinBuffer = "";
-      show(F("Da huy dang ky"), 2000);
+      show(F("Enroll cancelled"), 2000);
     }
   }
 }
@@ -514,9 +514,9 @@ void heartbeatIfDue() {
 // ---------------------------------------------------------------- open and enroll
 
 void showServerError(int code) {
-  if (code == 401) show(F("Sai API key\n(xem secrets.h)"), 4000);
-  else if (code <= 0) show(F("Khong goi duoc\nmay chu"), 3000);
-  else show("Loi may chu\nHTTP " + String(code), 3000);
+  if (code == 401) show(F("Wrong API key\n(see secrets.h)"), 4000);
+  else if (code <= 0) show(F("Cannot reach\nthe server"), 3000);
+  else show("Server error\nHTTP " + String(code), 3000);
 }
 
 // One request decides: UNLOCK opens, CHOOSE asks A / B, CONFIRM_EMAIL waits for the e-mail, DENY shows the server's text.
@@ -524,7 +524,7 @@ void showServerError(int code) {
 void authorize(JsonDocument& body) {
   wake();
   if (!body["intent"].is<const char*>()) body["intent"] = "ASK";
-  show(F("Dang kiem tra..."));
+  show(F("Checking..."));
   JsonDocument reply;
   int code = postJson("/device/auth", body, reply);
   if (code != 200) {
@@ -539,7 +539,7 @@ void authorize(JsonDocument& body) {
     chooseDeadline = millis() + (sec > 0 ? (uint32_t) sec * 1000 : CHOOSE_MS);
     mode = MODE_CHOOSE;
     pinBuffer = "";
-    idleDrawn = false;      // drawIdle shows "A: Mo tu / B: Tra tu"
+    idleDrawn = false;      // drawIdle shows "A: Open / B: Checkout"
     Serial.printf("CHOOSE slot %s\n", chooseSlot.c_str());
   } else if (result == "CONFIRM_EMAIL") {
     // nothing opens now: the owner confirms from the e-mail, the UNLOCK then comes with a heartbeat like a phone open
@@ -550,7 +550,7 @@ void authorize(JsonDocument& body) {
     if (reply["physical"] | true) {
       openDoor(reply["open_sec"] | 8, message);   // CHECK_IN, ACCESS and PICKUP all release the bolt
     } else {                                      // the booking moved on at the server; this slot has no servo
-      showSlotOk(reply["slot_code"] | "", phase == "PICKUP" ? "Da lay do" : phase == "ACCESS" ? "Da mo tu" : "Da gui do");
+      showSlotOk(reply["slot_code"] | "", phase == "PICKUP" ? "Picked up" : phase == "ACCESS" ? "Opened" : "Stored");
     }
   } else {
     Serial.print(F("DENY "));
@@ -567,7 +567,7 @@ bool enrollCall(const char* path, JsonDocument& body, JsonDocument& reply) {
     return false;
   }
   if (String(reply["result"] | "") == "OK") return true;
-  show(reply["message"] | "Loi dang ky", 3000);
+  show(reply["message"] | "Enroll failed", 3000);
   return false;
 }
 
@@ -584,9 +584,9 @@ bool waitFinger(bool want, uint32_t timeoutMs) {
 // AS608 enroll into the sensor slot the server chose: two images -> one model -> stored.
 bool captureFinger(int slot) {
   for (int pass = 1; pass <= 2; pass++) {
-    show(pass == 1 ? F("Dat ngon tay\nlen cam bien") : F("Dat lai\ncung ngon tay"));
+    show(pass == 1 ? F("Place finger\non the sensor") : F("Place the same\nfinger again"));
     if (!waitFinger(true, 15000) || finger.image2Tz(pass) != FINGERPRINT_OK) return false;
-    show(F("Nhac ngon tay ra"));
+    show(F("Lift your finger"));
     if (!waitFinger(false, 10000)) return false;
   }
   return finger.createModel() == FINGERPRINT_OK && finger.storeModel(slot) == FINGERPRINT_OK;
@@ -597,7 +597,7 @@ void startEnroll() {
   body["type"] = enrollType;
   body["enroll_code"] = enrollCode;
   mode = MODE_IDLE;
-  show(F("Kiem tra ma..."));
+  show(F("Checking code..."));
   if (!enrollCall("/device/enroll/start", body, reply)) return;
   if (enrollType == "CARD") {
     mode = MODE_ENROLL_CARD;
@@ -606,17 +606,17 @@ void startEnroll() {
     return;
   }
   if (!fingerOk) {
-    show(F("Khong thay AS608"), 3000);
+    show(F("AS608 not found"), 3000);
     return;
   }
   int slot = reply["sensor_slot"] | 0;
   finger.deleteModel(slot);  // a slot the server hands out is free; clear what an old test left there
   if (!captureFinger(slot)) {
-    show(F("Lay van tay loi\nBam C lam lai"), 3000);
+    show(F("Finger failed\nPress C to retry"), 3000);
     return;
   }
   body["sensor_slot"] = slot;   // the same type and code, plus the slot
-  if (enrollCall("/device/enroll/finish", body, reply)) show(reply["message"] | "Dang ky xong", 3000);
+  if (enrollCall("/device/enroll/finish", body, reply)) show(reply["message"] | "Enrolled", 3000);
   else finger.deleteModel(slot);
 }
 
@@ -626,7 +626,7 @@ void finishCardEnroll(const String& uid) {
   body["type"] = "CARD";
   body["enroll_code"] = enrollCode;
   body["card_uid"] = uid;
-  if (enrollCall("/device/enroll/finish", body, reply)) show(reply["message"] | "Dang ky xong", 3000);
+  if (enrollCall("/device/enroll/finish", body, reply)) show(reply["message"] | "Enrolled", 3000);
 }
 
 // ---------------------------------------------------------------- inputs
@@ -646,7 +646,7 @@ void handleKeypad() {
   if (mode == MODE_CHOOSE) {   // A opens (the rental goes on), B returns the slot, * cancels; other keys wait
     if (key == '*') {
       endChoose();
-      show(F("Da huy"), 1500);
+      show(F("Cancelled"), 1500);
     } else if (key == 'A' || key == 'B') {
       JsonDocument body = chooseBody;
       body["intent"] = key == 'A' ? "OPEN" : "CHECKOUT";
@@ -656,7 +656,7 @@ void handleKeypad() {
     return;
   }
   if (key == '*') {
-    if (mode != MODE_IDLE) show(F("Da huy"), 1500);
+    if (mode != MODE_IDLE) show(F("Cancelled"), 1500);
     mode = MODE_IDLE;
     pinBuffer = "";
     idleDrawn = false;
@@ -666,10 +666,10 @@ void handleKeypad() {
     pinBuffer = "";
     idleDrawn = false;
   } else if (key == 'D') {
-    show(WiFi.localIP().toString() + "\n" + (isOnline() ? "May chu OK" : "HTTP " + String(lastHttpCode)), 4000);
+    show(WiFi.localIP().toString() + "\n" + (isOnline() ? "Server OK" : "HTTP " + String(lastHttpCode)), 4000);
   } else if (key == '#') {
     if (pinBuffer.length() != 6) {
-      show(F("Can du 6 so"), 1500);
+      show(F("Need 6 digits"), 1500);
     } else if (mode == MODE_ENROLL_CODE) {
       enrollCode = pinBuffer;
       pinBuffer = "";
@@ -701,7 +701,7 @@ void handleFingerprint() {
   wake();
   fingerQuietUntil = millis() + 2500;
   if (finger.image2Tz() != FINGERPRINT_OK) {
-    show(F("Khong doc duoc\nvan tay, thu lai"), 2000);
+    show(F("Finger not read\nTry again"), 2000);
     return;
   }
   uint8_t r = finger.fingerFastSearch();
@@ -712,7 +712,7 @@ void handleFingerprint() {
     body["sensor_slot"] = finger.fingerID;
     authorize(body);
   } else if (r == FINGERPRINT_NOTFOUND) {
-    show(F("Van tay chua\ndang ky"), 2500);   // read fine, but not on this sensor: nothing to send to the server
+    show(F("Fingerprint not\nenrolled"), 2500);   // read fine, but not on this sensor: nothing to send to the server
   } else {
     Serial.printf("Finger search error 0x%02X (ignored)\n", r);   // a sensor or wiring hiccup is not "unregistered"
     drawIdle();
@@ -762,7 +762,7 @@ void setup() {
   } else {
     Serial.printf("LCD not found at 0x%02X: check SDA/SCL, or try 0x3F\n", LCD_ADDR);
   }
-  show(F("SmartLocker\nKhoi dong..."));
+  show(F("SmartLocker\nStarting..."));
 
   initNfc();
   if (USE_FINGERPRINT) {
@@ -791,11 +791,11 @@ void loop() {
   doorTick();
   if (mode == MODE_ENROLL_CARD && reached(enrollDeadline)) {
     mode = MODE_IDLE;
-    show(F("Het thoi gian\nquet the"), 2000);
+    show(F("Card scan\ntimed out"), 2000);
   }
   if (mode == MODE_CHOOSE && reached(chooseDeadline)) {
     endChoose();
-    show(F("Het thoi gian\nchon, da huy"), 2000);
+    show(F("Choice timed out\nCancelled"), 2000);
   }
   if (doorOpen) {
     if (keypad.getKey() == 'D') {   // while the door is open only D works: lock now

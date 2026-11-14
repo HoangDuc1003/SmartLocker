@@ -16,13 +16,13 @@
   var HOLD_MINUTES = 15;
 
   var STATUS = {
-    AVAILABLE: { label: 'Trống', icon: 'check' },
-    RESERVED: { label: 'Đã đặt', icon: 'bookmark' },
-    OCCUPIED: { label: 'Đang dùng', icon: 'box' },
-    OVERDUE: { label: 'Quá hạn', icon: 'clock' },
-    ALERT: { label: 'Cảnh báo', icon: 'alert' },
-    MAINTENANCE: { label: 'Bảo trì', icon: 'wrench' },
-    OFFLINE: { label: 'Mất kết nối', icon: 'wifiOff' }
+    AVAILABLE: { label: 'Available', icon: 'check' },
+    RESERVED: { label: 'Reserved', icon: 'bookmark' },
+    OCCUPIED: { label: 'Occupied', icon: 'box' },
+    OVERDUE: { label: 'Overdue', icon: 'clock' },
+    ALERT: { label: 'Alert', icon: 'alert' },
+    MAINTENANCE: { label: 'Maintenance', icon: 'wrench' },
+    OFFLINE: { label: 'Offline', icon: 'wifiOff' }
   };
   var STATUS_ORDER = ['AVAILABLE', 'RESERVED', 'OCCUPIED', 'OVERDUE', 'ALERT', 'MAINTENANCE', 'OFFLINE'];
 
@@ -139,7 +139,7 @@
     if (isNaN(d.getTime())) {
       return esc(iso);
     }
-    var time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    var time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     var today = new Date();
     if (d.toDateString() === today.toDateString()) {
       return time;
@@ -148,7 +148,7 @@
     return two(d.getDate()) + '/' + two(d.getMonth() + 1) + ', ' + time;
   }
 
-  // "12:34 left" under an hour, "2h 05m left" above, "late 5m" when the time has passed
+  // "12:34 left" under an hour, "2 h 05 min left" above, "5:00 late" when the time has passed
   function formatCountdown(iso) {
     var diff = Math.round((parseUtc(iso).getTime() - Date.now()) / 1000);
     var late = diff < 0;
@@ -156,9 +156,9 @@
     var h = Math.floor(s / 3600);
     var m = Math.floor((s % 3600) / 60);
     var sec = s % 60;
-    var text = h > 0 ? h + ' giờ ' + (m < 10 ? '0' : '') + m + ' phút'
+    var text = h > 0 ? h + ' h ' + (m < 10 ? '0' : '') + m + ' min'
                      : m + ':' + (sec < 10 ? '0' : '') + sec;
-    return { text: late ? 'trễ ' + text : 'còn ' + text, late: late };
+    return { text: late ? text + ' late' : text + ' left', late: late };
   }
 
   function countdownHtml(iso) {
@@ -167,7 +167,7 @@
   }
 
   function deviceLabel(code) {
-    var names = { ACTIVE: 'Hoạt động', MAINTENANCE: 'Bảo trì', OFFLINE: 'Mất kết nối', NONE: 'Chưa gắn thiết bị' };
+    var names = { ACTIVE: 'Active', MAINTENANCE: 'Maintenance', OFFLINE: 'Offline', NONE: 'No device attached' };
     return names[code || 'ACTIVE'] || code;
   }
 
@@ -223,7 +223,7 @@
   }
 
   function money(n) {
-    return (Number(n) || 0).toLocaleString('vi-VN') + ' đ';
+    return (Number(n) || 0).toLocaleString('en-US') + ' VND';
   }
 
   // the list of areas has no area in the URL, so a reload opens the list again
@@ -254,13 +254,13 @@
   // how full an area is: the colour always comes with a word
   function areaTone(a) {
     if (!a.slot_count) {
-      return { key: 'none', label: 'Chưa có ngăn' };
+      return { key: 'none', label: 'No slots yet' };
     }
     if (!a.available) {
       // every slot behind a silent (or missing) box is not "full": nothing can open it
-      return a.offline >= a.slot_count ? { key: 'full', label: 'Mất kết nối' } : { key: 'full', label: 'Hết chỗ' };
+      return a.offline >= a.slot_count ? { key: 'full', label: 'Offline' } : { key: 'full', label: 'Full' };
     }
-    return a.available / a.slot_count < 0.25 ? { key: 'low', label: 'Sắp hết' } : { key: 'ok', label: 'Còn nhiều' };
+    return a.available / a.slot_count < 0.25 ? { key: 'low', label: 'Almost full' } : { key: 'ok', label: 'Plenty free' };
   }
 
   function ringHtml(a) {
@@ -280,13 +280,13 @@
       return;
     }
     if (!list.length) {
-      el.areas.innerHTML = '<p class="sheet-empty">Chưa có khu vực tủ nào.</p>';
+      el.areas.innerHTML = '<p class="sheet-empty">No locker areas yet.</p>';
       return;
     }
     var sorted = sortedAreas(list);
     var shown = sorted.filter(areaMatches);
     if (!shown.length) {
-      el.areas.innerHTML = '<p class="sheet-empty">Không có khu nào khớp “' + esc(el.search.value.trim()) + '”.</p>';
+      el.areas.innerHTML = '<p class="sheet-empty">No area matches “' + esc(el.search.value.trim()) + '”.</p>';
       return;
     }
     el.areas.innerHTML = shown.map(function (a) {
@@ -295,21 +295,21 @@
       var where = dist !== null ? formatDistance(dist) : (a.location || a.area_code);
       var tags = [];
       if (myBooking() && myBooking().area_code === a.area_code) {
-        tags.push('<span class="gtag gtag--mine">Tủ của bạn</span>');
+        tags.push('<span class="gtag gtag--mine">Your locker</span>');
       }
       if (dist !== null && a === sorted[0]) {
-        tags.push('<span class="gtag">Gần nhất</span>');
+        tags.push('<span class="gtag">Nearest</span>');
       }
       if (tone.key !== 'ok') {
         tags.push('<span class="gtag tone-' + tone.key + '">' + esc(tone.label) + '</span>');
       }
       if (a.alert) {
-        tags.push('<span class="gtag tone-full">' + esc(a.alert) + ' cảnh báo</span>');
+        tags.push('<span class="gtag tone-full">' + esc(a.alert) + (a.alert === 1 ? ' alert' : ' alerts') + '</span>');
       }
       return '<button type="button" class="area-row lg-hover" data-area="' + esc(a.area_code) + '">' +
         ringHtml(a) +
         '<span class="area-row__body"><span class="area-row__name">' + esc(a.name) + '</span>' +
-          '<span class="area-row__meta">' + esc(where) + ' · Trống ' + esc(a.available) + '/' + esc(a.slot_count) + '</span>' +
+          '<span class="area-row__meta">' + esc(where) + ' · Free ' + esc(a.available) + '/' + esc(a.slot_count) + '</span>' +
           (tags.length ? '<span class="area-row__tags">' + tags.join('') + '</span>' : '') +
         '</span>' + icon('chevronRight') +
       '</button>';
@@ -330,14 +330,14 @@
   var PLACE_MAX_ACC_M = 300;     // a position worse than this (a PC on Wi-Fi) never says "right" or "wrong"
   var place = { dismissed: null, sig: null, html: '', kind: null, route: '', flown: false };
   // the same words as CardMail.action on the server
-  var CARD_ACTION = { CHECK_IN: 'cất đồ vào ngăn', ACCESS: 'mở ngăn (lượt thuê vẫn tiếp tục)', PICKUP: 'lấy đồ và trả tủ (lượt thuê kết thúc)' };
+  var CARD_ACTION = { CHECK_IN: 'store your things in the slot', ACCESS: 'open the slot (the booking continues)', PICKUP: 'pick up your things and check out (the booking ends)' };
   // result of CardConfirm_Decide -> [the message, is it an error]
   var CARD_ANSWER = {
-    OK: ['Đã xác nhận. Hộp sẽ mở trong vài giây.', false],
-    DONE_BEFORE: ['Yêu cầu này đã được xác nhận trước đó.', false],
-    REJECTED: ['Đã hủy, tủ không mở. Nếu bạn không quét thẻ, hãy báo nhân viên để khóa thẻ.', false],
-    DEVICE_OFFLINE: ['Hộp đang mất kết nối nên chưa mở được. Hãy thử lại sau ít giây.', true],
-    EXPIRED: ['Yêu cầu đã hết hiệu lực. Hãy quét lại thẻ tại hộp tủ.', true]
+    OK: ['Confirmed. The box opens in a few seconds.', false],
+    DONE_BEFORE: ['This request was already confirmed.', false],
+    REJECTED: ['Cancelled, the locker stays closed. If you did not scan your card, tell the staff so they can block it.', false],
+    DEVICE_OFFLINE: ['The box is offline, so it cannot open yet. Try again in a few seconds.', true],
+    EXPIRED: ['The request has expired. Scan your card at the box again.', true]
   };
 
   function myBooking() {
@@ -370,41 +370,41 @@
 
   function placeHtml(b, mine, now) {
     var name = b.area_name;
-    var slot = 'ngăn ' + b.slot_code + ', dãy ' + b.bank_code;
-    var far = now.dist !== null ? ' (cách bạn ' + formatDistance(now.dist) + ')' : '';
-    var where = (b.status === 'RESERVED' ? 'Bạn giữ ' : 'Đồ của bạn ở ') + slot + ', ' + name + far + '.';
+    var slot = 'slot ' + b.slot_code + ', bank ' + b.bank_code;
+    var far = now.dist !== null ? ' (' + formatDistance(now.dist) + ' from you)' : '';
+    var where = (b.status === 'RESERVED' ? 'You hold ' : 'Your things are in ') + slot + ', ' + name + far + '.';
     var title, text, ico;
     if (now.kind === 'confirm') {
       return '<span class="place-alert__ico">' + icon('unlock') + '</span>' +
-        '<div class="place-alert__body"><b>Xác nhận mở tủ</b><p>' +
-          esc('Thẻ của bạn vừa được quét tại hộp tủ để ' + (CARD_ACTION[b.confirm_phase] || 'mở tủ') + '. Tủ của bạn: ' + slot + ', ' + name +
-              '. Chưa thấy email? Bạn có thể xác nhận ngay ở đây.') + '</p></div>' +
-        '<button type="button" class="round-btn lg-hover place-alert__close" data-place-close aria-label="Đóng thông báo vị trí tủ">' + icon('close') + '</button>' +
+        '<div class="place-alert__body"><b>Confirm opening</b><p>' +
+          esc('Your card was just scanned at the box to ' + (CARD_ACTION[b.confirm_phase] || 'open the locker') + '. Your locker: ' + slot + ', ' + name +
+              '. No e-mail yet? You can confirm right here.') + '</p></div>' +
+        '<button type="button" class="round-btn lg-hover place-alert__close" data-place-close aria-label="Close the locker location notice">' + icon('close') + '</button>' +
         '<div class="place-alert__do">' +
-          '<button type="button" class="chip lg-hover place-alert__yes" data-card-answer="approve">' + icon('unlock') + 'Xác nhận mở tủ</button>' +
-          '<button type="button" class="chip lg-hover" data-card-answer="reject">Không phải tôi</button>' +
+          '<button type="button" class="chip lg-hover place-alert__yes" data-card-answer="approve">' + icon('unlock') + 'Confirm opening</button>' +
+          '<button type="button" class="chip lg-hover" data-card-answer="reject">It was not me</button>' +
         '</div>';
     }
     if (now.kind === 'wrong') {
       ico = 'alert';
-      title = now.scan ? 'Bạn mở nhầm hộp tủ' : 'Bạn đang đi sai chỗ';
-      text = (now.scan ? 'Bạn vừa thử mở tủ ở ' + (now.near || 'một hộp khác') : 'Bạn đang ở ' + now.near) + '. ' + where;
+      title = now.scan ? 'Wrong locker box' : 'You are in the wrong place';
+      text = (now.scan ? 'You just tried to open a locker at ' + (now.near || 'another box') : 'You are at ' + now.near) + '. ' + where;
     } else if (now.kind === 'here') {
       ico = 'check';
-      title = 'Bạn đến đúng chỗ rồi';
-      text = 'Tủ của bạn ở ngay khu này: ' + slot + ', ' + name + '.';
+      title = 'You are in the right place';
+      text = 'Your locker is in this area: ' + slot + ', ' + name + '.';
     } else {
       ico = 'box';
-      title = 'Tủ của bạn ở ' + name;
-      text = (b.status === 'RESERVED' ? 'Bạn giữ ' : 'Đồ của bạn ở ') + slot + far + '. Khu có tủ của bạn có vòng sóng trên bản đồ.';
+      title = 'Your locker is at ' + name;
+      text = (b.status === 'RESERVED' ? 'You hold ' : 'Your things are in ') + slot + far + '. The area with your locker has wave rings on the map.';
     }
     return '<span class="place-alert__ico">' + icon(ico) + '</span>' +
       '<div class="place-alert__body"><b>' + esc(title) + '</b><p>' + esc(text) + '</p></div>' +
-      '<button type="button" class="round-btn lg-hover place-alert__close" data-place-close aria-label="Đóng thông báo vị trí tủ">' + icon('close') + '</button>' +
+      '<button type="button" class="round-btn lg-hover place-alert__close" data-place-close aria-label="Close the locker location notice">' + icon('close') + '</button>' +
       (now.kind === 'here' ? '' : '<div class="place-alert__do">' +
-        '<button type="button" class="chip lg-hover" data-place-show>' + icon('locate') + 'Xem tủ của tôi</button>' +
+        '<button type="button" class="chip lg-hover" data-place-show>' + icon('locate') + 'Show my locker</button>' +
         (hasCoords(mine) ? '<a class="chip lg-hover" href="' + esc(directionsUrl(mine)) + '" target="_blank" rel="noopener noreferrer">' +
-          icon('route') + 'Chỉ đường</a>' : '') + '</div>');
+          icon('route') + 'Directions</a>' : '') + '</div>');
   }
 
   function renderPlace() {
@@ -472,7 +472,7 @@
         toast(said[0], said[1] ? 'error' : undefined);
       })
       .catch(function () {
-        toast('Chưa gửi được câu trả lời. Hãy thử lại.', 'error');
+        toast('Could not send your answer. Please try again.', 'error');
       })
       .then(function () {
         place.html = '';        // the buttons work again if the wait goes on (box offline, no network)
@@ -486,7 +486,7 @@
   function renderHead() {
     var info = areaInfo(state.area);
     var area = info || (state.data && state.data.area) || null;
-    el.title.textContent = area ? area.name : 'Khu vực';
+    el.title.textContent = area ? area.name : 'Area';
     el.sub.textContent = area ? (area.location || '') : '';
     if (!info) {
       el.quick.innerHTML = '';
@@ -495,16 +495,16 @@
     var go;
     if (hasCoords(info)) {
       var dist = distanceTo(info);
-      var text = dist !== null ? formatDistance(dist) : 'Chỉ đường';
+      var text = dist !== null ? formatDistance(dist) : 'Directions';
       go = '<a class="quick__tile quick__go lg-hover" href="' + esc(directionsUrl(info)) + '" target="_blank" rel="noopener noreferrer"' +
-        ' aria-label="' + esc('Chỉ đường đến ' + info.name + (dist !== null ? ', cách ' + text : '') + ' (mở Google Maps)') + '">' +
+        ' aria-label="' + esc('Directions to ' + info.name + (dist !== null ? ', ' + text + ' away' : '') + ' (opens Google Maps)') + '">' +
         icon('route') + '<span>' + esc(text) + '</span></a>';
     } else {
-      go = '<div class="quick__tile"><b>–</b><span>Chưa có tọa độ</span></div>';
+      go = '<div class="quick__tile"><b>–</b><span>No coordinates yet</span></div>';
     }
     el.quick.innerHTML = go +
-      '<div class="quick__tile"><b>' + esc(info.available) + '</b><span>ngăn trống</span></div>' +
-      '<div class="quick__tile"><b>' + esc(info.slot_count) + '</b><span>tổng ngăn</span></div>';
+      '<div class="quick__tile"><b>' + esc(info.available) + '</b><span>free slots</span></div>' +
+      '<div class="quick__tile"><b>' + esc(info.slot_count) + '</b><span>total slots</span></div>';
   }
 
   function renderChips() {
@@ -517,27 +517,27 @@
         ' <span class="chip__count">' + (counts[code] || 0) + '</span></button>';
     }).join('');
     if (hasFilter()) {
-      html += '<button type="button" class="chip chip--clear lg-hover" data-filter-clear>Bỏ lọc</button>';
+      html += '<button type="button" class="chip chip--clear lg-hover" data-filter-clear>Clear filters</button>';
     }
     el.chips.innerHTML = html;
   }
 
   function deviceTag(bank) {
     if (bank.device_status === 'MAINTENANCE') {
-      return '<span class="device-tag device-tag--maintenance">Bảo trì</span>';
+      return '<span class="device-tag device-tag--maintenance">Maintenance</span>';
     }
     if (bank.device_status === 'OFFLINE') {
-      return '<span class="device-tag device-tag--offline">Mất kết nối</span>';
+      return '<span class="device-tag device-tag--offline">Offline</span>';
     }
     if (bank.device_status === 'NONE') {
-      return '<span class="device-tag device-tag--offline">Chưa gắn thiết bị</span>';
+      return '<span class="device-tag device-tag--offline">No device attached</span>';
     }
-    return '<span class="device-tag device-tag--live">Trực tuyến</span>';
+    return '<span class="device-tag device-tag--live">Online</span>';
   }
 
   /* cabinet (spec v3 D9): one block per bank, door height by size S 1 / M 2 / L 3 units */
 
-  var SIZE_NAMES = { S: 'Nhỏ', M: 'Vừa', L: 'Lớn' };
+  var SIZE_NAMES = { S: 'Small', M: 'Medium', L: 'Large' };
 
   function slotHtml(slot) {
     var st = statusInfo(slot.status);
@@ -549,14 +549,14 @@
     var classes = 'slot st-' + (slot.locked ? 'OVERDUE' : slot.status) + ' size-' + size +
       (slot.locked ? ' is-locked' : '') + (slot.mine ? ' is-mine' : '') + (dim ? ' is-dim' : '') +
       (match ? ' is-match' : '') + (slot.slot_id === state.slotId ? ' is-selected' : '');
-    var label = slot.slot_code + ', ' + st.label + ', cỡ ' + size + (slot.locked ? ', khóa vì quá hạn' : '') +
-      (slot.mine ? ', của bạn' : '');
+    var label = slot.slot_code + ', ' + st.label + ', size ' + size + (slot.locked ? ', locked because overdue' : '') +
+      (slot.mine ? ', yours' : '');
     return '<button type="button" class="' + classes + '" data-slot="' + esc(slot.slot_id) + '" aria-label="' + esc(label) + '"' +
         ' aria-pressed="' + (slot.slot_id === state.slotId ? 'true' : 'false') + '" title="' + esc(label) + '">' +
       '<span class="slot__top"><span class="slot__code">' + esc(slot.slot_code) + '</span>' +
         '<span class="slot__size">' + size + '</span></span>' +
       '<span class="slot__icon">' + icon(slot.locked ? 'lock' : st.icon) + '</span>' +
-      (slot.mine ? '<span class="slot__you">Bạn</span>' : '') +
+      (slot.mine ? '<span class="slot__you">You</span>' : '') +
     '</button>';
   }
 
@@ -587,18 +587,18 @@
         issues++;
       }
     });
-    return free + ' trống · ' + used + ' đang dùng' + (locked ? ' · ' + locked + ' khóa quá hạn' : '') +
-      (issues ? ' · ' + issues + ' cần kiểm tra' : '');
+    return free + ' free · ' + used + ' in use' + (locked ? ' · ' + locked + ' locked overdue' : '') +
+      (issues ? ' · ' + issues + ' to check' : '');
   }
 
   function renderBanks() {
     var list = banks();
     if (!state.data || (!list.length && state.data.area && state.data.area.area_code !== state.area)) {
-      el.banks.innerHTML = '<div class="empty">Đang tải dãy tủ…</div>';
+      el.banks.innerHTML = '<div class="empty">Loading locker banks…</div>';
       return;
     }
     if (!list.length) {
-      el.banks.innerHTML = '<div class="empty">Khu vực này chưa có dãy tủ nào.</div>';
+      el.banks.innerHTML = '<div class="empty">This area has no locker banks yet.</div>';
       return;
     }
     el.banks.innerHTML = list.map(function (bank) {
@@ -619,12 +619,12 @@
   function renderSync() {
     var text;
     if (state.error) {
-      text = 'Mất kết nối máy chủ, đang thử lại';
+      text = 'Connection lost, retrying';
     } else if (!state.loadedAt) {
-      text = 'Đang tải';
+      text = 'Loading';
     } else {
       var secs = Math.max(0, Math.round((Date.now() - state.loadedAt) / 1000));
-      text = secs < 3 ? 'Vừa cập nhật' : 'Cập nhật ' + secs + ' giây trước';
+      text = secs < 3 ? 'Updated just now' : 'Updated ' + secs + ' s ago';
     }
     if (el.sync.textContent !== text) {
       el.sync.textContent = text;
@@ -646,25 +646,25 @@
   function describe(slot) {
     var mine = slot.mine;
     if (slot.locked) {
-      return mine ? 'Đã quá hạn nên tủ đang khóa. Phụ phí trễ hạn được trừ vào ví; số dư phải từ 0 đ trở lên mới mở được tủ.'
-                  : 'Lượt gửi trong ngăn đã quá hạn, tủ đang khóa.';
+      return mine ? 'The booking is overdue, so the slot is locked. The late fee is taken from your wallet; the slot opens again once your balance is 0 VND or more.'
+                  : 'The booking in this slot is overdue and the slot is locked.';
     }
     switch (slot.status) {
       case 'AVAILABLE':
-        return 'Chọn gói gửi và cách mở để đặt ngăn này.';
+        return 'Choose a storage plan and an open method to book this slot.';
       case 'RESERVED':
-        return mine ? 'Ngăn đang giữ cho bạn. Hết giờ giữ chỗ lượt tự bắt đầu: bạn đến sớm hay muộn đều dùng được trong thời gian đã trả.'
-                    : 'Ngăn này đã có người đặt.';
+        return mine ? 'This slot is held for you. When the hold ends the booking starts by itself: early or late, you can use it for the time you paid.'
+                    : 'Someone has booked this slot.';
       case 'OCCUPIED':
-        return mine ? 'Đồ của bạn đang ở trong ngăn.' : 'Đang có người dùng.';
+        return mine ? 'Your things are in this slot.' : 'Someone is using this slot.';
       case 'OVERDUE':
-        return mine ? 'Đã hết thời gian gửi. Hãy gia hạn hoặc đến lấy đồ trước khi hết thời gian ân hạn.' : 'Đã hết thời gian gửi.';
+        return mine ? 'Your storage time is over. Extend it or pick up your things before the grace period ends.' : 'The storage time is over.';
       case 'ALERT':
-        return 'Ngăn này đang có cảnh báo, nhân viên đang kiểm tra.';
+        return 'This slot has an alert; staff are checking it.';
       case 'MAINTENANCE':
-        return 'Tạm ngưng sử dụng trong lúc kỹ thuật viên kiểm tra.';
+        return 'Out of service while a technician checks it.';
       case 'OFFLINE':
-        return 'Bộ điều khiển tủ đang mất kết nối nên không đặt được và trạng thái có thể chưa cập nhật.';
+        return 'The locker controller is offline, so the slot cannot be booked and the status may be out of date.';
       default:
         return '';
     }
@@ -687,10 +687,10 @@
   }
 
   var METHODS = {
-    PIN: { label: 'Mật mã', desc: 'Nhập 6 số trên bàn phím của hộp hoặc trên điện thoại (quét QR).' },
-    CARD: { label: 'Thẻ RFID', desc: 'Quẹt thẻ RFID lên đầu đọc của hộp.' },
-    PHONE: { label: 'Điện thoại', desc: 'Đăng nhập trên điện thoại, chạm máy vào đầu đọc NFC của hộp rồi bấm Mở tủ. Không cần mật mã.' },
-    FINGERPRINT: { label: 'Vân tay', desc: 'Đặt ngón tay lên cảm biến của hộp.' }
+    PIN: { label: 'PIN', desc: 'Enter the 6-digit PIN on the keypad of the box or on your phone (scan the QR code).' },
+    CARD: { label: 'RFID card', desc: 'Hold your RFID card to the reader of the box.' },
+    PHONE: { label: 'Phone', desc: 'Sign in on your phone, tap it on the NFC reader of the box, then press Open. No PIN needed.' },
+    FINGERPRINT: { label: 'Fingerprint', desc: 'Place your finger on the sensor of the box.' }
   };
   var METHOD_ORDER = ['PIN', 'CARD', 'PHONE', 'FINGERPRINT'];
 
@@ -751,13 +751,13 @@
 
   function methodDesc(code, bank) {
     if (code === 'FINGERPRINT') {
-      return METHODS.FINGERPRINT.desc + (fingerEnrolled(bank) ? ' Bạn đã đăng ký vân tay trên hộp này.'
-        : ' Lần đầu cần đăng ký tại hộp bằng mã ở trang Tủ của tôi.');
+      return METHODS.FINGERPRINT.desc + (fingerEnrolled(bank) ? ' Your fingerprint is already enrolled on this box.'
+        : ' The first time, enroll it at the box with the code from My locker.');
     }
     return METHODS[code].desc;
   }
 
-  // "Tự chọn": price tables of the map API (util.Pricing, the same formula as dbo.fn_CustomPrice).
+  // "Custom": price tables of the map API (util.Pricing, the same formula as dbo.fn_CustomPrice).
   // Display only: the form posts customMin and Deposit_Reserve prices the booking again.
   function customCfg() {
     var c = state.data && state.data.custom;
@@ -778,10 +778,10 @@
   }
 
   function durationText(unit, count) {
-    return count + (unit === 'day' ? ' ngày' : ' giờ');
+    return count + (unit === 'day' ? (count === 1 ? ' day' : ' days') : ' h');
   }
 
-  // the unit and the count picked in the "Tự chọn" block, kept inside the limits
+  // the unit and the count picked in the "Custom" block, kept inside the limits
   function customPick(form) {
     var unitInput = form.querySelector('input[name="customUnit"]:checked');
     var unit = unitInput && unitInput.value === 'day' ? 'day' : 'hour';
@@ -813,9 +813,9 @@
     var method = checked ? checked.value : 'PIN';
     var price = custom ? customPrice(custom.unit, custom.count, slot.size) : planPrice(plan, slot.size);
     if (custom) {
-      plan = { plan_name: 'Tự chọn · ' + durationText(custom.unit, custom.count), duration_min: custom.minutes };
+      plan = { plan_name: 'Custom · ' + durationText(custom.unit, custom.count), duration_min: custom.minutes };
     }
-    // "Tự chọn" picked but no longer offered (a refresh dropped it) or not priced: never show it as free
+    // "Custom" picked but no longer offered (a refresh dropped it) or not priced: never show it as free
     var unavailable = wantsCustom && (!custom || price <= 0);
     var balance = Number(cfg.balance) || 0;
     // Deposit_Reserve: balance - price must stay >= BOOKING_BUFFER
@@ -842,36 +842,36 @@
       var byHour = rate * cu.count;
       if (choice.price < byHour) {
         // capped by the day pass: the day pass costs the same and lasts 24 hours
-        parts.push('Tính bằng giá trọn ngày, tiết kiệm ' + money(byHour - choice.price) + ' so với ' + money(rate) +
-          '/giờ. Gói Trọn ngày cùng giá và gửi được 24 giờ.');
+        parts.push('Charged at the full-day price, saving ' + money(byHour - choice.price) + ' against ' + money(rate) +
+          '/h. The Day pass plan costs the same and lasts 24 h.');
       } else {
-        parts.push(money(rate) + ' mỗi giờ (cỡ ' + size + '), không quá giá trọn ngày ' + money(c.day_price && c.day_price[size]) + '.');
+        parts.push(money(rate) + ' per hour (size ' + size + '), never more than the full-day price of ' + money(c.day_price && c.day_price[size]) + '.');
       }
       var plans = (state.data && state.data.plans) || [];
       for (var i = 0; i < plans.length; i++) {
         var p = planPrice(plans[i], size);
         if (Number(plans[i].duration_min) === cu.minutes && p < choice.price) {
-          parts.push('Gói “' + plans[i].plan_name + '” có sẵn rẻ hơn: ' + money(p) + '.');
+          parts.push('The plan “' + plans[i].plan_name + '” is cheaper: ' + money(p) + '.');
         }
       }
     } else {
       var day = Number(c.day_price && c.day_price[size]) || 0;
       var full = day * cu.count;
       if (cu.count > 1 && choice.price < full) {
-        parts.push('Khoảng ' + money(Math.round(choice.price / cu.count / 100) * 100) + '/ngày, tiết kiệm ' +
-          money(full - choice.price) + ' so với ' + cu.count + ' ngày lẻ.');
+        parts.push('About ' + money(Math.round(choice.price / cu.count / 100) * 100) + '/day, saving ' +
+          money(full - choice.price) + ' against ' + cu.count + ' single days.');
       } else {
-        parts.push(money(day) + ' mỗi ngày (cỡ ' + size + '); đặt từ 2 ngày được giảm giá.');
+        parts.push(money(day) + ' per day (size ' + size + '); 2 days or more get a discount.');
       }
     }
-    parts.push('Tính giờ từ lần mở tủ đầu tiên; mở ngay thì hạn trả lúc ' + dueIfOpenedNow(cu.minutes) + '.');
+    parts.push('Time counts from the first opening; if you open it now, the due time is ' + dueIfOpenedNow(cu.minutes) + '.');
     return parts.join(' ');
   }
 
   function rulesHint() {
-    return 'Giữ chỗ ' + holdMinutes() + ' phút · hủy trong ' + cancelMinutes() + ' phút đầu được hoàn đủ, sau đó tới hết giờ giữ chỗ hoàn ' +
-      cancelLatePct() + '%. Hết giờ giữ chỗ lượt tự bắt đầu tính giờ và không hủy được nữa: ngăn vẫn khóa cho bạn, ' +
-      'bạn đến sớm, muộn hay không đến đều dùng được trong thời gian đã trả, không hoàn tiền.';
+    return 'Hold ' + holdMinutes() + ' min · cancel in the first ' + cancelMinutes() + ' min for a full refund, after that until the hold ends for a ' +
+      cancelLatePct() + '% refund. When the hold ends the booking starts by itself and can no longer be cancelled: the slot stays locked for you, ' +
+      'and whether you come early, late or not at all, the paid time is yours; no refund.';
   }
 
   // the segmented controls are radios, so the form posts planId and openMethod as before
@@ -884,33 +884,33 @@
   function reserveForm(slot) {
     var plans = (state.data && state.data.plans) || [];
     if (!plans.length) {
-      return '<p class="notice">Hiện chưa có gói gửi nào.</p>';
+      return '<p class="notice">No storage plans yet.</p>';
     }
     var planOpts = plans.map(function (p, i) {
       var price = planPrice(p, slot.size);
       return segOption('planId', 'pl-' + slot.slot_id + '-' + p.plan_id, p.plan_id, i === 0,
-        '<span>' + esc(p.plan_name) + '</span><span class="seg-opt__sub">' + esc(price ? money(price) : 'Miễn phí') + '</span>');
+        '<span>' + esc(p.plan_name) + '</span><span class="seg-opt__sub seg-opt__sub--line">' + esc(price ? money(price) : 'Free') + '</span>');
     }).join('');
     var customBlock = '';
     if (customCfg()) {
       var sid = slot.slot_id;
       planOpts += segOption('planId', 'pl-' + sid + '-custom', 'custom', false,
-        '<span>Tự chọn</span><span class="seg-opt__sub">Giờ / ngày</span>');
+        '<span>Custom</span><span class="seg-opt__sub seg-opt__sub--line">Hours / days</span>');
       // disabled while hidden, so a plan booking posts no customMin
       customBlock = '<fieldset class="custom-pick" data-custom hidden disabled>' +
         '<div class="seg-track">' +
           (customMax('hour') >= 1 ? segOption('customUnit', 'cu-' + sid + '-hour', 'hour', true,
-            '<span>Theo giờ</span><span class="seg-opt__sub">1–' + esc(customMax('hour')) + ' giờ</span>') : '') +
+            '<span>By hour</span><span class="seg-opt__sub">1 to ' + esc(customMax('hour')) + ' h</span>') : '') +
           (customMax('day') >= 1 ? segOption('customUnit', 'cu-' + sid + '-day', 'day', customMax('hour') < 1,
-            '<span>Theo ngày</span><span class="seg-opt__sub">1–' + esc(customMax('day')) + ' ngày</span>') : '') +
+            '<span>By day</span><span class="seg-opt__sub">1 to ' + esc(customMax('day')) + ' days</span>') : '') +
         '</div>' +
         '<div class="stepper">' +
-          '<button type="button" class="stepper__btn lg-hover" data-custom-step="-1" aria-label="Bớt một">' + icon('minus') + '</button>' +
+          '<button type="button" class="stepper__btn lg-hover" data-custom-step="-1" aria-label="One less">' + icon('minus') + '</button>' +
           '<output class="stepper__value" data-custom-value aria-live="polite"></output>' +
-          '<button type="button" class="stepper__btn lg-hover" data-custom-step="1" aria-label="Thêm một">' + icon('plus') + '</button>' +
+          '<button type="button" class="stepper__btn lg-hover" data-custom-step="1" aria-label="One more">' + icon('plus') + '</button>' +
         '</div>' +
         '<input type="range" class="custom-range" name="customCount" min="1" max="' + esc(customMax('hour')) + '" value="3" ' +
-          'data-custom-count aria-label="Thời gian gửi">' +
+          'data-custom-count aria-label="Storage time">' +
         '<input type="hidden" name="customMin" value="" data-custom-min>' +
         '<p class="hint" data-custom-note></p>' +
       '</fieldset>';
@@ -919,15 +919,15 @@
       return segOption('openMethod', 'om-' + slot.slot_id + '-' + code, code, i === 0, '<span>' + esc(METHODS[code].label) + '</span>');
     }).join('');
     return formStart(cfg.bookingUrl, 'reserve', slot, null, ' data-reserve') +
-      '<fieldset class="seg-pick"><legend>Gói gửi</legend><div class="seg-track">' + planOpts + '</div></fieldset>' +
+      '<fieldset class="seg-pick"><legend>Storage plan</legend><div class="seg-track">' + planOpts + '</div></fieldset>' +
       customBlock +
-      '<fieldset class="seg-pick"><legend>Cách mở tủ</legend><div class="seg-track">' + methodOpts + '</div></fieldset>' +
+      '<fieldset class="seg-pick"><legend>Open method</legend><div class="seg-track">' + methodOpts + '</div></fieldset>' +
       '<p class="hint" data-method-desc></p>' +
-      '<div class="pay-now"><span>Trừ ngay</span><strong data-pay-now></strong></div>' +
-      '<div class="pay-line"><span>Số dư ví</span><strong data-account-balance></strong></div>' +
-      '<button type="submit" class="btn btn--block btn--pill lg-hover" data-reserve-button>Đặt ngăn ' + esc(slot.slot_code) + '</button>' +
-      '<p class="notice" data-balance-warning hidden>Sau khi đặt, ví phải còn ít nhất ' +
-        esc(money(bookingBuffer())) + ' để dự phòng phụ phí trễ hạn. <a href="' + esc(cfg.topupUrl) + '">Nạp tiền</a></p>' +
+      '<div class="pay-now"><span>Taken now</span><strong data-pay-now></strong></div>' +
+      '<div class="pay-line"><span>Wallet balance</span><strong data-account-balance></strong></div>' +
+      '<button type="submit" class="btn btn--block btn--pill lg-hover" data-reserve-button>Book slot ' + esc(slot.slot_code) + '</button>' +
+      '<p class="notice" data-balance-warning hidden>After booking, your wallet must keep at least ' +
+        esc(money(bookingBuffer())) + ' to cover a possible late fee. <a href="' + esc(cfg.topupUrl) + '">Top up</a></p>' +
       '<p class="hint">' + esc(rulesHint()) + '</p>' +
     '</form>';
   }
@@ -952,9 +952,9 @@
       }
     }
     el.panel.querySelector('[data-method-desc]').textContent = methodDesc(choice.method, found.bank);
-    el.panel.querySelector('[data-pay-now]').textContent = choice.unavailable ? '—' : choice.price ? money(choice.price) : 'Miễn phí';
+    el.panel.querySelector('[data-pay-now]').textContent = choice.unavailable ? '—' : choice.price ? money(choice.price) : 'Free';
     if (choice.unavailable) {
-      el.panel.querySelector('[data-method-desc]').textContent = 'Hiện chưa đặt được thời gian tự chọn. Hãy chọn một gói có sẵn.';
+      el.panel.querySelector('[data-method-desc]').textContent = 'A custom time cannot be booked right now. Please choose one of the plans.';
     }
     var balanceNode = el.panel.querySelector('[data-account-balance]');
     balanceNode.textContent = money(choice.balance);
@@ -974,26 +974,26 @@
   function reserveConfirmHtml(slot, bank, choice) {
     var z = sizeInfo(choice.size) || {};
     var rows = [
-      ['Ngăn', esc(slot.slot_code) + ' <span class="muted">' + esc(bank.bank_code) + '</span>'],
-      ['Cỡ', esc(choice.size) + (z.size_cm ? ' <span class="muted">' + esc(z.size_cm) + ' cm</span>' : '')],
-      ['Gói gửi', esc(choice.plan.plan_name)]
+      ['Slot', esc(slot.slot_code) + ' <span class="muted">' + esc(bank.bank_code) + '</span>'],
+      ['Size', esc(choice.size) + (z.size_cm ? ' <span class="muted">' + esc(z.size_cm) + ' cm</span>' : '')],
+      ['Storage plan', esc(choice.plan.plan_name)]
     ];
     if (choice.custom) {
-      rows.push(['Thời gian gửi', esc(durationText(choice.custom.unit, choice.custom.count)) +
-        ' <span class="muted">từ lần mở tủ đầu tiên · mở ngay thì hạn trả lúc ' + esc(dueIfOpenedNow(choice.custom.minutes)) + '</span>']);
+      rows.push(['Storage time', esc(durationText(choice.custom.unit, choice.custom.count)) +
+        ' <span class="muted">from the first opening · if opened now, due at ' + esc(dueIfOpenedNow(choice.custom.minutes)) + '</span>']);
     }
     rows = rows.concat([
-      ['Cách mở', esc(METHODS[choice.method].label)],
-      ['Trừ ngay', '<strong class="dlg__total money">' + (choice.price ? esc(money(choice.price)) : 'Miễn phí') + '</strong>']
+      ['Open method', esc(METHODS[choice.method].label)],
+      ['Taken now', '<strong class="dlg__total money">' + (choice.price ? esc(money(choice.price)) : 'Free') + '</strong>']
     ]);
-    rows.push(['Số dư còn lại', '<span class="money">' + esc(money(choice.after)) + '</span>']);
+    rows.push(['Balance after', '<span class="money">' + esc(money(choice.after)) + '</span>']);
     var rules = [
-      ['check', 'Hủy trong ' + cancelMinutes() + ' phút đầu: hoàn đủ. Sau đó tới hết giờ giữ chỗ: hoàn ' + cancelLatePct() + '%.'],
-      ['clock', 'Sau ' + holdMinutes() + ' phút không hủy được nữa: lượt tự bắt đầu tính giờ, ngăn vẫn khóa cho bạn.'],
-      ['alert', 'Bạn đến sớm, muộn hay không đến đều dùng được lúc nào cũng được trong thời gian đã trả. Không hoàn tiền.']
+      ['check', 'Cancel in the first ' + cancelMinutes() + ' min: full refund. After that until the hold ends: ' + cancelLatePct() + '% refund.'],
+      ['clock', 'After ' + holdMinutes() + ' min it can no longer be cancelled: the booking starts by itself and the slot stays locked for you.'],
+      ['alert', 'Early, late or not at all, you can use the slot at any time within the paid time. No refund.']
     ];
     if (z.overdue_rate) {
-      rules.push(['lock', 'Quá hạn: tủ khóa, phụ phí ' + money(z.overdue_rate) + ' mỗi giờ trễ (cỡ ' + choice.size + '), trừ vào ví.']);
+      rules.push(['lock', 'Overdue: the slot locks and a late fee of ' + money(z.overdue_rate) + ' per late hour (size ' + choice.size + ') is taken from your wallet.']);
     }
     return kvHtml(rows) + '<ul class="rule-list">' + rules.map(function (r) {
       return '<li>' + icon(r[0]) + '<span>' + esc(r[1]) + '</span></li>';
@@ -1013,25 +1013,25 @@
     var now = Date.now();
     var hold = slot.hold_until ? parseUtc(slot.hold_until).getTime() : 0;
     if (hold <= now) {
-      return '<p class="hint">Đã hết thời gian giữ chỗ nên không hủy được nữa.</p>';
+      return '<p class="hint">The hold time is over, so the booking can no longer be cancelled.</p>';
     }
     var until = cancelUntil(slot);
     var free = until ? until.getTime() : 0;
     var isFree = free > now;
     var paid = Number(slot.paid_amount) || 0;
     var late = lateRefund(paid);
-    var head = 'Hủy lượt đặt ngăn ' + slot.slot_code + '? ';
-    var fullText = head + 'Hoàn đủ ' + money(paid) + ' vào ví.';
-    var lateText = head + 'Đã quá ' + cancelMinutes() + ' phút kể từ lúc đặt nên chỉ hoàn ' + cancelLatePct() + '%: ' +
-      money(late) + ' vào ví.';
-    var lateLabel = 'hoàn ' + cancelLatePct() + '% (' + money(late) + ')';
+    var head = 'Cancel the booking of slot ' + slot.slot_code + '? ';
+    var fullText = head + 'The full ' + money(paid) + ' is refunded to your wallet.';
+    var lateText = head + 'More than ' + cancelMinutes() + ' min have passed since booking, so only ' + cancelLatePct() + '% is refunded: ' +
+      money(late) + ' to your wallet.';
+    var lateLabel = cancelLatePct() + '% refund (' + money(late) + ')';
     return formStart(cfg.bookingUrl, 'cancel', slot, isFree ? fullText : lateText,
         ' data-cancel-until="' + free + '" data-hold-until="' + hold + '" data-late-refund="' + late + '"' +
         ' data-confirm-late="' + esc(lateText) + '" data-late-label="' + esc(lateLabel) + '"' + (isFree ? '' : ' data-late')) +
       hidden('depositId', slot.deposit_id) +
       '<input type="hidden" name="expectedRefund" value="' + (isFree ? paid : late) + '" data-expected-refund>' +
-      '<button type="submit" class="btn ghost btn--block">Hủy đặt · <span data-cancel-label>' +
-        esc(isFree ? 'hoàn đủ' : lateLabel) + '</span> · <span data-cancel-left>' +
+      '<button type="submit" class="btn ghost btn--block">Cancel booking · <span data-cancel-label>' +
+        esc(isFree ? 'full refund' : lateLabel) + '</span> · <span data-cancel-left>' +
         esc(leftText(isFree ? free : hold)) + '</span></button>' +
     '</form>';
   }
@@ -1040,7 +1040,7 @@
     var s = Math.max(0, Math.round((endMs - Date.now()) / 1000));
     var m = Math.floor(s / 60);
     var sec = s % 60;
-    return 'còn ' + m + ':' + (sec < 10 ? '0' : '') + sec;
+    return m + ':' + (sec < 10 ? '0' : '') + sec + ' left';
   }
 
   function hourRate(slot) {
@@ -1058,25 +1058,25 @@
   function extendForm(slot) {
     var options = EXTEND_OPTIONS.map(function (m) {
       return '<option value="' + m + '"' + (m === 60 ? ' selected' : '') + '>' +
-        (m < 60 ? m + ' phút' : (m / 60) + ' giờ') + ' · ' + esc(money(extendPrice(slot, m))) + '</option>';
+        (m < 60 ? m + ' min' : (m / 60) + ' h') + ' · ' + esc(money(extendPrice(slot, m))) + '</option>';
     }).join('');
     return formStart(cfg.bookingUrl, 'extend', slot, null, ' data-extend') +
       hidden('depositId', slot.deposit_id) +
-      '<h3>Gia hạn trực tuyến</h3>' +
-      '<label class="field"><span>Thêm thời gian</span><select name="minutes" data-extend-minutes>' + options + '</select></label>' +
-      '<p class="hint">Giá ' + esc(money(hourRate(slot))) + ' cho mỗi giờ bắt đầu thêm (cỡ ' + esc(slot.size) + '), trừ ngay vào ví. Tối đa 3 lần.</p>' +
+      '<h3>Extend online</h3>' +
+      '<label class="field"><span>Add time</span><select name="minutes" data-extend-minutes>' + options + '</select></label>' +
+      '<p class="hint">' + esc(money(hourRate(slot))) + ' for each extra hour started (size ' + esc(slot.size) + '), taken from your wallet at once. At most 3 times.</p>' +
       '<button type="submit" class="btn btn--block btn--pill lg-hover" data-extend-button>' +
-        'Gia hạn · trả ' + esc(money(extendPrice(slot, 60))) + '</button>' +
+        'Extend · pay ' + esc(money(extendPrice(slot, 60))) + '</button>' +
     '</form>';
   }
 
   function extendConfirmHtml(slot, minutes) {
     var price = extendPrice(slot, minutes);
     return kvHtml([
-      ['Ngăn', esc(slot.slot_code)],
-      ['Thêm', esc(minutes < 60 ? minutes + ' phút' : (minutes / 60) + ' giờ')],
-      ['Trừ ngay', '<strong class="dlg__total money">' + esc(money(price)) + '</strong>'],
-      ['Số dư còn lại', '<span class="money">' + esc(money((Number(cfg.balance) || 0) - price)) + '</span>']
+      ['Slot', esc(slot.slot_code)],
+      ['Add', esc(minutes < 60 ? minutes + ' min' : (minutes / 60) + ' h')],
+      ['Taken now', '<strong class="dlg__total money">' + esc(money(price)) + '</strong>'],
+      ['Balance after', '<span class="money">' + esc(money((Number(cfg.balance) || 0) - price)) + '</span>']
     ]);
   }
 
@@ -1084,16 +1084,16 @@
   function overdueBoxHtml(slot) {
     var debt = (Number(cfg.balance) || 0) < 0 ? -Number(cfg.balance) : 0;
     return '<div class="overdue-box" role="status">' +
-      '<p class="overdue-box__title">' + icon('lock') + 'Đã quá hạn, tủ đang khóa</p>' +
+      '<p class="overdue-box__title">' + icon('lock') + 'Overdue, the slot is locked</p>' +
       '<dl class="kv">' +
-        '<dt>Giờ trễ đã tính</dt><dd>' + esc(slot.overdue_hours || 0) + ' giờ</dd>' +
-        '<dt>Phụ phí đã thu</dt><dd class="money">' + esc(money(slot.overdue_fee || 0)) + '</dd>' +
-        '<dt>Đang nợ</dt><dd class="money' + (debt ? ' text-danger' : '') + '">' + esc(money(debt)) + '</dd>' +
+        '<dt>Late hours charged</dt><dd>' + esc(slot.overdue_hours || 0) + ' h</dd>' +
+        '<dt>Late fee taken</dt><dd class="money">' + esc(money(slot.overdue_fee || 0)) + '</dd>' +
+        '<dt>Amount owed</dt><dd class="money' + (debt ? ' text-danger' : '') + '">' + esc(money(debt)) + '</dd>' +
       '</dl>' +
-      '<p class="hint">' + (debt ? 'Nạp tiền để số dư từ 0 đ trở lên rồi mở tủ để lấy đồ. Phụ phí vẫn tính thêm mỗi giờ.'
-                                  : 'Số dư đủ: mở tủ để lấy đồ ngay, phụ phí vẫn tính thêm mỗi giờ.') +
-        ' Không gia hạn được khi tủ đã khóa.</p>' +
-      '<a class="btn btn--block' + (debt ? '' : ' ghost') + '" href="' + esc(cfg.topupUrl) + '">Nạp tiền</a>' +
+      '<p class="hint">' + (debt ? 'Top up until your balance is 0 VND or more, then open the slot to pick up your things. The late fee keeps growing every hour.'
+                                  : 'Your balance is enough: open the slot to pick up your things now; the late fee keeps growing every hour.') +
+        ' A locked slot cannot be extended.</p>' +
+      '<a class="btn btn--block' + (debt ? '' : ' ghost') + '" href="' + esc(cfg.topupUrl) + '">Top up</a>' +
     '</div>';
   }
 
@@ -1107,10 +1107,10 @@
 
   // a visitor who is not signed in: the booking form needs an account, so the button opens the popup
   function guestBox() {
-    return '<div class="guest-box"><h3>Đặt ngăn này</h3>' +
-      '<p class="hint">Bạn cần có tài khoản để đặt ngăn. Đăng nhập hoặc đăng ký ngay trong cửa sổ nhỏ, ngăn bạn chọn vẫn được giữ nguyên.</p>' +
-      '<button type="button" class="btn btn--block btn--pill lg-hover" data-auth-reserve="login">Đăng nhập để đặt ngăn</button>' +
-      '<button type="button" class="btn ghost btn--block" data-auth-reserve="register">Tạo tài khoản mới</button></div>';
+    return '<div class="guest-box"><h3>Book this slot</h3>' +
+      '<p class="hint">You need an account to book a slot. Sign in or sign up in the small window; the slot you picked stays selected.</p>' +
+      '<button type="button" class="btn btn--block btn--pill lg-hover" data-auth-reserve="login">Sign in to book</button>' +
+      '<button type="button" class="btn ghost btn--block" data-auth-reserve="register">Create a new account</button></div>';
   }
 
   function requireLogin(tab) {
@@ -1121,7 +1121,7 @@
     }
     window.SmartLockerAuth.open({
       tab: tab,
-      reason: found ? 'Đăng nhập hoặc đăng ký để đặt ngăn ' + found.slot.slot_code + '. Ngăn bạn chọn vẫn được giữ nguyên.' : ''
+      reason: found ? 'Sign in or sign up to book slot ' + found.slot.slot_code + '. The slot you picked stays selected.' : ''
     }).then(function (ok) {
       if (ok) {
         afterSignIn();
@@ -1155,7 +1155,7 @@
         state.panelDirty = false;
         state.panelSig = null;
         state.popupOpen = false;
-        toast('Đã đăng nhập.' + (cfg.role === 'END_USER' && state.slotId !== null ? ' Chọn gói và cách mở rồi bấm Đặt ngăn.' : ''));
+        toast('Signed in.' + (cfg.role === 'END_USER' && state.slotId !== null ? ' Choose a plan and an open method, then press Book slot.' : ''));
         load();
       })
       .catch(function () {
@@ -1174,7 +1174,7 @@
     if (!tab || cfg.role !== 'GUEST' || !window.SmartLockerAuth || !window.HTMLDialogElement) {
       return;
     }
-    window.SmartLockerAuth.open({ tab: tab, reason: back ? 'Trang bạn vừa mở cần đăng nhập.' : '' }).then(function (ok) {
+    window.SmartLockerAuth.open({ tab: tab, reason: back ? 'The page you opened needs a sign-in.' : '' }).then(function (ok) {
       if (!ok) {
         return;
       }
@@ -1193,7 +1193,7 @@
       return '';
     }
     return '<a class="btn ghost btn--block" href="' + esc(cfg.ctx + '/k/' + encodeURIComponent(bank.device_code)) + '">' +
-      'Mở tủ bằng điện thoại</a>';
+      'Open with your phone</a>';
   }
 
   function actionsHtml(slot, bank) {
@@ -1207,12 +1207,12 @@
       if (slot.status === 'AVAILABLE') {
         parts.push(reserveForm(slot));
       } else if (bookingPhase(slot) === 'RESERVED') {
-        parts.push('<a class="btn btn--block btn--pill lg-hover" href="' + esc(cfg.myLockerUrl) + '">' + icon('unlock') + 'Xem cách mở ở Tủ của tôi</a>');
+        parts.push('<a class="btn btn--block btn--pill lg-hover" href="' + esc(cfg.myLockerUrl) + '">' + icon('unlock') + 'How to open it, in My locker</a>');
         parts.push(boxPageLink(bank));
         parts.push(cancelForm(slot));
       } else if (slot.mine && slot.locked) {
         parts.push(overdueBoxHtml(slot));
-        parts.push('<a class="btn ghost btn--block" href="' + esc(cfg.myLockerUrl) + '">Xem ở Tủ của tôi</a>');
+        parts.push('<a class="btn ghost btn--block" href="' + esc(cfg.myLockerUrl) + '">View in My locker</a>');
       } else if (bookingPhase(slot) === 'ACTIVE') {
         parts.push(boxPageLink(bank));
         parts.push(extendForm(slot));
@@ -1226,8 +1226,8 @@
     var plans = (state.data && state.data.plans) || [];
     return plans.map(function (p) {
       var price = planPrice(p, slot.size);
-      return '<span class="price-row"><span>' + esc(p.plan_name) + '</span><strong>' + (price ? esc(money(price)) : 'Miễn phí') + '</strong></span>';
-    }).join('') + (customCfg() ? '<span class="price-row"><span>Tự chọn ' + esc(customMax('day')) + ' ngày</span><strong>' +
+      return '<span class="price-row"><span>' + esc(p.plan_name) + '</span><strong>' + (price ? esc(money(price)) : 'Free') + '</strong></span>';
+    }).join('') + (customCfg() ? '<span class="price-row"><span>Custom ' + esc(customMax('day')) + ' days</span><strong>' +
       esc(money(customPrice('day', customMax('day'), slot.size))) + '</strong></span>' : '');
   }
 
@@ -1241,23 +1241,23 @@
     var facts = [];
     var prices = slot.status === 'AVAILABLE' ? priceHtml(slot) : '';
     if (prices) {
-      facts.push(fact('Giá cỡ ' + esc(slot.size), '<span class="price-list">' + prices + '</span>'));
+      facts.push(fact('Price, size ' + esc(slot.size), '<span class="price-list">' + prices + '</span>'));
     }
     if (bank.device_status !== 'ACTIVE') {
-      facts.push(fact('Thiết bị', esc(deviceLabel(bank.device_status)) + (bank.device_code ? ' <span class="muted">' + esc(bank.device_code) + '</span>' : '')));
+      facts.push(fact('Device', esc(deviceLabel(bank.device_status)) + (bank.device_code ? ' <span class="muted">' + esc(bank.device_code) + '</span>' : '')));
     }
     if (z && z.overdue_rate) {
-      facts.push(fact('Phụ phí trễ', esc(money(z.overdue_rate)) + ' <span class="muted">mỗi giờ</span>'));
+      facts.push(fact('Late fee', esc(money(z.overdue_rate)) + ' <span class="muted">per hour</span>'));
     }
     var phase = bookingPhase(slot);
     if ((slot.status === 'RESERVED' || phase === 'RESERVED') && slot.hold_until && phase !== 'ACTIVE') {
-      facts.push(fact(slot.mine ? 'Tự bắt đầu lúc' : 'Giữ đến', formatTime(slot.hold_until) + countdownHtml(slot.hold_until)));
+      facts.push(fact(slot.mine ? 'Starts by itself at' : 'Held until', formatTime(slot.hold_until) + countdownHtml(slot.hold_until)));
     }
     if ((slot.status === 'OCCUPIED' || slot.status === 'OVERDUE' || phase === 'ACTIVE' || slot.locked) && slot.due_at) {
-      facts.push(fact('Hạn trả', formatTime(slot.due_at) + countdownHtml(slot.due_at)));
+      facts.push(fact('Due time', formatTime(slot.due_at) + countdownHtml(slot.due_at)));
     }
     if (slot.escalated) {
-      facts.push(fact('Chuyển xử lý', '<span class="text-danger">Đã chuyển cho nhân viên (quá hạn lâu)</span>'));
+      facts.push(fact('Escalation', '<span class="text-danger">Escalated to staff (long overdue)</span>'));
     }
     return facts.length ? '<dl class="facts">' + facts.join('') + '</dl>' : '';
   }
@@ -1269,14 +1269,14 @@
     var z = sizeInfo(slot.size);
     var dims = sizeDims(slot);
     var fits = slot.status === 'AVAILABLE' && z && z.items && z.items.length
-      ? '<p class="size-fits"><b>Vừa với:</b> ' + esc(z.items.join(', ')) + '</p>' : '';
+      ? '<p class="size-fits"><b>Fits:</b> ' + esc(z.items.join(', ')) + '</p>' : '';
     return '<div class="card-head"><div>' +
-        '<h2 class="card-title" id="panelTitle" tabindex="-1">Ngăn ' + esc(slot.slot_code) + '</h2>' +
-        '<p class="card-sub">' + esc(bank.name) + ' · cỡ ' + esc(slot.size) + (dims ? ' · ' + esc(dims) : '') + '</p></div>' +
-        '<button type="button" class="round-btn lg-hover" data-close aria-label="Bỏ chọn ngăn">' + icon('close') + '</button>' +
+        '<h2 class="card-title" id="panelTitle" tabindex="-1">Slot ' + esc(slot.slot_code) + '</h2>' +
+        '<p class="card-sub">' + esc(bank.name) + ' · size ' + esc(slot.size) + (dims ? ' · ' + esc(dims) : '') + '</p></div>' +
+        '<button type="button" class="round-btn lg-hover" data-close aria-label="Deselect the slot">' + icon('close') + '</button>' +
       '</div>' +
       '<span class="status-pill st-' + esc(slot.locked ? 'OVERDUE' : slot.status) + '">' + icon(slot.locked ? 'lock' : st.icon) +
-        (slot.locked ? 'Khóa quá hạn' : esc(st.label)) + (slot.mine ? ' · của bạn' : '') + '</span>' +
+        (slot.locked ? 'Overdue lock' : esc(st.label)) + (slot.mine ? ' · yours' : '') + '</span>' +
       '<p class="panel-desc">' + esc(describe(slot)) + '</p>' +
       fits +
       factsHtml(slot, bank) +
@@ -1367,7 +1367,7 @@
   }
 
   function formatDistance(m) {
-    return m < 1000 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(1).replace('.', ',') + ' km';
+    return m < 1000 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(1) + ' km';
   }
 
   // nearest first; areas without coordinates keep their order at the end
@@ -1396,11 +1396,11 @@
     var list = areas();
     var html = '';
     if (state.placed === 0 && list.length) {
-      html += '<p>Chưa có khu nào được đặt tọa độ nên bản đồ chưa có ghim. Quản trị viên nhập vĩ độ, kinh độ ở trang Khu vực.</p>';
+      html += '<p>No area has coordinates yet, so the map has no pins. An administrator enters the latitude and longitude on the Areas page.</p>';
     }
     if (list.some(hasCoords) && !geo.pos && geo.watchId === null) {
-      html += '<p><button type="button" class="chip lg-hover" data-geo-start>' + icon('locate') + 'Sắp xếp theo khoảng cách</button></p>' +
-        (geo.message ? '' : '<p>Cho phép trình duyệt biết vị trí để sắp các khu từ gần đến xa. Vị trí chỉ dùng trên máy của bạn, không gửi đi.</p>');
+      html += '<p><button type="button" class="chip lg-hover" data-geo-start>' + icon('locate') + 'Sort by distance</button></p>' +
+        (geo.message ? '' : '<p>Let the browser share your location to sort the areas from near to far. The location stays on your device and is never sent.</p>');
     }
     if (geo.message) {
       html += '<p class="near__msg" role="status">' + esc(geo.message) + '</p>';
@@ -1418,11 +1418,11 @@
   function geoStart() {
     geo.wanted = true;
     if (!('geolocation' in navigator)) {
-      geo.message = 'Trình duyệt này không hỗ trợ định vị. Danh sách khu vẫn dùng bình thường.';
+      geo.message = 'This browser does not support location. The area list still works as usual.';
     } else if (window.isSecureContext === false) {
-      geo.message = 'Định vị chỉ chạy trên trang HTTPS. Danh sách khu vẫn dùng bình thường.';
+      geo.message = 'Location only works on an HTTPS page. The area list still works as usual.';
     } else if (geo.watchId === null) {
-      geo.message = geo.pos ? '' : 'Đang xác định vị trí…';
+      geo.message = geo.pos ? '' : 'Finding your location…';
       geo.watchId = navigator.geolocation.watchPosition(onPosition, onGeoError,
         { enableHighAccuracy: false, maximumAge: GEO_MIN_MS, timeout: 20000 });
     }
@@ -1458,13 +1458,13 @@
     if (err.code === 1) {
       geoStop();
       geo.wanted = false;
-      geo.message = 'Bạn chưa cho phép định vị. Hãy bật quyền vị trí cho trang này trong trình duyệt để xem tủ gần nhất.';
+      geo.message = 'Location access is not allowed. Turn on the location permission for this page in your browser to see the nearest lockers.';
     } else if (geo.pos) {
-      geo.message = 'Chưa cập nhật được vị trí mới, khoảng cách tính theo vị trí trước đó.';
+      geo.message = 'Could not update your location; distances use the previous one.';
     } else if (err.code === 3) {
-      geo.message = 'Định vị quá lâu chưa có kết quả, đang thử lại.';
+      geo.message = 'Location is taking too long, retrying.';
     } else {
-      geo.message = 'Chưa xác định được vị trí của bạn. Danh sách khu vẫn dùng bình thường.';
+      geo.message = 'Could not find your location. The area list still works as usual.';
     }
     renderNear();
   }
@@ -1485,7 +1485,7 @@
     state.sheetMode = mode;
     el.listView.hidden = mode !== 'list';
     el.detailView.hidden = mode !== 'detail';
-    el.sheet.setAttribute('aria-label', mode === 'list' ? 'Danh sách khu vực tủ' : 'Chi tiết khu vực');
+    el.sheet.setAttribute('aria-label', mode === 'list' ? 'Locker areas' : 'Area details');
     if (changed) {
       motion.slideIn(mode === 'list' ? el.listView : el.detailView, mode === 'list' ? -1 : 1);
     }
@@ -1556,7 +1556,7 @@
     if (isPhone()) {
       grab.removeAttribute('aria-hidden');
       grab.setAttribute('tabindex', '0');
-      grab.setAttribute('aria-label', 'Đổi chiều cao bảng (thấp, vừa, cao)');
+      grab.setAttribute('aria-label', 'Change the panel height (low, medium, high)');
       setSnap(state.snap, false);
     } else {
       grab.setAttribute('aria-hidden', 'true');
@@ -1811,10 +1811,10 @@
         state.error = err;
         renderSync();
         if (err.message === 'SESSION') {
-          toast('Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.', 'error');
+          toast('Your session has expired. Please sign in again.', 'error');
           window.location.reload();
         } else if (first) {
-          toast('Không tải được sơ đồ tủ. Sẽ thử lại sau mỗi 10 giây.', 'error');
+          toast('Could not load the locker map. Retrying every 10 s.', 'error');
         }
       });
   }
@@ -1886,11 +1886,11 @@
     window.SmartLocker.confirm(opts).then(function (yes) {
       state.popupOpen = false;
       if (!yes) {
-        state.panelDirty = wasDirty;   // "Quay lại": the card follows the refresh again
+        state.panelDirty = wasDirty;   // "Back": the card follows the refresh again
         return;
       }
       if (!form.isConnected) {
-        toast('Ngăn vừa thay đổi trạng thái. Hãy thử lại.', 'error');
+        toast('The slot has just changed status. Please try again.', 'error');
         return;
       }
       form.setAttribute('data-confirmed', '1');
@@ -1919,9 +1919,9 @@
           return;
         }
         askFirst(form, {
-          title: 'Xác nhận đặt ngăn ' + found.slot.slot_code,
+          title: 'Confirm booking of slot ' + found.slot.slot_code,
           html: reserveConfirmHtml(found.slot, found.bank, choice),
-          okText: choice.price ? 'Đặt và trả ' + money(choice.price) : 'Đặt ngăn'
+          okText: choice.price ? 'Book and pay ' + money(choice.price) : 'Book slot'
         }, e.submitter);
       } else if (isExtend) {
         var target = findSlot(toInt(form.querySelector('[name="slotId"]').value));
@@ -1930,15 +1930,15 @@
           return;
         }
         askFirst(form, {
-          title: 'Gia hạn ngăn ' + target.slot.slot_code,
+          title: 'Extend slot ' + target.slot.slot_code,
           html: extendConfirmHtml(target.slot, minutes),
-          okText: 'Gia hạn và trả ' + money(extendPrice(target.slot, minutes))   // the amount taken now
+          okText: 'Extend and pay ' + money(extendPrice(target.slot, minutes))   // the amount taken now
         }, e.submitter);
       } else {
         askFirst(form, {
-          title: 'Xác nhận',
+          title: 'Confirm',
           text: form.getAttribute('data-confirm'),
-          okText: 'Đồng ý',
+          okText: 'OK',
           danger: true
         }, e.submitter);
       }
@@ -1952,7 +1952,7 @@
     var button = form.querySelector('[type="submit"]');
     if (button) {
       button.disabled = true;
-      button.textContent = 'Đang gửi…';
+      button.textContent = 'Sending…';
     }
   }
 
@@ -1990,7 +1990,7 @@
         var found = findSlot(state.slotId);
         var btn = el.panel.querySelector('[data-extend-button]');
         if (found && btn) {
-          btn.textContent = 'Gia hạn · trả ' + money(extendPrice(found.slot, toInt(e.target.value) || 60));
+          btn.textContent = 'Extend · pay ' + money(extendPrice(found.slot, toInt(e.target.value) || 60));
         }
       }
     });
@@ -2142,7 +2142,7 @@
       if (hold <= now) {
         var note = document.createElement('p');
         note.className = 'hint';
-        note.textContent = 'Đã hết thời gian giữ chỗ nên không hủy được nữa.';
+        note.textContent = 'The hold time is over, so the booking can no longer be cancelled.';
         form.parentNode.replaceChild(note, form);
         continue;
       }
@@ -2175,7 +2175,7 @@
   motion.stagger([el.search.closest('.search-pill'), el.sheet].concat(
     Array.prototype.slice.call(document.querySelectorAll('.map-right > *:not(:empty), #glassTabs, .map-legend'))), 18);
   motion.pop(document.querySelector('.flash--float'));
-  // a popup (Tủ của tôi, Nạp tiền) changed the wallet or a booking: read the map again now
+  // a popup (My locker, Top up) changed the wallet or a booking: read the map again now
   document.addEventListener('sl-data-changed', load);
   load();
   openAskedSignIn();

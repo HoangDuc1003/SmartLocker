@@ -86,7 +86,7 @@ public class PricingDatabaseIntegrationTest {
         }
     }
 
-    /** "Tự chọn": fn_CustomPrice and Pricing.customPrice agree for S/M/L, 1..23 hours, 1..7 days and refused minutes. */
+    /** "Custom" duration: fn_CustomPrice and Pricing.customPrice agree for S/M/L, 1..23 hours, 1..7 days and refused minutes. */
     @Test
     public void customPricesMatchForEverySizeHoursAndDays() throws SQLException {
         try (Connection conn = open()) {

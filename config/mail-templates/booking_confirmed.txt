@@ -1,14 +1,14 @@
-Subject: Smart Locker: đã đặt ngăn {{slot_code}}
+Subject: Smart Locker: slot {{slot_code}} booked
 
-Chào {{name}},
+Hello {{name}},
 
-Bạn đã đặt thành công ngăn {{slot_code}} (dãy {{bank_code}}, {{area_name}}).
+You have booked slot {{slot_code}} (bank {{bank_code}}, {{area_name}}).
 
-- Gói gửi: {{plan_name}}
-- Cách mở tủ: {{open_method}}
-- Đã thanh toán: {{amount}}
-- Giữ chỗ đến: {{hold_until}}
+- Storage plan: {{plan_name}}
+- Open method: {{open_method}}
+- Paid: {{amount}}
+- Held until: {{hold_until}}
 
-Hãy tới tủ và gửi đồ trước {{hold_until}}. Quá giờ này mà chưa gửi, lượt đặt sẽ bị hủy và ngăn được trả lại cho người khác.
+Come to the locker and store your things before {{hold_until}}. If you have not stored them by then, the booking is cancelled and the slot goes back to other users.
 
-?Xem cách mở tủ: {{my_locker_url}}
+?How to open the locker: {{my_locker_url}}

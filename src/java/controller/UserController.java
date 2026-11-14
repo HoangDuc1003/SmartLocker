@@ -37,25 +37,25 @@ public class UserController extends HttpServlet {
     String validate(User me, User u, int exceptId, int roleRank) throws SQLException {
         UserDao dao = new UserDao();
         if (!USERNAME.matcher(u.getUsername()).matches()) {
-            return "Tên đăng nhập dài 3 đến 50 ký tự: chữ không dấu, số, _ và .";
+            return "The username has 3 to 50 characters: letters without accents, digits, _ and .";
         }
         if (u.getFullName().length() < 2 || u.getFullName().length() > 80) {
-            return "Họ tên dài từ 2 đến 80 ký tự";
+            return "The full name must be 2 to 80 characters long";
         }
         if (!EMAIL.matcher(u.getEmail()).matches()) {
-            return "Cần nhập email đúng dạng ten@mien";
+            return "Enter a valid e-mail address, like name@domain";
         }
         if (!u.getPhone().isEmpty() && !PHONE.matcher(u.getPhone()).matches()) {
-            return "Số điện thoại gồm 10 chữ số, bắt đầu bằng 0";
+            return "The phone number has 10 digits and starts with 0";
         }
         if (!"ADMIN".equals(me.getRoleName()) && roleRank <= me.getRoleRank()) {
-            return "Bạn chỉ được gán vai trò thấp hơn vai trò của mình";
+            return "You can only assign a role lower than your own";
         }
         if (dao.usernameExists(u.getUsername(), exceptId)) {
-            return "Tên đăng nhập " + u.getUsername() + " đã được dùng";
+            return "Username " + u.getUsername() + " is already taken";
         }
         if (dao.emailExists(u.getEmail(), exceptId)) {
-            return "Email " + u.getEmail() + " đã được dùng";
+            return "E-mail " + u.getEmail() + " is already in use";
         }
         return null;
     }
@@ -131,12 +131,12 @@ public class UserController extends HttpServlet {
                 int id = Web.intParam(req, "id", 0);
                 User item = dao.findById(id);
                 if (item == null) {
-                    Web.flash(req.getSession(), "Không tìm thấy người dùng", true);
+                    Web.flash(req.getSession(), "User not found", true);
                     res.sendRedirect("UserController");
                     return;
                 }
                 if (!canManage(me, item) && me.getUserId() != item.getUserId()) {
-                    Web.flash(req.getSession(), "Bạn không được sửa người dùng có vai trò cao hơn", true);
+                    Web.flash(req.getSession(), "You cannot edit a user with a higher role", true);
                     res.sendRedirect("UserController");
                     return;
                 }
@@ -161,21 +161,21 @@ public class UserController extends HttpServlet {
         try {
             if ("grantBalance".equals(action)) {
                 if (!"ADMIN".equals(me.getRoleName())) {
-                    res.sendError(HttpServletResponse.SC_FORBIDDEN, "Chỉ quản trị viên được cộng tiền trực tiếp.");
+                    res.sendError(HttpServletResponse.SC_FORBIDDEN, "Only an administrator can add money directly.");
                     return;
                 }
                 User target = dao.findById(id);
                 long amount = Web.longParam(req, "amount", 0);
                 if (target == null) {
-                    Web.flash(req.getSession(), "Không tìm thấy người dùng", true);
+                    Web.flash(req.getSession(), "User not found", true);
                 } else if (amount <= 0) {
-                    Web.flash(req.getSession(), "Số tiền phải lớn hơn 0", true);
+                    Web.flash(req.getSession(), "The amount must be greater than 0", true);
                 } else {
                     dao.addBalance(id, amount);
-                    auditDao.append(me.getUserId(), "GRANT_MONEY", "USER", id, "Granted " + amount + " VND to " + target.getUsername());
-                    Web.flash(req.getSession(), "Đã cộng " + String.format("%,d", amount).replace(',', '.') + " VND cho "
-                            + target.getUsername() + ". Số dư mới: "
-                            + String.format("%,d", target.getBalance() + amount).replace(',', '.') + " VND.", false);
+                    auditDao.append(me.getUserId(), "GRANT_MONEY", "USER", id, "Granted " + String.format(java.util.Locale.US, "%,d", amount) + " VND to " + target.getUsername());
+                    Web.flash(req.getSession(), "Added " + String.format(java.util.Locale.US, "%,d", amount) + " VND to "
+                            + target.getUsername() + ". New balance: "
+                            + String.format(java.util.Locale.US, "%,d", target.getBalance() + amount) + " VND.", false);
                 }
                 res.sendRedirect("UserController");
                 return;
@@ -184,16 +184,16 @@ public class UserController extends HttpServlet {
             if ("lock".equals(action) || "unlock".equals(action)) {
                 User target = dao.findById(id);
                 if (target == null) {
-                    Web.flash(req.getSession(), "Không tìm thấy người dùng", true);
+                    Web.flash(req.getSession(), "User not found", true);
                 } else if (target.getUserId() == me.getUserId()) {
-                    Web.flash(req.getSession(), "Bạn không thể tự khóa hoặc mở khóa chính mình", true);
+                    Web.flash(req.getSession(), "You cannot lock or unlock yourself", true);
                 } else if (!canManage(me, target)) {
-                    Web.flash(req.getSession(), "Bạn không được đổi trạng thái người dùng có vai trò cao hơn", true);
+                    Web.flash(req.getSession(), "You cannot change the status of a user with a higher role", true);
                 } else {
                     String newStatus = "lock".equals(action) ? "LOCKED" : "ACTIVE";
                     dao.setStatus(id, newStatus);
                     auditDao.append(me.getUserId(), "lock".equals(action) ? "LOCK" : "UNLOCK", "USER", id, target.getUsername());
-                    Web.flash(req.getSession(), "Người dùng " + target.getUsername() + " giờ ở trạng thái " + newStatus, false);
+                    Web.flash(req.getSession(), "User " + target.getUsername() + " is now " + newStatus, false);
                 }
                 res.sendRedirect("UserController");
                 return;
@@ -202,13 +202,13 @@ public class UserController extends HttpServlet {
             if ("reset".equals(action)) {
                 User target = dao.findById(id);
                 if (target == null) {
-                    Web.flash(req.getSession(), "Không tìm thấy người dùng", true);
+                    Web.flash(req.getSession(), "User not found", true);
                 } else if (!canManage(me, target) && target.getUserId() != me.getUserId()) {
-                    Web.flash(req.getSession(), "Bạn không được đặt lại mật khẩu của người dùng có vai trò cao hơn", true);
+                    Web.flash(req.getSession(), "You cannot reset the password of a user with a higher role", true);
                 } else {
                     dao.resetPassword(id, DEFAULT_PASSWORD);
                     auditDao.append(me.getUserId(), "RESET_PW", "USER", id, target.getUsername());
-                    Web.flash(req.getSession(), "Đã đặt lại mật khẩu của " + target.getUsername() + " về " + DEFAULT_PASSWORD, false);
+                    Web.flash(req.getSession(), "Password of " + target.getUsername() + " reset to " + DEFAULT_PASSWORD, false);
                 }
                 res.sendRedirect("UserController");
                 return;
@@ -217,16 +217,16 @@ public class UserController extends HttpServlet {
             if ("delete".equals(action)) {
                 User target = dao.findById(id);
                 if (target == null) {
-                    Web.flash(req.getSession(), "Không tìm thấy người dùng", true);
+                    Web.flash(req.getSession(), "User not found", true);
                 } else if (target.getUserId() == me.getUserId()) {
-                    Web.flash(req.getSession(), "Bạn không thể tự xóa chính mình", true);
+                    Web.flash(req.getSession(), "You cannot delete yourself", true);
                 } else if (!canManage(me, target)) {
-                    Web.flash(req.getSession(), "Bạn không được xóa người dùng có vai trò cao hơn", true);
+                    Web.flash(req.getSession(), "You cannot delete a user with a higher role", true);
                 } else {
                     String reason = dao.delete(id);
                     if (reason == null) {
                         auditDao.append(me.getUserId(), "DELETE", "USER", id, target.getUsername());
-                        Web.flash(req.getSession(), "Đã xóa người dùng " + target.getUsername(), false);
+                        Web.flash(req.getSession(), "User " + target.getUsername() + " deleted", false);
                     } else {
                         Web.flash(req.getSession(), reason, true);
                     }
@@ -260,11 +260,11 @@ public class UserController extends HttpServlet {
             if (id == 0) {
                 int newId = dao.insert(u, DEFAULT_PASSWORD);
                 auditDao.append(me.getUserId(), "CREATE", "USER", newId, u.getUsername());
-                Web.flash(req.getSession(), "Đã tạo người dùng " + u.getUsername() + " với mật khẩu mặc định " + DEFAULT_PASSWORD, false);
+                Web.flash(req.getSession(), "User " + u.getUsername() + " created with the default password " + DEFAULT_PASSWORD, false);
             } else {
                 User target = dao.findById(id);
                 if (target == null || (!canManage(me, target) && target.getUserId() != me.getUserId())) {
-                    Web.flash(req.getSession(), "Bạn không được sửa người dùng có vai trò cao hơn", true);
+                    Web.flash(req.getSession(), "You cannot edit a user with a higher role", true);
                     res.sendRedirect("UserController");
                     return;
                 }
@@ -273,7 +273,7 @@ public class UserController extends HttpServlet {
                 }
                 dao.update(u);
                 auditDao.append(me.getUserId(), "UPDATE", "USER", id, u.getUsername());
-                Web.flash(req.getSession(), "Đã cập nhật người dùng " + u.getUsername(), false);
+                Web.flash(req.getSession(), "User " + u.getUsername() + " updated", false);
             }
             res.sendRedirect("UserController");
         } catch (SQLException e) {

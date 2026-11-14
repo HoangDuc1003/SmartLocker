@@ -3,14 +3,14 @@
 Sketch `SmartLocker_Online.ino` biến hộp thật thành thiết bị `LOCKER-01` (khu CANT-A) của web.
 Hộp không tự quyết định mở: mọi PIN, thẻ, vân tay đều gửi lên máy chủ, máy chủ trả `UNLOCK` thì hộp mới mở chốt.
 Từ firmware 4.1 (v7) một đầu **PN532** làm cả hai việc, luân phiên trong mỗi vòng lặp: **đọc thẻ từ**, và **giả làm một thẻ
-NFC** chứa liên kết của hộp để điện thoại chạm vào là mở trang của hộp và bấm "Mở tủ của tôi".
+NFC** chứa liên kết của hộp để điện thoại chạm vào là mở trang của hộp và bấm "Open my locker".
 
 ```
 ESP32 ──Wi-Fi──► Tomcat /SmartLocker/api   (header X-API-Key = khóa của LOCKER-01)
   POST /api/health              3 giây/lần: giữ LOCKER-01 trực tuyến, nhận lệnh UNLOCK / DELETE_FP,
                                 gửi "nfc":true và nhận "tap_path" để ghi vào thẻ NFC giả lập
-  POST /api/device/auth         PIN 6 số, UID thẻ, số ô vân tay (+ intent) -> UNLOCK, CHOOSE, CONFIRM_EMAIL hoặc DENY + câu cho màn LCD
-  POST /api/device/enroll/...   đăng ký thẻ (phím B) / vân tay (phím C) bằng mã 6 số ở "Tủ của tôi"
+  POST /api/device/auth         PIN 6 số, UID thẻ, số ô vân tay (+ intent) -> UNLOCK, CHOOSE, CONFIRM_EMAIL hoặc DENY + câu cho màn LCD (tiếng Anh)
+  POST /api/device/enroll/...   đăng ký thẻ (phím B) / vân tay (phím C) bằng mã 6 số ở "My locker"
 ```
 
 Máy chủ không bao giờ gọi vào hộp, nên không cần biết IP của ESP32. Lệnh mở từ điện thoại (chạm NFC, hoặc QR
@@ -61,7 +61,7 @@ IP laptop: `ipconfig` → mục đang dùng (Wi-Fi, hoặc "Local Area Connectio
    và hỏi web. Phím `B` là đăng ký **thẻ**, `C` là đăng ký **vân tay** (mã 6 số từ web), PIN do web cấp (không còn PIN chủ
    `1234`). Thẻ không lưu trong hộp mà trên web; mẫu vân tay nằm trong AS608 của hộp, web chỉ lưu số ô của nó.
 5. **Tường lửa Windows**: lần đầu Tomcat chạy, Windows hỏi cho Java truy cập mạng → tích cả **Private**. Nếu ESP32 vẫn báo
-   "Khong goi duoc may chu", mở cổng 8080 (PowerShell **Run as administrator**):
+   "Cannot reach the server", mở cổng 8080 (PowerShell **Run as administrator**):
    `New-NetFirewallRule -DisplayName "Tomcat 8080" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow`
 6. Nạp sketch, mở Serial Monitor 115200. Thấy `Wi-Fi OK, IP ...` và trên web (Thiết bị / bản đồ) `LOCKER-01` trực tuyến là xong.
 
@@ -74,23 +74,23 @@ Thử nhanh từ điện thoại cùng Wi-Fi: mở `http://<IP laptop>:8080/Smar
 | `0-9` rồi `#` | Gửi PIN 6 số của lượt đặt |
 | `*` | Xóa PIN / hủy đăng ký |
 | Quẹt thẻ | Mở bằng thẻ đã đăng ký |
-| Chạm điện thoại vào đầu NFC | Điện thoại mở trang của hộp; đã đăng nhập thì bấm "Mở tủ của tôi". LCD hiện `Da gui lien ket` |
+| Chạm điện thoại vào đầu NFC | Điện thoại mở trang của hộp; đã đăng nhập thì bấm "Open my locker". LCD hiện `Link sent` / `Check your phone` |
 | Đặt ngón tay | Mở bằng vân tay (AS608 tìm số ô, gửi số ô lên web) |
 | `B` + mã đăng ký + `#`, rồi quẹt thẻ | Đăng ký thẻ cho lượt đặt (miễn phí) |
 | `C` + mã đăng ký + `#`, rồi đặt ngón tay 2 lần | Đăng ký vân tay (web chọn số ô, hộp lưu mẫu vào ô đó) |
 | `D` | Cửa đang đóng: xem IP của hộp và tình trạng máy chủ. Cửa đang mở: khóa ngay |
-| `A` / `B` sau `A: Mo tu` / `B: Tra tu` | Lượt đang thuê: `A` mở tủ (lượt vẫn chạy), `B` trả tủ (kết thúc lượt); `*` hoặc 15 giây không bấm thì hủy |
+| `A` / `B` sau `A: Open` / `B: Checkout` | Lượt đang thuê: `A` mở tủ (lượt vẫn chạy), `B` trả tủ (kết thúc lượt); `*` hoặc 15 giây không bấm thì hủy |
 
 **Mở nhiều lần (từ firmware 3.3).** Mọi lần gửi PIN / thẻ / vân tay đều kèm `"intent":"ASK"`. Lượt `RESERVED` vẫn mở ngay
 (CHECK_IN). Lượt đang thuê thì máy chủ trả `CHOOSE`: hộp giữ PIN / UID thẻ / số ô vân tay vừa đọc, hiện
-`A: Mo tu  * huy` / `B: Tra tu A01`, bấm `A` gửi lại với `"intent":"OPEN"` (UNLOCK phase `ACCESS`: nhả chốt, bấm D để khóa,
+`A: Open * cancel` / `B: Checkout A01`, bấm `A` gửi lại với `"intent":"OPEN"` (UNLOCK phase `ACCESS`: nhả chốt, bấm D để khóa,
 tự khóa như lần cất đồ), bấm `B` gửi lại với `"intent":"CHECKOUT"` (PICKUP). Lượt bị khóa quá hạn không hỏi, chỉ trả tủ
 (ví âm thì từ chối `OVERDUE_UNPAID`). Máy chủ cũ bỏ qua `intent` và trả PICKUP như trước. Lệnh `UNLOCK` trong heartbeat có
 thêm `phase` (in ra Serial); hộp mở như nhau cho mọi phase và vẫn theo cờ `physical`.
 
 Khi mở: servo chốt nhả, rồi servo kéo tủ quay ra 180° (nếu `USE_DOOR_SERVO = true`). Khi khóa thì servo kéo tủ về 0° trước, rồi chốt mới hạ. Người dùng bấm `D` để khóa lại (khóa ngay, kể cả khi còn đứng ở hộp).
 **Tự khóa theo cảm biến siêu âm** (firmware 4.3): khi cửa mở mà SRF05 còn thấy người trong 50 cm (`DOORWAY_CM`) thì
-không đếm, LCD hiện `Co nguoi, cho...`. Không còn ai mới đếm ngược 20 giây (`DOOR_OPEN_MS`, LCD `Tu khoa sau ..s`)
+không đếm, LCD hiện `Someone near...`. Không còn ai mới đếm ngược 20 giây (`DOOR_OPEN_MS`, LCD `Locks in ..s`)
 rồi khóa; người quay lại thì dừng đếm, đi khỏi thì đếm lại từ 20. Dù sao cũng khóa sau 2 phút kể từ lúc mở
 (`DOOR_OPEN_MAX_MS`), để cảm biến bị che không làm ngăn mở mãi. `USE_SONAR = false` thì khóa sau 20 giây như bản cũ.
 **Bản 4.3 còn nhanh hơn, cùng hành vi:** giữ một kết nối HTTP(S) dùng lại (keep-alive; im lặng quá 15 giây thì mở kết
@@ -98,7 +98,9 @@ nối mới vì Tomcat đóng sau 20 giây) nên heartbeat và lần mở tủ k
 (bus I2C dùng chung với PN532); PN532 chỉ cấu hình lại khi đổi giữa đọc thẻ và giả làm thẻ NFC; SRF05 chỉ chờ tiếng vọng
 trong 1 m (`SONAR_MAX_CM`), xa hơn coi như không có ai. JSON gửi lên máy chủ giữ nguyên.
 SRF05 còn dùng cho màn hình: có người trong 50 cm thì bật đèn LCD, không có ai và không bấm gì 1 phút (`SCREEN_OFF_MS`)
-thì tắt. Hộp không còn LED xanh/đỏ. Câu trên LCD do máy chủ viết (không dấu), ví dụ `Sai ma / Con 3 lan`, `Tam khoa / Cho 120 giay`.
+thì tắt. Hộp không còn LED xanh/đỏ. Câu trên LCD do máy chủ viết (tiếng Anh, ASCII, tối đa 2 dòng 16 ký tự), ví dụ `Wrong PIN / 3 tries left`, `Locked / Wait 120 s`.
+Câu do firmware tự hiện (từ 4.3, tiếng Anh): `PIN + # / finger` / `card / phone tap` (chờ), `Checking...`, `Door locked`,
+`Offline` / `Retrying...`, `No Wi-Fi` / `Reconnecting...`, `Enroll card:` / `Enroll finger:` (nhập mã đăng ký).
 
 Hộp thật chỉ có **một cửa** nhưng CANT-A có các ngăn A01–A15: lượt đặt ở ngăn nào của CANT-A cũng mở cùng cửa này.
 Khi demo nên đặt một ngăn (ví dụ A01) và nói rõ cửa đại diện cho ngăn đó.
@@ -106,30 +108,30 @@ Khi demo nên đặt một ngăn (ví dụ A01) và nói rõ cửa đại diện
 ## 4. Kịch bản demo
 
 1. **PIN**: đăng nhập tài khoản sinh viên → bản đồ → khu CANT-A → đặt ngăn, chọn mở bằng PIN → nhập PIN ở hộp →
-   cửa mở, LCD `Moi cat do / Ngan A01` (CHECK_IN). Nhập lại PIN → LCD `A: Mo tu / B: Tra tu`: bấm `A` → `Moi mo tu`
-   (ACCESS, lượt vẫn chạy, "Tủ của tôi" tăng số lần mở; làm lại bao nhiêu lần cũng được); bấm `B` → `Moi lay do` (PICKUP),
+   cửa mở, LCD `Store your items / Slot A01` (CHECK_IN). Nhập lại PIN → LCD `A: Open / B: Checkout`: bấm `A` → `Open the door`
+   (ACCESS, lượt vẫn chạy, "My locker" tăng số lần mở; làm lại bao nhiêu lần cũng được); bấm `B` → `Take your items` (PICKUP),
    lượt kết thúc.
 2. **Chạm điện thoại**: đặt với cách mở "Điện thoại" → đăng nhập web trên điện thoại → chạm điện thoại vào đầu PN532 →
-   trang `/k/LOCKER-01?n=...` mở ra → bấm "Mở tủ của tôi" → hộp mở trong khoảng 3 giây, LCD `Mo tu (dien thoai)`.
-   Lượt đang thuê: trang hiện hai nút "Mở tủ" / "Trả tủ". Bấm lại bằng liên kết cũ thì trang báo mã đã dùng, chạm lại.
-3. **Thẻ**: đặt với cách mở bằng thẻ → "Tủ của tôi" hiện mã đăng ký 6 số → ở hộp bấm `B`, nhập mã, `#`, quẹt thẻ →
-   `Dang ky xong` → quẹt thẻ để mở. Đăng ký không mất tiền.
-3b. **Vân tay**: đặt với cách mở bằng vân tay → "Tủ của tôi" hiện mã đăng ký 6 số → ở hộp bấm `C`, nhập mã, `#`, đặt
-   ngón tay 2 lần → `Dang ky xong` → đặt ngón tay để mở.
+   trang `/k/LOCKER-01?n=...` mở ra → bấm "Open my locker" → hộp mở trong khoảng 3 giây, LCD `Open slot A01 / (phone)`.
+   Lượt đang thuê: trang hiện hai nút "Open" / "Check out". Bấm lại bằng liên kết cũ thì trang báo mã đã dùng, chạm lại.
+3. **Thẻ**: đặt với cách mở bằng thẻ → "My locker" hiện mã đăng ký 6 số → ở hộp bấm `B`, nhập mã, `#`, quẹt thẻ →
+   `Enrolled` → quẹt thẻ để mở. Đăng ký không mất tiền.
+3b. **Vân tay**: đặt với cách mở bằng vân tay → "My locker" hiện mã đăng ký 6 số → ở hộp bấm `C`, nhập mã, `#`, đặt
+   ngón tay 2 lần → `Enrolled` → đặt ngón tay để mở.
 4. **Trang của hộp không cần NFC**: quét QR `/k/LOCKER-01`, nhập PIN trên điện thoại → hộp mở như trên.
-5. **Nhân viên mở từ xa** (operator3 phụ trách CANT): trang quản lý thiết bị → mở từ xa có lý do → hộp mở `Mo tu (tu xa)`.
-6. **Mất kết nối**: rút Wi-Fi/tắt hotspot → LCD `Mat Wi-Fi`; khoảng 90 giây sau web đánh dấu LOCKER-01 OFFLINE và không cho đặt ở CANT-A.
-7. **Sai 5 lần**: nhập PIN sai 5 lần → `Tam khoa / Cho 120 giay` (bộ đếm nằm ở máy chủ).
+5. **Nhân viên mở từ xa** (operator3 phụ trách CANT): trang quản lý thiết bị → mở từ xa có lý do → hộp mở `Open slot A01 / (remote)`.
+6. **Mất kết nối**: rút Wi-Fi/tắt hotspot → LCD `No Wi-Fi`; khoảng 90 giây sau web đánh dấu LOCKER-01 OFFLINE và không cho đặt ở CANT-A.
+7. **Sai 5 lần**: nhập PIN sai 5 lần → `Wrong PIN / Locked 2 min`, thử tiếp thì `Locked / Wait .. s` (bộ đếm nằm ở máy chủ).
 
 ## 5. Lỗi thường gặp
 
 | Hiện tượng | Cách xử lý |
 |---|---|
-| LCD `Khong goi duoc may chu`, Serial `connection refused` / `read Timeout` | Sai IP trong `SERVER_BASE`, Tomcat chưa chạy, hoặc tường lửa chặn 8080 (bước 2.5). |
-| LCD `Sai API key`, Serial `HTTP 401` | `DEVICE_API_KEY` không khớp `config/device-keys.local.properties` (key đổi sau khi chạy `set-device-key.ps1 -New` hoặc `03_v2_v3.sql`). |
+| LCD `Cannot reach / the server`, Serial `connection refused` / `read Timeout` | Sai IP trong `SERVER_BASE`, Tomcat chưa chạy, hoặc tường lửa chặn 8080 (bước 2.5). |
+| LCD `Wrong API key`, Serial `HTTP 401` | `DEVICE_API_KEY` không khớp `config/device-keys.local.properties` (key đổi sau khi chạy `set-device-key.ps1 -New` hoặc `03_v2_v3.sql`). |
 | Không bắt được Wi-Fi | ESP32 chỉ chạy 2.4 GHz; đặt hotspot của laptop ở 2.4 GHz. |
 | Biên dịch báo `ArduinoJson.h: No such file` dù đã cài | Thư mục sketchbook có dấu (`OneDrive\Tài liệu\Arduino`) làm trình biên dịch ESP32 không đọc được. File → Preferences → Sketchbook location đổi sang `C:\Arduino`, rồi cài lại các thư viện. |
 | Serial `PN532 not found` | Công tắc chưa ở chế độ I2C, hoặc dây SDA/SCL lỏng. Hộp vẫn chạy PIN và vân tay (không đọc được thẻ, không có chạm NFC); `USE_NFC = false` để tắt hẳn. |
 | Chạm điện thoại mà không mở gì | Bật NFC trên điện thoại; Serial phải có dòng `NFC tag: http...` (hộp đã nhận `tap_path`). Liên kết quá 126 byte thì hộp không ghi được: rút ngắn `SERVER_BASE`. |
 | PN532 ngừng trả lời sau khi servo chạy | Sketch khởi động lại PN532 sau mỗi lần khóa; nên cấp nguồn servo riêng 5 V, chung GND với ESP32. |
-| `Van tay chua dang ky` dù đã đăng ký trên web | Mẫu phải nằm trong AS608 của hộp này ở đúng số ô web lưu; đăng ký lại bằng phím `C`. |
+| `Fingerprint not / enrolled` dù đã đăng ký trên web | Mẫu phải nằm trong AS608 của hộp này ở đúng số ô web lưu; đăng ký lại bằng phím `C`. |

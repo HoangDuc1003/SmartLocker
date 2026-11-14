@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import model.User;
 import util.Web;
 
-/** Report lost (case 3). The cards are listed on "Tủ của tôi"; GET of the old page redirects there (spec v2 Q17). */
+/** Report lost (case 3). The cards are listed on "My locker"; GET of the old page redirects there (spec v2 Q17). */
 @WebServlet(name = "MyCardController", urlPatterns = {"/MyCardController"})
 public class MyCardController extends HttpServlet {
 
@@ -28,7 +28,7 @@ public class MyCardController extends HttpServlet {
             int cardId = Web.intParam(req, "cardId", 0);
             try {
                 new UserCardDao().reportLost(cardId, me.getUserId());
-                Web.flash(req.getSession(), "Đã báo mất thẻ và khóa thẻ.", false);
+                Web.flash(req.getSession(), "Card reported lost and blocked.", false);
             } catch (SQLException e) {
                 if (e.getErrorCode() >= 50000) {
                     Web.flash(req.getSession(), Web.sqlMessage(e), true);

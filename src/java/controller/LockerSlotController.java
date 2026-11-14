@@ -95,26 +95,26 @@ public class LockerSlotController extends HttpServlet {
     /** The browser checks only save a round trip; this is the check that counts. Returns null when valid. */
     private String validate(LockerSlot s) throws SQLException {
         if (!SLOT_CODE.matcher(s.getSlotCode()).matches()) {
-            return "Mã ngăn gồm 1 đến 20 ký tự: chữ, số, - hoặc _";
+            return "The slot code has 1 to 20 characters: letters, digits, - or _";
         }
         if (s.getBankId() <= 0) {
-            return "Hãy chọn dãy tủ";
+            return "Choose a locker bank";
         }
         if (!SIZES.contains(s.getSizeCode())) {
-            return "Kích cỡ phải là S, M hoặc L";
+            return "The size must be S, M or L";
         }
         if (s.getSizeCm().length() > 20) {
-            return "Kích thước (cm) dài tối đa 20 ký tự";
+            return "The dimensions (cm) can be at most 20 characters long";
         }
         if (!STATUSES.contains(s.getStatus())) {
-            return "Trạng thái không hợp lệ";
+            return "Invalid status";
         }
         if (dao.codeExists(s.getBankId(), s.getSlotCode(), s.getSlotId())) {
-            return "Dãy tủ này đã có ngăn mã " + s.getSlotCode();
+            return "This bank already has slot code " + s.getSlotCode();
         }
         if (dao.codeExistsOnDevice(s.getBankId(), s.getSlotCode(), s.getSlotId())) {
-            return "Một dãy tủ khác cùng thiết bị đã có ngăn mã " + s.getSlotCode()
-                    + "; hộp tìm ngăn theo mã nên mã ngăn không được trùng";
+            return "Another bank of the same box already has slot code " + s.getSlotCode()
+                    + "; the box finds a slot by its code, so slot codes cannot repeat";
         }
         return null;
     }
@@ -132,7 +132,7 @@ public class LockerSlotController extends HttpServlet {
             } else if ("edit".equals(action)) {
                 LockerSlot item = dao.findById(Web.intParam(req, "id", 0));
                 if (item == null) {
-                    Web.flash(req.getSession(), "Ngăn tủ không tồn tại", true);
+                    Web.flash(req.getSession(), "Slot not found", true);
                     res.sendRedirect("LockerSlotController");
                     return;
                 }
@@ -159,15 +159,15 @@ public class LockerSlotController extends HttpServlet {
                 LockerSlot old = dao.findById(id);
                 boolean isAdmin = "ADMIN".equals(me.getRoleName());
                 if (old == null || !STATUSES.contains(status)) {
-                    Web.flash(req.getSession(), "Ngăn tủ hoặc trạng thái không hợp lệ", true);
+                    Web.flash(req.getSession(), "Invalid slot or status", true);
                 } else {
                     boolean ok = isAdmin ? dao.updateStatusAdmin(id, status) : dao.updateStatus(id, status);
                     if (ok) {
                         new AuditDao().append(me.getUserId(), "STATUS", "LOCKERSLOT", id,
                                 old.getSlotCode() + ": " + old.getStatus() + " -> " + status);
-                        Web.flash(req.getSession(), "Đã đổi trạng thái ngăn " + old.getSlotCode() + " sang " + status, false);
+                        Web.flash(req.getSession(), "Slot " + old.getSlotCode() + " set to " + status, false);
                     } else {
-                        Web.flash(req.getSession(), "Không đổi được trạng thái: ngăn đang có lượt gửi", true);
+                        Web.flash(req.getSession(), "Cannot change the status: the slot has a booking", true);
                     }
                 }
                 if ("map".equals(Web.trimmed(req, "back"))) {
@@ -185,9 +185,9 @@ public class LockerSlotController extends HttpServlet {
                 String reason = dao.delete(id);
                 if (reason == null && old != null) {
                     new AuditDao().append(me.getUserId(), "DELETE", "LOCKERSLOT", id, old.getBankCode() + " " + old.getSlotCode());
-                    Web.flash(req.getSession(), "Đã xóa ngăn " + old.getSlotCode(), false);
+                    Web.flash(req.getSession(), "Slot " + old.getSlotCode() + " deleted", false);
                 } else {
-                    Web.flash(req.getSession(), reason == null ? "Không có gì bị xóa" : reason, true);
+                    Web.flash(req.getSession(), reason == null ? "Nothing was deleted" : reason, true);
                 }
                 res.sendRedirect("LockerSlotController");
                 return;
@@ -203,11 +203,11 @@ public class LockerSlotController extends HttpServlet {
             if ("create".equals(action)) {
                 int id = dao.insert(s);
                 new AuditDao().append(me.getUserId(), "CREATE", "LOCKERSLOT", id, s.getSlotCode());
-                Web.flash(req.getSession(), "Đã tạo ngăn " + s.getSlotCode(), false);
+                Web.flash(req.getSession(), "Slot " + s.getSlotCode() + " created", false);
             } else {
                 dao.update(s);
                 new AuditDao().append(me.getUserId(), "UPDATE", "LOCKERSLOT", s.getSlotId(), s.getSlotCode());
-                Web.flash(req.getSession(), "Đã lưu ngăn " + s.getSlotCode(), false);
+                Web.flash(req.getSession(), "Slot " + s.getSlotCode() + " saved", false);
             }
             res.sendRedirect("LockerSlotController");
         } catch (SQLException e) {

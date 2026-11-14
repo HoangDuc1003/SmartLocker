@@ -273,7 +273,7 @@
         var dot = document.createElement('span');
         dot.className = 'me-dot';
         dot.setAttribute('role', 'img');
-        dot.setAttribute('aria-label', 'Vị trí của bạn');
+        dot.setAttribute('aria-label', 'Your location');
         userMarker = new gl.Marker({ element: dot, anchor: 'center' }).setLngLat([pos.lng, pos.lat]).addTo(map);
       } else {
         userMarker.setLngLat([pos.lng, pos.lat]);

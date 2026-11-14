@@ -25,9 +25,9 @@ public class CardMailTest {
 
     @Test
     public void everyPhaseSaysWhatTheScanDoes() {
-        Assert.assertTrue(CardMail.action("PICKUP").contains("trả tủ"));
-        Assert.assertTrue(CardMail.action("ACCESS").contains("tiếp tục"));
-        Assert.assertTrue(CardMail.action("CHECK_IN").contains("cất đồ"));
+        Assert.assertTrue(CardMail.action("PICKUP").contains("check out"));
+        Assert.assertTrue(CardMail.action("ACCESS").contains("continues"));
+        Assert.assertTrue(CardMail.action("CHECK_IN").contains("store your things"));
     }
 
     private static void assertFitsOled(String message) {
@@ -47,7 +47,7 @@ public class CardMailTest {
         row.put("result", "DENY");
         row.put("reason", "WRONG_PLACE");
         row.put("right_bank", "CANT-B");
-        Assert.assertEquals(AuthText.oled(row), "Sai cho! Tu o\nCANT-B");
+        Assert.assertEquals(AuthText.oled(row), "Wrong box! Go to\nCANT-B");
         assertFitsOled(AuthText.oled(row));
     }
 }

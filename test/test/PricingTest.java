@@ -142,7 +142,7 @@ public class PricingTest {
         assertFalse(Pricing.reminderDue(now, 15, now));            // already due: too late for a reminder
     }
 
-    /** "Tự chọn": hours capped by the day pass, days at 100% / 90% / 80% of it, by size (the agreed table). */
+    /** "Custom" duration: hours capped by the day pass, days at 100% / 90% / 80% of it, by size (the agreed table). */
     @Test
     public void customDurationTable() {
         long[] hour = {2500, 3300, 4300};

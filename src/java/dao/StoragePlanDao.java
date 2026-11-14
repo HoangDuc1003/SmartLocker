@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import model.StoragePlan;
 
-/** Storage plans (2 giờ, 4 giờ, Trọn ngày...): list, find, insert, update, delete. */
+/** Storage plans (2 hours, 4 hours, day pass...): list, find, insert, update, delete. */
 public class StoragePlanDao {
 
     private static StoragePlan map(ResultSet rs) throws SQLException {
@@ -83,10 +83,10 @@ public class StoragePlanDao {
         try (Connection conn = DbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM StoragePlan WHERE plan_id = ?")) {
             ps.setInt(1, planId);
-            return ps.executeUpdate() == 1 ? null : "Không tìm thấy gói gửi đồ";
+            return ps.executeUpdate() == 1 ? null : "Storage plan not found";
         } catch (SQLException e) {
             if (e.getErrorCode() == 547) {
-                return "Gói đã có lượt gửi, hãy tắt gói thay vì xóa";
+                return "The plan already has bookings; turn it off instead of deleting it";
             }
             throw e;
         }

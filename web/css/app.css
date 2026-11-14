@@ -370,7 +370,7 @@ canvas { display: block; max-width: 100%; }
   .dlg__body dl.kv dd { margin-bottom: 0; }
 }
 
-/* ---------- "Tủ của tôi" ---------- */
+/* ---------- "My locker" ---------- */
 .ml-booking { display: grid; gap: 14px; }
 .ml-booking__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .ml-booking__head h3 { margin: 0; }

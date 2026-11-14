@@ -1371,7 +1371,23 @@ a.quick__go span {
   font-variant-numeric: tabular-nums;
 }
 
-/* "Tự chọn": hours/days switch, stepper and range under the plan segments */
+/* plan buttons: the price ("11,700 VND") and "Hours / days" stay on one line, so every plan button
+   has the same two lines; 11px fits four plans in the 302px panel and the wider phone sheet.
+   A narrower button (tablet widths, more plans) lets the text wrap again instead of spilling over. */
+.seg-opt:has(.seg-opt__sub--line) {
+  container: seg-opt / inline-size;
+}
+
+.seg-opt__sub--line {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+@container seg-opt (max-width: 65.5px) {
+  .seg-opt__sub--line { white-space: normal; }
+}
+
+/* "Custom": hours/days switch, stepper and range under the plan segments */
 .custom-pick {
   display: grid;
   gap: 10px;
@@ -1747,7 +1763,7 @@ button.btn--pill {
   border-left-color: var(--danger);
 }
 
-/* ===== "Tủ của tôi", "Nạp tiền": glass popup over the map (js/glass-panel.js) ===== */
+/* ===== "My locker", "Top up": glass popup over the map (js/glass-panel.js) ===== */
 
 .glass-dlg {
   position: fixed;

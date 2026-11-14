@@ -7,7 +7,13 @@ The page is 504 pt wide (7 in, the text width of the one-column IEEE layout), so
 \\linewidth without scaling and its labels stay at 8-9 pt as IEEE asks. The hardware parts are drawn front-on
 after the parts of the prototype box (ESP32 DevKit on a terminal expansion board, red PN532 NFC module and a white
 card, AS608, 4x4 membrane keypad, LCD 1602, ultrasonic ranger, SG90), redrawn after product photos.
+
+Department figure rules: pastel panels (light blue, mint, light coral) with dark borders, black text, no purple and
+no gray (hexc() turns the neutral tones of the hardware drawings into steel blue), arrows that touch the panels.
+SRF05 role as in firmware/SmartLocker_Online 4.3: presence, LCD backlight and the automatic door lock (20 s after
+the person left, at the latest 120 s after opening), carried out by the door servo.
 """
+import colorsys
 import math
 import os
 
@@ -19,10 +25,17 @@ OUT = os.path.join(HERE, "..", "images")
 
 
 def hexc(h):
-    return tuple(int(h[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    """Colour from #RRGGBB. Department rule: no gray anywhere, so a neutral mid tone (a gray of the hardware
+    drawings) is turned into a steel blue of the same lightness; near-black and near-white stay as they are."""
+    rgb = tuple(int(h[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    hi, lo = max(rgb), min(rgb)
+    light = (hi + lo) / 2
+    if hi - lo < 0.07 and 0.12 < light < 0.93:
+        return colorsys.hls_to_rgb(210 / 360, light, 0.45)
+    return rgb
 
 
-INK = hexc("#262626")
+INK = hexc("#0F2338")  # dark navy: lines and arrows
 BLUE = hexc("#2F6DB5")
 LIGHT = hexc("#DCE8F6")
 YELLOW = hexc("#E8B931")
@@ -153,7 +166,7 @@ def p_keypad(cx, cy):
 
 def p_pn532(cx, cy):
     """PN532 NFC module V3: square red board, antenna band, two plated holes, chip, DIP switch, pads."""
-    rrect(cx + 5, cy - 9, cx + 30, cy + 11, 1.8, fill=WHITE, stroke=hexc("#9A9A9A"), w=0.5)  # white card
+    rrect(cx + 3, cy - 9, cx + 25, cy + 11, 1.8, fill=WHITE, stroke=hexc("#9A9A9A"), w=0.5)  # white card
     bx = cx - 7
     rrect(bx - 17, cy - 17, bx + 17, cy + 17, 2.4, fill=hexc("#E3262F"), stroke=hexc("#A3121A"), w=0.4)
     rrect(bx - 15.2, cy - 15.2, bx + 15.2, cy + 15.2, 2, fill=None, stroke=hexc("#F6C4C4"), w=1.5)
@@ -362,18 +375,21 @@ ICONS = {i_server, i_pulse, i_database, i_magnifier, i_flow, i_network, i_warnin
 
 # ---- layout ----
 
+# (x0, x1, title, pastel fill, tab fill, dark border): light blue, mint, light coral; dark borders, black text
 PANELS = [
-    (2, 142, "Input sources", hexc("#E6EFFA"), hexc("#BCD2EE")),
-    (154, 370, "Processing", hexc("#FDF0E1"), hexc("#F3CFA4")),
-    (382, 502, "Output", hexc("#FBE8E8"), hexc("#EFC0C0")),
+    (2, 142, "Input sources", hexc("#E3EFFB"), hexc("#BFDDF7"), hexc("#1F4E79")),
+    (154, 370, "Processing", hexc("#E2F5E8"), hexc("#BDE6CB"), hexc("#1E6B3A")),
+    (382, 502, "Output", hexc("#FFE3E0"), hexc("#FFC9C4"), hexc("#9B2226")),
 ]
+# a card is (art, line 1, line 2[, line 3])
 COLUMNS = [
-    (6, 72, "Credentials", [(p_keypad, "Keypad 4x4", "(PIN)"), (p_pn532, "PN532 NFC,", "RFID card"),
+    (6, 67, "Credentials", [(p_keypad, "Keypad 4x4", "(PIN)"), (p_pn532, "PN532 NFC,", "RFID card"),
                             (p_as608, "AS608", "fingerprint")]),
-    (76, 138, "Web, sensors", [(p_phone, "Phone", "unlock page"), (p_ultrasonic, "Ultrasonic,", "presence"),
+    (70, 138, "Web, sensors", [(p_phone, "Phone", "unlock page"),
+                               (p_ultrasonic, "SRF05: presence,", "backlight,", "auto-lock"),
                                (p_door_weight, "Door time,", "weight")]),
     (158, 228, "ESP32 box", [(p_esp32, "ESP32 forwards", "credential"), (p_lcd, "LCD 1602", "message"),
-                             (p_sg90, "SG90 servo", "unlocks")]),
+                             (p_sg90, "SG90 servos:", "open, auto-lock")]),
     (230, 300, "Server", [(i_server, "Authorise", "or deny"), (i_pulse, "Heartbeat,", "commands"),
                           (i_database, "Store access", "sessions")]),
     (302, 366, "Detection", [(i_magnifier, "Load context", "from DB"), (i_flow, "Rule engine", "(Tier 1)"),
@@ -387,34 +403,45 @@ PY0, PY1 = 9, 247
 CARD_Y = (44, 112, 180)
 CARD_H = 63
 
-for x0, x1, title, fill, tab in PANELS:
-    rrect(x0, PY0, x1, PY1, 5, fill=fill, stroke=hexc("#8C8C8C"), w=0.6)
+def border_of(x):
+    for x0, x1, _t, _f, _tab, dark in PANELS:
+        if x0 <= x <= x1:
+            return dark
+    return INK
+
+
+for x0, x1, title, fill, tab, dark in PANELS:
+    rrect(x0, PY0, x1, PY1, 5, fill=fill, stroke=dark, w=0.7)
     tw = fitz.get_text_length(title, fontname="hebo", fontsize=9)
     cx = (x0 + x1) / 2
-    rrect(cx - tw / 2 - 8, 2, cx + tw / 2 + 8, 16, 3, fill=tab, stroke=hexc("#8C8C8C"), w=0.6)
+    rrect(cx - tw / 2 - 8, 2, cx + tw / 2 + 8, 16, 3, fill=tab, stroke=dark, w=0.7)
     text_c(cx, 12.3, title, bold=True, size=9)
 
 for x0, x1, head, cards in COLUMNS:
     cx = (x0 + x1) / 2
-    rrect(x0, 22, x1, 37, 2.5, fill=WHITE, stroke=hexc("#8C8C8C"), w=0.5)
+    dark = border_of(cx)
+    rrect(x0, 22, x1, 37, 2.5, fill=WHITE, stroke=dark, w=0.6)
     text_c(cx, 32.6, head, bold=True)
-    for (art, l1, l2), y0 in zip(cards, CARD_Y):
-        rrect(x0, y0, x1, y0 + CARD_H, 3, fill=WHITE, stroke=hexc("#B0B0B0"), w=0.5)
-        ay = y0 + 21
+    for card, y0 in zip(cards, CARD_Y):
+        art, lines = card[0], card[1:]
+        rrect(x0, y0, x1, y0 + CARD_H, 3, fill=WHITE, stroke=dark, w=0.45)
+        ay = y0 + 21 - (3 if len(lines) > 2 else 0)
         if art in ICONS:
             MORPH = (fitz.Point(cx, ay), fitz.Matrix(1.3, 1.3))
             art(cx, ay)
             MORPH = None
         else:
             art(cx, ay)
-        text_c(cx, y0 + 49, l1)
-        text_c(cx, y0 + 58, l2)
+        # two lines at +49 / +58; three lines at +43 / +51.5 / +60
+        ys = (49, 58) if len(lines) == 2 else (43, 51.5, 60)
+        for s, dy in zip(lines, ys):
+            text_c(cx, y0 + dy, s)
 
-# arrows between the panels
+# arrows between the panels: the line ends under the head and the tip touches the next panel's border
 for xa, xb in ((142, 154), (370, 382)):
     y = (PY0 + PY1) / 2
-    line((xa, y), (xb - 4.5, y), w=1.2)
-    poly([(xb, y), (xb - 5, y - 3), (xb - 5, y + 3)], fill=INK, stroke=None)
+    line((xa, y), (xb - 4.5, y), w=1.4)
+    poly([(xb, y), (xb - 5.5, y - 3.3), (xb - 5.5, y + 3.3)], fill=INK, stroke=None)
 
 sh.commit()
 

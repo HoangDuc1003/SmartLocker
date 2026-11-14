@@ -1,8 +1,8 @@
-Subject: Smart Locker: mã xác nhận email {{code}}
+Subject: Smart Locker: e-mail verification code {{code}}
 
-Chào {{name}},
+Hello {{name}},
 
-Mã xác nhận email của bạn là: {{code}}
+Your e-mail verification code is: {{code}}
 
-Mã có hiệu lực trong {{expires_min}} phút. Hãy nhập mã vào trang Tủ của tôi để bật email nhắc hạn.
-Nếu bạn không yêu cầu, hãy bỏ qua email này và không chia sẻ mã cho ai.
+The code is valid for {{expires_min}} min. Enter it on My locker to turn on due reminders by e-mail.
+If you did not ask for it, ignore this e-mail and do not share the code with anyone.

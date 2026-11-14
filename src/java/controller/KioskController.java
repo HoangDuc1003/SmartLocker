@@ -17,7 +17,7 @@ import util.Web;
  * No login for the PIN: the page only posts it to /api/kiosk/unlock (js/kiosk.js). An unknown box answers 404 with a short text.
  *
  * v7, the phone tap: the PN532 of the box emulates an NFC tag that holds /k/{device_code}?n={token}. A phone that taps
- * the box opens this page with the token; a signed-in owner of an open booking on the box sees "Mở tủ của tôi", which posts
+ * the box opens this page with the token; a signed-in owner of an open booking on the box sees "Open my locker", which posts
  * the token with the session to /api/kiosk/unlock. A GET never opens anything (link scanners, prefetch). A visitor who is
  * not signed in gets a sign-in link that comes back here with the same token.
  */

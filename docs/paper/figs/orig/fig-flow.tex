@@ -1,0 +1,41 @@
+\begin{tikzpicture}[
+  proc/.style={draw, rounded corners=2pt, font=\footnotesize, align=center, minimum height=0.7cm, inner sep=3pt},
+  term/.style={proc, fill=gray!12},
+  dec/.style={draw, diamond, aspect=2.2, font=\footnotesize, align=center, inner sep=1pt},
+  arr/.style={-{Latex[length=1.8mm]}},
+  yes/.style={font=\footnotesize, inner sep=1.5pt},
+  no/.style={font=\footnotesize, inner sep=1.5pt}]
+  % top row: input, context, the two first decisions and the rules 3-8
+  \node[proc] (in)   at (0,0)      {Session $s$};
+  \node[proc] (ctx)  at (2.5,0)    {Load context $C$};
+  \node[dec]  (sf)   at (5.2,0)    {Sensor\\fault?};
+  \node[dec]  (rem)  at (8.8,0)    {Remote or\\phone open?};
+  \node[proc] (rul)  at (12.8,0)   {$\ell \leftarrow$ first\\matching rule 3--8};
+  \node[term] (flt)  at (5.2,1.6) {SENSOR\_FAULT alert,\\ticket; no risk score};
+  % second row: remote and phone opens, then the merge into the risk score
+  \node[dec]  (cmd)  at (8.8,-1.75)  {Valid, unused\\command?};
+  \node[term] (stf)  at (5.0,-1.75)  {STAFF\_OPEN:\\no alert};
+  \node[proc] (spf)  at (12.8,-1.75) {$\ell \leftarrow$\\SUSPECTED\_SPOOF};
+  \node[proc] (rsk)  at (15.6,-1.75) {Risk $r(s)$\\by (\ref{eq:risk})};
+  % right column: the alert decision of (2)
+  \node[dec]  (lab)  at (15.6,-3.25) {$\ell \neq$\\NORMAL?};
+  \node[term] (ar)   at (12.2,-3.25) {Alert $\ell$ (rule),\\evidence $r$};
+  \node[dec]  (thr)  at (15.6,-4.75) {$r \geq 0.80$?};
+  \node[term] (am)   at (12.2,-4.75) {ML\_ANOMALY alert};
+  \node[term] (non)  at (15.6,-5.95) {No alert};
+  \draw[arr] (in) -- (ctx);
+  \draw[arr] (ctx) -- (sf);
+  \draw[arr] (sf) -- node[yes, right] {yes} (flt);
+  \draw[arr] (sf) -- node[no, above] {no} (rem);
+  \draw[arr] (rem) -- node[no, above] {no} (rul);
+  \draw[arr] (rem) -- node[yes, right] {yes} (cmd);
+  \draw[arr] (cmd) -- node[yes, above] {yes} (stf);
+  \draw[arr] (cmd) -- node[no, above] {no} (spf);
+  \draw[arr] (rul.east) -| (rsk.north);
+  \draw[arr] (spf) -- (rsk);
+  \draw[arr] (rsk) -- (lab);
+  \draw[arr] (lab) -- node[yes, above] {yes} (ar);
+  \draw[arr] (lab) -- node[no, right] {no} (thr);
+  \draw[arr] (thr) -- node[yes, above] {yes} (am);
+  \draw[arr] (thr) -- node[no, right] {no} (non);
+\end{tikzpicture}

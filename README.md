@@ -166,7 +166,11 @@ Lưu ý khi chạy lại từng file:
 
 ### 2. Build và chạy
 
-**NetBeans:** Clean and Build, rồi Run trên Tomcat 9.
+**NetBeans 13:** File > Open Project, chọn thư mục repo, rồi Clean and Build và Run trên Tomcat 9.
+
+- Thư viện chạy ứng dụng nằm sẵn trong `web/WEB-INF/lib`: `mssql-jdbc-12.8.1.jre8.jar`, `gson-2.10.1.jar`, `jbcrypt-0.4.jar`, `weka.jar`, `jstl-1.2.jar`. Chúng đi vào WAR cùng thư mục `web/`, không cần thêm jar nào bằng tay.
+- `lib/` chỉ chứa jar để chạy test: `testng-7.5.jar`, `jcommander-1.78.jar`, `slf4j-api-1.7.36.jar`. Các jar này không vào WAR.
+- Máy mới chưa có `nbproject/private/` (không commit), nên NetBeans báo project thiếu server. Thêm Tomcat 9 ở Tools > Servers, rồi chuột phải project > Resolve Project Problems (hoặc Properties > Run) và chọn server đó. Project dùng JDK mà NetBeans đang chạy (`default_platform`), nên tốt nhất NetBeans chạy bằng JDK 8 (`netbeans_jdkhome` trong `etc/netbeans.conf`). Nếu không, thêm JDK 8 ở Tools > Java Platforms rồi chọn nó ở hai chỗ: Properties của project > Libraries > Java Platform (NetBeans ghi `platform.active` vào `nbproject/project.properties`), và Tools > Servers > Tomcat 9 > tab Platform > Java Platform.
 
 **Git Bash:** lần đầu, tạo file `conf/Catalina/localhost/SmartLocker.xml` trong thư mục Tomcat (thay đường dẫn repo của bạn):
 
@@ -184,7 +188,7 @@ sh scripts/build-dev.sh
 
 Chờ khoảng 15 giây rồi mở <http://localhost:8080/SmartLocker/>.
 
-Kết nối DB mặc định là `localhost:1433`, `sa` / `12345`. Đổi bằng biến môi trường `DB_URL`, `DB_USER`, `DB_PASSWORD`.
+Kết nối DB cấu hình ở mục [Kết nối cơ sở dữ liệu](#3-kết-nối-cơ-sở-dữ-liệu) ngay dưới.
 
 Hai tính năng tùy chọn, chép file `.example` trong `config/` thành file `.local.properties` rồi điền:
 
@@ -193,7 +197,94 @@ Hai tính năng tùy chọn, chép file `.example` trong `config/` thành file `
 | `config/mail.local.properties` | Gửi email nhắc hạn và xác nhận thẻ; không có thì tắt gửi mail |
 | `config/mapbox.local.properties` | Dùng bản đồ Mapbox (`pk.*`); không có thì dùng Leaflet |
 
-### 3. Tài khoản demo
+### 3. Kết nối cơ sở dữ liệu
+
+`dao/DbContext` là nơi duy nhất mở kết nối. Nó đọc ba **biến môi trường** (không đọc tham số `-D` của JVM). Biến chưa đặt hoặc để trống thì dùng giá trị mặc định:
+
+| Biến môi trường | Giá trị mặc định |
+|---|---|
+| `DB_URL` | `jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false` |
+| `DB_USER` | `sa` |
+| `DB_PASSWORD` | `12345` |
+
+Giá trị mặc định **chỉ dùng cho demo trên máy cá nhân**, nơi SQL Server cài sẵn với tài khoản `sa`. Ở mọi máy khác hãy đặt cả ba biến. `DbContext` đọc biến một lần khi ứng dụng khởi động, nên đặt biến xong phải khởi động lại Tomcat (hoặc NetBeans, nếu Tomcat chạy từ NetBeans).
+
+Các ví dụ dưới dùng mật khẩu mẫu `Doi-Mat-Khau#2026` (đủ chữ hoa, chữ thường, số, ký hiệu nên qua được `CHECK_POLICY`). Hãy thay bằng mật khẩu của bạn, đừng dùng nguyên mẫu.
+
+**Windows, Tomcat chạy bằng `startup.bat` hoặc từ NetBeans:** tạo file `bin\setenv.bat` trong thư mục Tomcat. `catalina.bat` tự gọi file này khi khởi động. Trong file `.bat`, ký tự `%` trong mật khẩu phải viết thành `%%`.
+
+```bat
+set "DB_URL=jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false"
+set "DB_USER=smartlocker_app"
+set "DB_PASSWORD=Doi-Mat-Khau#2026"
+```
+
+Hoặc lưu biến cho tài khoản Windows bằng `setx`, rồi mở lại cửa sổ dòng lệnh và NetBeans:
+
+```powershell
+setx DB_URL "jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false"
+setx DB_USER "smartlocker_app"
+setx DB_PASSWORD "Doi-Mat-Khau#2026"
+```
+
+**Windows, Tomcat cài dạng dịch vụ (service):** dịch vụ không đọc `setenv.bat`, và ô Java Options của `Tomcat9w.exe` chỉ thêm tham số `-D` mà `DbContext` không đọc. Hãy đặt biến hệ thống bằng `setx /M DB_USER "smartlocker_app"` (tương tự cho `DB_URL`, `DB_PASSWORD`) trong cửa sổ PowerShell chạy quyền quản trị. Dịch vụ chỉ nhận biến hệ thống mới sau khi Windows khởi động lại; chỉ khởi động lại dịch vụ thường chưa đủ.
+
+**Linux:** tạo `$CATALINA_BASE/bin/setenv.sh`:
+
+```bash
+export DB_URL='jdbc:sqlserver://db-host:1433;databaseName=PRJ301_LOCKER;encrypt=true'
+export DB_USER='smartlocker_app'
+export DB_PASSWORD='Doi-Mat-Khau#2026'
+```
+
+**Docker:** truyền biến khi chạy image (trên Render, khai báo ở mục Environment, xem [docs/deploy-render.md](./docs/deploy-render.md)):
+
+```bash
+docker run -p 8080:8080 \
+  -e DB_URL='jdbc:sqlserver://db-host:1433;databaseName=PRJ301_LOCKER;encrypt=true' \
+  -e DB_USER='smartlocker_app' -e DB_PASSWORD='Doi-Mat-Khau#2026' smartlocker
+```
+
+Với `encrypt=true`, driver kiểm tra chứng chỉ TLS của máy chủ. Azure SQL có sẵn chứng chỉ hợp lệ. SQL Server tự cài thường dùng chứng chỉ tự ký và sẽ báo lỗi `PKIX path building failed`: cài chứng chỉ do CA tin cậy cấp, hoặc chỉ khi mạng giữa Tomcat và SQL Server là mạng tin cậy thì thêm `;trustServerCertificate=true` (tắt kiểm tra chứng chỉ).
+
+> **Không dùng tài khoản `sa` (hay server admin của Azure) trên máy chủ.** Tài khoản đó có toàn quyền trên mọi database; ai lấy được mật khẩu trong cấu hình là chiếm được cả máy chủ. Tạo một tài khoản riêng chỉ có quyền đọc, ghi dữ liệu và gọi procedure trong database của ứng dụng. Ứng dụng không tạo hay sửa bảng khi chạy, nên tài khoản này không cần quyền DDL hay `db_owner`.
+
+SQL Server cài trên máy (chạy bằng tài khoản quản trị, sau khi đã dựng database bằng `run_demo_db.ps1`):
+
+```sql
+CREATE LOGIN smartlocker_app WITH PASSWORD = N'Doi-Mat-Khau#2026', CHECK_POLICY = ON;
+GO
+USE PRJ301_LOCKER;
+GO
+CREATE USER smartlocker_app FOR LOGIN smartlocker_app;
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON SCHEMA::dbo TO smartlocker_app;
+GO
+```
+
+`run_demo_db.ps1` xóa và tạo lại database trên máy, nên login vẫn còn nhưng user trong database và quyền `GRANT` mất theo. Sau mỗi lần dựng lại, chạy lại ba dòng từ `USE PRJ301_LOCKER;` trở xuống.
+
+Azure SQL Database (không có `USE`, còn `CREATE LOGIN` chỉ chạy trong `master`): dùng *contained user*, tức tài khoản nằm ngay trong database. Kết nối thẳng vào database `PRJ301_LOCKER` bằng server admin (ví dụ trong Query editor của Azure Portal, hoặc `sqlcmd -S <server>.database.windows.net -d PRJ301_LOCKER -U <server admin> -P <mật khẩu> -N -I`) rồi chạy:
+
+```sql
+CREATE USER smartlocker_app WITH PASSWORD = N'Doi-Mat-Khau#2026';
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON SCHEMA::dbo TO smartlocker_app;
+GO
+```
+
+Sau đó đặt `DB_USER=smartlocker_app`. `DB_URL` phải có `databaseName=PRJ301_LOCKER`, vì contained user chỉ đăng nhập được vào đúng database đó. Chạy lại `run_demo_db.ps1 -Azure` không xóa tài khoản này và quyền cấp trên schema `dbo` vẫn còn.
+
+*Tăng cường (tùy chọn, chưa chạy thử với ứng dụng):* nhật ký audit `AuditLog` và chuỗi băm `HashChain` chỉ được ghi thêm qua procedure `Audit_Append`; mã Java không sửa hay xóa trực tiếp hai bảng này. Có thể cấm thêm:
+
+```sql
+DENY UPDATE, DELETE ON dbo.AuditLog TO smartlocker_app;
+DENY UPDATE, DELETE ON dbo.HashChain TO smartlocker_app;
+```
+
+Procedure của `dbo` vẫn ghi được (ownership chaining). Quyền cấm gắn với bảng, nên phải chạy lại sau mỗi lần dựng lại database.
+
+Các script dựng database (`run_demo_db.ps1`, `sql/*.sql`) tạo bảng và procedure nên vẫn chạy bằng tài khoản quản trị: `run_demo_db.ps1 -Server <máy> -User <tài khoản quản trị> -Password <mật khẩu>`. Không ghi mật khẩu thật vào file trong repo.
+
+### 4. Tài khoản demo
 
 Mật khẩu chung: `123456`.
 
@@ -455,7 +546,7 @@ SmartLocker/
 ├── config/        # Mẫu email, file cấu hình mẫu (*.local.properties không commit)
 ├── docs/          # SYSTEM_FLOWS, spec, deploy, Postman, ảnh, bài báo (paper)
 ├── firmware/      # SmartLocker_Online (ESP32 nối web), SmartLocker_Local (thử phần cứng)
-├── lib/           # JDBC, Gson, jBCrypt, Weka; TestNG, JCommander, SLF4J chỉ dùng để test
+├── lib/           # Chỉ jar để test: TestNG, JCommander, SLF4J (không vào WAR)
 ├── scripts/       # build-dev, test, set-device-key, send-demo, proof/ (DB và Tomcat test)
 ├── sql/           # 01-05, demo_box, upgrade, test_*
 ├── src/java/
@@ -469,6 +560,7 @@ SmartLocker/
 │   └── util/      # Web, Pricing, Csv, SecurityUtils, SlotImages
 ├── test/          # test/ (TestNG), tool/ (chạy tay), support/
 └── web/           # JSP, CSS, JS, Leaflet
+    └── WEB-INF/lib/   # Jar chạy ứng dụng: mssql-jdbc, Gson, jBCrypt, Weka, JSTL
 ```
 
 ### API chính
@@ -506,7 +598,7 @@ Hợp đồng API thiết bị: [docs/spec/smart-locker-v2.md](./docs/spec/smart
 - Email lưu ngay khi nhập, chưa xác minh bằng mã.
 - Chưa có CSRF token, hiện dựa vào SameSite=Lax.
 - Chưa có trang lỗi 500 riêng.
-- `DbContext` có sẵn mặc định `sa` / `12345` cho máy local; khi triển khai phải đặt `DB_URL`, `DB_USER`, `DB_PASSWORD`.
+- `DbContext` có sẵn mặc định `sa` / `12345` cho máy demo local; khi triển khai phải đặt `DB_URL`, `DB_USER`, `DB_PASSWORD` và dùng login riêng thay cho `sa` (xem [Kết nối cơ sở dữ liệu](#3-kết-nối-cơ-sở-dữ-liệu)).
 - Firmware dùng `setInsecure()`, không ghim chứng chỉ TLS.
 
 ---
@@ -521,7 +613,7 @@ Bài báo *Smart Locker with Anomalous Access Detection Based on IoT Device Tele
 |---|---|
 | Hệ thống | Kiến trúc ba tầng, sơ đồ workflow, sơ đồ khối phần cứng, sơ đồ tuần tự của giao thức hộp, sơ đồ trạng thái ngăn |
 | Phát hiện bất thường | Bảng 8 luật theo thứ tự ưu tiên, điểm rủi ro (công thức 1), luật ra cảnh báo (công thức 2), lưu đồ hai tầng |
-| Đánh giá | 4 bộ phân loại Weka trên 480 phiên tổng hợp (IBk, F1 = 0,977), 66 test TestNG, 472 assertion newman, 6 kịch bản phát hiện, thời gian phản hồi 6–31 ms |
+| Đánh giá | 4 bộ phân loại Weka trên 480 phiên tổng hợp (IBk, F1 = 0,977), 83 test TestNG, 514 assertion newman, 6 kịch bản phát hiện, thời gian phản hồi 6–31 ms |
 | Hạn chế | Dữ liệu phiên là tổng hợp (hộp chưa có cảm biến cửa và loadcell), một ngăn có khóa thật, chưa có CSRF token và kiểm tra chứng chỉ |
 
 **Biên dịch trên Overleaf:** tải lên file `.tex` (làm `main.tex`) và thư mục `docs/paper/images/`. Danh mục 22 tài liệu

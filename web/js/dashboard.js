@@ -18,7 +18,7 @@
 
     function $(id) { return document.getElementById(id); }
     var esc = window.SmartLocker.esc;   // the one HTML escaper, from js/app.js
-    function num(n) { return Number(n || 0).toLocaleString('vi-VN'); }
+    function num(n) { return Number(n || 0).toLocaleString('en-US'); }
     function setText(id, v) { var el = $(id); if (el && el.textContent !== String(v)) el.textContent = v; }
     function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
     function fmtTime(v) {
@@ -27,12 +27,12 @@
         var s = String(v).replace(' ', 'T').replace(/(\.\d{3})\d*$/, '$1');
         var d = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? s : s + 'Z');
         if (isNaN(d.getTime())) return String(v);
-        return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        return d.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
     var STATUS = {
-        ONLINE: ['ok', 'Trực tuyến'], DEGRADED: ['warn', 'Chập chờn'], OFFLINE: ['bad', 'Mất kết nối'],
-        ACTIVE: ['ok', 'Hoạt động'], MAINTENANCE: ['warn', 'Bảo trì']
+        ONLINE: ['ok', 'Online'], DEGRADED: ['warn', 'Unstable'], OFFLINE: ['bad', 'Offline'],
+        ACTIVE: ['ok', 'Active'], MAINTENANCE: ['warn', 'Maintenance']
     };
     function tag(code) {
         var s = STATUS[code] || ['', code || '–'];
@@ -56,8 +56,8 @@
         setText('k-over', num(k.overdueSessions));
         setText('k-alerts', num(k.activeAlerts));
         setText('k-offline', num(k.offlineDevices));
-        setText('k-rate', total > 0 ? (Math.round(k.occupiedSlots * 1000 / total) / 10).toLocaleString('vi-VN') + '%' : '0%');
-        setText('k-audit', k.auditChainValid ? 'Toàn vẹn' : 'Bị sửa đổi');
+        setText('k-rate', total > 0 ? (Math.round(k.occupiedSlots * 1000 / total) / 10).toLocaleString('en-US') + '%' : '0%');
+        setText('k-audit', k.auditChainValid ? 'Intact' : 'Tampered');
         $('c-alerts').classList.toggle('warn', k.activeAlerts > 0);
         $('c-offline').classList.toggle('warn', k.offlineDevices > 0);
         $('c-audit').classList.toggle('warn', !k.auditChainValid);
@@ -71,7 +71,7 @@
     // ----- tables -----
     function renderAreas(rows) {
         var tb = $('db-areas');
-        if (!rows || !rows.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">Chưa có khu vực nào.</td></tr>'; return; }
+        if (!rows || !rows.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">No areas yet.</td></tr>'; return; }
         tb.innerHTML = rows.map(function (r) {
             var pct = r.total > 0 ? Math.round(r.occupied * 100 / r.total) : 0;
             return '<tr><td><b>' + esc(r.areaName) + '</b> <span class="muted">' + esc(r.areaCode) + '</span></td>' +
@@ -84,16 +84,16 @@
 
     function renderDevices(list) {
         var tb = $('db-devices');
-        if (!list || !list.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">Chưa có thiết bị nào.</td></tr>'; return; }
+        if (!list || !list.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">No devices yet.</td></tr>'; return; }
         var online = list.filter(function (d) { return d.health === 'ONLINE'; }).length;
-        setText('db-online', online + '/' + list.length + ' trực tuyến');
-        setText('k-online', online + '/' + list.length + ' thiết bị trực tuyến');
+        setText('db-online', online + '/' + list.length + ' online');
+        setText('k-online', online + '/' + list.length + ' devices online');
         tb.innerHTML = list.map(function (d) {
             var health = d.status === 'MAINTENANCE' ? 'MAINTENANCE' : d.health;
-            var seen = d.lastSeenSec === null || d.lastSeenSec === undefined ? 'chưa có'
-                : d.lastSeenSec < 120 ? d.lastSeenSec + ' giây trước'
-                : d.lastSeenSec < 7200 ? Math.round(d.lastSeenSec / 60) + ' phút trước'
-                : Math.round(d.lastSeenSec / 3600) + ' giờ trước';
+            var seen = d.lastSeenSec === null || d.lastSeenSec === undefined ? 'never'
+                : d.lastSeenSec < 120 ? d.lastSeenSec + ' s ago'
+                : d.lastSeenSec < 7200 ? Math.round(d.lastSeenSec / 60) + ' min ago'
+                : Math.round(d.lastSeenSec / 3600) + ' h ago';
             return '<tr><td><b>' + esc(d.deviceCode) + '</b></td><td>' + esc(d.location || '–') + '</td>' +
                 '<td>' + tag(health) + '</td><td class="r muted">' + esc(seen) + '</td></tr>';
         }).join('');
@@ -101,7 +101,7 @@
 
     function renderAlerts(list) {
         var tb = $('db-alerts');
-        if (!list || !list.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">Không có cảnh báo nào.</td></tr>'; return; }
+        if (!list || !list.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">No alerts.</td></tr>'; return; }
         tb.innerHTML = list.map(function (a) {
             var risk = a.riskScore !== null && a.riskScore !== undefined ? Math.round(a.riskScore * 100) + '%' : '–';
             var cls = a.severity === 'CRITICAL' ? 'bad' : a.severity === 'WARNING' ? 'warn' : '';
@@ -116,7 +116,7 @@
         var tb = $('db-sessions');
         if (!list || !list.length) {
             tb.innerHTML = '<tr><td colspan="' + (tb.closest('table').querySelectorAll('thead th').length || 1) +
-                '" class="muted">Chưa có lượt mở tủ nào.</td></tr>';
+                '" class="muted">No openings yet.</td></tr>';
             return;
         }
         tb.innerHTML = list.map(function (s) {
@@ -125,11 +125,11 @@
             var ok = s.rfid_ok === true || s.rfid_ok === 1;
             return '<tr data-door="' + door + '" data-weight="' + w + '" data-rfid="' + ok + '">' +
                 '<td class="num">#' + esc(s.session_id) + '</td>' +
-                '<td>Thiết bị #' + esc(s.device_id) + ' · <b>' + esc(s.slot_code || s.slot_id) + '</b></td>' +
+                '<td>Device #' + esc(s.device_id) + ' · <b>' + esc(s.slot_code || s.slot_id) + '</b></td>' +
                 '<td><code>' + esc(s.card_uid || '–') + '</code></td>' +
-                '<td class="r num">' + door.toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' s</td>' +
-                '<td class="r num">' + (w > 0 ? '+' : '') + Math.round(w).toLocaleString('vi-VN') + ' g</td>' +
-                '<td><span class="tag ' + (ok ? 'ok' : 'bad') + '">' + (ok ? 'Hợp lệ' : 'Từ chối') + '</span></td>' +
+                '<td class="r num">' + door.toLocaleString('en-US', { maximumFractionDigits: 1 }) + ' s</td>' +
+                '<td class="r num">' + (w > 0 ? '+' : '') + Math.round(w).toLocaleString('en-US') + ' g</td>' +
+                '<td><span class="tag ' + (ok ? 'ok' : 'bad') + '">' + (ok ? 'Valid' : 'Denied') + '</span></td>' +
                 '<td>' + esc(s.open_source || 'CARD') + '</td>' +
                 '<td>' + esc(fmtTime(s.measured_at)) + '</td></tr>';
         }).join('');
@@ -163,7 +163,7 @@
         var old = box.querySelector('.chart-empty');
         if (!chartRows.length) {
             if (!old) { old = document.createElement('div'); old.className = 'chart-empty'; box.appendChild(old); }
-            old.textContent = 'Thiết bị này chưa có phiên mở tủ nào.';
+            old.textContent = 'This device has no opening sessions yet.';
             return;
         }
         if (old) old.parentNode.removeChild(old);
@@ -185,11 +185,11 @@
             var gv = min + (max - min) * g / 4;
             var gy = y(gv);
             ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(w - padR, gy); ctx.stroke();
-            ctx.fillText(Math.round(gv).toLocaleString('vi-VN'), padL - 6, gy + 4);
+            ctx.fillText(Math.round(gv).toLocaleString('en-US'), padL - 6, gy + 4);
         }
         ctx.textAlign = 'center';
-        ctx.fillText('cũ hơn', padL + 20, h - 8);
-        ctx.fillText('mới nhất', w - padR - 26, h - 8);
+        ctx.fillText('older', padL + 20, h - 8);
+        ctx.fillText('newest', w - padR - 26, h - 8);
 
         var color = chartMode === 'a' ? css('--primary') : css('--success');
         ctx.strokeStyle = color; ctx.lineWidth = 2;
@@ -203,9 +203,9 @@
 
         var tip = $('db-tip');
         if (hover >= 0 && hover < vals.length) {
-            var unit = chartMode === 'a' ? ' giây' : ' g';
+            var unit = chartMode === 'a' ? ' s' : ' g';
             tip.textContent = fmtTime(chartRows[hover].time) + ' · ' +
-                vals[hover].toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + unit;
+                vals[hover].toLocaleString('en-US', { maximumFractionDigits: 1 }) + unit;
             tip.style.left = x(hover) + 'px';
             tip.style.top = y(vals[hover]) + 'px';
             tip.hidden = false;
@@ -223,9 +223,9 @@
             .then(function (rows) {
                 chartRows = rows || [];
                 drawChart(-1);
-                setText('db-chart-meta', chartRows.length + ' phiên gần nhất của thiết bị ' + sel.options[sel.selectedIndex].text + '.');
+                setText('db-chart-meta', 'Latest ' + chartRows.length + ' sessions of device ' + sel.options[sel.selectedIndex].text + '.');
             })
-            .catch(function () { setText('db-chart-meta', 'Không tải được dữ liệu cảm biến.'); });
+            .catch(function () { setText('db-chart-meta', 'Could not load the sensor data.'); });
     }
 
     // ----- polling -----
@@ -246,12 +246,12 @@
                 if (d.recentAlerts) renderAlerts(d.recentAlerts);
                 if (d.recentSessions) renderSessions(d.recentSessions);
                 if (window.DashCharts) window.DashCharts.snapshot(d);
-                setState('live', 'Đã kết nối');
-                setText('db-time', 'Cập nhật lúc ' + new Date().toLocaleTimeString('vi-VN') + '.');
+                setState('live', 'Connected');
+                setText('db-time', 'Updated at ' + new Date().toLocaleTimeString('en-GB') + '.');
             })
             .catch(function (err) {
                 if (err && err.name === 'AbortError' && inFlight !== ctrl) return;   // replaced by a newer poll
-                setState('warn', 'Mất kết nối, đang thử lại');
+                setState('warn', 'Connection lost, retrying');
             })
             .then(function () {
                 clearTimeout(killer);
@@ -268,7 +268,7 @@
     // ----- wiring -----
     $('db-interval').addEventListener('change', function () {
         interval = parseInt(this.value, 10) || 0;
-        if (interval === 0) { clearTimeout(timer); setState('idle', 'Đã tạm dừng'); }
+        if (interval === 0) { clearTimeout(timer); setState('idle', 'Paused'); }
         else poll();
     });
     $('db-refresh').addEventListener('click', function () { poll(); loadChart(); });

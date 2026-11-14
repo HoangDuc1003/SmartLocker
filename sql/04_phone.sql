@@ -6,7 +6,7 @@
 --   Part C  procedures: Device_TapIssue, Auth_Log, Device_Authorize, Deposit_Reserve, Enroll_Finish
 --   Part D  no card deposit any more: a card is enrolled once registered_device_id is set
 -- The PN532 emulates an NFC tag holding the link /k/{device_code}?n={token}; the token comes with the heartbeat and
--- changes every minute. A phone that taps the box opens that link, the signed-in owner presses "Mở tủ", and
+-- changes every minute. A phone that taps the box opens that link, the signed-in owner presses "Open", and
 -- Device_Authorize (method PHONE) checks the token is fresh: the owner stands at the box.
 -- Between two emulation slices the same PN532 reads cards, which go to /api/device/auth as before.
 -- ============================================================
@@ -370,7 +370,7 @@ GO
 -- v3: price by size; after paying, BOOKING_BUFFER (10,000 VND) must stay in the wallet. The late fee of the size is fixed now.
 -- v7: PHONE needs nothing at the box (no PIN, no enrollment): the owner taps the box with a signed-in phone.
 -- A card has no deposit any more: a first card only gets an enroll code.
--- "Tự chọn": @custom_min (whole hours or whole days, priced by fn_CustomPrice) replaces @plan_id; the booking
+-- "Custom" duration: @custom_min (whole hours or whole days, priced by fn_CustomPrice) replaces @plan_id; the booking
 -- keeps the longest active plan not longer than it (the day pass for days) for its grace time, and its minutes.
 CREATE OR ALTER PROCEDURE Deposit_Reserve
     @user_id INT, @slot_id INT, @plan_id INT, @new_id BIGINT OUTPUT, @open_method NVARCHAR(12) = N'PIN',

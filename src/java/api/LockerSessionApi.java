@@ -87,7 +87,7 @@ public class LockerSessionApi extends HttpServlet {
         JsonArray sessions = body != null && body.has("sessions") && body.get("sessions").isJsonArray()
                 ? body.getAsJsonArray("sessions") : null;
         if (sessions == null) {
-            ApiJson.error(res, HttpServletResponse.SC_BAD_REQUEST, "BAD_REQUEST", "Sai du lieu");   // body must be {"sessions":[...]}
+            ApiJson.error(res, HttpServletResponse.SC_BAD_REQUEST, "BAD_REQUEST", "Bad request data");   // body must be {"sessions":[...]}
             return;
         }
         LockerSessionDao dao = new LockerSessionDao();
@@ -138,7 +138,7 @@ public class LockerSessionApi extends HttpServlet {
             new DeviceDao().heartbeat(deviceId);                  // a batch also proves the device is alive
         } catch (SQLException e) {
             log("Batch insert failed", e);
-            ApiJson.error(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "SERVER_ERROR", "Loi may chu");
+            ApiJson.error(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "SERVER_ERROR", "Server error");
             return;
         }
         JsonObject reply = new JsonObject();

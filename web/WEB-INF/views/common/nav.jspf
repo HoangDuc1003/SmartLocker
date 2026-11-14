@@ -24,31 +24,31 @@
 <%-- students also hold TOPUP:WRITE to create their own top-up; reviewing is for the roles TopupController treats as staff --%>
 <c:set var="isTopupStaff" value="${me.roleName == 'ADMIN' or me.roleName == 'OPERATOR'}"/>
 <c:choose>
-    <c:when test="${me.roleName == 'ADMIN'}"><c:set var="roleLabel" value="Quản trị viên"/></c:when>
-    <c:when test="${me.roleName == 'OPERATOR'}"><c:set var="roleLabel" value="Nhân viên vận hành"/></c:when>
-    <c:when test="${me.roleName == 'TECHNICIAN'}"><c:set var="roleLabel" value="Kỹ thuật viên"/></c:when>
-    <c:when test="${me.roleName == 'AUDITOR'}"><c:set var="roleLabel" value="Kiểm toán viên"/></c:when>
-    <c:otherwise><c:set var="roleLabel" value="Người dùng"/></c:otherwise>
+    <c:when test="${me.roleName == 'ADMIN'}"><c:set var="roleLabel" value="Administrator"/></c:when>
+    <c:when test="${me.roleName == 'OPERATOR'}"><c:set var="roleLabel" value="Operator"/></c:when>
+    <c:when test="${me.roleName == 'TECHNICIAN'}"><c:set var="roleLabel" value="Technician"/></c:when>
+    <c:when test="${me.roleName == 'AUDITOR'}"><c:set var="roleLabel" value="Auditor"/></c:when>
+    <c:otherwise><c:set var="roleLabel" value="User"/></c:otherwise>
 </c:choose>
 <c:choose>
-    <c:when test="${activeNav == 'dashboard'}"><c:set var="navTitle" value="Tổng quan"/></c:when>
-    <c:when test="${activeNav == 'map'}"><c:set var="navTitle" value="Sơ đồ tủ"/></c:when>
-    <c:when test="${activeNav == 'alerts'}"><c:set var="navTitle" value="Cảnh báo"/></c:when>
-    <c:when test="${activeNav == 'sessions'}"><c:set var="navTitle" value="Dữ liệu cảm biến"/></c:when>
-    <c:when test="${activeNav == 'mylocker'}"><c:set var="navTitle" value="Tủ của tôi"/></c:when>
-    <c:when test="${activeNav == 'topup'}"><c:set var="navTitle" value="Nạp tiền"/></c:when>
-    <c:when test="${activeNav == 'areas'}"><c:set var="navTitle" value="Khu vực"/></c:when>
-    <c:when test="${activeNav == 'banks'}"><c:set var="navTitle" value="Dãy tủ"/></c:when>
-    <c:when test="${activeNav == 'slots'}"><c:set var="navTitle" value="Ngăn tủ"/></c:when>
-    <c:when test="${activeNav == 'plans'}"><c:set var="navTitle" value="Gói gửi đồ"/></c:when>
-    <c:when test="${activeNav == 'cards'}"><c:set var="navTitle" value="Thẻ RFID"/></c:when>
-    <c:when test="${activeNav == 'deposits'}"><c:set var="navTitle" value="Lượt gửi đồ"/></c:when>
-    <c:when test="${activeNav == 'commands'}"><c:set var="navTitle" value="Mở khóa từ xa"/></c:when>
-    <c:when test="${activeNav == 'calibration'}"><c:set var="navTitle" value="Hiệu chuẩn"/></c:when>
-    <c:when test="${activeNav == 'maintenance'}"><c:set var="navTitle" value="Bảo trì"/></c:when>
-    <c:when test="${activeNav == 'users'}"><c:set var="navTitle" value="Người dùng"/></c:when>
-    <c:when test="${activeNav == 'roles'}"><c:set var="navTitle" value="Vai trò"/></c:when>
-    <c:when test="${activeNav == 'audit'}"><c:set var="navTitle" value="Nhật ký kiểm toán"/></c:when>
+    <c:when test="${activeNav == 'dashboard'}"><c:set var="navTitle" value="Dashboard"/></c:when>
+    <c:when test="${activeNav == 'map'}"><c:set var="navTitle" value="Locker map"/></c:when>
+    <c:when test="${activeNav == 'alerts'}"><c:set var="navTitle" value="Alerts"/></c:when>
+    <c:when test="${activeNav == 'sessions'}"><c:set var="navTitle" value="Sensor data"/></c:when>
+    <c:when test="${activeNav == 'mylocker'}"><c:set var="navTitle" value="My locker"/></c:when>
+    <c:when test="${activeNav == 'topup'}"><c:set var="navTitle" value="Top up"/></c:when>
+    <c:when test="${activeNav == 'areas'}"><c:set var="navTitle" value="Areas"/></c:when>
+    <c:when test="${activeNav == 'banks'}"><c:set var="navTitle" value="Locker banks"/></c:when>
+    <c:when test="${activeNav == 'slots'}"><c:set var="navTitle" value="Slots"/></c:when>
+    <c:when test="${activeNav == 'plans'}"><c:set var="navTitle" value="Storage plans"/></c:when>
+    <c:when test="${activeNav == 'cards'}"><c:set var="navTitle" value="RFID cards"/></c:when>
+    <c:when test="${activeNav == 'deposits'}"><c:set var="navTitle" value="Bookings"/></c:when>
+    <c:when test="${activeNav == 'commands'}"><c:set var="navTitle" value="Remote unlock"/></c:when>
+    <c:when test="${activeNav == 'calibration'}"><c:set var="navTitle" value="Calibration"/></c:when>
+    <c:when test="${activeNav == 'maintenance'}"><c:set var="navTitle" value="Maintenance"/></c:when>
+    <c:when test="${activeNav == 'users'}"><c:set var="navTitle" value="Users"/></c:when>
+    <c:when test="${activeNav == 'roles'}"><c:set var="navTitle" value="Roles & permissions"/></c:when>
+    <c:when test="${activeNav == 'audit'}"><c:set var="navTitle" value="Audit log"/></c:when>
     <c:otherwise><c:set var="navTitle" value="Smart Locker"/></c:otherwise>
 </c:choose>
 <%-- the staff review of top-ups opens TopupController?status=...; the personal page has no status --%>
@@ -56,59 +56,59 @@
 
 <%@ include file="icons.jspf" %>
 
-<a class="skip-link" href="#main">Bỏ qua menu</a>
+<a class="skip-link" href="#main">Skip to content</a>
 
 <header class="app-topbar">
-    <button type="button" class="icon-btn" id="navOpen" aria-label="Mở menu" aria-controls="appSidebar" aria-expanded="false">
+    <button type="button" class="icon-btn" id="navOpen" aria-label="Open menu" aria-controls="appSidebar" aria-expanded="false">
         <svg class="ico" aria-hidden="true"><use href="#i-menu"/></svg>
     </button>
     <span class="app-topbar__title"><c:out value="${navTitle}"/></span>
-    <button type="button" class="icon-btn theme-toggle" aria-label="Đổi nền sáng / tối">
+    <button type="button" class="icon-btn theme-toggle" aria-label="Toggle light/dark theme">
         <svg class="ico ico-moon" aria-hidden="true"><use href="#i-moon"/></svg>
         <svg class="ico ico-sun" aria-hidden="true"><use href="#i-sun"/></svg>
     </button>
 </header>
 
-<aside class="app-sidebar" id="appSidebar" aria-label="Menu chính">
+<aside class="app-sidebar" id="appSidebar" aria-label="Main menu">
     <a class="side-brand" href="${ctx}/${perms.contains('ALERT:READ') ? 'DashboardController' : 'LockerMapController'}">
         <span class="side-brand__mark"><svg class="ico" aria-hidden="true"><use href="#i-lock"/></svg></span>
-        <span class="side-brand__name">Smart Locker <span class="side-brand__sub">Học kỳ FALL2026</span></span>
+        <span class="side-brand__name">Smart Locker <span class="side-brand__sub">Semester FALL2026</span></span>
     </a>
 
     <nav class="side-nav">
         <c:if test="${perms.contains('ALERT:READ') or perms.contains('MAP:READ')}">
         <div class="side-group">
-            <div class="side-group__title">Vận hành</div>
+            <div class="side-group__title">Operations</div>
             <c:if test="${perms.contains('ALERT:READ')}">
                 <a class="side-link ${activeNav == 'dashboard' ? 'on' : ''}" href="${ctx}/DashboardController" ${activeNav == 'dashboard' ? 'aria-current="page"' : ''}>
-                    <svg class="ico" aria-hidden="true"><use href="#i-dashboard"/></svg>Tổng quan</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-dashboard"/></svg>Dashboard</a>
             </c:if>
             <c:if test="${perms.contains('MAP:READ')}">
                 <a class="side-link ${activeNav == 'map' ? 'on' : ''}" href="${ctx}/LockerMapController" ${activeNav == 'map' ? 'aria-current="page"' : ''}>
-                    <svg class="ico" aria-hidden="true"><use href="#i-map"/></svg>Sơ đồ tủ</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-map"/></svg>Locker map</a>
             </c:if>
             <c:if test="${perms.contains('ALERT:READ')}">
                 <a class="side-link ${activeNav == 'alerts' ? 'on' : ''}" href="${ctx}/AlertController" ${activeNav == 'alerts' ? 'aria-current="page"' : ''}>
-                    <svg class="ico" aria-hidden="true"><use href="#i-bell"/></svg>Cảnh báo</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-bell"/></svg>Alerts</a>
             </c:if>
             <c:if test="${perms.contains('LOCKERSESSION:READ')}">
                 <a class="side-link ${activeNav == 'sessions' ? 'on' : ''}" href="${ctx}/LockerSessionController" ${activeNav == 'sessions' ? 'aria-current="page"' : ''}>
-                    <svg class="ico" aria-hidden="true"><use href="#i-file"/></svg>Dữ liệu cảm biến</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-file"/></svg>Sensor data</a>
             </c:if>
         </div>
         </c:if>
 
         <c:if test="${perms.contains('BOOKING:READ') or perms.contains('TOPUP:READ')}">
         <div class="side-group">
-            <div class="side-group__title">Cá nhân</div>
-            <%-- v2: "Lượt đặt của tôi" and "Thẻ của tôi" became one page; the old URLs redirect to it --%>
+            <div class="side-group__title">Personal</div>
+            <%-- v2: "My bookings" and "My cards" became one page; the old URLs redirect to it --%>
             <c:if test="${perms.contains('BOOKING:READ')}">
                 <a class="side-link ${activeNav == 'mylocker' ? 'on' : ''}" href="${ctx}/MyLockerController" ${activeNav == 'mylocker' ? 'aria-current="page"' : ''}>
-                    <svg class="ico" aria-hidden="true"><use href="#i-box"/></svg>Tủ của tôi</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-box"/></svg>My locker</a>
             </c:if>
             <c:if test="${perms.contains('TOPUP:READ')}">
                 <a class="side-link ${activeNav == 'topup' and not topupReview ? 'on' : ''}" href="${ctx}/TopupController">
-                    <svg class="ico" aria-hidden="true"><use href="#i-wallet"/></svg>Nạp tiền</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-wallet"/></svg>Top up</a>
             </c:if>
         </div>
         </c:if>
@@ -118,64 +118,64 @@
                       or perms.contains('COMMAND:READ') or perms.contains('CALIBRATION:READ') or perms.contains('MAINTENANCE:READ')
                       or isTopupStaff}">
         <div class="side-group">
-            <div class="side-group__title">Quản lý</div>
+            <div class="side-group__title">Management</div>
             <c:if test="${perms.contains('AREA:READ')}">
                 <a class="side-link ${activeNav == 'areas' ? 'on' : ''}" href="${ctx}/LockerAreaController">
-                    <svg class="ico" aria-hidden="true"><use href="#i-pin"/></svg>Khu vực</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-pin"/></svg>Areas</a>
             </c:if>
             <c:if test="${perms.contains('LOCKERBANK:READ')}">
                 <a class="side-link ${activeNav == 'banks' ? 'on' : ''}" href="${ctx}/LockerBankController">
-                    <svg class="ico" aria-hidden="true"><use href="#i-bank"/></svg>Dãy tủ</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-bank"/></svg>Locker banks</a>
             </c:if>
             <c:if test="${perms.contains('LOCKERSLOT:READ')}">
                 <a class="side-link ${activeNav == 'slots' ? 'on' : ''}" href="${ctx}/LockerSlotController">
-                    <svg class="ico" aria-hidden="true"><use href="#i-slot"/></svg>Ngăn tủ</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-slot"/></svg>Slots</a>
             </c:if>
             <c:if test="${perms.contains('STORAGEPLAN:READ')}">
                 <a class="side-link ${activeNav == 'plans' ? 'on' : ''}" href="${ctx}/StoragePlanController">
-                    <svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>Gói gửi đồ</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>Storage plans</a>
             </c:if>
             <c:if test="${perms.contains('USERCARD:READ')}">
                 <a class="side-link ${activeNav == 'cards' ? 'on' : ''}" href="${ctx}/UserCardController">
-                    <svg class="ico" aria-hidden="true"><use href="#i-card"/></svg>Thẻ RFID</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-card"/></svg>RFID cards</a>
             </c:if>
             <c:if test="${perms.contains('DEPOSIT:READ')}">
                 <a class="side-link ${activeNav == 'deposits' ? 'on' : ''}" href="${ctx}/DepositController">
-                    <svg class="ico" aria-hidden="true"><use href="#i-box"/></svg>Lượt gửi đồ</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-box"/></svg>Bookings</a>
             </c:if>
             <c:if test="${perms.contains('COMMAND:READ')}">
                 <a class="side-link ${activeNav == 'commands' ? 'on' : ''}" href="${ctx}/RemoteCommandController">
-                    <svg class="ico" aria-hidden="true"><use href="#i-unlock"/></svg>Mở khóa từ xa</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-unlock"/></svg>Remote unlock</a>
             </c:if>
             <c:if test="${perms.contains('CALIBRATION:READ')}">
                 <a class="side-link ${activeNav == 'calibration' ? 'on' : ''}" href="${ctx}/CalibrationController">
-                    <svg class="ico" aria-hidden="true"><use href="#i-sliders"/></svg>Hiệu chuẩn</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-sliders"/></svg>Calibration</a>
             </c:if>
             <c:if test="${perms.contains('MAINTENANCE:READ')}">
                 <a class="side-link ${activeNav == 'maintenance' ? 'on' : ''}" href="${ctx}/MaintenanceController">
-                    <svg class="ico" aria-hidden="true"><use href="#i-wrench"/></svg>Bảo trì</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-wrench"/></svg>Maintenance</a>
             </c:if>
             <c:if test="${isTopupStaff}">
                 <a class="side-link ${topupReview ? 'on' : ''}" href="${ctx}/TopupController?status=PENDING">
-                    <svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Duyệt nạp tiền</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Top-up review</a>
             </c:if>
         </div>
         </c:if>
 
         <c:if test="${perms.contains('USER:READ') or perms.contains('ROLE:READ') or perms.contains('AUDIT:READ')}">
         <div class="side-group">
-            <div class="side-group__title">Hệ thống</div>
+            <div class="side-group__title">System</div>
             <c:if test="${perms.contains('USER:READ')}">
                 <a class="side-link ${activeNav == 'users' ? 'on' : ''}" href="${ctx}/UserController">
-                    <svg class="ico" aria-hidden="true"><use href="#i-users"/></svg>Người dùng</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-users"/></svg>Users</a>
             </c:if>
             <c:if test="${perms.contains('ROLE:READ')}">
                 <a class="side-link ${activeNav == 'roles' ? 'on' : ''}" href="${ctx}/RoleController">
-                    <svg class="ico" aria-hidden="true"><use href="#i-shield"/></svg>Vai trò &amp; quyền</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-shield"/></svg>Roles &amp; permissions</a>
             </c:if>
             <c:if test="${perms.contains('AUDIT:READ')}">
                 <a class="side-link ${activeNav == 'audit' ? 'on' : ''}" href="${ctx}/AuditController">
-                    <svg class="ico" aria-hidden="true"><use href="#i-file"/></svg>Nhật ký kiểm toán</a>
+                    <svg class="ico" aria-hidden="true"><use href="#i-file"/></svg>Audit log</a>
             </c:if>
         </div>
         </c:if>
@@ -192,26 +192,26 @@
                     </span>
                 </div>
                 <c:if test="${not empty me.balance}">
-                    <a class="side-balance" href="${ctx}/TopupController" title="Nạp thêm tiền">
-                        <span>Số dư</span>
-                        <b><fmt:formatNumber value="${me.balance}" type="number" groupingUsed="true"/> đ</b>
+                    <a class="side-balance" href="${ctx}/TopupController" title="Top up your wallet">
+                        <span>Balance</span>
+                        <b><fmt:formatNumber value="${me.balance}" type="number" groupingUsed="true"/> VND</b>
                     </a>
                 </c:if>
                 <div class="side-actions">
-                    <button type="button" class="icon-btn theme-toggle" aria-label="Đổi nền sáng / tối" title="Đổi nền sáng / tối">
+                    <button type="button" class="icon-btn theme-toggle" aria-label="Toggle light/dark theme" title="Toggle light/dark theme">
                         <svg class="ico ico-moon" aria-hidden="true"><use href="#i-moon"/></svg>
                         <svg class="ico ico-sun" aria-hidden="true"><use href="#i-sun"/></svg>
                     </button>
                     <a class="btn ghost btn--sm" href="${ctx}/LogoutController">
-                        <svg class="ico" aria-hidden="true"><use href="#i-logout"/></svg>Đăng xuất</a>
+                        <svg class="ico" aria-hidden="true"><use href="#i-logout"/></svg>Sign out</a>
                 </div>
             </c:when>
             <c:otherwise>
                 <%-- a visitor on the open map page: the buttons open the popup of js/auth-modal.js, the links work without it --%>
-                <a class="btn btn--block" href="${ctx}/LoginController" data-auth-open="login">Đăng nhập</a>
+                <a class="btn btn--block" href="${ctx}/LoginController" data-auth-open="login">Sign in</a>
                 <div class="side-actions">
-                    <a class="btn ghost btn--sm" href="${ctx}/RegisterController" data-auth-open="register">Đăng ký</a>
-                    <button type="button" class="icon-btn theme-toggle" aria-label="Đổi nền sáng / tối" title="Đổi nền sáng / tối">
+                    <a class="btn ghost btn--sm" href="${ctx}/RegisterController" data-auth-open="register">Sign up</a>
+                    <button type="button" class="icon-btn theme-toggle" aria-label="Toggle light/dark theme" title="Toggle light/dark theme">
                         <svg class="ico ico-moon" aria-hidden="true"><use href="#i-moon"/></svg>
                         <svg class="ico ico-sun" aria-hidden="true"><use href="#i-sun"/></svg>
                     </button>

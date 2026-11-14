@@ -85,7 +85,7 @@ public class Web {
     }
 
     /**
-     * The glass interface (full-screen map, "Tủ của tôi" and "Nạp tiền" as popups) is for the users and the visitors;
+     * The glass interface (full-screen map, "My locker" and "Top up" as popups) is for the users and the visitors;
      * the staff roles keep the pages with the sidebar.
      */
     public static boolean isUserView(User me) {
@@ -98,43 +98,43 @@ public class Web {
         session.setAttribute("flashBad", bad);
     }
 
-    /** Vietnamese text of the business errors the stored procedures THROW (50000+); other errors keep their own text. */
+    /** The text shown to users for the business errors the stored procedures THROW (50000+); other errors keep their own text. */
     private static final java.util.Map<String, String> SQL_MESSAGES = new java.util.HashMap<>();
     static {
         String[][] pairs = {
-            {"This slot has no device", "Ngăn tủ này chưa gắn thiết bị"},
-            {"Device is not online, the command cannot be delivered", "Thiết bị đang mất kết nối, không gửi được lệnh"},
-            {"Another operator is controlling this device", "Một nhân viên khác đang điều khiển thiết bị này"},
-            {"A reason of at least 5 characters is required", "Cần nhập lý do ít nhất 5 ký tự"},
-            {"Card not found, not yours, or already reported", "Không tìm thấy thẻ, thẻ không phải của bạn hoặc đã báo mất"},
-            {"Only a lost or blocked card can be replaced", "Chỉ đổi được thẻ đã báo mất hoặc bị khóa"},
-            {"Insufficient balance. Add funds before booking.", "Số dư không đủ. Hãy nạp tiền trước khi đặt tủ."},
-            {"Booking is blocked: 3 no-shows in the last 7 days", "Bạn bị tạm khóa đặt tủ: 3 lần không đến trong 7 ngày qua"},
-            {"You already have a booking in progress", "Bạn đang có một lượt đặt chưa kết thúc"},
-            {"This slot is no longer available", "Ngăn tủ này không còn trống"},
-            {"This storage plan is not available", "Gói gửi đồ này không còn áp dụng"},
-            {"The locker is offline, booking is paused", "Tủ đang mất kết nối, tạm ngừng nhận đặt"},
-            {"Nothing to cancel: not your reservation, or it already started", "Không hủy được: không phải lượt đặt của bạn hoặc đã bắt đầu"},
-            {"You can add between 15 and 240 minutes", "Chỉ gia hạn được từ 15 đến 240 phút"},
-            {"Nothing to extend: not your active booking", "Không gia hạn được: không phải lượt gửi đang dùng của bạn"},
-            {"A booking can be extended 3 times at most", "Mỗi lượt gửi chỉ gia hạn tối đa 3 lần"},
-            {"The storage plan has an invalid price", "Gói gửi đồ có giá không hợp lệ"},
-            {"Ticket not found or already closed", "Không tìm thấy phiếu hoặc phiếu đã đóng"},
-            {"Alert not found or already resolved", "Không tìm thấy cảnh báo hoặc cảnh báo đã xử lý"},
+            {"This slot has no device", "This slot has no locker box attached."},
+            {"Device is not online, the command cannot be delivered", "The box is offline, so the command cannot be sent."},
+            {"Another operator is controlling this device", "Another staff member is controlling this box."},
+            {"A reason of at least 5 characters is required", "Enter a reason of at least 5 characters."},
+            {"Card not found, not yours, or already reported", "Card not found, not yours, or already reported lost."},
+            {"Only a lost or blocked card can be replaced", "Only a card reported lost or blocked can be replaced."},
+            {"Insufficient balance. Add funds before booking.", "Insufficient balance. Top up your wallet before booking."},
+            {"Booking is blocked: 3 no-shows in the last 7 days", "Booking is paused for you: 3 no-shows in the last 7 days."},
+            {"You already have a booking in progress", "You already have a booking that has not ended."},
+            {"This slot is no longer available", "This slot is no longer available."},
+            {"This storage plan is not available", "This storage plan is no longer offered."},
+            {"The locker is offline, booking is paused", "The locker is offline, booking is paused."},
+            {"Nothing to cancel: not your reservation, or it already started", "Cannot cancel: not your booking, or it has already started."},
+            {"You can add between 15 and 240 minutes", "You can extend by 15 to 240 minutes only."},
+            {"Nothing to extend: not your active booking", "Cannot extend: this is not your active booking."},
+            {"A booking can be extended 3 times at most", "A booking can be extended 3 times at most."},
+            {"The storage plan has an invalid price", "The storage plan has an invalid price."},
+            {"Ticket not found or already closed", "Ticket not found or already closed."},
+            {"Alert not found or already resolved", "Alert not found or already resolved."},
             // v2 (sql/03_v2_v3.sql)
-            {"Choose how to open the locker: PIN, card, phone or fingerprint", "Hãy chọn cách mở tủ: mật mã, thẻ từ, điện thoại hoặc vân tay"},
-            {"Could not create a unique code, try again", "Không tạo được mã, hãy thử lại"},
-            {"This booking has nothing to enroll", "Lượt đặt này không cần đăng ký thẻ hoặc vân tay"},
-            {"Fingerprint not found or not yours", "Không tìm thấy vân tay hoặc vân tay không phải của bạn"},
+            {"Choose how to open the locker: PIN, card, phone or fingerprint", "Choose how to open the locker: PIN, card, phone or fingerprint."},
+            {"Could not create a unique code, try again", "Could not create a code, please try again."},
+            {"This booking has nothing to enroll", "This booking does not need a card or fingerprint enrollment."},
+            {"Fingerprint not found or not yours", "Fingerprint not found or not yours."},
             // v3 (sql/03_v2_v3.sql)
-            {"After booking at least 10,000 VND must stay in the wallet", "Sau khi đặt, ví phải còn ít nhất 10.000 đ để dự phòng phụ phí quá hạn. Hãy nạp thêm tiền."},
-            {"The hold is over, the booking can no longer be cancelled", "Đã hết thời gian giữ chỗ nên không hủy được nữa."},
-            {"The free cancel time just ended, the refund is lower now", "Thời gian hủy được hoàn đủ vừa hết nên số tiền hoàn bây giờ thấp hơn. Lượt đặt chưa bị hủy; hãy xem lại số tiền rồi hủy lại."},
-            {"The booking is overdue and locked, it cannot be extended", "Lượt gửi đã quá hạn và tủ đang bị khóa nên không gia hạn được. Hãy nạp tiền và tới lấy đồ."},
-            {"Insufficient balance to extend", "Số dư không đủ để gia hạn. Hãy nạp thêm tiền."},
-            // "Tự chọn" (custom duration)
-            {"Choose whole hours or whole days within the limits", "Thời gian tự chọn không hợp lệ: chọn số giờ hoặc số ngày trong giới hạn cho phép."},
-            {"Custom duration is not available now", "Hiện chưa đặt được thời gian tự chọn (chưa có gói trọn ngày). Hãy chọn một gói có sẵn."},
+            {"After booking at least 10,000 VND must stay in the wallet", "After booking, at least 10,000 VND must stay in your wallet to cover late fees. Please top up."},
+            {"The hold is over, the booking can no longer be cancelled", "The hold time is over, so the booking can no longer be cancelled."},
+            {"The free cancel time just ended, the refund is lower now", "The full-refund cancel time just ended, so the refund is lower now. The booking was not cancelled; check the amount and cancel again."},
+            {"The booking is overdue and locked, it cannot be extended", "The booking is overdue and the locker is locked, so it cannot be extended. Top up and come to pick up your things."},
+            {"Insufficient balance to extend", "Insufficient balance to extend. Please top up."},
+            // "Custom" duration
+            {"Choose whole hours or whole days within the limits", "Invalid custom duration: choose whole hours or whole days within the limits."},
+            {"Custom duration is not available now", "A custom duration cannot be booked now (there is no day pass plan). Please choose one of the plans."},
         };
         for (String[] p : pairs) {
             SQL_MESSAGES.put(p[0], p[1]);
@@ -143,8 +143,8 @@ public class Web {
 
     public static String sqlMessage(java.sql.SQLException e) {
         String text = e.getMessage() == null ? "" : e.getMessage().trim();
-        String vi = SQL_MESSAGES.get(text);
-        return vi != null ? vi : text;
+        String shown = SQL_MESSAGES.get(text);
+        return shown != null ? shown : text;
     }
 
     /** v3: an optional e-mail address: empty, or one plain address of at most 150 characters. */

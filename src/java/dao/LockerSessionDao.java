@@ -190,7 +190,7 @@ public class LockerSessionDao {
     }
 
     /**
-     * The filters of the "Dữ liệu cảm biến" page. q: a word in the box code, the slot code, the open source, the label or the alert,
+     * The filters of the "Sensor data" page. q: a word in the box code, the slot code, the open source, the label or the alert,
      * or a session number. fromUtc / toUtc: the measured time, as UTC "yyyy-MM-dd HH:mm:ss" (the page turns the Vietnam
      * dates into these), toUtc excluded. sort: a key of SORTS, desc: newest / largest first.
      */
@@ -261,7 +261,7 @@ public class LockerSessionDao {
         }
     }
 
-    /** One page of the "Dữ liệu cảm biến" list, with the box code and the label of each session. */
+    /** One page of the "Sensor data" list, with the box code and the label of each session. */
     public List<Map<String, Object>> list(Filter f, int page, int size) throws SQLException {
         List<Object> params = new ArrayList<>();
         String column = SORTS.containsKey(f.sort) ? SORTS.get(f.sort) : SORTS.get("measured");

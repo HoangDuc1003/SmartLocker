@@ -12,11 +12,11 @@ import javax.servlet.http.HttpServletResponse;
 import service.AuthText;
 
 /**
- * v2, spec 4.3: enrolling a card or a finger at the box with the 6-digit code shown on "Tủ của tôi".
+ * v2, spec 4.3: enrolling a card or a finger at the box with the 6-digit code shown on "My locker".
  *
- * start:  {"type":"FINGERPRINT","enroll_code":"551204"}  ->  {"result":"OK","sensor_slot":7,"message":"Dat ngon tay\n2 lan"}
+ * start:  {"type":"FINGERPRINT","enroll_code":"551204"}  ->  {"result":"OK","sensor_slot":7,"message":"Place finger\ntwice"}
  * finish: {"type":"FINGERPRINT","enroll_code":"551204","sensor_slot":7}
- *         {"type":"CARD","enroll_code":"551204","card_uid":"04A1B2C3"}  ->  {"result":"OK","message":"Dang ky xong"}
+ *         {"type":"CARD","enroll_code":"551204","card_uid":"04A1B2C3"}  ->  {"result":"OK","message":"Enrolled"}
  * Errors: {"result":"ERROR","reason":"BAD_CODE","message":"..."} with HTTP 200; 400 for a bad body.
  */
 @WebServlet(name = "DeviceEnrollApi", urlPatterns = {"/api/device/enroll/start", "/api/device/enroll/finish"})
@@ -30,7 +30,7 @@ public class DeviceEnrollApi extends HttpServlet {
         String type = ApiJson.text(body, "type");
         String code = ApiJson.text(body, "enroll_code");
         if (!("CARD".equals(type) || "FINGERPRINT".equals(type)) || code == null || !code.matches(DeviceAuthApi.PIN_FORMAT)) {
-            ApiJson.error(res, 400, "BAD_REQUEST", "Sai du lieu");
+            ApiJson.error(res, 400, "BAD_REQUEST", "Bad request data");
             return;
         }
         Integer sensorSlot = null;
@@ -38,14 +38,14 @@ public class DeviceEnrollApi extends HttpServlet {
         if (finish && "FINGERPRINT".equals(type)) {
             sensorSlot = ApiJson.integer(body, "sensor_slot");
             if (sensorSlot == null) {
-                ApiJson.error(res, 400, "BAD_REQUEST", "Sai du lieu");
+                ApiJson.error(res, 400, "BAD_REQUEST", "Bad request data");
                 return;
             }
         } else if (finish) {
             uid = ApiJson.text(body, "card_uid");
             uid = uid == null ? null : uid.toUpperCase();
             if (uid == null || !uid.matches(DeviceAuthApi.UID_FORMAT)) {
-                ApiJson.error(res, 400, "BAD_REQUEST", "Sai du lieu");
+                ApiJson.error(res, 400, "BAD_REQUEST", "Bad request data");
                 return;
             }
         }
@@ -70,7 +70,7 @@ public class DeviceEnrollApi extends HttpServlet {
             ApiJson.write(res, 200, reply);
         } catch (SQLException e) {
             log("Enroll failed for device " + deviceId, e);
-            ApiJson.error(res, 500, "SERVER_ERROR", "Loi may chu");
+            ApiJson.error(res, 500, "SERVER_ERROR", "Server error");
         }
     }
 }

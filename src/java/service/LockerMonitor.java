@@ -226,7 +226,7 @@ public class LockerMonitor implements ServletContextListener {
      * Tomcat was stopped) comes back ACTIVE with its DEVICE_OFFLINE alert resolved; MAINTENANCE stays.
      * An OFFLINE demo box is revived only when the clock job put it there: its latest status entry in AuditLog
      * (MARK_OFFLINE by Device_MarkOffline, BACK_ONLINE, or DEVICE_STATUS by staff) is MARK_OFFLINE. A box set
-     * OFFLINE on purpose (staff "Đánh dấu mất kết nối", the seed example LOCKER-07 with no such entry) stays OFFLINE
+     * OFFLINE on purpose (staff "Mark offline", the seed example LOCKER-07 with no such entry) stays OFFLINE
      * until staff sets it ACTIVE again. The audit log already records who changed the status, so no new column.
      */
     private void heartbeatDemoDevices() {

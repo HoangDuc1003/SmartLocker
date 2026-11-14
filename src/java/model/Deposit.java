@@ -29,7 +29,7 @@ public class Deposit {
     private String sizeCode;     // joined: S, M or L
     private String sizeCm;       // joined: 20x20x20 ...
     private int graceMin;        // joined from the plan: the slot locks after due_at + grace
-    private Integer customMin;   // "Tự chọn": booked minutes; null = the plan's duration
+    private Integer customMin;   // "Custom": booked minutes; null = the plan's duration
     private Long overdueRate;    // late fee of one hour, fixed at booking time
     private int overdueHours;    // late hours already charged
     private long overdueFee;     // late fee already charged

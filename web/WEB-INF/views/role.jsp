@@ -7,11 +7,11 @@
   The permission grid is a table of checkboxes name="permIds" grouped by resource.
 --%>
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Vai trò &amp; quyền · Smart Locker</title>
+    <title>Roles &amp; permissions · Smart Locker</title>
     <script src="${pageContext.request.contextPath}/js/theme.js"></script>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
 </head>
@@ -24,10 +24,10 @@
 <c:when test="${mode == 'grid'}">
     <div class="page-head">
         <div>
-            <h2>Quyền của vai trò <c:out value="${roleName}"/></h2>
-            <p class="sub">READ là xem, WRITE là thêm, sửa, xóa. Vai trò ADMIN luôn giữ quyền ROLE.</p>
+            <h2>Permissions of role <c:out value="${roleName}"/></h2>
+            <p class="sub">READ means view; WRITE means add, edit and delete. The ADMIN role always keeps the ROLE permission.</p>
         </div>
-        <a class="btn ghost" href="${ctx}/RoleController">Quay lại</a>
+        <a class="btn ghost" href="${ctx}/RoleController">Back</a>
     </div>
 
     <form method="post" action="${ctx}/RoleController">
@@ -35,7 +35,7 @@
 
         <div class="tablewrap">
         <table class="grid">
-            <tr><th>Tài nguyên</th><th>Hành động</th><th class="c">Được cấp</th></tr>
+            <tr><th>Resource</th><th>Action</th><th class="c">Granted</th></tr>
             <c:forEach var="p" items="${grid}">
                 <tr>
                     <td><b><c:out value="${p[1]}"/></b></td>
@@ -45,7 +45,7 @@
                         <input type="checkbox" name="permIds" value="${p[0]}" aria-label="<c:out value="${p[1]} ${p[2]}"/>"
                                ${p[3] == '1' ? 'checked' : ''}
                                ${isCriticalAdminPerm or not perms.contains('ROLE:WRITE') ? 'disabled' : ''}
-                               ${isCriticalAdminPerm ? 'title="ADMIN phải giữ quyền ROLE"' : ''}>
+                               ${isCriticalAdminPerm ? 'title="ADMIN must keep the ROLE permission"' : ''}>
                         <c:if test="${isCriticalAdminPerm and p[3] == '1'}">
                             <input type="hidden" name="permIds" value="${p[0]}">
                         </c:if>
@@ -57,8 +57,8 @@
 
         <c:if test="${perms.contains('ROLE:WRITE')}">
             <div class="actions">
-                <button type="submit">Lưu quyền</button>
-                <a class="btn ghost" href="${ctx}/RoleController">Hủy</a>
+                <button type="submit">Save permissions</button>
+                <a class="btn ghost" href="${ctx}/RoleController">Cancel</a>
             </div>
         </c:if>
     </form>
@@ -67,22 +67,22 @@
 <%-- ================= LIST ================= --%>
 <c:otherwise>
     <div class="page-head">
-        <h2>Vai trò &amp; quyền</h2>
+        <h2>Roles &amp; permissions</h2>
     </div>
 
     <div class="tablewrap">
     <table class="grid">
-        <tr><th class="r">Cấp</th><th>Vai trò</th><th class="r">Người dùng</th><th class="r">Số quyền</th><th>Thao tác</th></tr>
+        <tr><th class="r">Rank</th><th>Role</th><th class="r">Users</th><th class="r">Permissions</th><th>Actions</th></tr>
         <c:forEach var="x" items="${roles}">
             <tr>
                 <td class="r num">${x.rank_no}</td>
                 <td><b><c:out value="${x.role_name}"/></b></td>
                 <td class="r num">${x.user_count}</td>
                 <td class="r num">${x.perm_count}</td>
-                <td class="ops"><a href="${ctx}/RoleController?id=${x.role_id}">${perms.contains('ROLE:WRITE') ? 'Phân quyền' : 'Xem quyền'}</a></td>
+                <td class="ops"><a href="${ctx}/RoleController?id=${x.role_id}">${perms.contains('ROLE:WRITE') ? 'Edit permissions' : 'View permissions'}</a></td>
             </tr>
         </c:forEach>
-        <c:if test="${empty roles}"><tr><td colspan="5" class="empty">Chưa có vai trò nào.</td></tr></c:if>
+        <c:if test="${empty roles}"><tr><td colspan="5" class="empty">No roles yet.</td></tr></c:if>
     </table>
     </div>
 </c:otherwise>

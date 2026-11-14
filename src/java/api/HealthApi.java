@@ -23,7 +23,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * Request:  {"firmware":"2.0","uptime_sec":1234,"nfc":true}   (v7: "nfc" = the box has a PN532 tag for the phone tap)
  * Reply:    {"interval_sec":3,
- *            "commands":[{"command_id":15,"action":"UNLOCK","slot_code":"A04","open_sec":8,"message":"Mo tu\n(dien thoai)","physical":true,
+ *            "commands":[{"command_id":15,"action":"UNLOCK","slot_code":"A04","open_sec":8,"message":"Open\n(phone)","physical":true,
  *                         "phase":"ACCESS"},   (v6: phone opens carry CHECK_IN, ACCESS or PICKUP; staff opens have no phase)
  *                        {"command_id":16,"action":"DELETE_FP","sensor_slot":7}],
  *            "server_time":"2026-10-17 07:03:00",
@@ -56,7 +56,7 @@ public class HealthApi extends HttpServlet {
         int deviceId = (Integer) req.getAttribute("DEVICE_ID");   // set by SecurityFilter from the API key
         JsonObject body = ApiJson.bodyOrEmpty(req);
         if (body == null) {                                  // wrong JSON shape: the device's mistake, not ours
-            ApiJson.error(res, HttpServletResponse.SC_BAD_REQUEST, "BAD_REQUEST", "Sai du lieu");
+            ApiJson.error(res, HttpServletResponse.SC_BAD_REQUEST, "BAD_REQUEST", "Bad request data");
             return;
         }
         JsonObject reply = new JsonObject();
@@ -79,7 +79,7 @@ public class HealthApi extends HttpServlet {
                     if (cmd.get("phase") != null) {
                         c.addProperty("phase", (String) cmd.get("phase"));
                     }
-                    c.addProperty("message", "PHONE".equals(cmd.get("source")) ? "Mo tu\n(dien thoai)" : "Mo tu\n(tu xa)");
+                    c.addProperty("message", "PHONE".equals(cmd.get("source")) ? "Open\n(phone)" : "Open\n(remote)");
                     // the commands are already SENT and the bookings moved on: a failed check keeps the servo shut, never a 500
                     boolean physical = false;
                     try {
@@ -115,7 +115,7 @@ public class HealthApi extends HttpServlet {
             }
         } catch (SQLException e) {
             log("Heartbeat failed for device " + deviceId, e);
-            ApiJson.error(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "SERVER_ERROR", "Loi may chu");
+            ApiJson.error(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "SERVER_ERROR", "Server error");
             return;
         }
         ApiJson.write(res, 200, reply);

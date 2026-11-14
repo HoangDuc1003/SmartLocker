@@ -25,10 +25,10 @@ public class AuditController extends HttpServlet {
             if ("verify".equals(actionParam)) {
                 long broken = service.AuditVerifier.findFirstBroken();
                 if (broken == -1L) {
-                    req.setAttribute("integrity", "Chuỗi băm toàn vẹn, không có bản ghi nào bị sửa.");
+                    req.setAttribute("integrity", "The hash chain is intact: no record was changed.");
                     req.setAttribute("integrityStatus", "ok");
                 } else {
-                    req.setAttribute("integrity", "Chuỗi băm bị đứt tại bản ghi #" + broken + ", phát hiện can thiệp dữ liệu.");
+                    req.setAttribute("integrity", "The hash chain is broken at record #" + broken + ": the data was tampered with.");
                     req.setAttribute("integrityStatus", "bad");
                 }
             }

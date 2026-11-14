@@ -10,7 +10,7 @@ Mỗi file `*.txt` là một mẫu. Sửa trực tiếp, không cần biên dị
   (ví dụ link khi chưa cấu hình `app.base_url`).
 - `_footer.txt` được nối vào cuối mọi email.
 - Chỉ có chữ thuần (không HTML). Mọi giá trị chèn vào đều bị bỏ xuống dòng và cắt tối đa 300 ký tự.
-- `{{name}}` là họ tên người nhận; nếu trống thì dùng "bạn".
+- `{{name}}` là họ tên người nhận; nếu trống thì dùng "there" ("Hello there,"). Nội dung email bằng tiếng Anh (yêu cầu PRJ301).
 
 ## Các mẫu và biến
 
@@ -28,7 +28,9 @@ Mỗi file `*.txt` là một mẫu. Sửa trực tiếp, không cần biên dị
 | `card_confirm` | Quét thẻ, chờ xác nhận mở tủ — **đang chạy tự động** | name, slot_code, bank_code, area_name, action, expires_min, confirm_url |
 | `wrong_place` | Quét thẻ ở sai hộp tủ — **đang chạy tự động** | name, slot_code, bank_code, area_name, map_url |
 
-Thời gian ghi theo giờ Việt Nam (`16:00 23/10/2026`), tiền ghi `14.700 đ`.
+`booking_confirmed` và `reservation_expired` hiện không được gửi ở đâu và còn mô tả luật trước v7.1 (hết giữ chỗ thì hủy; nay tự check-in tại `hold_until`); sửa nội dung trước khi dùng lại.
+
+Thời gian ghi theo giờ Việt Nam (`23/10/2026 16:00`), tiền ghi `14,700 VND`.
 
 ## Xem thử
 

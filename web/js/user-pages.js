@@ -1,13 +1,13 @@
-/* The pages of the user: "Tủ của tôi" and "Nạp tiền", on their own or drawn inside the glass popup of the map
+/* The pages of the user: "My locker" and "Top up", on their own or drawn inside the glass popup of the map
    (js/glass-panel.js), so every listener is on the document.
-   - Tủ của tôi: show / hide the PIN, tick the countdowns (hold time, due time, enroll code, free cancel) and keep the
+   - My locker: show / hide the PIN, tick the countdowns (hold time, due time, enroll code, free cancel) and keep the
      extension popup text in step with the chosen option. Times in data-countdown are the DB's UTC wall clock
      without a zone ("2026-10-17 09:03:51.123").
-   - Nạp tiền: the quick amounts fill the amount field and stay pressed while they match it. */
+   - Top up: the quick amounts fill the amount field and stay pressed while they match it. */
 (function () {
   'use strict';
 
-  /* ---------- Tủ của tôi ---------- */
+  /* ---------- My locker ---------- */
 
   function parseUtc(iso) {
     var s = String(iso).replace(' ', 'T').replace(/(\.\d{3})\d*$/, '$1');
@@ -37,14 +37,14 @@
       }
       var left = Math.round((end - Date.now()) / 1000);
       if (left <= 0) {
-        node.textContent = node.getAttribute('data-late-text') || 'Đã hết giờ';
+        node.textContent = node.getAttribute('data-late-text') || 'Time is up';
         node.classList.add('is-late');
         continue;
       }
       var h = Math.floor(left / 3600);
       var m = Math.floor((left % 3600) / 60);
       var s = left % 60;
-      node.textContent = 'Còn ' + (h > 0 ? h + ' giờ ' + two(m) + ' phút' : m + ':' + two(s));
+      node.textContent = (h > 0 ? h + ' h ' + two(m) + ' min' : m + ':' + two(s)) + ' left';
       node.classList.remove('is-late');
     }
     // v3 D4: full refund in the first minutes, then a part until the hold ends, then the form goes away; no reload.
@@ -63,7 +63,7 @@
       if (now >= hold) {
         var note = document.createElement('span');
         note.className = 'muted';
-        note.textContent = 'Đã hết thời gian giữ chỗ nên không hủy được nữa.';
+        note.textContent = 'The hold time is over, so the booking can no longer be cancelled.';
         form.parentNode.replaceChild(note, form);
         continue;
       }
@@ -82,7 +82,7 @@
   }
 
   function money(n) {
-    return (Number(n) || 0).toLocaleString('vi-VN') + ' đ';
+    return (Number(n) || 0).toLocaleString('en-US') + ' VND';
   }
 
   // v3 D10: the extension popup (data-confirm, js/app.js) states the amount of the chosen option
@@ -93,7 +93,7 @@
       return;
     }
     var label = opt.textContent.split('·')[0].replace('+', '').trim();
-    form.setAttribute('data-confirm', 'Gia hạn thêm ' + label + '? Ví bị trừ ngay ' + money(opt.getAttribute('data-price')) + '.');
+    form.setAttribute('data-confirm', 'Extend by ' + label + '? ' + money(opt.getAttribute('data-price')) + ' is taken from your wallet now.');
   }
 
   document.addEventListener('change', function (e) {
@@ -112,11 +112,11 @@
     box.querySelector('[data-pin-mask]').hidden = show;
     box.querySelector('[data-pin-value]').hidden = !show;
     btn.setAttribute('aria-pressed', show ? 'true' : 'false');
-    btn.textContent = show ? 'Ẩn mật mã' : 'Hiện mật mã';
+    btn.textContent = show ? 'Hide PIN' : 'Show PIN';
   });
 
 
-  /* ---------- Nạp tiền ---------- */
+  /* ---------- Top up ---------- */
 
   function sync(form) {
     var amount = form.querySelector('#amount');

@@ -1,0 +1,46 @@
+% Shared TikZ setup for the figures of the paper (figs/fig-*.tex).
+% Light pastel fills, dark borders and black text; no purple and no gray anywhere.
+% Every style and colour is prefixed with "sl" so nothing clashes with the paper's own preamble.
+% The figures are drawn at their natural size (at most 17.5 cm, \linewidth is 18.1 cm in the
+% one-column IEEEtran layout), so the \small labels print at 9 pt without any scaling.
+\usetikzlibrary{arrows.meta,positioning,fit,shapes.geometric,calc,backgrounds}
+
+% pastel fills
+\definecolor{slBlue}{HTML}{DCEBFA}    % light blue: clients, entry points
+\definecolor{slMint}{HTML}{DDF3E3}    % mint green: server, processing
+\definecolor{slYellow}{HTML}{FFF3C4}  % pale yellow: decisions, services
+\definecolor{slPeach}{HTML}{FFE2C8}   % peach: hardware outputs, data access
+\definecolor{slCoral}{HTML}{FFD9D6}   % light coral/pink: alerts, outcomes
+\definecolor{slSky}{HTML}{E9F6FB}     % very light cyan: group backgrounds
+% dark borders (one per fill) and ink
+\definecolor{slBlueD}{HTML}{1F4E79}
+\definecolor{slMintD}{HTML}{1E6B3A}
+\definecolor{slYellowD}{HTML}{7A5B00}
+\definecolor{slPeachD}{HTML}{8A4513}
+\definecolor{slCoralD}{HTML}{9B2226}
+\definecolor{slInk}{HTML}{0F2338}     % arrows and lines (dark navy)
+
+\tikzset{
+  % basic block: one main line of text; \slsub{...} adds an optional smaller second line
+  slbox/.style={draw=slBlueD, fill=slBlue, rounded corners=3pt, line width=0.7pt, align=center,
+                font=\small, text=black, inner xsep=5pt, inner ysep=4pt, minimum height=0.8cm},
+  slblue/.style={slbox},
+  slmint/.style={slbox, draw=slMintD, fill=slMint},
+  slyellow/.style={slbox, draw=slYellowD, fill=slYellow},
+  slpeach/.style={slbox, draw=slPeachD, fill=slPeach},
+  slcoral/.style={slbox, draw=slCoralD, fill=slCoral},
+  sldec/.style={draw=slYellowD, fill=slYellow, diamond, aspect=2.1, line width=0.7pt, align=center,
+                font=\small, text=black, inner sep=1pt},
+  slterm/.style={slbox, draw=slCoralD, fill=slCoral, line width=1.0pt},
+  slok/.style={slbox, draw=slMintD, fill=slMint, line width=1.0pt},
+  % arrows end exactly on the node border (default anchors, no shortening)
+  slarr/.style={draw=slInk, line width=0.8pt, -{Latex[length=2.4mm, width=1.7mm]}},
+  sldbl/.style={draw=slInk, line width=0.8pt, {Latex[length=2.4mm, width=1.7mm]}-{Latex[length=2.4mm, width=1.7mm]}},
+  slret/.style={slarr, dashed},
+  sllbl/.style={font=\small, text=black, inner sep=2pt},
+  slbus/.style={font=\footnotesize, text=slInk, fill=white, inner sep=1.5pt},
+  slgroup/.style={draw=slMintD, dashed, rounded corners=5pt, line width=0.7pt},
+  slgrouplbl/.style={font=\small\bfseries, text=slMintD, inner sep=2pt},
+}
+% smaller second line inside a block
+\newcommand{\slsub}[1]{\\[-1pt]{\footnotesize #1}}

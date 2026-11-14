@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "4f0a8f0d-8ff5-5422-b1d4-8824242352f7",
     "name": "SmartLocker v2",
-    "description": "API thiết bị v2 (v7: thẻ từ và điện thoại chạm NFC, không còn cọc thẻ) (docs/spec/smart-locker-v2.md, mục 4 và 6) và thư mục v3 (docs/spec/smart-locker-v3.md, mục 7.3). Trước khi chạy: sql/test_setup.sql. Postman Runner: chạy cả collection theo thứ tự. Newman: newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<khóa LOCKER-01>. Khóa LOCKER-01 nằm trong config/device-keys.local.properties (scripts/set-device-key.ps1).",
+    "description": "Device API v2 (v7: RFID card and NFC phone tap, no card deposit any more) (docs/spec/smart-locker-v2.md, sections 4 and 6) and the v3 folder (docs/spec/smart-locker-v3.md, section 7.3). Before a run: sql/test_setup.sql. Postman Runner: run the whole collection in order. Newman: newman run docs/postman/SmartLocker-v2.postman_collection.json -e docs/postman/SmartLocker-local.postman_environment.json --env-var api_key=<LOCKER-01 key>. The LOCKER-01 key is in config/device-keys.local.properties (scripts/set-device-key.ps1).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -10,7 +10,7 @@
       "name": "Heartbeat",
       "item": [
         {
-          "name": "Heartbeat v2 (giữ hộp trực tuyến)",
+          "name": "Heartbeat v2 (keeps the box online)",
           "event": [
             {
               "listen": "test",
@@ -66,13 +66,13 @@
           }
         }
       ],
-      "description": "POST /api/health. Gọi đầu tiên để LOCKER-01 không bị đánh dấu OFFLINE."
+      "description": "POST /api/health. Called first so that LOCKER-01 is not marked OFFLINE."
     },
     {
       "name": "Auth",
       "item": [
         {
-          "name": "Sai API key -> 401",
+          "name": "Wrong API key -> 401",
           "event": [
             {
               "listen": "test",
@@ -120,7 +120,7 @@
           }
         },
         {
-          "name": "Body sai định dạng -> 400",
+          "name": "Malformed body -> 400",
           "event": [
             {
               "listen": "test",
@@ -168,7 +168,7 @@
           }
         },
         {
-          "name": "Cách mở không hỗ trợ -> 400",
+          "name": "Unsupported open method -> 400",
           "event": [
             {
               "listen": "test",
@@ -215,7 +215,7 @@
           }
         },
         {
-          "name": "v7: method PHONE không dùng ở API của hộp -> 400",
+          "name": "v7: method PHONE is not used on the box API -> 400",
           "event": [
             {
               "listen": "test",
@@ -262,13 +262,13 @@
           }
         }
       ],
-      "description": "POST /api/device/auth: các lỗi định dạng (không tính vào giới hạn sai 5 lần)."
+      "description": "POST /api/device/auth: format errors (they do not count towards the 5-try limit)."
     },
     {
       "name": "Enroll",
       "item": [
         {
-          "name": "Loại đăng ký sai -> 400",
+          "name": "Wrong enrollment type -> 400",
           "event": [
             {
               "listen": "test",
@@ -316,7 +316,7 @@
           }
         },
         {
-          "name": "Thiếu card_uid khi finish -> 400",
+          "name": "card_uid missing on finish -> 400",
           "event": [
             {
               "listen": "test",
@@ -364,13 +364,13 @@
           }
         }
       ],
-      "description": "POST /api/device/enroll/start và /finish: lỗi định dạng. Luồng đầy đủ nằm ở Scenarios 3 và 4."
+      "description": "POST /api/device/enroll/start and /finish: format errors. The full flow is in Scenarios 3 and 4."
     },
     {
-      "name": "Kiosk (điện thoại)",
+      "name": "Kiosk (phone)",
       "item": [
         {
-          "name": "Hộp không tồn tại -> 404",
+          "name": "Unknown box -> 404",
           "event": [
             {
               "listen": "test",
@@ -414,7 +414,7 @@
           }
         },
         {
-          "name": "Mật mã không đủ 6 số -> 400",
+          "name": "Code shorter than 6 digits -> 400",
           "event": [
             {
               "listen": "test",
@@ -457,7 +457,7 @@
           }
         },
         {
-          "name": "Đăng xuất (bước 401 cần phiên trống)",
+          "name": "Sign out (the 401 step needs an empty session)",
           "event": [
             {
               "listen": "test",
@@ -484,7 +484,7 @@
           }
         },
         {
-          "name": "v7: chạm điện thoại khi chưa đăng nhập -> 401",
+          "name": "v7: phone tap while signed out -> 401",
           "event": [
             {
               "listen": "test",
@@ -530,13 +530,13 @@
           }
         }
       ],
-      "description": "POST /api/kiosk/unlock: công khai, không cần API key."
+      "description": "POST /api/kiosk/unlock: public, no API key needed."
     },
     {
       "name": "Batch",
       "item": [
         {
-          "name": "Gửi bản ghi mở chốt (PIN)",
+          "name": "Send an unlock record (PIN)",
           "event": [
             {
               "listen": "prerequest",
@@ -597,13 +597,13 @@
           }
         }
       ],
-      "description": "POST /api/locker/batch: chỉ lưu lịch sử, không kết thúc lượt gửi (v2)."
+      "description": "POST /api/locker/batch: only stores history, does not end the booking (v2)."
     },
     {
       "name": "Scenarios",
       "item": [
         {
-          "name": "1. Mật mã: CHECK_IN rồi PICKUP",
+          "name": "1. PIN: CHECK_IN then PICKUP",
           "item": [
             {
               "name": "Heartbeat",
@@ -662,7 +662,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -689,7 +689,7 @@
               }
             },
             {
-              "name": "Đăng nhập v2pin",
+              "name": "Sign in v2pin",
               "event": [
                 {
                   "listen": "test",
@@ -729,7 +729,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -760,7 +760,7 @@
               }
             },
             {
-              "name": "Chọn ngăn trống trên CANT-A",
+              "name": "Pick a free slot on CANT-A",
               "event": [
                 {
                   "listen": "test",
@@ -807,7 +807,7 @@
               }
             },
             {
-              "name": "Đặt tủ: PIN",
+              "name": "Book: PIN",
               "event": [
                 {
                   "listen": "test",
@@ -855,7 +855,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đặt PIN",
+              "name": "My locker: PIN booking",
               "event": [
                 {
                   "listen": "test",
@@ -897,7 +897,7 @@
               }
             },
             {
-              "name": "Sơ đồ: ngăn RESERVED",
+              "name": "Map: slot RESERVED",
               "event": [
                 {
                   "listen": "test",
@@ -934,7 +934,7 @@
               }
             },
             {
-              "name": "auth PIN lần 1 -> CHECK_IN",
+              "name": "auth PIN, 1st time -> CHECK_IN",
               "event": [
                 {
                   "listen": "test",
@@ -993,7 +993,7 @@
               }
             },
             {
-              "name": "Sơ đồ: ngăn OCCUPIED",
+              "name": "Map: slot OCCUPIED",
               "event": [
                 {
                   "listen": "test",
@@ -1030,7 +1030,7 @@
               }
             },
             {
-              "name": "auth PIN lần 2 -> PICKUP",
+              "name": "auth PIN, 2nd time -> PICKUP",
               "event": [
                 {
                   "listen": "test",
@@ -1090,7 +1090,7 @@
               }
             },
             {
-              "name": "Sơ đồ: ngăn AVAILABLE",
+              "name": "Map: slot AVAILABLE",
               "event": [
                 {
                   "listen": "test",
@@ -1129,7 +1129,7 @@
           ]
         },
         {
-          "name": "18. Mở nhiều lần: CHOOSE, OPEN (ACCESS) hai lần, CHECKOUT",
+          "name": "18. Open many times: CHOOSE, OPEN (ACCESS) twice, CHECKOUT",
           "item": [
             {
               "name": "Heartbeat",
@@ -1188,7 +1188,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -1215,7 +1215,7 @@
               }
             },
             {
-              "name": "Đăng nhập v2pin",
+              "name": "Sign in v2pin",
               "event": [
                 {
                   "listen": "test",
@@ -1255,7 +1255,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -1286,7 +1286,7 @@
               }
             },
             {
-              "name": "Chọn ngăn trống trên CANT-A",
+              "name": "Pick a free slot on CANT-A",
               "event": [
                 {
                   "listen": "test",
@@ -1333,7 +1333,7 @@
               }
             },
             {
-              "name": "Đặt tủ: PIN",
+              "name": "Book: PIN",
               "event": [
                 {
                   "listen": "test",
@@ -1381,7 +1381,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đặt PIN",
+              "name": "My locker: PIN booking",
               "event": [
                 {
                   "listen": "test",
@@ -1423,7 +1423,7 @@
               }
             },
             {
-              "name": "Sơ đồ: ngăn RESERVED",
+              "name": "Map: slot RESERVED",
               "event": [
                 {
                   "listen": "test",
@@ -1460,7 +1460,7 @@
               }
             },
             {
-              "name": "auth PIN lần 1 -> CHECK_IN",
+              "name": "auth PIN, 1st time -> CHECK_IN",
               "event": [
                 {
                   "listen": "test",
@@ -1519,7 +1519,7 @@
               }
             },
             {
-              "name": "Sơ đồ: ngăn OCCUPIED",
+              "name": "Map: slot OCCUPIED",
               "event": [
                 {
                   "listen": "test",
@@ -1556,7 +1556,7 @@
               }
             },
             {
-              "name": "auth PIN, intent ASK -> CHOOSE (không mở, không đổi gì)",
+              "name": "auth PIN, intent ASK -> CHOOSE (no open, nothing changes)",
               "event": [
                 {
                   "listen": "test",
@@ -1617,7 +1617,7 @@
               }
             },
             {
-              "name": "auth PIN, intent OPEN -> UNLOCK ACCESS (lượt vẫn ACTIVE)",
+              "name": "auth PIN, intent OPEN -> UNLOCK ACCESS (booking still ACTIVE)",
               "event": [
                 {
                   "listen": "test",
@@ -1677,7 +1677,7 @@
               }
             },
             {
-              "name": "Sơ đồ: ngăn vẫn OCCUPIED",
+              "name": "Map: slot still OCCUPIED",
               "event": [
                 {
                   "listen": "test",
@@ -1714,7 +1714,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: vẫn ACTIVE, đã mở 1 lần",
+              "name": "My locker: still ACTIVE, opened once",
               "event": [
                 {
                   "listen": "test",
@@ -1749,7 +1749,7 @@
               }
             },
             {
-              "name": "auth PIN, intent ASK -> CHOOSE (không mở, không đổi gì)",
+              "name": "auth PIN, intent ASK -> CHOOSE (no open, nothing changes)",
               "event": [
                 {
                   "listen": "test",
@@ -1810,7 +1810,7 @@
               }
             },
             {
-              "name": "auth PIN, intent OPEN -> UNLOCK ACCESS (lượt vẫn ACTIVE)",
+              "name": "auth PIN, intent OPEN -> UNLOCK ACCESS (booking still ACTIVE)",
               "event": [
                 {
                   "listen": "test",
@@ -1870,7 +1870,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: vẫn ACTIVE, đã mở 2 lần",
+              "name": "My locker: still ACTIVE, opened twice",
               "event": [
                 {
                   "listen": "test",
@@ -1905,7 +1905,7 @@
               }
             },
             {
-              "name": "auth PIN, intent ASK -> CHOOSE (không mở, không đổi gì)",
+              "name": "auth PIN, intent ASK -> CHOOSE (no open, nothing changes)",
               "event": [
                 {
                   "listen": "test",
@@ -2024,7 +2024,7 @@
               }
             },
             {
-              "name": "Sơ đồ: ngăn AVAILABLE",
+              "name": "Map: slot AVAILABLE",
               "event": [
                 {
                   "listen": "test",
@@ -2061,7 +2061,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: không còn lượt mở",
+              "name": "My locker: no open booking left",
               "event": [
                 {
                   "listen": "test",
@@ -2092,7 +2092,7 @@
           ]
         },
         {
-          "name": "2. Mở bằng trang điện thoại (lệnh UNLOCK qua heartbeat)",
+          "name": "2. Open from the phone page (UNLOCK command through the heartbeat)",
           "item": [
             {
               "name": "Heartbeat",
@@ -2151,7 +2151,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -2178,7 +2178,7 @@
               }
             },
             {
-              "name": "Đăng nhập v2pin",
+              "name": "Sign in v2pin",
               "event": [
                 {
                   "listen": "test",
@@ -2218,7 +2218,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -2249,7 +2249,7 @@
               }
             },
             {
-              "name": "Chọn ngăn trống trên CANT-A",
+              "name": "Pick a free slot on CANT-A",
               "event": [
                 {
                   "listen": "test",
@@ -2296,7 +2296,7 @@
               }
             },
             {
-              "name": "Đặt tủ: PIN",
+              "name": "Book: PIN",
               "event": [
                 {
                   "listen": "test",
@@ -2344,7 +2344,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đặt PIN",
+              "name": "My locker: PIN booking",
               "event": [
                 {
                   "listen": "test",
@@ -2384,7 +2384,7 @@
               }
             },
             {
-              "name": "Heartbeat (hộp vừa báo sống, dưới 10 giây)",
+              "name": "Heartbeat (box reported alive less than 10 seconds ago)",
               "event": [
                 {
                   "listen": "test",
@@ -2440,7 +2440,7 @@
               }
             },
             {
-              "name": "kiosk/unlock -> CHECK_IN + lệnh UNLOCK",
+              "name": "kiosk/unlock -> CHECK_IN + UNLOCK command",
               "event": [
                 {
                   "listen": "test",
@@ -2454,7 +2454,7 @@
                       "    pm.expect(r.phase).to.eql('CHECK_IN');",
                       "    pm.expect(r.command_id).to.be.a('number');",
                       "});",
-                      "pm.test('Vietnamese message', () => pm.expect(r.message).to.include('Mời cất đồ'));",
+                      "pm.test('English message', () => pm.expect(r.message).to.include('Put your things in slot'));",
                       "pm.environment.set('command_id', r.command_id);"
                     ]
                   }
@@ -2491,7 +2491,7 @@
               }
             },
             {
-              "name": "Chưa đổi trạng thái khi hộp chưa nhận lệnh",
+              "name": "No state change before the box takes the command",
               "event": [
                 {
                   "listen": "test",
@@ -2520,7 +2520,7 @@
               }
             },
             {
-              "name": "kiosk/unlock lần nữa -> cùng lệnh",
+              "name": "kiosk/unlock again -> the same command",
               "event": [
                 {
                   "listen": "test",
@@ -2534,7 +2534,7 @@
                       "    pm.expect(r.phase).to.eql('CHECK_IN');",
                       "    pm.expect(r.command_id).to.be.a('number');",
                       "});",
-                      "pm.test('Vietnamese message', () => pm.expect(r.message).to.include('Mời cất đồ'));",
+                      "pm.test('English message', () => pm.expect(r.message).to.include('Put your things in slot'));",
                       "pm.test('same command as before (not delivered yet)', () => pm.expect(r.command_id).to.eql(pm.environment.get('command_id')));"
                     ]
                   }
@@ -2571,7 +2571,7 @@
               }
             },
             {
-              "name": "Heartbeat kế tiếp nhận lệnh UNLOCK",
+              "name": "Next heartbeat takes the UNLOCK command",
               "event": [
                 {
                   "listen": "test",
@@ -2635,7 +2635,7 @@
               }
             },
             {
-              "name": "Heartbeat sau đó không lặp lại lệnh",
+              "name": "The heartbeat after that does not repeat the command",
               "event": [
                 {
                   "listen": "test",
@@ -2693,7 +2693,7 @@
               }
             },
             {
-              "name": "Hộp nhận lệnh: lượt đã ACTIVE",
+              "name": "Box took the command: booking is ACTIVE",
               "event": [
                 {
                   "listen": "test",
@@ -2722,7 +2722,7 @@
               }
             },
             {
-              "name": "Batch: bản ghi PHONE dùng command_id",
+              "name": "Batch: PHONE record uses command_id",
               "event": [
                 {
                   "listen": "prerequest",
@@ -2782,7 +2782,7 @@
               }
             },
             {
-              "name": "kiosk/unlock -> PICKUP + lệnh UNLOCK",
+              "name": "kiosk/unlock -> PICKUP + UNLOCK command",
               "event": [
                 {
                   "listen": "test",
@@ -2796,7 +2796,7 @@
                       "    pm.expect(r.phase).to.eql('PICKUP');",
                       "    pm.expect(r.command_id).to.be.a('number');",
                       "});",
-                      "pm.test('Vietnamese message', () => pm.expect(r.message).to.include('Mời lấy đồ'));",
+                      "pm.test('English message', () => pm.expect(r.message).to.include('Take your things from slot'));",
                       "pm.environment.set('command_id', r.command_id);"
                     ]
                   }
@@ -2833,7 +2833,7 @@
               }
             },
             {
-              "name": "Chưa kết thúc khi hộp chưa nhận lệnh",
+              "name": "Not ended before the box takes the command",
               "event": [
                 {
                   "listen": "test",
@@ -2862,7 +2862,7 @@
               }
             },
             {
-              "name": "Heartbeat nhận lệnh lấy đồ",
+              "name": "Heartbeat takes the pickup command",
               "event": [
                 {
                   "listen": "test",
@@ -2926,7 +2926,7 @@
               }
             },
             {
-              "name": "Hộp nhận lệnh: lượt đã kết thúc",
+              "name": "Box took the command: booking has ended",
               "event": [
                 {
                   "listen": "test",
@@ -2955,7 +2955,7 @@
               }
             },
             {
-              "name": "Sơ đồ: ngăn AVAILABLE",
+              "name": "Map: slot AVAILABLE",
               "event": [
                 {
                   "listen": "test",
@@ -2994,7 +2994,7 @@
           ]
         },
         {
-          "name": "3. Thẻ từ lần đầu: đăng ký tại hộp, không cọc, cùng giá mật mã",
+          "name": "3. RFID card, first time: enrolled at the box, no deposit, same price as PIN",
           "item": [
             {
               "name": "Heartbeat",
@@ -3053,7 +3053,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -3080,7 +3080,7 @@
               }
             },
             {
-              "name": "Đăng nhập v2card",
+              "name": "Sign in v2card",
               "event": [
                 {
                   "listen": "test",
@@ -3120,7 +3120,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -3151,7 +3151,7 @@
               }
             },
             {
-              "name": "Chưa có thẻ: giá gói, không cọc",
+              "name": "No card yet: plan price, no deposit",
               "event": [
                 {
                   "listen": "test",
@@ -3186,7 +3186,7 @@
               }
             },
             {
-              "name": "Chọn ngăn trống trên CANT-A",
+              "name": "Pick a free slot on CANT-A",
               "event": [
                 {
                   "listen": "test",
@@ -3233,7 +3233,7 @@
               }
             },
             {
-              "name": "Đặt tủ: CARD",
+              "name": "Book: CARD",
               "event": [
                 {
                   "listen": "test",
@@ -3281,7 +3281,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đặt CARD",
+              "name": "My locker: CARD booking",
               "event": [
                 {
                   "listen": "test",
@@ -3344,7 +3344,7 @@
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
                       "const r = pm.response.json();",
-                      "pm.test('OK, Quet the', () => { pm.expect(r.result).to.eql('OK'); pm.expect(r.message).to.eql('Quet the'); });"
+                      "pm.test('OK, Scan the card', () => { pm.expect(r.result).to.eql('OK'); pm.expect(r.message).to.eql('Scan the card'); });"
                     ]
                   }
                 }
@@ -3385,7 +3385,7 @@
               }
             },
             {
-              "name": "enroll/finish CARD (UID mới)",
+              "name": "enroll/finish CARD (new UID)",
               "event": [
                 {
                   "listen": "test",
@@ -3394,7 +3394,7 @@
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
                       "const r = pm.response.json();",
-                      "pm.test('OK, Dang ky xong', () => { pm.expect(r.result).to.eql('OK'); pm.expect(r.message).to.eql('Dang ky xong'); });",
+                      "pm.test('OK, Enrolled', () => { pm.expect(r.result).to.eql('OK'); pm.expect(r.message).to.eql('Enrolled'); });",
                       "pm.environment.set('used_enroll_code', pm.environment.get('enroll_code'));"
                     ]
                   }
@@ -3436,7 +3436,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: UID thẻ, ví không bị trừ thêm",
+              "name": "My locker: card UID, wallet not charged again",
               "event": [
                 {
                   "listen": "test",
@@ -3473,7 +3473,7 @@
               }
             },
             {
-              "name": "auth CARD lần 1 -> CHECK_IN",
+              "name": "auth CARD, 1st time -> CHECK_IN",
               "event": [
                 {
                   "listen": "test",
@@ -3532,7 +3532,7 @@
               }
             },
             {
-              "name": "auth CARD lần 2 -> PICKUP",
+              "name": "auth CARD, 2nd time -> PICKUP",
               "event": [
                 {
                   "listen": "test",
@@ -3593,7 +3593,7 @@
           ]
         },
         {
-          "name": "9. Đặt bằng mật mã nhưng quẹt thẻ",
+          "name": "9. Booked with a PIN but a card is scanned",
           "item": [
             {
               "name": "Heartbeat",
@@ -3652,7 +3652,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -3679,7 +3679,7 @@
               }
             },
             {
-              "name": "Đăng nhập v2card",
+              "name": "Sign in v2card",
               "event": [
                 {
                   "listen": "test",
@@ -3719,7 +3719,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -3750,7 +3750,7 @@
               }
             },
             {
-              "name": "Chọn ngăn trống trên CANT-A",
+              "name": "Pick a free slot on CANT-A",
               "event": [
                 {
                   "listen": "test",
@@ -3797,7 +3797,7 @@
               }
             },
             {
-              "name": "Đặt tủ: PIN",
+              "name": "Book: PIN",
               "event": [
                 {
                   "listen": "test",
@@ -3845,7 +3845,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đặt PIN",
+              "name": "My locker: PIN booking",
               "event": [
                 {
                   "listen": "test",
@@ -4057,10 +4057,10 @@
           ]
         },
         {
-          "name": "8. Thẻ đã báo mất",
+          "name": "8. Card reported lost",
           "item": [
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -4087,7 +4087,7 @@
               }
             },
             {
-              "name": "Đăng nhập v2card",
+              "name": "Sign in v2card",
               "event": [
                 {
                   "listen": "test",
@@ -4127,7 +4127,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -4158,7 +4158,7 @@
               }
             },
             {
-              "name": "Báo mất thẻ (trang Thẻ của tôi)",
+              "name": "Report the card lost (My cards page)",
               "event": [
                 {
                   "listen": "test",
@@ -4252,8 +4252,8 @@
           ]
         },
         {
-          "name": "19. Điện thoại: chạm NFC, mã chạm dùng một lần (v7)",
-          "description": "Thay kịch bản thẻ từ. Heartbeat có \"nfc\":true trả tap_path (link của thẻ NFC giả lập trên PN532); người dùng đã đăng nhập gửi method PHONE + mã chạm tới /api/kiosk/unlock. Mã sai, cũ hoặc đã dùng là TAP_EXPIRED, không tính là lần đoán sai.",
+          "name": "19. Phone: NFC tap, one-time tap code (v7)",
+          "description": "Replaces the RFID card scenario. A heartbeat with \"nfc\":true returns tap_path (the link of the NFC tag the PN532 emulates); a signed-in user sends method PHONE + the tap code to /api/kiosk/unlock. A wrong, old or used code is TAP_EXPIRED and does not count as a wrong guess.",
           "item": [
             {
               "name": "Heartbeat",
@@ -4312,7 +4312,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -4339,7 +4339,7 @@
               }
             },
             {
-              "name": "Đăng nhập v2card",
+              "name": "Sign in v2card",
               "event": [
                 {
                   "listen": "test",
@@ -4379,7 +4379,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -4410,7 +4410,7 @@
               }
             },
             {
-              "name": "Chọn ngăn trống trên CANT-A",
+              "name": "Pick a free slot on CANT-A",
               "event": [
                 {
                   "listen": "test",
@@ -4457,7 +4457,7 @@
               }
             },
             {
-              "name": "Đặt tủ: PHONE",
+              "name": "Book: PHONE",
               "event": [
                 {
                   "listen": "test",
@@ -4505,7 +4505,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đặt PHONE",
+              "name": "My locker: PHONE booking",
               "event": [
                 {
                   "listen": "test",
@@ -4596,7 +4596,7 @@
               }
             },
             {
-              "name": "Chạm với mã sai -> TAP_EXPIRED (không phải lần đoán)",
+              "name": "Tap with a wrong code -> TAP_EXPIRED (not a guess)",
               "event": [
                 {
                   "listen": "test",
@@ -4610,7 +4610,7 @@
                       "    pm.expect(r.reason).to.eql('TAP_EXPIRED');",
                       "    pm.expect(r.attempts_left).to.eql(5);",
                       "});",
-                      "pm.test('Vietnamese message', () => pm.expect(r.message).to.include('chạm'));"
+                      "pm.test('English message', () => pm.expect(r.message).to.include('tap link has expired'));"
                     ]
                   }
                 }
@@ -4646,7 +4646,7 @@
               }
             },
             {
-              "name": "Chạm, ASK -> CHECK_IN + lệnh UNLOCK (lượt chưa cất đồ)",
+              "name": "Tap, ASK -> CHECK_IN + UNLOCK command (nothing stored yet)",
               "event": [
                 {
                   "listen": "test",
@@ -4660,7 +4660,7 @@
                       "    pm.expect(r.phase).to.eql('CHECK_IN');",
                       "    pm.expect(r.command_id).to.be.a('number');",
                       "});",
-                      "pm.test('Vietnamese message', () => pm.expect(r.message).to.include('Mời cất đồ'));",
+                      "pm.test('English message', () => pm.expect(r.message).to.include('Put your things in slot'));",
                       "pm.environment.set('command_id', r.command_id);"
                     ]
                   }
@@ -4697,7 +4697,7 @@
               }
             },
             {
-              "name": "Cùng mã chạm lần nữa -> TAP_EXPIRED (đã dùng)",
+              "name": "Same tap code again -> TAP_EXPIRED (already used)",
               "event": [
                 {
                   "listen": "test",
@@ -4742,7 +4742,7 @@
               }
             },
             {
-              "name": "Heartbeat nhận lệnh, mã chạm mới",
+              "name": "Heartbeat takes the command, new tap code",
               "event": [
                 {
                   "listen": "test",
@@ -4800,7 +4800,7 @@
               }
             },
             {
-              "name": "Hộp nhận lệnh: lượt đã ACTIVE",
+              "name": "Box took the command: booking is ACTIVE",
               "event": [
                 {
                   "listen": "test",
@@ -4829,7 +4829,7 @@
               }
             },
             {
-              "name": "Chạm, ASK -> CHOOSE (không mở, mã chưa bị dùng)",
+              "name": "Tap, ASK -> CHOOSE (no open, code not used up)",
               "event": [
                 {
                   "listen": "test",
@@ -4877,7 +4877,7 @@
               }
             },
             {
-              "name": "Chạm, CHECKOUT -> PICKUP + lệnh UNLOCK",
+              "name": "Tap, CHECKOUT -> PICKUP + UNLOCK command",
               "event": [
                 {
                   "listen": "test",
@@ -4927,7 +4927,7 @@
               }
             },
             {
-              "name": "Heartbeat nhận lệnh lấy đồ",
+              "name": "Heartbeat takes the pickup command",
               "event": [
                 {
                   "listen": "test",
@@ -4982,7 +4982,7 @@
               }
             },
             {
-              "name": "Hộp nhận lệnh: lượt đã kết thúc",
+              "name": "Box took the command: booking has ended",
               "event": [
                 {
                   "listen": "test",
@@ -5013,7 +5013,7 @@
           ]
         },
         {
-          "name": "4. Vân tay: đăng ký một lần, dùng lại",
+          "name": "4. Fingerprint: enrolled once, used again",
           "item": [
             {
               "name": "Heartbeat",
@@ -5072,7 +5072,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -5099,7 +5099,7 @@
               }
             },
             {
-              "name": "Đăng nhập v2fp",
+              "name": "Sign in v2fp",
               "event": [
                 {
                   "listen": "test",
@@ -5139,7 +5139,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -5170,7 +5170,7 @@
               }
             },
             {
-              "name": "Chọn ngăn trống trên CANT-A",
+              "name": "Pick a free slot on CANT-A",
               "event": [
                 {
                   "listen": "test",
@@ -5217,7 +5217,7 @@
               }
             },
             {
-              "name": "Đặt tủ: FINGERPRINT",
+              "name": "Book: FINGERPRINT",
               "event": [
                 {
                   "listen": "test",
@@ -5265,7 +5265,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đặt FINGERPRINT",
+              "name": "My locker: FINGERPRINT booking",
               "event": [
                 {
                   "listen": "test",
@@ -5408,7 +5408,7 @@
               }
             },
             {
-              "name": "auth FINGERPRINT lần 1 -> CHECK_IN",
+              "name": "auth FINGERPRINT, 1st time -> CHECK_IN",
               "event": [
                 {
                   "listen": "test",
@@ -5467,7 +5467,7 @@
               }
             },
             {
-              "name": "auth FINGERPRINT lần 2 -> PICKUP",
+              "name": "auth FINGERPRINT, 2nd time -> PICKUP",
               "event": [
                 {
                   "listen": "test",
@@ -5526,7 +5526,7 @@
               }
             },
             {
-              "name": "Chọn ngăn trống trên CANT-A",
+              "name": "Pick a free slot on CANT-A",
               "event": [
                 {
                   "listen": "test",
@@ -5573,7 +5573,7 @@
               }
             },
             {
-              "name": "Đặt tủ: FINGERPRINT",
+              "name": "Book: FINGERPRINT",
               "event": [
                 {
                   "listen": "test",
@@ -5621,7 +5621,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đặt FINGERPRINT",
+              "name": "My locker: FINGERPRINT booking",
               "event": [
                 {
                   "listen": "test",
@@ -5664,7 +5664,7 @@
               }
             },
             {
-              "name": "lượt 2: auth FINGERPRINT -> CHECK_IN",
+              "name": "booking 2: auth FINGERPRINT -> CHECK_IN",
               "event": [
                 {
                   "listen": "test",
@@ -5723,7 +5723,7 @@
               }
             },
             {
-              "name": "lượt 2: auth FINGERPRINT -> PICKUP",
+              "name": "booking 2: auth FINGERPRINT -> PICKUP",
               "event": [
                 {
                   "listen": "test",
@@ -5784,10 +5784,10 @@
           ]
         },
         {
-          "name": "6. Không đến: sau 15 phút tự check-in, không hoàn tiền (v7.1)",
+          "name": "6. No-show: checked in automatically after 15 minutes, no refund (v7.1)",
           "item": [
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -5814,7 +5814,7 @@
               }
             },
             {
-              "name": "Đăng nhập v2noshow",
+              "name": "Sign in v2noshow",
               "event": [
                 {
                   "listen": "test",
@@ -5854,7 +5854,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -5885,7 +5885,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đã tự check-in (chờ LockerMonitor)",
+              "name": "My locker: booking checked in automatically (waits for LockerMonitor)",
               "event": [
                 {
                   "listen": "prerequest",
@@ -5941,10 +5941,10 @@
           ]
         },
         {
-          "name": "10. Sai API key hoặc body sai",
+          "name": "10. Wrong API key or bad body",
           "item": [
             {
-              "name": "auth sai key -> 401",
+              "name": "auth with a wrong key -> 401",
               "event": [
                 {
                   "listen": "test",
@@ -5991,7 +5991,7 @@
               }
             },
             {
-              "name": "heartbeat sai key -> 401",
+              "name": "heartbeat with a wrong key -> 401",
               "event": [
                 {
                   "listen": "test",
@@ -6037,7 +6037,7 @@
               }
             },
             {
-              "name": "enroll thiếu key -> 401",
+              "name": "enroll without a key -> 401",
               "event": [
                 {
                   "listen": "test",
@@ -6081,7 +6081,7 @@
               }
             },
             {
-              "name": "auth body không phải JSON -> 400",
+              "name": "auth body is not JSON -> 400",
               "event": [
                 {
                   "listen": "test",
@@ -6128,7 +6128,7 @@
               }
             },
             {
-              "name": "heartbeat body sai -> 400",
+              "name": "heartbeat with a bad body -> 400",
               "event": [
                 {
                   "listen": "test",
@@ -6174,7 +6174,7 @@
               }
             },
             {
-              "name": "auth PIN chữ -> 400",
+              "name": "auth PIN with letters -> 400",
               "event": [
                 {
                   "listen": "test",
@@ -6223,7 +6223,7 @@
           ]
         },
         {
-          "name": "5. Sai mật mã 5 lần: khóa 2 phút",
+          "name": "5. Wrong PIN 5 times: locked for 2 minutes",
           "item": [
             {
               "name": "Heartbeat",
@@ -6282,7 +6282,7 @@
               }
             },
             {
-              "name": "Sai mật mã (lặp tới khi bị khóa)",
+              "name": "Wrong PIN (repeat until locked)",
               "event": [
                 {
                   "listen": "prerequest",
@@ -6354,7 +6354,7 @@
               }
             },
             {
-              "name": "Hộp đã khóa: thẻ cũng bị từ chối",
+              "name": "Box locked: a card is refused too",
               "event": [
                 {
                   "listen": "test",
@@ -6406,7 +6406,7 @@
               }
             },
             {
-              "name": "Trang điện thoại đếm riêng: chưa bị khóa",
+              "name": "The phone page counts separately: not locked",
               "event": [
                 {
                   "listen": "prerequest",
@@ -6470,7 +6470,7 @@
               }
             },
             {
-              "name": "Sau 2 phút nhập lại được",
+              "name": "After 2 minutes a PIN works again",
               "event": [
                 {
                   "listen": "prerequest",
@@ -6530,7 +6530,7 @@
               }
             },
             {
-              "name": "Heartbeat (giữ hộp trực tuyến)",
+              "name": "Heartbeat (keeps the box online)",
               "event": [
                 {
                   "listen": "test",
@@ -6588,7 +6588,7 @@
           ]
         },
         {
-          "name": "7. Mật mã của lượt đã kết thúc hoặc của hộp khác",
+          "name": "7. PIN of an ended booking or of another box",
           "item": [
             {
               "name": "Heartbeat",
@@ -6647,7 +6647,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -6674,7 +6674,7 @@
               }
             },
             {
-              "name": "Đăng nhập v2pin",
+              "name": "Sign in v2pin",
               "event": [
                 {
                   "listen": "test",
@@ -6714,7 +6714,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -6745,7 +6745,7 @@
               }
             },
             {
-              "name": "Mật mã của lượt đã kết thúc -> WRONG_CODE",
+              "name": "PIN of an ended booking -> WRONG_CODE",
               "event": [
                 {
                   "listen": "test",
@@ -6797,7 +6797,7 @@
               }
             },
             {
-              "name": "Mã đăng ký đã dùng -> BAD_CODE",
+              "name": "Used enrollment code -> BAD_CODE",
               "event": [
                 {
                   "listen": "test",
@@ -6845,7 +6845,7 @@
               }
             },
             {
-              "name": "Chọn ngăn trống trên CANT-A",
+              "name": "Pick a free slot on CANT-A",
               "event": [
                 {
                   "listen": "test",
@@ -6892,7 +6892,7 @@
               }
             },
             {
-              "name": "Đặt tủ: PIN",
+              "name": "Book: PIN",
               "event": [
                 {
                   "listen": "test",
@@ -6940,7 +6940,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đặt PIN",
+              "name": "My locker: PIN booking",
               "event": [
                 {
                   "listen": "test",
@@ -6980,7 +6980,7 @@
               }
             },
             {
-              "name": "Mật mã đúng nhưng gửi tới hộp khác -> WRONG_CODE",
+              "name": "Right PIN sent to another box -> WRONG_CODE",
               "event": [
                 {
                   "listen": "test",
@@ -7032,7 +7032,7 @@
               }
             },
             {
-              "name": "Tại đúng hộp -> CHECK_IN",
+              "name": "At the right box -> CHECK_IN",
               "event": [
                 {
                   "listen": "test",
@@ -7091,7 +7091,7 @@
               }
             },
             {
-              "name": "Tại đúng hộp -> PICKUP",
+              "name": "At the right box -> PICKUP",
               "event": [
                 {
                   "listen": "test",
@@ -7152,15 +7152,15 @@
           ]
         }
       ],
-      "description": "Spec 6.2. Chạy sql/test_setup.sql ngay trước mỗi lần chạy. Thứ tự: 9 cần thẻ của 3, 8 báo mất thẻ đó; 5 chạy gần cuối vì khóa hộp 2 phút (có bước chờ 122 giây); 7 dùng mật mã đã kết thúc của 1."
+      "description": "Spec 6.2. Run sql/test_setup.sql right before every run. Order: 9 needs the card of 3, 8 reports that card lost; 5 runs near the end because it locks the box for 2 minutes (it has a 122-second wait); 7 uses the ended PIN of 1."
     },
     {
       "name": "v3",
-      "description": "Kịch bản 11–17 của docs/spec/smart-locker-v3.md mục 7.3. Trước khi chạy: sql/test_setup.sql. Thứ tự chạy 11, 16, 17, 12, 13, 14, 15 (16 và 17 dùng lượt bị khóa của 11 trước khi 12 nạp tiền và lấy đồ). Không có bước đoán sai mã.",
+      "description": "Scenarios 11-17 of docs/spec/smart-locker-v3.md section 7.3. Before a run: sql/test_setup.sql. Run order 11, 16, 17, 12, 13, 14, 15 (16 and 17 use the locked booking of 11 before 12 tops up and picks up). No wrong-code guessing step.",
       "item": [
         {
-          "name": "11. Quá hạn: hộp từ chối OVERDUE_UNPAID, có số nợ",
-          "description": "sql/test_setup.sql: v3overdue có lượt ACTIVE quá hạn 130 phút, ví 5.000 đ. Device_Authorize tự khóa và tính phụ phí khi nhập mã.",
+          "name": "11. Overdue: the box answers OVERDUE_UNPAID with the debt",
+          "description": "sql/test_setup.sql: v3overdue has an ACTIVE booking 130 minutes overdue, wallet 5,000 VND. Device_Authorize locks it and charges the late fee when the code is typed.",
           "item": [
             {
               "name": "Heartbeat",
@@ -7210,7 +7210,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -7237,7 +7237,7 @@
               }
             },
             {
-              "name": "Đăng nhập v3overdue",
+              "name": "Sign in v3overdue",
               "event": [
                 {
                   "listen": "test",
@@ -7277,7 +7277,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -7308,7 +7308,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt ACTIVE đã quá hạn (test_setup.sql)",
+              "name": "My locker: overdue ACTIVE booking (test_setup.sql)",
               "event": [
                 {
                   "listen": "test",
@@ -7354,7 +7354,7 @@
               }
             },
             {
-              "name": "auth PIN -> DENY OVERDUE_UNPAID (phí tính ngay tại hộp)",
+              "name": "auth PIN -> DENY OVERDUE_UNPAID (fee charged at the box)",
               "event": [
                 {
                   "listen": "test",
@@ -7375,7 +7375,7 @@
                       "});",
                       "// test_setup.sql set the wallet to 5,000 VND; LockerMonitor may already have charged it before this request",
                       "pm.test('debt = fee - the 5,000 VND wallet of test_setup.sql', () => pm.expect(r.debt).to.eql(r.overdue_fee - 5000));",
-                      "pm.test('OLED text of the spec', () => pm.expect(r.message).to.eql('Qua han tra tu\\nNap tien de mo'));",
+                      "pm.test('OLED text of the spec', () => pm.expect(r.message).to.eql('Overdue\\nTop up to open'));",
                       "pm.test('OLED message: ASCII, 2 lines of 16 at most', () => {",
                       "    pm.expect(/^[\\x20-\\x7E\\n]*$/.test(r.message)).to.be.true;",
                       "    r.message.split('\\n').forEach(l => pm.expect(l.length).to.be.at.most(16));",
@@ -7422,7 +7422,7 @@
               }
             },
             {
-              "name": "auth PIN lần nữa: không thu trùng, không tính lần sai",
+              "name": "auth PIN again: no double charge, not a wrong try",
               "event": [
                 {
                   "listen": "test",
@@ -7476,7 +7476,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt bị khóa, ví âm",
+              "name": "My locker: booking locked, wallet negative",
               "event": [
                 {
                   "listen": "test",
@@ -7516,7 +7516,7 @@
               }
             },
             {
-              "name": "Sơ đồ: ngăn bị khóa quá hạn",
+              "name": "Map: slot locked overdue",
               "event": [
                 {
                   "listen": "test",
@@ -7558,11 +7558,11 @@
           ]
         },
         {
-          "name": "16. Trang điện thoại với lượt bị khóa",
-          "description": "Cùng lượt của kịch bản 11, mở bằng /api/kiosk/unlock (kênh điện thoại).",
+          "name": "16. Phone page with a locked booking",
+          "description": "The same booking as scenario 11, opened through /api/kiosk/unlock (phone channel).",
           "item": [
             {
-              "name": "Heartbeat (hộp vừa báo sống, dưới 10 giây)",
+              "name": "Heartbeat (box reported alive less than 10 seconds ago)",
               "event": [
                 {
                   "listen": "test",
@@ -7608,14 +7608,14 @@
               }
             },
             {
-              "name": "kiosk/unlock -> DENY OVERDUE_UNPAID, tiếng Việt có số nợ",
+              "name": "kiosk/unlock -> DENY OVERDUE_UNPAID, message with the debt",
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "const vnd = n => String(n).replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.') + ' đ';   // AuthText.vnd: 14.700 đ",
+                      "const vnd = n => String(n).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + ' VND';   // AuthText.vnd: 14,700 VND",
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
                       "const r = pm.response.json();",
                       "pm.test('DENY OVERDUE_UNPAID, no command', () => {",
@@ -7624,10 +7624,10 @@
                       "    pm.expect(r.debt).to.eql(pm.environment.get('debt'));",
                       "    pm.expect(r.command_id == null).to.be.true;",
                       "});",
-                      "pm.test('Vietnamese message with the debt', () => {",
-                      "    pm.expect(r.message).to.include('quá hạn');",
-                      "    pm.expect(r.message).to.include('Bạn còn nợ ' + vnd(pm.environment.get('debt')));",
-                      "    pm.expect(r.message).to.include('nạp tiền');",
+                      "pm.test('English message with the debt', () => {",
+                      "    pm.expect(r.message).to.include('overdue and locked');",
+                      "    pm.expect(r.message).to.include('You owe ' + vnd(pm.environment.get('debt')));",
+                      "    pm.expect(r.message).to.include('Top up your wallet');",
                       "});"
                     ]
                   }
@@ -7666,11 +7666,11 @@
           ]
         },
         {
-          "name": "17. Gia hạn: lượt đang dùng trả tiền, lượt bị khóa thì từ chối",
-          "description": "Phần đầu dùng lượt bị khóa của v3overdue (kịch bản 11). Phần sau: v2pin đặt cỡ S, mở tủ, gia hạn 90 phút = 2 × giá một giờ của cỡ S (sizes[].hour_rate).",
+          "name": "17. Extend: an active booking pays, a locked booking is refused",
+          "description": "First part uses the locked booking of v3overdue (scenario 11). Second part: v2pin books size S, opens the slot, extends by 90 minutes = 2 x the hourly price of size S (sizes[].hour_rate).",
           "item": [
             {
-              "name": "Gia hạn lượt bị khóa (v3overdue) -> lỗi 50048",
+              "name": "Extend the locked booking (v3overdue) -> error 50048",
               "event": [
                 {
                   "listen": "test",
@@ -7678,7 +7678,7 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));",
-                      "pm.test('flash shows the 50048 text', () => pm.expect(pm.response.text()).to.include('quá hạn và tủ đang bị khóa nên không gia hạn được'));"
+                      "pm.test('flash shows the 50048 text', () => pm.expect(pm.response.text()).to.include('overdue and the locker is locked, so it cannot be extended'));"
                     ]
                   }
                 }
@@ -7715,7 +7715,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: không đổi gì",
+              "name": "My locker: nothing changed",
               "event": [
                 {
                   "listen": "test",
@@ -7795,7 +7795,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -7822,7 +7822,7 @@
               }
             },
             {
-              "name": "Đăng nhập v2pin",
+              "name": "Sign in v2pin",
               "event": [
                 {
                   "listen": "test",
@@ -7862,7 +7862,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -7893,7 +7893,7 @@
               }
             },
             {
-              "name": "Chọn ngăn trống cỡ S trên CANT-A",
+              "name": "Pick a free size S slot on CANT-A",
               "event": [
                 {
                   "listen": "test",
@@ -7943,7 +7943,7 @@
               }
             },
             {
-              "name": "Đặt tủ: PIN",
+              "name": "Book: PIN",
               "event": [
                 {
                   "listen": "test",
@@ -7991,7 +7991,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đặt PIN",
+              "name": "My locker: PIN booking",
               "event": [
                 {
                   "listen": "test",
@@ -8091,7 +8091,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: trước khi gia hạn",
+              "name": "My locker: before the extension",
               "event": [
                 {
                   "listen": "test",
@@ -8123,20 +8123,20 @@
               }
             },
             {
-              "name": "Gia hạn 90 phút -> trừ 2 giờ của cỡ S",
+              "name": "Extend by 90 minutes -> charges 2 hours of size S",
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "const vnd = n => String(n).replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.') + ' đ';   // AuthText.vnd: 14.700 đ",
+                      "const vnd = n => String(n).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + ' VND';   // AuthText.vnd: 14,700 VND",
                       "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));",
                       "const charge = 2 * pm.environment.get('hour_rate');      // CEILING(90 / 60) started hours",
                       "pm.environment.set('extend_charge', charge);",
                       "pm.test('flash states the amount taken', () => {",
-                      "    pm.expect(pm.response.text()).to.include('Đã gia hạn thêm 90 phút.');",
-                      "    pm.expect(pm.response.text()).to.include('Đã trừ ' + vnd(charge) + ' vào ví.');",
+                      "    pm.expect(pm.response.text()).to.include('Extended by 90 min.');",
+                      "    pm.expect(pm.response.text()).to.include(vnd(charge) + ' was taken from your wallet.');",
                       "});"
                     ]
                   }
@@ -8174,7 +8174,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: đã trừ tiền gia hạn",
+              "name": "My locker: extension charged",
               "event": [
                 {
                   "listen": "test",
@@ -8210,7 +8210,7 @@
               }
             },
             {
-              "name": "auth PIN -> PICKUP, không phụ phí",
+              "name": "auth PIN -> PICKUP, no late fee",
               "event": [
                 {
                   "listen": "test",
@@ -8269,7 +8269,7 @@
               }
             },
             {
-              "name": "Sơ đồ: ngăn AVAILABLE",
+              "name": "Map: slot AVAILABLE",
               "event": [
                 {
                   "listen": "test",
@@ -8309,11 +8309,11 @@
           ]
         },
         {
-          "name": "12. Nạp tiền, nhân viên duyệt, mở lại: PICKUP có overdue_fee",
-          "description": "Không có API riêng cho việc duyệt: dùng chính form của TopupController (người dùng action=create, nhân viên action=approve), tài khoản nhân viên trong biến staff_user.",
+          "name": "12. Top up, staff approve, open again: PICKUP with overdue_fee",
+          "description": "There is no separate API for approval: it uses the TopupController form itself (user action=create, staff action=approve), with the staff account in the staff_user variable.",
           "item": [
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -8340,7 +8340,7 @@
               }
             },
             {
-              "name": "Đăng nhập v3overdue",
+              "name": "Sign in v3overdue",
               "event": [
                 {
                   "listen": "test",
@@ -8380,7 +8380,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -8411,7 +8411,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt bị khóa của kịch bản 11",
+              "name": "My locker: the locked booking of scenario 11",
               "event": [
                 {
                   "listen": "test",
@@ -8454,7 +8454,7 @@
               }
             },
             {
-              "name": "Yêu cầu nạp tiền (nợ + 20.000 đ)",
+              "name": "Top-up request (debt + 20,000 VND)",
               "event": [
                 {
                   "listen": "prerequest",
@@ -8510,7 +8510,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -8537,7 +8537,7 @@
               }
             },
             {
-              "name": "Đăng nhập nhân viên (admin)",
+              "name": "Staff sign in (admin)",
               "event": [
                 {
                   "listen": "test",
@@ -8577,7 +8577,7 @@
               }
             },
             {
-              "name": "Nhân viên duyệt yêu cầu nạp",
+              "name": "Staff approve the top-up request",
               "event": [
                 {
                   "listen": "test",
@@ -8585,7 +8585,7 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));",
-                      "pm.test('flash: money added to v3overdue', () => pm.expect(pm.response.text()).to.include('Đã cộng tiền vào tài khoản ' + pm.environment.get('user_overdue')));"
+                      "pm.test('flash: money added to v3overdue', () => pm.expect(pm.response.text()).to.include('Money added to account ' + pm.environment.get('user_overdue')));"
                     ]
                   }
                 }
@@ -8618,7 +8618,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -8645,7 +8645,7 @@
               }
             },
             {
-              "name": "Đăng nhập v3overdue",
+              "name": "Sign in v3overdue",
               "event": [
                 {
                   "listen": "test",
@@ -8685,7 +8685,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: hết nợ, lượt vẫn khóa tới khi lấy đồ",
+              "name": "My locker: debt cleared, booking stays locked until pickup",
               "event": [
                 {
                   "listen": "test",
@@ -8762,7 +8762,7 @@
               }
             },
             {
-              "name": "auth PIN -> UNLOCK PICKUP, có overdue_fee",
+              "name": "auth PIN -> UNLOCK PICKUP, with overdue_fee",
               "event": [
                 {
                   "listen": "test",
@@ -8821,7 +8821,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đã kết thúc, không thu thêm",
+              "name": "My locker: booking ended, nothing more charged",
               "event": [
                 {
                   "listen": "test",
@@ -8857,7 +8857,7 @@
               }
             },
             {
-              "name": "Sơ đồ: ngăn AVAILABLE",
+              "name": "Map: slot AVAILABLE",
               "event": [
                 {
                   "listen": "test",
@@ -8897,8 +8897,8 @@
           ]
         },
         {
-          "name": "13. Hủy trong 5 phút hoàn đủ, sau 5 phút hoàn 50%",
-          "description": "Phần đầu: v2pin đặt và hủy ngay. Phần sau: v3late có lượt đặt từ 6 phút trước (test_setup.sql), hủy bị từ chối; cuối cùng mở và lấy đồ để trả ngăn.",
+          "name": "13. Cancel within 5 minutes refunds in full, after 5 minutes 50%",
+          "description": "First part: v2pin books and cancels at once. Second part: v3late has a booking made 6 minutes ago (test_setup.sql), the full-refund cancel is refused; at the end it opens and picks up to free the slot.",
           "item": [
             {
               "name": "Heartbeat",
@@ -8948,7 +8948,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -8975,7 +8975,7 @@
               }
             },
             {
-              "name": "Đăng nhập v2pin",
+              "name": "Sign in v2pin",
               "event": [
                 {
                   "listen": "test",
@@ -9015,7 +9015,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -9046,7 +9046,7 @@
               }
             },
             {
-              "name": "Chọn ngăn trống cỡ S trên CANT-A",
+              "name": "Pick a free size S slot on CANT-A",
               "event": [
                 {
                   "listen": "test",
@@ -9096,7 +9096,7 @@
               }
             },
             {
-              "name": "Đặt tủ: PIN",
+              "name": "Book: PIN",
               "event": [
                 {
                   "listen": "test",
@@ -9144,7 +9144,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt vừa đặt",
+              "name": "My locker: the booking just made",
               "event": [
                 {
                   "listen": "test",
@@ -9187,7 +9187,7 @@
               }
             },
             {
-              "name": "Hủy ngay (trong 5 phút)",
+              "name": "Cancel at once (within 5 minutes)",
               "event": [
                 {
                   "listen": "test",
@@ -9195,7 +9195,7 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));",
-                      "pm.test('flash: refunded', () => pm.expect(pm.response.text()).to.include('Đã hủy lượt đặt. Đã hoàn'));"
+                      "pm.test('flash: refunded', () => pm.expect(pm.response.text()).to.include('Booking cancelled.'));"
                     ]
                   }
                 }
@@ -9228,7 +9228,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: hoàn 100%",
+              "name": "My locker: 100% refunded",
               "event": [
                 {
                   "listen": "test",
@@ -9259,7 +9259,7 @@
               }
             },
             {
-              "name": "Sơ đồ: ngăn AVAILABLE",
+              "name": "Map: slot AVAILABLE",
               "event": [
                 {
                   "listen": "test",
@@ -9297,7 +9297,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -9324,7 +9324,7 @@
               }
             },
             {
-              "name": "Đăng nhập v3late",
+              "name": "Sign in v3late",
               "event": [
                 {
                   "listen": "test",
@@ -9364,7 +9364,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -9395,7 +9395,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đặt 6 phút trước (test_setup.sql)",
+              "name": "My locker: booking made 6 minutes ago (test_setup.sql)",
               "event": [
                 {
                   "listen": "test",
@@ -9443,7 +9443,7 @@
               }
             },
             {
-              "name": "Hủy với số hoàn đủ đã cũ -> lỗi 50052",
+              "name": "Cancel with a stale full refund -> error 50052",
               "event": [
                 {
                   "listen": "test",
@@ -9451,7 +9451,7 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));",
-                      "pm.test('flash shows the 50052 text', () => pm.expect(pm.response.text()).to.include('Thời gian hủy được hoàn đủ vừa hết'));"
+                      "pm.test('flash shows the 50052 text', () => pm.expect(pm.response.text()).to.include('The full-refund cancel time just ended'));"
                     ]
                   }
                 }
@@ -9489,7 +9489,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt vẫn giữ, chưa hoàn",
+              "name": "My locker: booking kept, nothing refunded",
               "event": [
                 {
                   "listen": "test",
@@ -9519,7 +9519,7 @@
               }
             },
             {
-              "name": "Hủy sau 5 phút -> hoàn 50%",
+              "name": "Cancel after 5 minutes -> 50% refund",
               "event": [
                 {
                   "listen": "test",
@@ -9527,7 +9527,7 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));",
-                      "pm.test('flash: part refunded', () => pm.expect(pm.response.text()).to.include('Đã hủy lượt đặt. Đã hoàn'));"
+                      "pm.test('flash: part refunded', () => pm.expect(pm.response.text()).to.include('Booking cancelled.'));"
                     ]
                   }
                 }
@@ -9565,7 +9565,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: hoàn 50%",
+              "name": "My locker: 50% refunded",
               "event": [
                 {
                   "listen": "test",
@@ -9598,8 +9598,8 @@
           ]
         },
         {
-          "name": "14. Đặt khi số dư dưới mức đệm 10.000 đ (50046)",
-          "description": "v3poor: 12.000 đ (test_setup.sql). Giá S 2 giờ 5.000 đ, sau khi đặt còn 7.000 đ < 10.000 đ.",
+          "name": "14. Booking when the balance falls under the 10,000 VND buffer (50046)",
+          "description": "v3poor: 12,000 VND (test_setup.sql). Size S, 2 hours costs 5,000 VND, after booking 7,000 VND < 10,000 VND remain.",
           "item": [
             {
               "name": "Heartbeat",
@@ -9649,7 +9649,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -9676,7 +9676,7 @@
               }
             },
             {
-              "name": "Đăng nhập v3poor",
+              "name": "Sign in v3poor",
               "event": [
                 {
                   "listen": "test",
@@ -9716,7 +9716,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -9747,7 +9747,7 @@
               }
             },
             {
-              "name": "Chọn ngăn trống cỡ S trên CANT-A",
+              "name": "Pick a free size S slot on CANT-A",
               "event": [
                 {
                   "listen": "test",
@@ -9797,7 +9797,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: số dư 12.000 đ",
+              "name": "My locker: balance 12,000 VND",
               "event": [
                 {
                   "listen": "test",
@@ -9831,7 +9831,7 @@
               }
             },
             {
-              "name": "Đặt tủ: PIN -> lỗi 50046",
+              "name": "Book: PIN -> error 50046",
               "event": [
                 {
                   "listen": "test",
@@ -9839,7 +9839,7 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200 after redirect', () => pm.response.to.have.status(200));",
-                      "pm.test('flash shows the 50046 text', () => pm.expect(pm.response.text()).to.include('Sau khi đặt, ví phải còn ít nhất 10.000 đ'));"
+                      "pm.test('flash shows the 50046 text', () => pm.expect(pm.response.text()).to.include('After booking, at least 10,000 VND must stay in your wallet'));"
                     ]
                   }
                 }
@@ -9880,7 +9880,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: không có lượt, không trừ tiền",
+              "name": "My locker: no booking, nothing charged",
               "event": [
                 {
                   "listen": "test",
@@ -9909,7 +9909,7 @@
               }
             },
             {
-              "name": "Sơ đồ: ngăn AVAILABLE",
+              "name": "Map: slot AVAILABLE",
               "event": [
                 {
                   "listen": "test",
@@ -9949,11 +9949,11 @@
           ]
         },
         {
-          "name": "15. Chuyển xử lý sau 48 giờ: escalated, cảnh báo OVERDUE_ESCALATED, audit OVERDUE_ESCALATE",
-          "description": "sql/test_setup.sql: v3esc có lượt ACTIVE quá hạn 49 giờ. LockerMonitor (15 giây) khóa, thu phụ phí, gọi Deposit_Escalate.",
+          "name": "15. Escalated after 48 hours: escalated, alert OVERDUE_ESCALATED, audit OVERDUE_ESCALATE",
+          "description": "sql/test_setup.sql: v3esc has an ACTIVE booking 49 hours overdue. LockerMonitor (15 seconds) locks it, charges the late fee, calls Deposit_Escalate.",
           "item": [
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -9980,7 +9980,7 @@
               }
             },
             {
-              "name": "Đăng nhập v3esc",
+              "name": "Sign in v3esc",
               "event": [
                 {
                   "listen": "test",
@@ -10020,7 +10020,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: phiên đăng nhập",
+              "name": "My locker: signed-in session",
               "event": [
                 {
                   "listen": "test",
@@ -10051,7 +10051,7 @@
               }
             },
             {
-              "name": "Tủ của tôi: lượt đã chuyển xử lý (chờ LockerMonitor)",
+              "name": "My locker: booking escalated (waits for LockerMonitor)",
               "event": [
                 {
                   "listen": "prerequest",
@@ -10110,7 +10110,7 @@
               }
             },
             {
-              "name": "Đăng xuất",
+              "name": "Sign out",
               "event": [
                 {
                   "listen": "test",
@@ -10137,7 +10137,7 @@
               }
             },
             {
-              "name": "Đăng nhập nhân viên (admin)",
+              "name": "Staff sign in (admin)",
               "event": [
                 {
                   "listen": "test",
@@ -10177,7 +10177,7 @@
               }
             },
             {
-              "name": "Cảnh báo: danh sách OVERDUE_ESCALATED đang mở",
+              "name": "Alerts: open OVERDUE_ESCALATED list",
               "event": [
                 {
                   "listen": "test",
@@ -10217,7 +10217,7 @@
               }
             },
             {
-              "name": "Cảnh báo: chi tiết có lượt, người dùng, số nợ",
+              "name": "Alerts: detail with booking, user, debt",
               "event": [
                 {
                   "listen": "test",
@@ -10256,7 +10256,7 @@
               }
             },
             {
-              "name": "Nhật ký: OVERDUE_ESCALATE của lượt này",
+              "name": "Audit log: OVERDUE_ESCALATE of this booking",
               "event": [
                 {
                   "listen": "test",

@@ -34,23 +34,23 @@ public class AuthTextTest {
     @Test
     public void chooseAsksForAOrB() {
         String oled = AuthText.oled(row("CHOOSE", null));
-        assertEquals(oled, "A: Mo tu  * huy\nB: Tra tu A01");
+        assertEquals(oled, "A: Open * cancel\nB: Checkout A01");
         assertFitsLcd(oled);
-        assertTrue(AuthText.phone(row("CHOOSE", null)).contains("Trả tủ"));
+        assertTrue(AuthText.phone(row("CHOOSE", null)).contains("Check out"));
     }
 
     @Test
     public void accessKeepsTheRental() {
         String oled = AuthText.oled(row("UNLOCK", "ACCESS"));
-        assertEquals(oled, "Moi mo tu\nNgan A01");
+        assertEquals(oled, "Open the door\nSlot A01");
         assertFitsLcd(oled);
-        assertTrue(AuthText.phone(row("UNLOCK", "ACCESS")).contains("vẫn là của bạn"));
+        assertTrue(AuthText.phone(row("UNLOCK", "ACCESS")).contains("is still yours"));
     }
 
     @Test
     public void checkInAndPickupUnchanged() {
-        assertEquals(AuthText.oled(row("UNLOCK", "CHECK_IN")), "Moi cat do\nNgan A01");
-        assertEquals(AuthText.oled(row("UNLOCK", "PICKUP")), "Moi lay do\nNgan A01");
-        assertTrue(AuthText.phone(row("UNLOCK", "PICKUP")).contains("lượt gửi sẽ kết thúc"));
+        assertEquals(AuthText.oled(row("UNLOCK", "CHECK_IN")), "Store your items\nSlot A01");
+        assertEquals(AuthText.oled(row("UNLOCK", "PICKUP")), "Take your items\nSlot A01");
+        assertTrue(AuthText.phone(row("UNLOCK", "PICKUP")).contains("the booking will end"));
     }
 }

@@ -94,7 +94,7 @@ public class DepositController extends HttpServlet {
                 long id = Web.longParam(req, "id", 0);
                 Deposit item = dao.findById(id);
                 if (item == null) {
-                    Web.flash(req.getSession(), "Không tìm thấy lượt gửi", true);
+                    Web.flash(req.getSession(), "Booking not found", true);
                     res.sendRedirect("DepositController");
                     return;
                 }
@@ -120,9 +120,9 @@ public class DepositController extends HttpServlet {
                 String reason = dao.delete(id);
                 if (reason == null && old != null) {
                     new AuditDao().append(me.getUserId(), "DELETE", "DEPOSIT", id, "Deposit #" + id);
-                    Web.flash(req.getSession(), "Đã xóa lượt gửi #" + id, false);
+                    Web.flash(req.getSession(), "Booking #" + id + " deleted", false);
                 } else {
-                    Web.flash(req.getSession(), reason == null ? "Không có gì bị xóa" : reason, true);
+                    Web.flash(req.getSession(), reason == null ? "Nothing was deleted" : reason, true);
                 }
                 res.sendRedirect("DepositController");
                 return;
@@ -133,7 +133,7 @@ public class DepositController extends HttpServlet {
                 int slotId = Web.intParam(req, "slotId", 0);
                 int planId = Web.intParam(req, "planId", 0);
                 if (userId <= 0 || slotId <= 0 || planId <= 0) {
-                    req.setAttribute("error", "Cần chọn người dùng, ngăn tủ và gói gửi đồ.");
+                    req.setAttribute("error", "Choose a user, a slot and a storage plan.");
                     Deposit d = new Deposit();
                     d.setUserId(userId);
                     d.setSlotId(slotId);
@@ -153,7 +153,7 @@ public class DepositController extends HttpServlet {
                 try {
                     long newId = dao.insert(d);
                     new AuditDao().append(me.getUserId(), "CREATE", "DEPOSIT", newId, "Walk-in deposit");
-                    Web.flash(req.getSession(), "Đã tạo lượt gửi #" + newId, false);
+                    Web.flash(req.getSession(), "Booking #" + newId + " created", false);
                 } catch (SQLException e) {
                     boolean openBooking = (e.getErrorCode() == 2601 || e.getErrorCode() == 2627)
                             && String.valueOf(e.getMessage()).contains("UX_Deposit_user_open");
@@ -161,7 +161,7 @@ public class DepositController extends HttpServlet {
                         throw e;   // not a business rule: the outer handler turns it into a server error
                     }
                     req.setAttribute("error", openBooking
-                            ? "Người dùng này đang có một lượt gửi chưa kết thúc." : Web.sqlMessage(e));
+                            ? "This user already has a booking that has not ended." : Web.sqlMessage(e));
                     showForm(req, res, d, true);
                     return;
                 }
@@ -171,7 +171,7 @@ public class DepositController extends HttpServlet {
                 String status = Web.trimmed(req, "status");
                 Deposit d = dao.findById(id);
                 if (d == null) {
-                    Web.flash(req.getSession(), "Không tìm thấy lượt gửi", true);
+                    Web.flash(req.getSession(), "Booking not found", true);
                     res.sendRedirect("DepositController");
                     return;
                 }
@@ -188,13 +188,13 @@ public class DepositController extends HttpServlet {
                                 .atZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
                         d.setDueAt(Timestamp.valueOf(java.time.LocalDateTime.ofInstant(due, java.time.ZoneOffset.UTC)));
                     } catch (java.time.DateTimeException e) {
-                        Web.flash(req.getSession(), "Hạn trả không đúng định dạng, ví dụ 2026-10-20 18:00:00.", true);
+                        Web.flash(req.getSession(), "Invalid due time, use the format 2026-10-20 18:00:00.", true);
                         res.sendRedirect("DepositController?action=edit&id=" + id);
                         return;
                     }
                 }
                 if (!DepositDao.STATUSES.contains(status)) {
-                    Web.flash(req.getSession(), "Trạng thái không hợp lệ", true);
+                    Web.flash(req.getSession(), "Invalid status", true);
                     res.sendRedirect("DepositController?action=edit&id=" + id);
                     return;
                 }
@@ -211,10 +211,10 @@ public class DepositController extends HttpServlet {
                 }
                 new AuditDao().append(me.getUserId(), "UPDATE", "DEPOSIT", id,
                         "Status: " + status + (refund > 0 ? ", refund " + refund : ""));
-                Web.flash(req.getSession(), "Đã cập nhật lượt gửi #" + id
-                        + (refund > 0 ? ", hoàn " + AuthText.vnd(refund) + " vào ví người dùng" : ""), false);
+                Web.flash(req.getSession(), "Booking #" + id + " updated"
+                        + (refund > 0 ? ", " + AuthText.vnd(refund) + " refunded to the wallet of the user" : ""), false);
             } else {
-                Web.flash(req.getSession(), "Thao tác không hợp lệ", true);
+                Web.flash(req.getSession(), "Invalid action", true);
             }
             res.sendRedirect("DepositController");
         } catch (SQLException e) {

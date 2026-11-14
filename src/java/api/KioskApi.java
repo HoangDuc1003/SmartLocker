@@ -39,11 +39,11 @@ public class KioskApi extends HttpServlet {
         String pin = ApiJson.text(body, "pin");
         String tap = ApiJson.text(body, "tap");
         if (deviceCode == null || "".equals(intent)) {
-            ApiJson.error(res, 400, "BAD_REQUEST", "Sai dữ liệu.");
+            ApiJson.error(res, 400, "BAD_REQUEST", "Bad request data.");
             return;
         }
         if (!phone && (pin == null || !pin.matches(DeviceAuthApi.PIN_FORMAT))) {
-            ApiJson.error(res, 400, "BAD_REQUEST", "Mật mã gồm 6 chữ số.");
+            ApiJson.error(res, 400, "BAD_REQUEST", "The PIN has 6 digits.");
             return;
         }
         if (phone && tap != null && !tap.matches(KioskController.TAP_FORMAT)) {
@@ -51,14 +51,14 @@ public class KioskApi extends HttpServlet {
         }
         User me = Web.currentUser(req);
         if (phone && me == null) {
-            ApiJson.error(res, 401, "NOT_SIGNED_IN", "Hãy đăng nhập để mở tủ bằng điện thoại.");
+            ApiJson.error(res, 401, "NOT_SIGNED_IN", "Sign in to open the locker with your phone.");
             return;
         }
         try {
             DeviceAuthDao dao = new DeviceAuthDao();
             Map<String, Object> device = dao.findDeviceByCode(deviceCode);
             if (device == null) {
-                ApiJson.error(res, 404, "UNKNOWN_DEVICE", "Không tìm thấy hộp tủ này.");
+                ApiJson.error(res, 404, "UNKNOWN_DEVICE", "This locker box was not found.");
                 return;
             }
             int deviceId = (Integer) device.get("device_id");
@@ -70,7 +70,7 @@ public class KioskApi extends HttpServlet {
             ApiJson.write(res, 200, reply);
         } catch (SQLException e) {
             log("Kiosk unlock failed for " + deviceCode, e);
-            ApiJson.error(res, 500, "SERVER_ERROR", "Lỗi máy chủ, hãy thử lại.");
+            ApiJson.error(res, 500, "SERVER_ERROR", "Server error, please try again.");
         }
     }
 }

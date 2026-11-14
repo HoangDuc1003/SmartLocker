@@ -1,9 +1,9 @@
 /* Phone page /k/{device_code}: post the 6-digit PIN, or (v7) the phone tap of the signed-in owner, to /api/kiosk/unlock
    and show the answer.
    retry_after_sec > 0 locks the PIN input with a countdown (the box refuses every PIN until then); the tap is never locked.
-   v6: every try goes with intent ASK; a rented slot answers CHOOSE and the page offers "Mở tủ" (OPEN, the booking
-   stays) or "Trả tủ" (CHECKOUT), then posts the same body again with that intent.
-   v7: "Mở tủ của tôi" posts {method: PHONE, tap: <token of the NFC tag>}; one tap opens once, so after an UNLOCK or a
+   v6: every try goes with intent ASK; a rented slot answers CHOOSE and the page offers "Open" (OPEN, the booking
+   stays) or "Check out" (CHECKOUT), then posts the same body again with that intent.
+   v7: "Open my locker" posts {method: PHONE, tap: <token of the NFC tag>}; one tap opens once, so after an UNLOCK or a
    TAP_EXPIRED the button goes away and the page asks for a new tap. */
 (function () {
   'use strict';
@@ -76,7 +76,7 @@
     choiceTimer = setTimeout(function () {
       closeChoice();
       setEnabled(pinFree());
-      show('Đã hết thời gian chọn. Hãy thử lại.', '');
+      show('Time to choose is over. Please try again.', '');
     }, CHOICE_MS);
     choiceButtons[0].focus();
   }
@@ -112,21 +112,21 @@
       lockUntil = 0;
       remember(0);
       setEnabled(true);
-      button.textContent = 'Mở tủ';
-      show('Đã hết thời gian khóa. Bạn có thể nhập lại mật mã.', '');
+      button.textContent = 'Open';
+      show('The lockout is over. You can enter the PIN again.', '');
       input.focus();
       return;
     }
     var m = Math.floor(left / 60);
     var s = left % 60;
-    button.textContent = 'Thử lại sau ' + m + ':' + (s < 10 ? '0' : '') + s;
+    button.textContent = 'Try again in ' + m + ':' + (s < 10 ? '0' : '') + s;
   }
 
   function lock(seconds, message) {
     lockUntil = Date.now() + seconds * 1000;
     remember(lockUntil);
     setEnabled(false);
-    show(message || 'Ô mật mã đang tạm khóa.', 'wait');
+    show(message || 'PIN entry is temporarily locked.', 'wait');
     if (!timer) {
       timer = setInterval(tick, 1000);
     }
@@ -137,7 +137,7 @@
   function pinReady() {
     if (pinFree()) {
       setEnabled(true);
-      button.textContent = 'Mở tủ';
+      button.textContent = 'Open';
     }
   }
 
@@ -157,7 +157,7 @@
       body: JSON.stringify(payload)
     }).then(function (res) {
       return res.json().catch(function () {
-        return { result: 'ERROR', message: 'Lỗi máy chủ, hãy thử lại.' };
+        return { result: 'ERROR', message: 'Server error, please try again.' };
       });
     }).then(function (data) {
       busy = false;
@@ -173,7 +173,7 @@
     var wait = Number(data.retry_after_sec) || 0;
     var isTap = body.method === 'PHONE';
     if (data.result === 'CHOOSE') {
-      show(data.message || 'Chọn Mở tủ hoặc Trả tủ.', '');
+      show(data.message || 'Choose Open or Check out.', '');
       openChoice(body);
       return;
     }
@@ -182,17 +182,17 @@
     var demo = tapButton && tapButton.hasAttribute('data-demo');
     if (isTap && !demo && (data.result === 'UNLOCK' || data.reason === 'TAP_EXPIRED')) {
       endTap(data.result === 'UNLOCK'
-        ? 'Lần chạm này đã được dùng. Muốn mở lại, hãy chạm điện thoại vào hộp lần nữa.'
-        : 'Chạm điện thoại vào đầu đọc NFC trên hộp để có liên kết mới.');
+        ? 'This tap has been used. To open again, tap your phone on the box once more.'
+        : 'Tap your phone on the NFC reader of the box to get a new link.');
     }
     if (data.result === 'UNLOCK') {
       pinReady();
-      show(data.message || 'Tủ đang mở.', 'ok');
+      show(data.message || 'The locker is open.', 'ok');
     } else if (wait > 0 && !isTap) {
       lock(wait, data.message);
     } else {
       pinReady();
-      show(data.message || 'Không mở được tủ.', 'bad');
+      show(data.message || 'Could not open the locker.', 'bad');
       if (!isTap && pinFree()) {
         input.focus();
       }
@@ -204,9 +204,9 @@
     pinReady();
     if (tapButton) {
       tapButton.disabled = false;
-      tapButton.textContent = 'Mở tủ của tôi';
+      tapButton.textContent = 'Open my locker';
     }
-    show('Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.', 'bad');
+    show('Could not reach the server. Check the network and try again.', 'bad');
   }
 
   input.addEventListener('input', function () {
@@ -223,15 +223,15 @@
     }
     var pin = input.value.replace(/\D/g, '');
     if (!/^\d{6}$/.test(pin)) {
-      show('Mật mã gồm đúng 6 chữ số.', 'bad');
+      show('The PIN has exactly 6 digits.', 'bad');
       input.focus();
       return;
     }
     setEnabled(false);
-    button.textContent = 'Đang kiểm tra…';
+    button.textContent = 'Checking…';
     send({ pin: pin }, 'ASK').then(function (data) {
       input.value = '';
-      button.textContent = 'Mở tủ';
+      button.textContent = 'Open';
       handle(data, { pin: pin });
     }).catch(offline);
   });
@@ -243,11 +243,11 @@
       }
       var body = { method: 'PHONE', tap: tapButton.getAttribute('data-tap') || null };
       tapButton.disabled = true;
-      tapButton.textContent = 'Đang kiểm tra…';
+      tapButton.textContent = 'Checking…';
       send(body, 'ASK').then(function (data) {
         if (tapButton) {
           tapButton.disabled = false;
-          tapButton.textContent = 'Mở tủ của tôi';
+          tapButton.textContent = 'Open my locker';
         }
         handle(data, body);
       }).catch(offline);
@@ -262,7 +262,7 @@
       var label = b.textContent;
       var body = chosen;
       setChoiceEnabled(false);
-      b.textContent = 'Đang gửi…';
+      b.textContent = 'Sending…';
       send(body, b.getAttribute('data-intent')).then(function (data) {
         b.textContent = label;
         handle(data, body);
@@ -283,7 +283,7 @@
   try {
     var saved = Number(sessionStorage.getItem(KEY)) || 0;
     if (saved > Date.now()) {
-      lock(Math.ceil((saved - Date.now()) / 1000), 'Ô mật mã đang tạm khóa.');
+      lock(Math.ceil((saved - Date.now()) / 1000), 'PIN entry is temporarily locked.');
     }
   } catch (e) { /* no storage */ }
 })();

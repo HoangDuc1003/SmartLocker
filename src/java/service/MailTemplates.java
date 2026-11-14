@@ -58,7 +58,7 @@ public final class MailTemplates {
         }
         Map<String, String> vars = clean(values);
         if (vars.get("name").isEmpty()) {
-            vars.put("name", "bạn");   // a user without a name still gets "Chào bạn,"
+            vars.put("name", "there");   // a user without a name still gets "Hello there,"
         }
         String text = read(new File(dir, key + ".txt"));
         String footer = new File(dir, "_footer.txt").isFile() ? read(new File(dir, "_footer.txt")) : "";
@@ -127,18 +127,18 @@ public final class MailTemplates {
 
     /* ---------- helpers for the values every sender needs ---------- */
 
-    /** 14700 -> "14.700 đ" */
+    /** 14700 -> "14,700 VND" */
     public static String money(long amount) {
         return AuthText.vnd(amount);
     }
 
-    /** "2026-10-23 09:00:00" (UTC, as stored) -> "16:00 23/10/2026" (Vietnam time). */
+    /** "2026-10-23 09:00:00" (UTC, as stored) -> "23/10/2026 16:00" (Vietnam time). */
     public static String time(String utc) {
         try {
             SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             in.setTimeZone(TimeZone.getTimeZone("UTC"));
             Date d = in.parse(utc);
-            SimpleDateFormat out = new SimpleDateFormat("HH:mm dd/MM/yyyy");
+            SimpleDateFormat out = new SimpleDateFormat("dd/MM/yyyy HH:mm");
             out.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
             return out.format(d);
         } catch (ParseException | NullPointerException e) {
@@ -155,13 +155,13 @@ public final class MailTemplates {
 
     private static Map<String, String> sample(MailService mail) {
         Map<String, String> v = new LinkedHashMap<>();
-        v.put("name", "Nguyễn Văn An");
+        v.put("name", "Nguyễn Văn An");   // seed names and places stay as they are in the database
         v.put("username", "student1");
         v.put("slot_code", "B01");
         v.put("bank_code", "CANT-B");
         v.put("area_name", "Căng tin KTX khu A");
-        v.put("plan_name", "Trọn ngày");
-        v.put("open_method", "Mật mã 6 số");
+        v.put("plan_name", "Day pass");
+        v.put("open_method", "6-digit PIN");
         v.put("amount", money(35000));
         v.put("balance", money(-12500));
         v.put("due_at", time("2026-10-23 09:00:00"));
@@ -175,7 +175,7 @@ public final class MailTemplates {
         v.put("escalate_hours", "48");
         v.put("code", "482915");
         v.put("expires_min", "10");
-        v.put("reason", "Không tìm thấy giao dịch khớp với mã chuyển khoản");
+        v.put("reason", "No transfer matched the transfer code");
         v.put("my_locker_url", link(mail, "/MyLockerController"));
         v.put("map_url", link(mail, "/LockerMapController"));
         v.put("topup_url", link(mail, "/TopupController"));

@@ -72,13 +72,13 @@
             document.body.appendChild(dlg);
         }
         var back = document.activeElement;
-        dlg.querySelector('#dlgTitle').textContent = opts.title || 'Xác nhận';
+        dlg.querySelector('#dlgTitle').textContent = opts.title || 'Confirm';
         dlg.querySelector('#dlgBody').innerHTML = opts.html || ('<p>' + esc(opts.text || '') + '</p>');
         var ok = dlg.querySelector('[data-dlg-ok]');
-        ok.textContent = opts.okText || 'Đồng ý';
+        ok.textContent = opts.okText || 'OK';
         ok.className = (opts.danger ? 'btn--danger' : '') + (glass ? ' btn--pill lg-hover' : '');
         var cancel = dlg.querySelector('[data-dlg-cancel]');
-        cancel.textContent = opts.cancelText || 'Quay lại';
+        cancel.textContent = opts.cancelText || 'Back';
         cancel.className = 'ghost' + (glass ? ' btn--pill lg-hover' : '');
         dlg.returnValue = '';
         return new Promise(function (resolve) {
@@ -106,9 +106,9 @@
         if (form.getAttribute('data-confirmed') === '1') { form.removeAttribute('data-confirmed'); return; }
         e.preventDefault();
         confirmDialog({
-            title: src.getAttribute('data-confirm-title') || 'Xác nhận',
+            title: src.getAttribute('data-confirm-title') || 'Confirm',
             text: src.getAttribute('data-confirm'),
-            okText: src.getAttribute('data-confirm-ok') || 'Đồng ý',
+            okText: src.getAttribute('data-confirm-ok') || 'OK',
             danger: src.hasAttribute('data-confirm-danger')
         }).then(function (yes) {
             if (!yes) return;

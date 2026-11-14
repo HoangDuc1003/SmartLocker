@@ -147,7 +147,7 @@ public class LockerMapDao {
             // the booking form needs the plans, priced for every size; every open method costs the same
             java.util.List<AppConfigDao.SlotSize> sizes = new AppConfigDao().sizes();
             JsonArray plans = new JsonArray();
-            long dayPrice = 0;                                                // the day pass, base of "Tự chọn"
+            long dayPrice = 0;                                                // the day pass, base of "Custom"
             try (PreparedStatement ps = conn.prepareStatement(
                     "SELECT plan_id, plan_name, duration_min, price FROM StoragePlan WHERE is_active = 1 ORDER BY duration_min, plan_id");
                  ResultSet rs = ps.executeQuery()) {
@@ -283,7 +283,7 @@ public class LockerMapDao {
         return root;
     }
     /**
-     * "Tự chọn" price tables for the booking card, from util.Pricing (which mirrors dbo.fn_CustomPrice):
+     * "Custom" price tables for the booking card, from util.Pricing (which mirrors dbo.fn_CustomPrice):
      * {"max_hours":23,"max_days":7,"hours":{"S":[1 h .. 23 h]},"days":{"S":[1 d .. 7 d]},"hour_rate":{"S":2500},
      * "day_price":{"S":25000}}. Display only: Deposit_Reserve prices the booking again. Null without a day pass.
      */

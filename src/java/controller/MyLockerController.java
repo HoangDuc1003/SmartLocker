@@ -21,8 +21,8 @@ import util.Pricing;
 import util.Web;
 
 /**
- * v2 "Tủ của tôi" (spec 5.2): the open booking with its PIN or enroll code, the cards, the fingerprints and
- * the history. It replaces "Lượt đặt của tôi" (BookingController GET) and "Thẻ của tôi" (MyCardController GET).
+ * v2 "My locker" (spec 5.2): the open booking with its PIN or enroll code, the cards, the fingerprints and
+ * the history. It replaces "My bookings" (BookingController GET) and "My cards" (MyCardController GET).
  * Cancel and extend post to BookingController, report lost to MyCardController; both come back here.
  */
 @WebServlet(name = "MyLockerController", urlPatterns = {"/MyLockerController"})
@@ -97,31 +97,31 @@ public class MyLockerController extends HttpServlet {
             }
             if ("newEnrollCode".equals(action)) {
                 String code = new DepositDao().newEnrollCode(Web.longParam(req, "depositId", 0), me.getUserId());
-                Web.flash(req.getSession(), "Đã tạo mã đăng ký mới " + code + ", có hạn 10 phút.", false);
+                Web.flash(req.getSession(), "New enrollment code " + code + " created, valid for 10 minutes.", false);
             } else if ("deleteFingerprint".equals(action)) {
                 new DeviceAuthDao().deleteFingerprint(Web.intParam(req, "fpId", 0), me.getUserId());
-                Web.flash(req.getSession(), "Đã xóa vân tay. Hộp sẽ xóa mẫu trong lần kết nối tới.", false);
+                Web.flash(req.getSession(), "Fingerprint deleted. The box deletes the template the next time it connects.", false);
                 anchor = "#fingerprints";
             } else if ("setEmail".equals(action)) {
                 // v3: the address for the due reminders, saved as typed (the user's choice); empty turns them off
                 String email = Web.trimmed(req, "email");
                 anchor = "#reminder";
                 if (!email.isEmpty() && !Web.isEmail(email)) {
-                    Web.flash(req.getSession(), "Email không hợp lệ", true);
+                    Web.flash(req.getSession(), "Invalid e-mail address", true);
                 } else {
                     try {
                         new UserDao().setEmail(me.getUserId(), email);
-                        Web.flash(req.getSession(), email.isEmpty() ? "Đã tắt email nhắc hạn."
-                                : "Đã lưu email nhận nhắc hạn: " + email, false);
+                        Web.flash(req.getSession(), email.isEmpty() ? "Due reminders by e-mail are turned off."
+                                : "Due reminders will be sent to " + email, false);
                     } catch (SQLException dup) {
                         if (dup.getErrorCode() != 2601 && dup.getErrorCode() != 2627) {
                             throw dup;
                         }
-                        Web.flash(req.getSession(), "Email này đã được một tài khoản khác dùng", true);
+                        Web.flash(req.getSession(), "This e-mail address is already used by another account", true);
                     }
                 }
             } else {
-                Web.flash(req.getSession(), "Thao tác không hợp lệ", true);
+                Web.flash(req.getSession(), "Invalid action", true);
             }
         } catch (SQLException e) {
             if (e.getErrorCode() >= 50000) {                 // our own THROW: the text is written for the user

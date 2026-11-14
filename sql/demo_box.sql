@@ -22,22 +22,22 @@ INSERT INTO @list SELECT DISTINCT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@banks, 
 
 DECLARE @dev INT = (SELECT device_id FROM dbo.Device WHERE device_code = @device_code);
 IF @dev IS NULL
-    THROW 50901, N'Không tìm thấy thiết bị @device_code.', 1;
+    THROW 50901, N'Device @device_code not found.', 1;
 IF NOT EXISTS (SELECT 1 FROM @list)
-    THROW 50902, N'@banks rỗng: hộp phải quản lý ít nhất một dãy tủ.', 1;
+    THROW 50902, N'@banks is empty: the box must manage at least one locker bank.', 1;
 IF EXISTS (SELECT 1 FROM @list l WHERE NOT EXISTS (SELECT 1 FROM dbo.LockerBank b WHERE b.bank_code = l.bank_code))
-    THROW 50903, N'Có mã dãy tủ trong @banks không tồn tại.', 1;
+    THROW 50903, N'A bank code in @banks does not exist.', 1;
 -- Deposit_CheckIn / Deposit_Complete find the booking by device + slot code, so the codes must not repeat
 IF EXISTS (SELECT s.slot_code FROM dbo.LockerSlot s JOIN dbo.LockerBank b ON b.bank_id = s.bank_id
            JOIN @list l ON l.bank_code = b.bank_code GROUP BY s.slot_code HAVING COUNT(*) > 1)
-    THROW 50904, N'Các dãy tủ trong @banks có mã ngăn trùng nhau (ví dụ A01 ở hai dãy); chọn các dãy có mã ngăn khác nhau.', 1;
+    THROW 50904, N'The banks in @banks share slot codes (e.g. A01 in two banks); pick banks whose slot codes differ.', 1;
 
 -- a bank the box gives up keeps its open bookings, but its fingers and phone commands belong to this device
 IF EXISTS (SELECT 1 FROM dbo.Deposit d JOIN dbo.LockerSlot s ON s.locker_slot_id = d.slot_id
            JOIN dbo.LockerBank b ON b.bank_id = s.bank_id
            WHERE b.device_id = @dev AND b.bank_code NOT IN (SELECT bank_code FROM @list)
              AND d.status IN (N'RESERVED', N'ACTIVE'))
-    THROW 50906, N'Dãy tủ mà hộp sắp bỏ ra còn lượt gửi RESERVED/ACTIVE; chờ các lượt đó kết thúc rồi chạy lại.', 1;
+    THROW 50906, N'A bank the box gives up still has RESERVED/ACTIVE bookings; wait until they end, then run again.', 1;
 
 DECLARE @physical_id INT = NULL;
 IF @physical_bank IS NOT NULL OR @physical_slot IS NOT NULL
@@ -47,7 +47,7 @@ BEGIN
     JOIN @list l ON l.bank_code = b.bank_code
     WHERE b.bank_code = @physical_bank AND s.slot_code = @physical_slot;
     IF @physical_id IS NULL
-        THROW 50905, N'Ngăn vật lý không thuộc các dãy trong @banks.', 1;
+        THROW 50905, N'The physical slot is not in the banks of @banks.', 1;
 END;
 
 DECLARE @sys INT = (SELECT user_id FROM dbo.Users WHERE username = N'system');

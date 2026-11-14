@@ -1,4 +1,4 @@
-/* "Tủ của tôi" and "Nạp tiền" as glass popups over the users' map (WEB-INF/views/lockerMap.jsp, <dialog id="glassPanel">).
+/* "My locker" and "Top up" as glass popups over the users' map (WEB-INF/views/lockerMap.jsp, <dialog id="glassPanel">).
    The content is the page itself drawn with ?panel=1 (myLocker.jsp, topup.jsp without the shell). A link to one of the
    two pages anywhere on the map opens the popup instead; a form inside it is posted with fetch and the content is
    drawn again with the flash of the controller. ?panel=mylocker|topup (&id=) on the map opens one at load, which is
@@ -103,7 +103,7 @@
       dlg.removeAttribute('data-closing');
       motion.pop(dlg);
     } else if (!dlg.open) {
-      body.innerHTML = '<p class="glass-dlg__loading">Đang tải…</p>';
+      body.innerHTML = '<p class="glass-dlg__loading">Loading…</p>';
       dlg.show();          // not modal: the tab bar stays usable to switch page or go back to the map
       motion.pop(dlg);
     }
@@ -116,7 +116,7 @@
       .catch(function () {
         if (ticket === loading && dlg.open) {
           body.removeAttribute('aria-busy');
-          body.innerHTML = '<p class="flash bad" role="alert">Không tải được nội dung. Kiểm tra kết nối rồi thử lại.</p>';
+          body.innerHTML = '<p class="flash bad" role="alert">Could not load the content. Check your connection and try again.</p>';
         }
       });
   }

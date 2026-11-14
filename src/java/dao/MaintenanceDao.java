@@ -62,7 +62,8 @@ public class MaintenanceDao {
                 while (rs.next()) {
                     Map<String, Object> map = new LinkedHashMap<>();
                     map.put("ticket_id", rs.getInt("ticket_id"));
-                    map.put("alert_id", rs.getInt("alert_id"));
+                    int alertId = rs.getInt("alert_id");
+                    map.put("alert_id", rs.wasNull() ? null : alertId);   // a ticket without an alert shows no link
                     map.put("device_code", rs.getString("device_code"));
                     map.put("assigned_to_name", rs.getString("assigned_to_name"));
                     map.put("note", rs.getString("note"));

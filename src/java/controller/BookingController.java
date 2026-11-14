@@ -16,7 +16,7 @@ import util.Web;
 /**
  * Case 4. The Locker User reserves, cancels and extends a booking.
  * The forms are in the slot panel of the locker map, so every POST goes back to the map.
- * GET (the old "My bookings" page) redirects to "Tủ của tôi" (MyLockerController, spec v2 Q17).
+ * GET (the old "My bookings" page) redirects to "My locker" (MyLockerController, spec v2 Q17).
  */
 @WebServlet(name = "BookingController", urlPatterns = {"/BookingController"})
 public class BookingController extends HttpServlet {
@@ -40,9 +40,9 @@ public class BookingController extends HttpServlet {
                     method = "PIN";
                 }
                 if (!DepositDao.OPEN_METHODS.contains(method)) {
-                    Web.flash(req.getSession(), "Cách mở tủ không hợp lệ", true);
+                    Web.flash(req.getSession(), "Invalid open method", true);
                 } else {
-                    // "Tự chọn": customMin (whole hours or days) replaces planId; the procedure prices it, never the page
+                    // "Custom": customMin (whole hours or days) replaces planId; the procedure prices it, never the page
                     int customMin = Web.intParam(req, "customMin", 0);
                     long id = dao.reserve(me.getUserId(), Web.intParam(req, "slotId", 0), Web.intParam(req, "planId", 0), method,
                             customMin > 0 ? Integer.valueOf(customMin) : null);
@@ -56,7 +56,7 @@ public class BookingController extends HttpServlet {
                 long before = users.getBalance(me.getUserId());
                 dao.cancel(Web.longParam(req, "depositId", 0), me.getUserId(), expected >= 0 ? Long.valueOf(expected) : null);
                 long refund = users.getBalance(me.getUserId()) - before;
-                Web.flash(req.getSession(), "Đã hủy lượt đặt. Đã hoàn " + service.AuthText.vnd(refund) + " vào ví.", false);
+                Web.flash(req.getSession(), "Booking cancelled. " + service.AuthText.vnd(refund) + " refunded to your wallet.", false);
             } else if ("extend".equals(action)) {
                 // v3: an extension is paid; the flash says what was taken (the procedure computes the same amount)
                 long depositId = Web.longParam(req, "depositId", 0);
@@ -64,13 +64,13 @@ public class BookingController extends HttpServlet {
                 model.Deposit before = dao.findById(depositId);
                 dao.extend(depositId, minutes, me.getUserId());
                 model.Deposit after = dao.findById(depositId);
-                String text = "Đã gia hạn thêm " + minutes + " phút.";
+                String text = "Extended by " + minutes + " min.";
                 if (before != null && after != null) {
-                    text += " Đã trừ " + service.AuthText.vnd(after.getPaidAmount() - before.getPaidAmount()) + " vào ví.";
+                    text += " " + service.AuthText.vnd(after.getPaidAmount() - before.getPaidAmount()) + " was taken from your wallet.";
                 }
                 Web.flash(req.getSession(), text, false);
             } else {
-                Web.flash(req.getSession(), "Thao tác không hợp lệ", true);
+                Web.flash(req.getSession(), "Invalid action", true);
             }
         } catch (SQLException e) {
             if (e.getErrorCode() >= 50000) {                 // our own THROW: the text is written for the user
@@ -82,24 +82,24 @@ public class BookingController extends HttpServlet {
         res.sendRedirect(backUrl(req));
     }
 
-    /** What to do next at the box, by open method. The PIN itself stays on "Tủ của tôi", not in the flash. */
+    /** What to do next at the box, by open method. The PIN itself stays on "My locker", not in the flash. */
     private static String reservedMessage(model.Deposit d, int hold) {
-        String box = d == null || d.getDeviceCode() == null ? "hộp tủ" : "hộp " + d.getDeviceCode();
+        String box = d == null || d.getDeviceCode() == null ? "the locker box" : "box " + d.getDeviceCode();
         if (d != null && d.getEnrollCode() != null) {
-            return "Đã giữ ngăn. Hãy tới " + box + " đăng ký "
-                    + ("CARD".equals(d.getOpenMethod()) ? "thẻ từ" : "vân tay")
-                    + " bằng mã " + d.getEnrollCode() + " (hạn 10 phút), rồi mở tủ trong vòng " + hold + " phút.";
+            return "Slot held. Go to " + box + " and enroll your "
+                    + ("CARD".equals(d.getOpenMethod()) ? "card" : "fingerprint")
+                    + " with code " + d.getEnrollCode() + " (valid 10 min), then open the locker within " + hold + " min.";
         }
         if (d != null && "PHONE".equals(d.getOpenMethod())) {
-            return "Đã giữ ngăn. Hãy chạm điện thoại vào đầu đọc NFC của " + box + " trong vòng " + hold + " phút.";
+            return "Slot held. Tap your phone on the NFC reader of " + box + " within " + hold + " min.";
         }
         if (d != null && "CARD".equals(d.getOpenMethod())) {
-            return "Đã giữ ngăn. Hãy quẹt thẻ tại " + box + " trong vòng " + hold + " phút.";
+            return "Slot held. Scan your card at " + box + " within " + hold + " min.";
         }
         if (d != null && "FINGERPRINT".equals(d.getOpenMethod())) {
-            return "Đã giữ ngăn. Hãy đặt vân tay tại " + box + " trong vòng " + hold + " phút.";
+            return "Slot held. Place your finger on the sensor of " + box + " within " + hold + " min.";
         }
-        return "Đã giữ ngăn. Xem mật mã ở mục Tủ của tôi và mở tủ tại " + box + " trong vòng " + hold + " phút.";
+        return "Slot held. See your PIN in My locker and open the locker at " + box + " within " + hold + " min.";
     }
 
     private static String backUrl(HttpServletRequest req) throws UnsupportedEncodingException {

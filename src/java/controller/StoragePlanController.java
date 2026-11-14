@@ -70,16 +70,16 @@ public class StoragePlanController extends HttpServlet {
 
     private String validate(StoragePlan p) {
         if (p.getPlanName() == null || p.getPlanName().length() < 1 || p.getPlanName().length() > 40) {
-            return "Tên gói dài từ 1 đến 40 ký tự";
+            return "The plan name must be 1 to 40 characters long";
         }
         if (p.getDurationMin() < 1 || p.getDurationMin() > 1440) {
-            return "Thời lượng phải từ 1 đến 1440 phút";
+            return "The duration must be 1 to 1440 minutes";
         }
         if (p.getGraceMin() < 0 || p.getGraceMin() > 120) {
-            return "Thời gian ân hạn phải từ 0 đến 120 phút";
+            return "The grace period must be 0 to 120 minutes";
         }
         if (p.getPrice() < 0) {
-            return "Giá không được âm";
+            return "The price cannot be negative";
         }
         return null;
     }
@@ -99,7 +99,7 @@ public class StoragePlanController extends HttpServlet {
                 int id = Web.intParam(req, "id", 0);
                 StoragePlan item = dao.findById(id);
                 if (item == null) {
-                    Web.flash(req.getSession(), "Không tìm thấy gói gửi đồ", true);
+                    Web.flash(req.getSession(), "Storage plan not found", true);
                     res.sendRedirect("StoragePlanController");
                     return;
                 }
@@ -126,9 +126,9 @@ public class StoragePlanController extends HttpServlet {
                 AppConfigDao.clear();   // the hour and late-fee rates come from the shortest plan
                 if (reason == null && old != null) {
                     new AuditDao().append(me.getUserId(), "DELETE", "STORAGEPLAN", id, old.getPlanName());
-                    Web.flash(req.getSession(), "Đã xóa gói " + old.getPlanName(), false);
+                    Web.flash(req.getSession(), "Plan " + old.getPlanName() + " deleted", false);
                 } else {
-                    Web.flash(req.getSession(), reason == null ? "Không có gì bị xóa" : reason, true);
+                    Web.flash(req.getSession(), reason == null ? "Nothing was deleted" : reason, true);
                 }
                 res.sendRedirect("StoragePlanController");
                 return;
@@ -145,11 +145,11 @@ public class StoragePlanController extends HttpServlet {
             if ("create".equals(action)) {
                 int id = dao.insert(p);
                 new AuditDao().append(me.getUserId(), "CREATE", "STORAGEPLAN", id, p.getPlanName());
-                Web.flash(req.getSession(), "Đã tạo gói " + p.getPlanName(), false);
+                Web.flash(req.getSession(), "Plan " + p.getPlanName() + " created", false);
             } else {
                 dao.update(p);
                 new AuditDao().append(me.getUserId(), "UPDATE", "STORAGEPLAN", p.getPlanId(), p.getPlanName());
-                Web.flash(req.getSession(), "Đã lưu gói " + p.getPlanName(), false);
+                Web.flash(req.getSession(), "Plan " + p.getPlanName() + " saved", false);
             }
             AppConfigDao.clear();
             res.sendRedirect("StoragePlanController");

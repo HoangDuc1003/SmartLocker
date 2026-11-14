@@ -12,19 +12,19 @@
   var STATS_API = main.getAttribute('data-stats-api');
   var STATS_MS = 60000;
   var esc = window.SmartLocker.esc;
-  var DAYS = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ nhật'];
-  var DAYS_SHORT = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+  var DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  var DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   var CAT = ['seg-bad', 'seg-warn', 'seg-use', 'seg-ok', 'seg-mute'];   // categorical order for alert types
 
   var snap = null;
   var stats = null;
 
   function $(id) { return document.getElementById(id); }
-  function num(n) { return Number(n || 0).toLocaleString('vi-VN'); }
+  function num(n) { return Number(n || 0).toLocaleString('en-US'); }
   function width(el) { return Math.max(260, Math.floor(el.clientWidth || 0)); }
 
   function money(n) {
-    if (n >= 1000000) { return (n / 1000000).toFixed(1).replace('.', ',').replace(',0', '') + ' tr'; }
+    if (n >= 1000000) { return (n / 1000000).toFixed(1).replace('.0', '') + 'M'; }
     if (n >= 1000) { return Math.round(n / 1000) + 'k'; }
     return String(n);
   }
@@ -112,25 +112,25 @@
   function drawSlots(k) {
     var el = $('ch-slots');
     if (!el || !k) { return; }
-    if (!k.totalSlots) { empty(el, 'Chưa có ngăn tủ nào.'); return; }
+    if (!k.totalSlots) { empty(el, 'No slots yet.'); return; }
     var used = Math.round(k.occupiedSlots * 100 / k.totalSlots);
     donut(el, [
-      { label: 'Trống', value: k.availableSlots, cls: 'seg-ok' },
-      { label: 'Đang dùng', value: k.occupiedSlots, cls: 'seg-use' },
-      { label: 'Lỗi hoặc bảo trì', value: k.maintenanceOrFaultSlots, cls: 'seg-bad' }
-    ], used + '%', 'đang dùng',
-      'Trong ' + k.totalSlots + ' ngăn, ' + k.availableSlots + ' trống, ' + k.occupiedSlots + ' đang dùng, ' + k.maintenanceOrFaultSlots + ' lỗi hoặc bảo trì');
+      { label: 'Available', value: k.availableSlots, cls: 'seg-ok' },
+      { label: 'Occupied', value: k.occupiedSlots, cls: 'seg-use' },
+      { label: 'Fault or maintenance', value: k.maintenanceOrFaultSlots, cls: 'seg-bad' }
+    ], used + '%', 'occupied',
+      'Of ' + k.totalSlots + ' slots, ' + k.availableSlots + ' available, ' + k.occupiedSlots + ' occupied, ' + k.maintenanceOrFaultSlots + ' fault or maintenance');
   }
 
   function drawAreas(rows) {
     var el = $('ch-areas');
     if (!el || !rows) { return; }
-    if (!rows.length) { empty(el, 'Chưa có khu vực nào có ngăn tủ.'); return; }
-    el.innerHTML = '<ul class="chart-legend chart-legend--row"><li><i class="seg-use"></i><span>Đang dùng</span></li>' +
-      '<li><i class="seg-bad"></i><span>Lỗi hoặc bảo trì</span></li><li><i class="seg-ok"></i><span>Trống</span></li></ul>' +
+    if (!rows.length) { empty(el, 'No area has slots yet.'); return; }
+    el.innerHTML = '<ul class="chart-legend chart-legend--row"><li><i class="seg-use"></i><span>Occupied</span></li>' +
+      '<li><i class="seg-bad"></i><span>Fault or maintenance</span></li><li><i class="seg-ok"></i><span>Available</span></li></ul>' +
       rows.map(function (r) {
         var t = r.total || 1;
-        var tip = r.areaName + ': đang dùng ' + r.occupied + ', lỗi ' + r.fault + ', trống ' + r.available + ' / ' + r.total;
+        var tip = r.areaName + ': ' + r.occupied + ' occupied, ' + r.fault + ' fault, ' + r.available + ' available / ' + r.total;
         return '<div class="hbar" data-tip="' + esc(tip) + '" tabindex="0">' +
           '<a class="hbar__name" href="LockerMapController?area=' + encodeURIComponent(r.areaCode) + '">' + esc(r.areaName) + '</a>' +
           '<span class="hbar__track" role="img" aria-label="' + esc(tip) + '">' +
@@ -145,15 +145,15 @@
   function drawDevices(list) {
     var el = $('ch-devices');
     if (!el || !list) { return; }
-    if (!list.length) { empty(el, 'Chưa có thiết bị nào.'); return; }
+    if (!list.length) { empty(el, 'No devices yet.'); return; }
     var c = { ONLINE: 0, DEGRADED: 0, OFFLINE: 0 };
     list.forEach(function (d) { c[d.health] = (c[d.health] || 0) + 1; });
     donut(el, [
-      { label: 'Trực tuyến', value: c.ONLINE, cls: 'seg-ok' },
-      { label: 'Chập chờn', value: c.DEGRADED, cls: 'seg-warn' },
-      { label: 'Mất kết nối', value: c.OFFLINE, cls: 'seg-bad' }
-    ], c.ONLINE + '/' + list.length, 'trực tuyến',
-      c.ONLINE + ' trên ' + list.length + ' thiết bị đang trực tuyến');
+      { label: 'Online', value: c.ONLINE, cls: 'seg-ok' },
+      { label: 'Unstable', value: c.DEGRADED, cls: 'seg-warn' },
+      { label: 'Offline', value: c.OFFLINE, cls: 'seg-bad' }
+    ], c.ONLINE + '/' + list.length, 'online',
+      c.ONLINE + ' of ' + list.length + ' devices online');
   }
 
   /* ---------- usage charts ---------- */
@@ -163,10 +163,22 @@
     if (!el || !stats) { return; }
     var rows = stats.alertsOpen || [];
     var total = rows.reduce(function (s, r) { return s + r.count; }, 0);
-    if (!total) { empty(el, 'Không có cảnh báo nào chưa xử lý.'); return; }
-    donut(el, rows.slice(0, 5).map(function (r, i) {
-      return { label: r.label, value: r.count, cls: CAT[i % CAT.length] };
-    }), String(total), 'chưa xử lý', total + ' cảnh báo chưa xử lý, chia theo loại');
+    if (!total) { empty(el, 'No open alerts.'); return; }
+    // The palette has five colours: with more than five types, keep the first four (rows come sorted by count)
+    // and fold the rest into "Other", so the slices and the legend add up to the total in the centre.
+    var shown = rows.length > CAT.length ? rows.slice(0, CAT.length - 1) : rows;
+    var items = shown.map(function (r, i) {
+      return { label: r.label, value: r.count, cls: CAT[i] };
+    });
+    if (shown.length < rows.length) {
+      var rest = rows.slice(shown.length);
+      items.push({
+        label: 'Other (' + rest.length + ' types)',
+        value: rest.reduce(function (s, r) { return s + r.count; }, 0),
+        cls: 'seg-mute'
+      });
+    }
+    donut(el, items, String(total), 'open', total + ' open alerts, by type');
   }
 
   function drawHourly() {
@@ -174,8 +186,8 @@
     if (!el || !stats) { return; }
     var today = stats.hourlyToday, yest = stats.hourlyYesterday;
     var total = (stats.bookingsToday || 0) + (stats.bookingsYesterday || 0);
-    $('ch-hourly-meta').textContent = 'Hôm nay ' + num(stats.bookingsToday) + ' lượt, hôm qua ' + num(stats.bookingsYesterday) + ' lượt.';
-    if (!total) { empty(el, 'Chưa có lượt đặt nào trong hai ngày gần đây.'); return; }
+    $('ch-hourly-meta').textContent = 'Today ' + num(stats.bookingsToday) + ' bookings, yesterday ' + num(stats.bookingsYesterday) + '.';
+    if (!total) { empty(el, 'No bookings in the last two days.'); return; }
     var nowH = (new Date().getUTCHours() + 7) % 24;   // Vietnam time, the same frame as the server
     var w = width(el), h = 220, pl = 34, pr = 10, pt = 12, pb = 26;
     var max = niceMax(Math.max.apply(null, today.concat(yest)));
@@ -200,13 +212,13 @@
     var step = (w - pl - pr) / 23;
     for (var k = 0; k < 24; k++) {
       hits += '<rect class="hit" x="' + (x(k) - step / 2) + '" y="' + pt + '" width="' + step + '" height="' + (h - pt - pb) +
-        '" data-tip="' + esc(k + ':00 – hôm nay ' + (k <= nowH ? today[k] : 0) + ' lượt, hôm qua ' + yest[k] + ' lượt') + '"/>';
+        '" data-tip="' + esc(k + ':00 · today ' + (k <= nowH ? today[k] : 0) + ' bookings, yesterday ' + yest[k]) + '"/>';
     }
     var peak = today.indexOf(Math.max.apply(null, today));
-    var summary = 'Số lượt đặt theo giờ. Hôm nay ' + stats.bookingsToday + ' lượt' +
-      (stats.bookingsToday ? ', cao điểm lúc ' + peak + ' giờ' : '') + '; hôm qua ' + stats.bookingsYesterday + ' lượt.';
-    el.innerHTML = '<ul class="chart-legend chart-legend--row"><li><i class="line-use"></i><span>Hôm nay</span></li>' +
-      '<li><i class="line-mute"></i><span>Hôm qua</span></li></ul>' +
+    var summary = 'Bookings per hour. Today ' + stats.bookingsToday + ' bookings' +
+      (stats.bookingsToday ? ', peak at ' + peak + ':00' : '') + '; yesterday ' + stats.bookingsYesterday + '.';
+    el.innerHTML = '<ul class="chart-legend chart-legend--row"><li><i class="line-use"></i><span>Today</span></li>' +
+      '<li><i class="line-mute"></i><span>Yesterday</span></li></ul>' +
       '<svg width="' + w + '" height="' + h + '" role="img" aria-label="' + esc(summary) + '">' + grid +
       '<polygon class="area-use" points="' + area + '"/>' +
       '<polyline class="ln ln-mute" points="' + line(yest, 23) + '"/>' +
@@ -220,7 +232,7 @@
     if (!el || !stats) { return; }
     var heat = stats.heat, max = 0, total = 0;
     heat.forEach(function (row) { row.forEach(function (v) { max = Math.max(max, v); total += v; }); });
-    if (!total) { empty(el, 'Chưa có lượt đặt nào trong 4 tuần gần đây.'); return; }
+    if (!total) { empty(el, 'No bookings in the last 4 weeks.'); return; }
     var w = width(el), pl = 28, top = 18, cell = (w - pl) / 24, ch = Math.min(26, Math.max(18, cell + 4));
     var h = top + 7 * ch + 4;
     var out = '';
@@ -234,14 +246,14 @@
         var level = v === 0 ? 0 : Math.min(5, Math.ceil(v * 5 / max));
         out += '<rect class="heat heat-' + level + '" x="' + (pl + hh * cell + 1) + '" y="' + (top + d * ch + 1) + '" width="' +
           Math.max(cell - 2, 2) + '" height="' + (ch - 2) + '" rx="3" data-tip="' +
-          esc(DAYS[d] + ' ' + hh + 'h–' + (hh + 1) + 'h: ' + v + ' lượt') + '"/>';
+          esc(DAYS[d] + ' ' + hh + ':00 to ' + (hh + 1) + ':00: ' + v + ' bookings') + '"/>';
       });
     });
     var best = { v: -1, d: 0, h: 0 };
     heat.forEach(function (row, d) { row.forEach(function (v, hh) { if (v > best.v) { best = { v: v, d: d, h: hh }; } }); });
     el.innerHTML = '<svg width="' + w + '" height="' + h + '" role="img" aria-label="' +
-      esc('Lượt đặt theo thứ và giờ trong 4 tuần. Đông nhất: ' + DAYS[best.d] + ' lúc ' + best.h + ' giờ, ' + best.v + ' lượt.') + '">' + out + '</svg>' +
-      '<div class="heat-scale" aria-hidden="true"><span>Ít</span><i class="heat heat-1"></i><i class="heat heat-2"></i><i class="heat heat-3"></i><i class="heat heat-4"></i><i class="heat heat-5"></i><span>Nhiều</span></div>';
+      esc('Bookings by weekday and hour over 4 weeks. Busiest: ' + DAYS[best.d] + ' at ' + best.h + ':00, ' + best.v + ' bookings.') + '">' + out + '</svg>' +
+      '<div class="heat-scale" aria-hidden="true"><span>Few</span><i class="heat heat-1"></i><i class="heat heat-2"></i><i class="heat heat-3"></i><i class="heat heat-4"></i><i class="heat heat-5"></i><span>Many</span></div>';
     bindTip(el);
   }
 
@@ -253,8 +265,8 @@
     card.hidden = false;
     var rows = stats.revenue;
     var sum = rows.reduce(function (s, r) { return s + r.amount; }, 0);
-    $('ch-revenue-meta').textContent = 'Tổng 7 ngày: ' + num(sum) + ' đ';
-    if (!sum) { empty(el, 'Chưa có doanh thu trong 7 ngày gần đây.'); return; }
+    $('ch-revenue-meta').textContent = '7-day total: ' + num(sum) + ' VND';
+    if (!sum) { empty(el, 'No revenue in the last 7 days.'); return; }
     var w = width(el), h = 200, pl = 8, pr = 8, pt = 22, pb = 26;
     var max = niceMax(Math.max.apply(null, rows.map(function (r) { return r.amount; })));
     var bw = (w - pl - pr) / rows.length;
@@ -269,12 +281,12 @@
       var d = new Date(r.date + 'T00:00:00');
       var label = (d.getDate() < 10 ? '0' : '') + d.getDate() + '/' + (d.getMonth() + 1 < 10 ? '0' : '') + (d.getMonth() + 1);
       out += '<rect class="bar-use" x="' + bx + '" y="' + by + '" width="' + bwid + '" height="' + Math.max(bh, r.amount ? 2 : 0) +
-        '" rx="4" tabindex="0" data-tip="' + esc(label + ': ' + num(r.amount) + ' đ') + '"/>' +
+        '" rx="4" tabindex="0" data-tip="' + esc(label + ': ' + num(r.amount) + ' VND') + '"/>' +
         '<text class="axt" x="' + (bx + bwid / 2) + '" y="' + (h - 8) + '" text-anchor="middle">' + label + '</text>' +
         (r.amount ? '<text class="valt" x="' + (bx + bwid / 2) + '" y="' + (by - 5) + '" text-anchor="middle">' + money(r.amount) + '</text>' : '');
     });
     el.innerHTML = '<svg width="' + w + '" height="' + h + '" role="img" aria-label="' +
-      esc('Doanh thu gửi đồ 7 ngày gần nhất, tổng ' + num(sum) + ' đồng') + '">' + out + '</svg>';
+      esc('Storage revenue over the last 7 days, total ' + num(sum) + ' VND') + '">' + out + '</svg>';
     bindTip(el);
   }
 
@@ -292,7 +304,7 @@
       .catch(function () {
         ['ch-hourly', 'ch-heat', 'ch-alerts'].forEach(function (id) {
           var el = $(id);
-          if (el && !stats) { empty(el, 'Không tải được số liệu thống kê. Sẽ thử lại sau 1 phút.'); }
+          if (el && !stats) { empty(el, 'Could not load the statistics. Retrying in 1 minute.'); }
         });
       });
   }

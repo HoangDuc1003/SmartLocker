@@ -52,13 +52,13 @@ public class LoginController extends HttpServlet {
             User user = users.checkLogin(username, password);
             String error = null;
             if (user == null) {
-                error = "Sai tên đăng nhập hoặc mật khẩu";
+                error = "Wrong username or password";
                 new AuditDao().append(AuditDao.SYSTEM_USER_ID, "LOGIN_FAIL", "USER", 0,
                         loginFailDiff(users.findUsername(username)));
             } else if (user.isLocked()) {
-                error = "Tài khoản đang bị khóa, hãy liên hệ nhân viên vận hành để mở khóa";
+                error = "Your account is locked; ask an operator to unlock it";
             } else if (!"ACTIVE".equals(user.getStatus())) {
-                error = "Tài khoản này không thể đăng nhập";
+                error = "This account cannot sign in";
             }
             if (error != null) {
                 if (Web.wantsJson(req)) {

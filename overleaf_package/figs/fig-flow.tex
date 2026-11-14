@@ -1,0 +1,44 @@
+% Fig. 6 (fig:flow): decision flow of the two-tier detector for one session. Needs figs/colors.tex.
+% Laid out across the page width (about 17.2 cm). Decisions are yellow diamonds; outcomes have a thick border:
+% coral when an alert is raised, mint when no alert is raised.
+\begin{tikzpicture}[
+  proc/.style={slblue},
+  dec/.style={sldec, aspect=1.7},
+  yes/.style={sllbl, font=\small\itshape},
+  no/.style={sllbl, font=\small\itshape}]
+  % row 1: input, context and the first two decisions, left to right
+  \node[proc]  (in)  at (1.2,2.05)  {Session $s$};
+  \node[proc]  (ctx) at (1.2,0)     {Load context $C$};
+  \node[dec]   (sf)  at (4.3,0)     {Sensor\\fault?};
+  \node[dec]   (rem) at (7.9,0)     {Remote or\\phone open?};
+  \node[dec]   (cmd) at (11.7,0)    {Valid, unused\\command?};
+  \node[proc]  (spf) at (15.95,0)    {$\ell \leftarrow$\\SUSPECTED\_SPOOF};
+  % outcomes above row 1
+  \node[slterm] (flt) at (4.3,2.05)  {SENSOR\_FAULT alert\slsub{ticket, no risk score}};
+  \node[slok]   (stf) at (11.7,2.05) {STAFF\_OPEN, no alert};
+  % row 2: rules 3 to 9 and the risk score
+  \node[proc]  (rul) at (7.9,-1.9)  {$\ell \leftarrow$ first matching\\rule 3 to 9};
+  \node[proc]  (rsk) at (11.7,-1.9) {Risk $r(s)$ by (\ref{eq:risk})};
+  % row 3: the alert decision of (2), right to left
+  \node[dec]   (lab) at (11.7,-3.75) {$\ell \neq$\\NORMAL?};
+  \node[slterm] (ar) at (15.85,-3.75) {Alert $\ell$, evidence $r$};
+  \node[dec]   (thr) at (7.9,-3.75)  {$r \geq 0.80$?};
+  \node[slterm] (am) at (4.0,-3.75)  {ML\_ANOMALY alert};
+  \node[slok]  (non) at (7.9,-5.45)   {No alert};
+  % arrows
+  \draw[slarr] (in) -- (ctx);
+  \draw[slarr] (ctx) -- (sf);
+  \draw[slarr] (sf) -- node[yes, right] {yes} (flt);
+  \draw[slarr] (sf) -- node[no, above] {no} (rem);
+  \draw[slarr] (rem) -- node[yes, above] {yes} (cmd);
+  \draw[slarr] (rem) -- node[no, right] {no} (rul);
+  \draw[slarr] (cmd) -- node[yes, right] {yes} (stf);
+  \draw[slarr] (cmd) -- node[no, above] {no} (spf);
+  \draw[slarr] (rul) -- (rsk);
+  \draw[slarr] (spf) |- (rsk);
+  \draw[slarr] (rsk) -- (lab);
+  \draw[slarr] (lab) -- node[yes, above] {yes} (ar);
+  \draw[slarr] (lab) -- node[no, above] {no} (thr);
+  \draw[slarr] (thr) -- node[yes, above] {yes} (am);
+  \draw[slarr] (thr) -- node[no, right] {no} (non);
+\end{tikzpicture}

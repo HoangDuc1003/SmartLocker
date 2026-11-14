@@ -1,16 +1,15 @@
 # Image for a hosted server such as Render (docs/deploy-render.md). Same steps as scripts/build-dev.sh.
 FROM tomcat:9.0-jdk8-temurin AS build
 WORKDIR /src
-COPY lib lib
 COPY src/java src/java
 COPY web web
-RUN mkdir -p out/WEB-INF/classes out/WEB-INF/lib \
+RUN mkdir -p out/WEB-INF/classes \
  && find src/java -name '*.java' > sources.txt \
  && javac -nowarn -encoding UTF-8 -source 8 -target 8 \
-      -cp "$CATALINA_HOME/lib/*:lib/*" -d out/WEB-INF/classes @sources.txt \
+      -cp "$CATALINA_HOME/lib/*:web/WEB-INF/lib/*" -d out/WEB-INF/classes @sources.txt \
  && (cd src/java && find . -type f ! -name '*.java' -exec cp --parents {} /src/out/WEB-INF/classes/ \;) \
- && cp -r web/. out/ \
- && cp lib/gson-*.jar lib/jbcrypt-*.jar lib/mssql-jdbc-*.jar lib/weka.jar out/WEB-INF/lib/
+ && cp -r web/. out/
+# the runtime jars come with web/ (web/WEB-INF/lib); lib/ holds only the test jars and is not copied
 
 FROM tomcat:9.0-jre8-temurin
 RUN rm -rf "$CATALINA_HOME/webapps/"*

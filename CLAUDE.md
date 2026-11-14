@@ -10,11 +10,11 @@ Dev server: Tomcat at `E:/apache-tomcat-9.0.113`, app at `http://localhost:8080/
 - Every page includes `js/theme.js` in `<head>` (sets the theme before paint) and `common/nav.jspf`
   right after `<body>`. Exception: the full-screen map (`lockerMap.jsp`) includes `common/nav-floating.jspf`
   (glass tab bar); both share the icon sprite `common/icons.jspf`. Glass tokens (`--glass-*`) live in `app.css`.
-- All visible text is Vietnamese; technical codes (slot code, RFID UID, status enum) stay as is.
+- All visible text is English (PRJ301 rule, translated 2026-11 after the teacher's review; terms in `docs/review/ui-glossary.md`, money `12,000 VND`); technical codes (slot code, RFID UID, status enum) and seed place/person names stay as is.
 - No emoji as icons; inline SVG only. No fake "LIVE"/status indicators that are not backed by data.
 - Confirm before a POST with `data-confirm="..."` (on the form, or on one submit button) handled by `js/app.js`; never `confirm()`.
   Pages build HTML with `window.SmartLocker.esc` from `app.js` (load `app.js` first); no local copies.
-- Code comments in English; UI text and submitted docs (README, SYSTEM_FLOWS) in Vietnamese.
+- Code comments and UI text in English; submitted docs (README, SYSTEM_FLOWS) in Vietnamese (`README.en.md` mirrors README).
 
 ## Working process
 - Test end-to-end in a browser (load the `built-in-browser` skill; claude-in-chrome if the pane is unavailable): every button,
@@ -49,7 +49,7 @@ Dev server: Tomcat at `E:/apache-tomcat-9.0.113`, app at `http://localhost:8080/
 - A procedure that checks a row and then changes it must read it `WITH (UPDLOCK, HOLDLOCK)` inside the transaction (Deposit_Extend was checked outside and could charge twice).
 - `XACT_ABORT ON` + `THROW` rolls back the caller's transaction too; never wrap a test that expects an error in an outer `BEGIN TRAN ... ROLLBACK`.
 - Always run `sqlcmd -I` (filtered indexes need QUOTED_IDENTIFIER ON).
-- JSTL `fmt` follows the browser's Accept-Language; the locale is fixed to `vi_VN` in web.xml, do not remove it.
+- JSTL `fmt` follows the browser's Accept-Language; the locale is fixed to `en_US` in web.xml, do not remove it.
 - A popup must freeze every redraw of the form it confirms, including a fetch that started before it opened and a countdown that would remove the form.
 - A user-supplied address (e-mail) is saved only after a code sent to it comes back; JSESSIONID is SameSite=Lax, keep it in both context files.
 - Long-running Tomcat started from a Claude background shell can be killed for low memory; start it in its own window (`startup.bat`).
@@ -63,7 +63,7 @@ Dev server: Tomcat at `E:/apache-tomcat-9.0.113`, app at `http://localhost:8080/
 - Staff edits of a booking (`DepositDao.update/insert`) must keep the slot consistent: walk-ins only on an AVAILABLE slot, closing frees the slot, a closed booking is never reopened; an admin slot override never cancels an ACTIVE booking.
 - `SecurityFilter` reloads the session user on every request (status, role, balance); a LOCKED account is signed out at once.
 - Browser autofill pre-fills the login popup with `admin`: select the field (triple-click) before typing in E2E tests.
-- Run the TestNG suite with `sh scripts/test.sh`; `testng`/`jcommander`/`slf4j` are test-only and stay out of `WEB-INF/lib`.
+- Run the TestNG suite with `sh scripts/test.sh`; `testng`/`jcommander`/`slf4j` are test-only and stay in `lib/`, every runtime jar lives in `web/WEB-INF/lib` (course rule; NetBeans packages them with the docroot, so `project.xml` lists none).
 - Python `open(path, 'w')` on some repo files fails with `Errno 22` (OneDrive); write in place with `open(path, 'r+')` + `truncate()`.
 - A demo area needs a `"demo":true` device on every bank (DOMB had none: 28 slots OFFLINE, shown as "Hết chỗ"). `LOCKER-01` (CANT-A) is the only non-demo box and the repo firmware has no network, so CANT-A is OFFLINE unless `ScenarioSender`/a real box sends `/api/health`.
 - Some home routers (VNPT "iGate") do not resolve `tile.openstreetmap.org`, and CARTO basemaps answer every tile with an "API KEY REQUIRED" picture (HTTP 200); `area-map.js` falls back OSM → OSM.de → OSM.fr, remembers the host that worked and keeps tiles in Cache Storage (`sl-map-tiles-v*`: bump the name to drop bad tiles).
@@ -91,3 +91,4 @@ Dev server: Tomcat at `E:/apache-tomcat-9.0.113`, app at `http://localhost:8080/
 - The phone tap (v7): the PN532 emulates an NFC tag with `/k/{device}?n={token}`; the token comes from the heartbeat only when the box sends `"nfc":true` (`Device_TapIssue`: new each minute and after each use, valid 5 minutes) and is used up by the UNLOCK it gives, never by a CHOOSE. `TAP_EXPIRED` is not a guess and the tap skips the PIN lockout (a stranger typing PINs must not block the owner). A demo box has no reader and takes no token. In E2E, sign in before opening `/k/...?n=`.
 - One PN532 reads cards and emulates the NFC tag in turns, one slice per `loop()`, switching roles with `SAMConfig`. A phone with an HCE wallet answers a card poll with a random 4-byte UID starting `0x08`: ignore it before anything else, or a phone tap counts as `UNKNOWN_CARD` towards the lockout. No emulation while enrolling a card or typing a PIN.
 - v7.1: a reservation nobody checked in starts by itself at `hold_until` (`Deposit_ExpireNoShow` -> ACTIVE, audit `AUTO_CHECK_IN`, paid time counted from `hold_until`, slot OCCUPIED and locked, nothing refunded); it is never NO_SHOW at 15 minutes any more. `Deposit_ExpireOverdue` ends an auto check-in that was never opened (no `ACCESS` row) at due + grace as NO_SHOW without a late fee; an opened one still locks and charges. `Device_Authorize` no longer answers EXPIRED for a RESERVED booking whose hold ended (patched in place by `05_auto_checkin.sql`, which must run after 03/04 every time). The popup, the slot card and "Tủ của tôi" say so.
+- Server text shown to users is English and some JS/JSP/Postman checks compare it byte for byte (CardMail.action vs `CARD_ACTION`, `customLabel` vs `'Custom · '`, kiosk button labels, Postman assertions): change both sides together.

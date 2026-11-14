@@ -32,7 +32,7 @@ public class AlertController extends HttpServlet {
                 int id = Web.intParam(req, "id", 0);
                 Alert a = dao.findById(id);
                 if (a == null) {
-                    Web.flash(req.getSession(), "Không tìm thấy cảnh báo.", true);
+                    Web.flash(req.getSession(), "Alert not found.", true);
                     res.sendRedirect("AlertController");
                     return;
                 }
@@ -78,7 +78,7 @@ public class AlertController extends HttpServlet {
             int id = Web.intParam(req, "id", 0);
             try {
                 dao.resolve(id, me.getUserId());
-                Web.flash(req.getSession(), "Đã đánh dấu cảnh báo #" + id + " là đã xử lý.", false);
+                Web.flash(req.getSession(), "Alert #" + id + " marked as resolved.", false);
             } catch (SQLException e) {
                 if (e.getErrorCode() >= 50000) {
                     Web.flash(req.getSession(), Web.sqlMessage(e), true);
@@ -101,10 +101,10 @@ public class AlertController extends HttpServlet {
                     if (ok) {
                         new dao.AuditDao().append(me.getUserId(), "DEVICE_STATUS", "DEVICE", deviceId,
                                 oldDev.getDeviceCode() + ": " + oldDev.getStatus() + " -> " + status);
-                        String statusLabel = "ACTIVE".equals(status) ? "hoạt động" : "MAINTENANCE".equals(status) ? "bảo trì" : "mất kết nối";
-                        Web.flash(req.getSession(), "Đã chuyển thiết bị " + oldDev.getDeviceCode() + " sang trạng thái " + statusLabel + ".", false);
+                        String statusLabel = "ACTIVE".equals(status) ? "active" : "MAINTENANCE".equals(status) ? "maintenance" : "offline";
+                        Web.flash(req.getSession(), "Box " + oldDev.getDeviceCode() + " set to " + statusLabel + ".", false);
                     } else {
-                        Web.flash(req.getSession(), "Không cập nhật được trạng thái thiết bị.", true);
+                        Web.flash(req.getSession(), "Could not update the box status.", true);
                     }
                 }
             } catch (SQLException e) {
@@ -132,15 +132,15 @@ public class AlertController extends HttpServlet {
             try {
                 model.Device oldDev = new dao.DeviceDao().findById(deviceId);
                 if (oldDev == null) {
-                    Web.flash(req.getSession(), "Không tìm thấy thiết bị cần cập nhật.", true);
+                    Web.flash(req.getSession(), "The box to update was not found.", true);
                 } else if ("ACTIVE".equals(oldDev.getStatus())) {
-                    Web.flash(req.getSession(), "Thiết bị " + oldDev.getDeviceCode() + " đang trực tuyến.", false);
+                    Web.flash(req.getSession(), "Box " + oldDev.getDeviceCode() + " is already online.", false);
                 } else if (new dao.DeviceDao().setStatus(deviceId, "ACTIVE")) {
                     new dao.AuditDao().append(me.getUserId(), "DEVICE_STATUS", "DEVICE", deviceId,
                             oldDev.getDeviceCode() + ": " + oldDev.getStatus() + " -> ACTIVE (locker map)");
-                    Web.flash(req.getSession(), "Đã chuyển thiết bị " + oldDev.getDeviceCode() + " sang trực tuyến.", false);
+                    Web.flash(req.getSession(), "Box " + oldDev.getDeviceCode() + " set to online.", false);
                 } else {
-                    Web.flash(req.getSession(), "Không cập nhật được trạng thái thiết bị.", true);
+                    Web.flash(req.getSession(), "Could not update the box status.", true);
                 }
             } catch (SQLException e) {
                 throw new ServletException(e);

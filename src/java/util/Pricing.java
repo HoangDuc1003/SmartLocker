@@ -49,7 +49,7 @@ public final class Pricing {
     }
 
     /**
-     * "Tự chọn" (dbo.fn_CustomPrice): N whole hours = min(hour x N, sized day pass); N whole days = day pass x N x
+     * "Custom" duration (dbo.fn_CustomPrice): N whole hours = min(hour x N, sized day pass); N whole days = day pass x N x
      * (100% for 1 day, multiDayPct for 2-6, weekPct from WEEK_DAYS), by size, rounded up once to 100 VND.
      * Returns -1 when the minutes are not allowed or there is no day pass (dayPrice <= 0).
      */

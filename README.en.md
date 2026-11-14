@@ -166,7 +166,11 @@ When running single files again:
 
 ### 2. Build and run
 
-**NetBeans:** Clean and Build, then Run on Tomcat 9.
+**NetBeans 13:** File > Open Project, pick the repo folder, then Clean and Build and Run on Tomcat 9.
+
+- The runtime libraries are already in `web/WEB-INF/lib`: `mssql-jdbc-12.8.1.jre8.jar`, `gson-2.10.1.jar`, `jbcrypt-0.4.jar`, `weka.jar`, `jstl-1.2.jar`. They go into the WAR with the `web/` folder; no jar has to be added by hand.
+- `lib/` holds only the test jars: `testng-7.5.jar`, `jcommander-1.78.jar`, `slf4j-api-1.7.36.jar`. They never go into the WAR.
+- A fresh machine has no `nbproject/private/` (not committed), so NetBeans reports a missing server. Add Tomcat 9 under Tools > Servers, then right-click the project > Resolve Project Problems (or Properties > Run) and pick that server. The project uses the JDK NetBeans runs on (`default_platform`), so it is best to run NetBeans on JDK 8 (`netbeans_jdkhome` in `etc/netbeans.conf`). Otherwise add a JDK 8 under Tools > Java Platforms and select it in two places: project Properties > Libraries > Java Platform (NetBeans then writes `platform.active` into `nbproject/project.properties`), and Tools > Servers > Tomcat 9 > Platform tab > Java Platform.
 
 **Git Bash:** the first time, create `conf/Catalina/localhost/SmartLocker.xml` in the Tomcat folder (use your repo path):
 
@@ -184,7 +188,7 @@ sh scripts/build-dev.sh
 
 Wait about 15 seconds, then open <http://localhost:8080/SmartLocker/>.
 
-The default database connection is `localhost:1433`, `sa` / `12345`. Change it with the environment variables `DB_URL`, `DB_USER`, `DB_PASSWORD`.
+The database connection is configured in [Database connection](#3-database-connection) just below.
 
 Two optional features: copy the `.example` file in `config/` to a `.local.properties` file and fill it in.
 
@@ -193,7 +197,94 @@ Two optional features: copy the `.example` file in `config/` to a `.local.proper
 | `config/mail.local.properties` | Sends due reminders and card confirmations; without it, mail is off |
 | `config/mapbox.local.properties` | Uses Mapbox (`pk.*`); without it, Leaflet |
 
-### 3. Demo accounts
+### 3. Database connection
+
+`dao/DbContext` is the only place that opens a connection. It reads three **environment variables** (not JVM `-D` properties). A variable that is unset or empty falls back to its default:
+
+| Environment variable | Default |
+|---|---|
+| `DB_URL` | `jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false` |
+| `DB_USER` | `sa` |
+| `DB_PASSWORD` | `12345` |
+
+The defaults are **only for the demo on a personal machine**, where SQL Server is installed locally with the `sa` account. On any other machine set all three. `DbContext` reads them once when the application starts, so restart Tomcat (or NetBeans, when Tomcat runs from NetBeans) after setting them.
+
+The examples below use the sample password `Change-Me#2026` (upper and lower case, digits and a symbol, so it passes `CHECK_POLICY`). Replace it with your own; never use the sample as is.
+
+**Windows, Tomcat started with `startup.bat` or from NetBeans:** create `bin\setenv.bat` in the Tomcat folder. `catalina.bat` calls it on start. In a `.bat` file, a `%` in the password must be written `%%`.
+
+```bat
+set "DB_URL=jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false"
+set "DB_USER=smartlocker_app"
+set "DB_PASSWORD=Change-Me#2026"
+```
+
+Or store them for your Windows account with `setx`, then reopen the console and NetBeans:
+
+```powershell
+setx DB_URL "jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false"
+setx DB_USER "smartlocker_app"
+setx DB_PASSWORD "Change-Me#2026"
+```
+
+**Windows, Tomcat installed as a service:** the service does not read `setenv.bat`, and the Java Options box of `Tomcat9w.exe` only adds `-D` properties, which `DbContext` does not read. Set system variables with `setx /M DB_USER "smartlocker_app"` (and likewise `DB_URL`, `DB_PASSWORD`) in an elevated PowerShell. Services only see new system variables after Windows restarts; restarting the service alone is usually not enough.
+
+**Linux:** create `$CATALINA_BASE/bin/setenv.sh`:
+
+```bash
+export DB_URL='jdbc:sqlserver://db-host:1433;databaseName=PRJ301_LOCKER;encrypt=true'
+export DB_USER='smartlocker_app'
+export DB_PASSWORD='Change-Me#2026'
+```
+
+**Docker:** pass the variables when running the image (on Render, set them under Environment, see [docs/deploy-render.md](./docs/deploy-render.md)):
+
+```bash
+docker run -p 8080:8080 \
+  -e DB_URL='jdbc:sqlserver://db-host:1433;databaseName=PRJ301_LOCKER;encrypt=true' \
+  -e DB_USER='smartlocker_app' -e DB_PASSWORD='Change-Me#2026' smartlocker
+```
+
+With `encrypt=true` the driver checks the server's TLS certificate. Azure SQL has a valid one. A self-hosted SQL Server usually has a self-signed certificate and fails with `PKIX path building failed`: install a certificate from a trusted CA, or, only when the network between Tomcat and SQL Server is trusted, add `;trustServerCertificate=true` (turns the certificate check off).
+
+> **Never use `sa` (or the Azure server admin) on a server.** That account has full rights on every database; whoever reads the password from the configuration owns the whole server. Create a dedicated account that can only read and write data and run procedures in the application's database. The application never creates or alters tables at run time, so this account needs no DDL rights and no `db_owner`.
+
+Self-hosted SQL Server (run as an administrator, after building the database with `run_demo_db.ps1`):
+
+```sql
+CREATE LOGIN smartlocker_app WITH PASSWORD = N'Change-Me#2026', CHECK_POLICY = ON;
+GO
+USE PRJ301_LOCKER;
+GO
+CREATE USER smartlocker_app FOR LOGIN smartlocker_app;
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON SCHEMA::dbo TO smartlocker_app;
+GO
+```
+
+`run_demo_db.ps1` drops and recreates the database on a local server: the login survives, but the database user and its `GRANT` are lost. After each rebuild, run the lines from `USE PRJ301_LOCKER;` down again.
+
+Azure SQL Database (no `USE`, and `CREATE LOGIN` runs only in `master`): use a *contained user*, an account that lives inside the database. Connect straight to the `PRJ301_LOCKER` database as the server admin (for example the Query editor in the Azure Portal, or `sqlcmd -S <server>.database.windows.net -d PRJ301_LOCKER -U <server admin> -P <password> -N -I`) and run:
+
+```sql
+CREATE USER smartlocker_app WITH PASSWORD = N'Change-Me#2026';
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON SCHEMA::dbo TO smartlocker_app;
+GO
+```
+
+Then set `DB_USER=smartlocker_app`. `DB_URL` must contain `databaseName=PRJ301_LOCKER`, because a contained user can only sign in to that database. Running `run_demo_db.ps1 -Azure` again keeps this user, and the rights granted on schema `dbo` stay.
+
+*Hardening (optional, not tested with the application):* the audit log `AuditLog` and the hash chain `HashChain` are only appended to through the `Audit_Append` procedure; the Java code never updates or deletes them directly. You can also deny:
+
+```sql
+DENY UPDATE, DELETE ON dbo.AuditLog TO smartlocker_app;
+DENY UPDATE, DELETE ON dbo.HashChain TO smartlocker_app;
+```
+
+Procedures owned by `dbo` can still write (ownership chaining). The deny is attached to the tables, so run it again after every database rebuild.
+
+The database build scripts (`run_demo_db.ps1`, `sql/*.sql`) create tables and procedures, so they still run as an administrator: `run_demo_db.ps1 -Server <host> -User <admin login> -Password <password>`. Never write a real password into a file of the repo.
+
+### 4. Demo accounts
 
 Common password: `123456`.
 
@@ -455,7 +546,7 @@ SmartLocker/
 ├── config/        # Mail templates, sample config (*.local.properties are not committed)
 ├── docs/          # SYSTEM_FLOWS, specs, deploy, Postman, images, the paper
 ├── firmware/      # SmartLocker_Online (web-connected ESP32), SmartLocker_Local (hardware test)
-├── lib/           # JDBC, Gson, jBCrypt, Weka; TestNG, JCommander, SLF4J for tests only
+├── lib/           # Test-only jars: TestNG, JCommander, SLF4J (not in the WAR)
 ├── scripts/       # build-dev, test, set-device-key, send-demo, proof/ (test DB and Tomcat)
 ├── sql/           # 01-05, demo_box, upgrade, test_*
 ├── src/java/
@@ -469,6 +560,7 @@ SmartLocker/
 │   └── util/      # Web, Pricing, Csv, SecurityUtils, SlotImages
 ├── test/          # test/ (TestNG), tool/ (manual), support/
 └── web/           # JSP, CSS, JS, Leaflet
+    └── WEB-INF/lib/   # Runtime jars: mssql-jdbc, Gson, jBCrypt, Weka, JSTL
 ```
 
 ### Main API
@@ -506,7 +598,7 @@ Device API contract (Vietnamese): [docs/spec/smart-locker-v2.md](./docs/spec/sma
 - E-mail addresses are saved as typed, with no verification code.
 - No CSRF token; it relies on SameSite=Lax.
 - No dedicated error page for HTTP 500.
-- `DbContext` defaults to `sa` / `12345` for local use; set `DB_URL`, `DB_USER`, `DB_PASSWORD` when deploying.
+- `DbContext` defaults to `sa` / `12345` for the local demo machine; when deploying, set `DB_URL`, `DB_USER`, `DB_PASSWORD` and use a dedicated login instead of `sa` (see [Database connection](#3-database-connection)).
 - The firmware uses `setInsecure()` and does not pin the TLS certificate.
 
 ---
@@ -521,7 +613,7 @@ pages), six authors from FPT University, Ho Chi Minh Campus; the corresponding a
 |---|---|
 | System | Three-tier architecture, workflow figure, hardware block diagram, sequence diagram of the box protocol, slot state diagram |
 | Anomaly detection | Table of 8 priority-ordered rules, risk score (Eq. 1), alert rule (Eq. 2), two-tier flowchart |
-| Evaluation | 4 Weka classifiers on 480 synthetic sessions (IBk, F1 = 0.977), 66 TestNG tests, 472 newman assertions, 6 detection scenarios, 6–31 ms response time |
+| Evaluation | 4 Weka classifiers on 480 synthetic sessions (IBk, F1 = 0.977), 83 TestNG tests, 514 newman assertions, 6 detection scenarios, 6–31 ms response time |
 | Limitations | Synthetic sessions (no door sensor or load cell yet), one physically locked slot, no CSRF token or certificate check |
 
 **Compiling on Overleaf:** upload the `.tex` file (as `main.tex`) and the `docs/paper/images/` folder. The 22

@@ -19,7 +19,7 @@ public class RegisterController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        // no sign-up page: the map opens the popup on its "Đăng ký" tab
+        // no sign-up page: the map opens the popup on its "Sign up" tab
         res.sendRedirect(Web.signInUrl(req, "register", null));
     }
 
@@ -33,15 +33,15 @@ public class RegisterController extends HttpServlet {
 
         String error = null;
         if (!USERNAME.matcher(username).matches()) {
-            error = "Tên đăng nhập dài 3 đến 50 ký tự: chữ không dấu, số, _ và .";
+            error = "The username has 3 to 50 characters: letters without accents, digits, _ and .";
         } else if (fullName.length() < 2 || fullName.length() > 80) {
-            error = "Họ tên dài từ 2 đến 80 ký tự";
+            error = "The full name must be 2 to 80 characters long";
         } else if (password.length() < 6) {
-            error = "Mật khẩu có ít nhất 6 ký tự";
+            error = "The password must have at least 6 characters";
         } else if (!password.equals(confirm)) {
-            error = "Mật khẩu nhập lại không khớp";
+            error = "The passwords do not match";
         } else if (!email.isEmpty() && !Web.isEmail(email)) {
-            error = "Email không hợp lệ";
+            error = "Invalid e-mail address";
         }
 
         if (error != null) {
@@ -61,13 +61,13 @@ public class RegisterController extends HttpServlet {
                 Web.writeJson(res, HttpServletResponse.SC_OK, null);
                 return;
             }
-            Web.flash(req.getSession(), "Đăng ký thành công. Bạn có thể đăng nhập.", false);
+            Web.flash(req.getSession(), "Signed up. You can sign in now.", false);
             res.sendRedirect(Web.signInUrl(req, "login", null));
         } catch (SQLException e) {
             if (e.getErrorCode() == 2627 || e.getErrorCode() == 2601) {
                 boolean emailTaken = String.valueOf(e.getMessage()).contains("UX_Users_email");
-                String taken = emailTaken ? "Email này đã được một tài khoản khác dùng"
-                        : "Tên đăng nhập " + username + " đã được dùng";
+                String taken = emailTaken ? "This e-mail address is already used by another account"
+                        : "Username " + username + " is already taken";
                 if (Web.wantsJson(req)) {
                     Web.writeJson(res, HttpServletResponse.SC_CONFLICT, taken);
                     return;

@@ -388,9 +388,9 @@ BEGIN TRY
             ELSE @oper2Id
         END AS approved_by,
         CASE
-            WHEN n.n <= 10 THEN N'Chờ đối soát giao dịch chuyển khoản ngân hàng'
-            WHEN n.n <= 45 THEN N'Đã đối soát khớp lệnh và cộng tiền vào ví'
-            ELSE N'Từ chối: nội dung chuyển khoản không khớp mã tham chiếu'
+            WHEN n.n <= 10 THEN N'Waiting for the bank transfer to be matched'
+            WHEN n.n <= 45 THEN N'Transfer matched and added to the wallet'
+            ELSE N'Rejected: the transfer note does not match the reference code'
         END AS note
     FROM Nums n
     JOIN dbo.Users u ON u.username = N'student' + CONVERT(NVARCHAR(2), (n.n % 26) + 1)
@@ -561,18 +561,18 @@ BEGIN TRY
     );
 
     INSERT INTO @cases VALUES
-    (1,  N'LIB-B',  N'B01', N'FORCED_OPEN',     24.0,     0.0, 4, 0,  20.0, NULL,       N'RFID',   N'Cửa mở khi RFID không hợp lệ (Cạy tủ)'),
-    (2,  N'CANT-A', N'A06', N'SUSPECTED_SPOOF',  0.0,   120.0, 1, 1,  20.0, N'04E1F217', N'RFID',   N'Khối lượng thay đổi trong khi cửa báo đóng'),
-    (3,  N'DOMA-A', N'A09', N'ITEM_LEFT',        7.0,   220.0, 1, 1,  20.0, N'04E1F207', N'RFID',   N'Còn vật nặng 220g sau khi lấy đồ và đóng cửa'),
-    (4,  N'DOMA-A', N'A04', N'OVERDUE',          5.0,     0.0, 1, 1, 170.0, N'04E1F201', N'RFID',   N'Gửi đồ 170 phút, vượt gói 120 phút và ân hạn'),
-    (5,  N'DOMA-A', N'A08', N'WRONG_USER',       5.0,     0.0, 1, 1,  20.0, N'04E1F217', N'RFID',   N'Thẻ student25 cố tình quét mở slot của student14'),
-    (6,  N'DOMA-A', N'A06', N'LOST_CARD_USED',   5.0,     0.0, 1, 1,  20.0, N'04DE0012', N'RFID',   N'Thẻ đã báo mất được sử dụng lại'),
-    (7,  N'DOMA-A', N'A07', N'LOST_CARD_USED',   5.0,     0.0, 1, 1,  20.0, N'04E1F205', N'RFID',   N'Thẻ bị khóa được sử dụng lại'),
-    (8,  N'DOMA-B', N'B04', N'SENSOR_FAULT',     5.0,     0.0, 1, 1,  20.0, N'04E1F216', N'RFID',   N'Hiệu chuẩn cảm biến khối lượng đã hết hạn'),
-    (9,  N'LIB-B',  N'B04', N'SUSPECTED_SPOOF',  6.0,     0.0, 1, 1,  20.0, NULL,       N'REMOTE', N'Mở từ xa không có lệnh hợp lệ'),
-    (10, N'LIB-B',  N'B05', N'SENSOR_FAULT',     5.0,     0.0, 1, 1,  20.0, N'04E1F218', N'RFID',   N'Đồng hồ thiết bị trôi quá 15 phút so với máy chủ'),
-    (11, N'LIB-B',  N'B06', N'SENSOR_FAULT',     5.0, 25000.0, 1, 1,  20.0, N'04FF0099', N'RFID',   N'Khối lượng 25000g vượt giới hạn cảm biến'),
-    (12, N'GYM-A',  N'A06', N'ML_ANOMALY',      18.0,     0.0, 3, 1, 100.0, N'04E1F210', N'RFID',   N'Mô hình Machine Learning phát hiện hành vi bất thường (Điểm 0.94)');
+    (1,  N'LIB-B',  N'B01', N'FORCED_OPEN',     24.0,     0.0, 4, 0,  20.0, NULL,       N'RFID',   N'Door opened without a valid RFID card (forced open)'),
+    (2,  N'CANT-A', N'A06', N'SUSPECTED_SPOOF',  0.0,   120.0, 1, 1,  20.0, N'04E1F217', N'RFID',   N'Weight changed while the door reported closed'),
+    (3,  N'DOMA-A', N'A09', N'ITEM_LEFT',        7.0,   220.0, 1, 1,  20.0, N'04E1F207', N'RFID',   N'A 220 g item was left after pick-up and the door closed'),
+    (4,  N'DOMA-A', N'A04', N'OVERDUE',          5.0,     0.0, 1, 1, 170.0, N'04E1F201', N'RFID',   N'Stored for 170 min, over the 120-min plan and the grace period'),
+    (5,  N'DOMA-A', N'A08', N'WRONG_USER',       5.0,     0.0, 1, 1,  20.0, N'04E1F217', N'RFID',   N'The card of student25 was scanned to open the slot of student14'),
+    (6,  N'DOMA-A', N'A06', N'LOST_CARD_USED',   5.0,     0.0, 1, 1,  20.0, N'04DE0012', N'RFID',   N'A card reported lost was used again'),
+    (7,  N'DOMA-A', N'A07', N'LOST_CARD_USED',   5.0,     0.0, 1, 1,  20.0, N'04E1F205', N'RFID',   N'A blocked card was used again'),
+    (8,  N'DOMA-B', N'B04', N'SENSOR_FAULT',     5.0,     0.0, 1, 1,  20.0, N'04E1F216', N'RFID',   N'The weight sensor calibration has expired'),
+    (9,  N'LIB-B',  N'B04', N'SUSPECTED_SPOOF',  6.0,     0.0, 1, 1,  20.0, NULL,       N'REMOTE', N'Remote open without a valid command'),
+    (10, N'LIB-B',  N'B05', N'SENSOR_FAULT',     5.0,     0.0, 1, 1,  20.0, N'04E1F218', N'RFID',   N'The box clock drifted more than 15 min from the server'),
+    (11, N'LIB-B',  N'B06', N'SENSOR_FAULT',     5.0, 25000.0, 1, 1,  20.0, N'04FF0099', N'RFID',   N'Weight 25000 g exceeds the sensor limit'),
+    (12, N'GYM-A',  N'A06', N'ML_ANOMALY',      18.0,     0.0, 3, 1, 100.0, N'04E1F210', N'RFID',   N'The machine learning model detected unusual behaviour (score 0.94)');
 
     INSERT INTO dbo.LockerSession (device_id, device_seq, measured_at, ingested_at, door_open_sec, weight_delta_g, unlock_count, rfid_ok, stay_min, slot_id, card_uid, open_source, command_id)
     OUTPUT inserted.session_id, N'CASE' INTO @sessions
@@ -660,7 +660,7 @@ BEGIN TRY
     -- Maintenance Tickets
     -- 1) Open ticket for sensor fault
     INSERT INTO dbo.MaintenanceTicket (alert_id, device_id, assigned_to, note, status, opened_at)
-    SELECT a.alert_id, a.device_id, @tech1Id, N'Kiểm tra và hiệu chuẩn lại cảm biến trọng lượng: ' + c.reason, N'OPEN', a.created_at
+    SELECT a.alert_id, a.device_id, @tech1Id, N'Check and recalibrate the weight sensor: ' + c.reason, N'OPEN', a.created_at
     FROM @alerts x
     JOIN dbo.Alert a ON a.alert_id = x.alert_id
     JOIN dbo.LockerSession s ON s.session_id = a.session_id
@@ -674,9 +674,9 @@ BEGIN TRY
 
     INSERT INTO dbo.MaintenanceTicket (device_id, assigned_to, note, status, opened_at)
     VALUES
-    (1, @tech3Id, N'Bảo trì định kỳ tủ LIB-A: kiểm tra chốt solenoid các ô A01-A04', N'OPEN', DATEADD(HOUR, -5, @now)),
-    (3, @tech5Id, N'Kiểm tra ăng ten đọc thẻ RFID tại sảnh Ký túc xá DOMA-A', N'OPEN', DATEADD(HOUR, -12, @now)),
-    (5, @tech8Id, N'Vệ sinh cảm biến hồng ngoại và công tắc từ Bank CANT-A', N'OPEN', DATEADD(DAY, -1, @now));
+    (1, @tech3Id, N'Routine maintenance of LIB-A: check the solenoid bolts of slots A01-A04', N'OPEN', DATEADD(HOUR, -5, @now)),
+    (3, @tech5Id, N'Check the RFID reader antenna in the DOMA-A dormitory lobby', N'OPEN', DATEADD(HOUR, -12, @now)),
+    (5, @tech8Id, N'Clean the infrared sensor and the reed switch of bank CANT-A', N'OPEN', DATEADD(DAY, -1, @now));
 
     -- 3) Historical closed maintenance tickets (10 rows)
     ;WITH TktNums AS (
@@ -686,7 +686,7 @@ BEGIN TRY
     SELECT
         (n.n % 7) + 1,
         CASE n.n % 2 WHEN 0 THEN @tech1Id ELSE @tech2Id END,
-        N'Đã hoàn thành bảo dưỡng và kiểm tra cảm biến lần ' + CONVERT(NVARCHAR(2), n.n),
+        N'Maintenance and sensor check done, round ' + CONVERT(NVARCHAR(2), n.n),
         N'CLOSED',
         DATEADD(DAY, -(n.n + 3), @now),
         DATEADD(HOUR, 2, DATEADD(DAY, -(n.n + 3), @now))
@@ -699,7 +699,7 @@ BEGIN TRY
         b.device_id,
         s.locker_slot_id,
         N'UNLOCK',
-        N'Hỗ trợ mở tủ khẩn cấp từ quầy quản trị viên lần ' + CONVERT(NVARCHAR(2), n.n),
+        N'Emergency open from the admin desk, request ' + CONVERT(NVARCHAR(2), n.n),
         @oper1Id,
         CASE n.n % 4 WHEN 0 THEN N'PENDING' WHEN 1 THEN N'SENT' WHEN 2 THEN N'DONE' ELSE N'EXPIRED' END,
         DATEADD(MINUTE, -(n.n + 5), @now),
@@ -750,8 +750,8 @@ BEGIN TRY
     (@adminId, N'SYS_INIT',       N'DATABASE',  0, N'System bootstrap and cryptographic hash chain initialized'),
     (@adminId, N'USER_CREATE',    N'USER',      2, N'Created administrator account admin'),
     (@adminId, N'ROLE_ASSIGN',    N'ROLE',      1, N'Assigned ADMIN role with permissions to administrative staff'),
-    (@oper1Id, N'TOPUP_APPROVE',  N'TOPUP',     1, N'Approved TopupRequest 1 (amount 50000 VND) for student1'),
-    (@oper1Id, N'TOPUP_APPROVE',  N'TOPUP',     2, N'Approved TopupRequest 2 (amount 100000 VND) for student2'),
+    (@oper1Id, N'TOPUP_APPROVE',  N'TOPUP',     1, N'Approved TopupRequest 1 (amount 50,000 VND) for student1'),
+    (@oper1Id, N'TOPUP_APPROVE',  N'TOPUP',     2, N'Approved TopupRequest 2 (amount 100,000 VND) for student2'),
     (@oper2Id, N'DEPOSIT_CREATE', N'DEPOSIT',   1, N'Created locker reservation slot A02 for user student1'),
     (@oper1Id, N'REMOTE_UNLOCK',  N'COMMAND',   1, N'Operator dispatched remote unlock command to slot A05'),
     (@tech1Id, N'TICKET_CLOSE',   N'TICKET',    1, N'Technician replaced solenoid lock and closed ticket 1'),

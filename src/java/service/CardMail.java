@@ -110,9 +110,9 @@ public final class CardMail {
     /** What a scan will do, for the e-mail and for the page behind the link. */
     public static String action(String phase) {
         if ("PICKUP".equals(phase)) {
-            return "lấy đồ và trả tủ (lượt thuê kết thúc)";
+            return "pick up your things and check out (the booking ends)";
         }
-        return "ACCESS".equals(phase) ? "mở ngăn (lượt thuê vẫn tiếp tục)" : "cất đồ vào ngăn";
+        return "ACCESS".equals(phase) ? "open the slot (the booking continues)" : "store your things in the slot";
     }
 
     private static void send(MailService mail, String template, String to, Map<String, String> values, String what, Runnable onFail) {

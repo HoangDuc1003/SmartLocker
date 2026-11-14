@@ -22,7 +22,7 @@ git worktree add --detach C:\sl-wt\baseline rf-baseline
 
 ## Rào chắn
 
-- Mọi công cụ từ chối tên DB không có tiền tố `SL_`. Sau mỗi lần chạy, công cụ kiểm tra `create_date` của `PRJ301_LOCKER` vẫn là 2026-10-28 07:20:35 và báo động nếu khác.
+- Mọi công cụ từ chối tên DB không có tiền tố `SL_`. Sau mỗi lần chạy, công cụ kiểm tra `create_date` của `PRJ301_LOCKER` vẫn là 2026-11-07 08:09:43 (giá trị trong `lib.ps1`, chủ dự án dựng lại DB ngày 07/11/2026) và báo động nếu khác.
 - Tomcat test dùng `CATALINA_BASE` riêng (`C:\sl-wt\tomcat-8081`), cổng 8081, shutdown 8015. Nó chỉ dùng chung file chương trình của `E:\apache-tomcat-9.0.113`, không đọc `conf` của Tomcat 8080 khi chạy và không đụng `SmartLocker.xml` ở đó.
 - Không có mail thật: công cụ dừng nếu thấy `config/mail.local.properties` hoặc `conf/smartlocker-mail.properties`, và dừng nếu log không có dòng `Due reminder e-mails off`.
 - Script gốc không bị sửa: `build-db.ps1` chép ra thư mục tạm, thay tên DB, giữ BOM và dừng nếu còn câu `USE`, `CREATE`, `ALTER`, `DROP DATABASE` trỏ sang DB khác.
@@ -64,6 +64,6 @@ Kết quả diff nằm ở `%TEMP%\sl-proof\diff.txt`.
 
 ## Newman
 
-`newman-baseline.txt` là tập assertion đang fail, mỗi dòng một assertion. Hiện file này rỗng: 221 request (211 mục cộng các vòng lặp của kịch bản), 472 assertion, không lỗi. `newman.ps1` chạy lại `test_setup.sql` trước mỗi lần và báo `NEW FAILURE` hoặc `NOW PASSES` khi khác baseline. Khóa `device-1-api-key` là khóa seed công khai của `03_v2_v3.sql`.
+`newman-baseline.txt` là tập assertion đang fail, mỗi dòng một assertion. Hiện file này rỗng: 241 request (231 mục cộng các vòng lặp của kịch bản), 514 assertion, không lỗi, khoảng 142 giây (lần chạy 15/11/2026, `docs/paper/evidence/newman-4.log`). `newman.ps1` chạy lại `test_setup.sql` trước mỗi lần và báo `NEW FAILURE` hoặc `NOW PASSES` khi khác baseline. Khóa `device-1-api-key` là khóa seed công khai của `03_v2_v3.sql`.
 
 Collection chưa có bước nào cho `WRONG_PLACE` (v7 đã bỏ `CONFIRM_EMAIL` cùng thẻ từ), nên Newman xanh chưa nói gì về nhánh đó.

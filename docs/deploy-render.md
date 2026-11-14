@@ -44,6 +44,22 @@ Script chạy lần lượt `01_schema.sql`, `02_data_v1.sql`, `03_v2_v3.sql`, `
 
 Nếu báo lỗi `Cannot open server ... Client with IP address ... is not allowed`: thêm IP đó vào Firewall rules (Bước 1, mục 6), chờ khoảng 1 phút rồi chạy lại.
 
+**Tạo tài khoản riêng cho web.** `lockeradmin` là server admin, có toàn quyền; chỉ dùng nó để chạy script dựng DB, không đưa cho web. Azure SQL không cho `USE` và chỉ cho `CREATE LOGIN` trong `master`, nên tạo *contained user* ngay trong DB. Kết nối vào database `PRJ301_LOCKER` (không phải `master`) bằng `lockeradmin`, ví dụ trong **Query editor** của DB trên Azure Portal, hoặc:
+
+```powershell
+sqlcmd -S smartlocker-<tên-bạn>.database.windows.net -d PRJ301_LOCKER -U lockeradmin -P "<mật khẩu>" -N -I
+```
+
+rồi chạy (thay mật khẩu mẫu bằng mật khẩu mạnh của bạn, có chữ hoa, chữ thường, số và ký hiệu):
+
+```sql
+CREATE USER smartlocker_app WITH PASSWORD = N'Doi-Mat-Khau#2026';
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON SCHEMA::dbo TO smartlocker_app;
+GO
+```
+
+Làm một lần là đủ: chạy lại `run_demo_db.ps1 -Azure` chỉ xóa bảng, view, procedure, không xóa tài khoản, và quyền trên schema `dbo` vẫn giữ. Xem thêm mục "Kết nối cơ sở dữ liệu" trong README.
+
 ## Bước 3. Tạo Web Service trên Render
 
 1. Vào <https://dashboard.render.com> → **New** → **Web Service** → chọn repo `SmartLocker` (lần đầu cần cấp quyền cho Render đọc repo GitHub).
@@ -58,8 +74,8 @@ Nếu báo lỗi `Cannot open server ... Client with IP address ... is not allow
    | Key | Value |
    |---|---|
    | `DB_URL` | `jdbc:sqlserver://smartlocker-<tên-bạn>.database.windows.net:1433;databaseName=PRJ301_LOCKER;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=60` |
-   | `DB_USER` | `lockeradmin` |
-   | `DB_PASSWORD` | mật khẩu ở Bước 1 |
+   | `DB_USER` | `smartlocker_app` (tài khoản tạo ở cuối Bước 2, **không** dùng `lockeradmin`) |
+   | `DB_PASSWORD` | mật khẩu của `smartlocker_app` |
 
    `loginTimeout=60` là bắt buộc. DB miễn phí tự tạm dừng khi không dùng, và lần kết nối đầu tiên cần khoảng 30–60 giây để DB thức dậy.
 4. **Deploy Web Service**. Lần build đầu mất khoảng 5–10 phút. Theo dõi tab **Logs** đến khi thấy dòng `Server startup in [...] milliseconds`.

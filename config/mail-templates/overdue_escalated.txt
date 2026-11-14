@@ -1,11 +1,11 @@
-Subject: Smart Locker: lượt gửi ở ngăn {{slot_code}} đã chuyển cho nhân viên xử lý
+Subject: Smart Locker: your booking of slot {{slot_code}} was escalated to the staff
 
-Chào {{name}},
+Hello {{name}},
 
-Lượt gửi đồ của bạn ở ngăn {{slot_code}} (dãy {{bank_code}}, {{area_name}}) đã quá hạn từ {{due_at}}, tức khoảng {{overdue_hours}} giờ, nên đã được chuyển cho nhân viên khu vực {{area_name}} xử lý.
+Your booking of slot {{slot_code}} (bank {{bank_code}}, {{area_name}}) has been overdue since {{due_at}}, about {{overdue_hours}} h, so it was escalated to the staff of {{area_name}}.
 
-Phụ phí trễ hạn đã tính: {{overdue_fee}}. Số dư ví hiện tại: {{balance}}.
+Late fee charged: {{overdue_fee}}. Current wallet balance: {{balance}}.
 
-Hãy liên hệ nhân viên vận hành của khu vực này càng sớm càng tốt để nhận lại đồ.
+Please contact an operator of this area as soon as possible to get your things back.
 
-?Tủ của tôi: {{my_locker_url}}
+?My locker: {{my_locker_url}}

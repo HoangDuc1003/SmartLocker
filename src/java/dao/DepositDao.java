@@ -28,9 +28,13 @@ public class DepositDao {
             + "JOIN StoragePlan p ON p.plan_id = d.plan_id "
             + "LEFT JOIN Device v ON v.device_id = b.device_id";
 
-    /** "Tự chọn · 3 giờ" / "Tự chọn · 2 ngày" for a custom booking of that many minutes. */
+    /** "Custom · 3 h" / "Custom · 2 days" for a custom booking of that many minutes. */
     public static String customLabel(int minutes) {
-        return minutes % 1440 == 0 ? "Tự chọn · " + (minutes / 1440) + " ngày" : "Tự chọn · " + (minutes / 60) + " giờ";
+        if (minutes % 1440 == 0) {
+            int days = minutes / 1440;
+            return "Custom · " + days + (days == 1 ? " day" : " days");
+        }
+        return "Custom · " + (minutes / 60) + " h";
     }
 
     private static Deposit map(ResultSet rs) throws SQLException {
@@ -44,7 +48,7 @@ public class DepositDao {
         d.setPlanId(rs.getInt("plan_id"));
         int customMin = rs.getInt("custom_min");
         d.setCustomMin(rs.wasNull() ? null : customMin);
-        // a custom booking shows what was booked ("Tự chọn · 3 giờ"), not the plan it keeps for the grace time
+        // a custom booking shows what was booked ("Custom · 3 h"), not the plan it keeps for the grace time
         d.setPlanName(rs.wasNull() ? rs.getString("plan_name") : customLabel(customMin));
         int cardId = rs.getInt("card_id");
         d.setCardId(rs.wasNull() ? null : cardId);
@@ -102,7 +106,7 @@ public class DepositDao {
         return reserve(userId, slotId, planId, openMethod, null);
     }
 
-    /** customMin != null: "Tự chọn" (whole hours or days); the procedure checks it, prices it and picks the plan. */
+    /** customMin != null: "Custom" (whole hours or days); the procedure checks it, prices it and picks the plan. */
     public long reserve(int userId, int slotId, int planId, String openMethod, Integer customMin) throws SQLException {
         try (Connection conn = DbContext.getConnection();
              CallableStatement cs = conn.prepareCall("{call Deposit_Reserve(?, ?, ?, ?, ?, ?)}")) {
@@ -340,7 +344,7 @@ public class DepositDao {
                 try (PreparedStatement psSlot = conn.prepareStatement(sqlSlot)) {
                     psSlot.setInt(1, d.getSlotId());
                     if (psSlot.executeUpdate() != 1) {
-                        throw refused("Ngăn này không còn trống hoặc hộp tủ đang mất kết nối, hãy chọn ngăn khác.");
+                        throw refused("This slot is no longer free or its box is offline; choose another slot.");
                     }
                 }
                 long depositId;
@@ -400,7 +404,7 @@ public class DepositDao {
                     ps.setLong(1, d.getDepositId());
                     try (ResultSet rs = ps.executeQuery()) {
                         if (!rs.next()) {
-                            throw refused("Không tìm thấy lượt gửi");
+                            throw refused("Booking not found");
                         }
                         oldStatus = rs.getString(1);
                         slotId = rs.getInt(2);
@@ -412,8 +416,8 @@ public class DepositDao {
                 boolean closing = isOpen(oldStatus) && !isOpen(newStatus);
                 if (!oldStatus.equals(newStatus) && isOpen(newStatus)) {
                     throw refused(isOpen(oldStatus)
-                            ? "Trạng thái Đã đặt / Đang gửi do hộp tủ chuyển, không đổi tay được."
-                            : "Không mở lại được lượt gửi đã kết thúc, hãy tạo lượt mới.");
+                            ? "The Reserved / In use status is set by the locker box and cannot be changed by hand."
+                            : "A booking that has ended cannot be reopened; create a new one.");
                 }
                 try (PreparedStatement ps = conn.prepareStatement("UPDATE Deposit SET "
                         + "plan_id = CASE WHEN ? > 0 THEN ? ELSE plan_id END, due_at = ?, status = ?, "
@@ -464,17 +468,17 @@ public class DepositDao {
     /** null when deleted, otherwise the reason. Only a booking that is not open may be deleted. */
     public String delete(long depositId) throws SQLException {
         Deposit d = findById(depositId);
-        if (d == null) return "Không tìm thấy lượt gửi";
+        if (d == null) return "Booking not found";
         if ("RESERVED".equals(d.getStatus()) || "ACTIVE".equals(d.getStatus())) {
-            return "Không xóa được lượt gửi đang dùng hoặc đang giữ chỗ. Hãy hủy hoặc kết thúc trước.";
+            return "A booking in use or on hold cannot be deleted. Cancel or end it first.";
         }
         String sql = "DELETE FROM Deposit WHERE deposit_id = ?";
         try (Connection conn = DbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, depositId);
-            return ps.executeUpdate() == 1 ? null : "Không có gì bị xóa";
+            return ps.executeUpdate() == 1 ? null : "Nothing was deleted";
         } catch (SQLException e) {
             if (e.getErrorCode() == 547) {
-                return "Lượt gửi này đang được dữ liệu khác tham chiếu, không xóa được.";
+                return "Other data refers to this booking, so it cannot be deleted.";
             }
             throw e;
         }

@@ -43,16 +43,16 @@ public class MailTemplatesTest {
         Map<String, String> v = all();
         v.put("my_locker_url", "");
         MailTemplates.Message m = templates().render("due_soon", v);
-        Assert.assertFalse(m.body.contains("Tủ của tôi:"), "the link line must go");
+        Assert.assertFalse(m.body.contains("My locker:"), "the link line must go");
         v.put("my_locker_url", "https://x/y");
-        Assert.assertTrue(templates().render("due_soon", v).body.contains("Tủ của tôi: https://x/y"));
+        Assert.assertTrue(templates().render("due_soon", v).body.contains("My locker: https://x/y"));
     }
 
     @Test
-    public void emptyNameBecomesBan() throws Exception {
+    public void emptyNameBecomesThere() throws Exception {
         Map<String, String> v = all();
         v.put("name", "  ");
-        Assert.assertTrue(templates().render("welcome", v).body.startsWith("Chào bạn,"));
+        Assert.assertTrue(templates().render("welcome", v).body.startsWith("Hello there,"));
     }
 
     @Test
@@ -61,7 +61,7 @@ public class MailTemplatesTest {
         v.put("name", "An\r\nBcc: x@y.z");
         MailTemplates.Message m = templates().render("welcome", v);
         Assert.assertFalse(m.subject.contains("\n"));
-        Assert.assertTrue(m.body.contains("Chào An Bcc: x@y.z,"));
+        Assert.assertTrue(m.body.contains("Hello An Bcc: x@y.z,"));
     }
 
     @Test(expectedExceptions = java.io.IOException.class)

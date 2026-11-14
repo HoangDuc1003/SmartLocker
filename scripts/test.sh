@@ -14,7 +14,8 @@ esac
 cd "$(dirname "$0")/.."
 JDK="${JDK:-C:/Program Files/Java/jdk1.8.0_202/bin}"
 TOMCAT="${TOMCAT:-E:/apache-tomcat-9.0.113}"
-CP="$TOMCAT/lib/servlet-api.jar;$TOMCAT/lib/jsp-api.jar;lib/*"
+# runtime jars in web/WEB-INF/lib, test-only jars (TestNG, JCommander, SLF4J) in lib/
+CP="$TOMCAT/lib/servlet-api.jar;$TOMCAT/lib/jsp-api.jar;web/WEB-INF/lib/*;lib/*"
 mkdir -p build/classes build/test-classes
 find src/java -name '*.java' > build/sources.txt
 "$JDK/javac" -nowarn -encoding UTF-8 -source 8 -target 8 -cp "$CP" -d build/classes @build/sources.txt

@@ -92,7 +92,7 @@ public class SecurityFilter implements Filter {
     private static void deviceUnauthorized(HttpServletResponse res) throws IOException {
         res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         res.setContentType("application/json;charset=UTF-8");
-        res.getWriter().write("{\"result\":\"ERROR\",\"reason\":\"BAD_API_KEY\",\"message\":\"Sai khoa thiet bi\"}");
+        res.getWriter().write("{\"result\":\"ERROR\",\"reason\":\"BAD_API_KEY\",\"message\":\"Wrong device key\"}");
     }
 
     @Override

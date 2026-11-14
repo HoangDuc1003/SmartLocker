@@ -4,11 +4,11 @@
 <%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
 <c:set var="activeNav" value="alerts"/>
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Cảnh báo · Smart Locker</title>
+    <title>Alerts · Smart Locker</title>
     <script src="${pageContext.request.contextPath}/js/theme.js"></script>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
 </head>
@@ -21,55 +21,55 @@
 <c:when test="${mode == 'detail'}">
     <div class="page-head">
         <div>
-            <h2>Cảnh báo #${alert.alertId}: <c:out value="${alert.label}"/></h2>
+            <h2>Alert #${alert.alertId}: <c:out value="${alert.label}"/></h2>
         </div>
-        <a class="btn ghost" href="${ctx}/AlertController">Quay lại danh sách</a>
+        <a class="btn ghost" href="${ctx}/AlertController">Back to the list</a>
     </div>
 
     <div class="grid-2">
         <section class="panel">
-            <h3>Thông tin</h3>
+            <h3>Details</h3>
             <dl class="kv">
-                <dt>Trạng thái</dt><dd><ui:status value="${alert.status}"/></dd>
-                <dt>Nguồn phát hiện</dt><dd><c:out value="${alert.source == 'ML' ? 'Mô hình học máy (ML)' : 'Luật (RULE)'}"/></dd>
-                <dt>Thời điểm</dt><dd><ui:dt value="${alert.createdAt}"/></dd>
+                <dt>Status</dt><dd><ui:status value="${alert.status}"/></dd>
+                <dt>Detected by</dt><dd><c:out value="${alert.source == 'ML' ? 'Machine learning model (ML)' : 'Rule (RULE)'}"/></dd>
+                <dt>Time</dt><dd><ui:dt value="${alert.createdAt}"/></dd>
                 <c:if test="${not empty alert.riskScore}">
                     <%-- risk = 1 - P(NORMAL), shown as a whole percent like the list and the dashboard --%>
-                    <dt>Điểm rủi ro</dt><dd class="num"><fmt:formatNumber value="${alert.riskScore}" type="percent" maxFractionDigits="0"/></dd>
+                    <dt>Risk score</dt><dd class="num"><fmt:formatNumber value="${alert.riskScore}" type="percent" maxFractionDigits="0"/></dd>
                 </c:if>
-                <dt>Thiết bị</dt>
+                <dt>Device</dt>
                 <dd>
                     <c:choose>
                         <c:when test="${not empty device}">
                             <b><c:out value="${device.deviceCode}"/></b> · <c:out value="${device.location}"/>
                             <ui:status value="${device.status}"/>
                         </c:when>
-                        <c:otherwise>Thiết bị #${alert.deviceId}</c:otherwise>
+                        <c:otherwise>Device #${alert.deviceId}</c:otherwise>
                     </c:choose>
                 </dd>
             </dl>
             <c:if test="${alert.status == 'OPEN' and perms.contains('ALERT:WRITE')}">
-                <form method="post" action="${ctx}/AlertController" class="actions" data-confirm="Đánh dấu cảnh báo này là đã xử lý?">
+                <form method="post" action="${ctx}/AlertController" class="actions" data-confirm="Mark this alert as resolved?">
                     <input type="hidden" name="action" value="resolve">
                     <input type="hidden" name="id" value="${alert.alertId}">
-                    <button type="submit">Đánh dấu đã xử lý</button>
+                    <button type="submit">Mark as resolved</button>
                 </form>
             </c:if>
         </section>
 
         <c:if test="${not empty device and perms.contains('ALERT:WRITE')}">
             <section class="panel">
-                <h3>Trạng thái thiết bị</h3>
-                <p class="muted" style="margin-top:0">Sau khi kiểm tra hoặc sửa xong, kỹ thuật viên chỉnh lại trạng thái của bộ điều khiển
+                <h3>Device status</h3>
+                <p class="muted" style="margin-top:0">After checking or repairing it, the technician sets the status of the controller
                     <b><c:out value="${device.deviceCode}"/></b>.</p>
                 <form method="post" action="${ctx}/AlertController" class="actions">
                     <input type="hidden" name="action" value="device_status">
                     <input type="hidden" name="alertId" value="${alert.alertId}">
                     <input type="hidden" name="deviceId" value="${device.deviceId}">
-                    <button type="submit" name="status" value="ACTIVE" class="btn--ok" ${device.status == 'ACTIVE' ? 'disabled' : ''}>Hoạt động lại</button>
-                    <button type="submit" name="status" value="MAINTENANCE" class="ghost" ${device.status == 'MAINTENANCE' ? 'disabled' : ''}>Chuyển sang bảo trì</button>
+                    <button type="submit" name="status" value="ACTIVE" class="btn--ok" ${device.status == 'ACTIVE' ? 'disabled' : ''}>Back in service</button>
+                    <button type="submit" name="status" value="MAINTENANCE" class="ghost" ${device.status == 'MAINTENANCE' ? 'disabled' : ''}>Set to maintenance</button>
                     <button type="submit" name="status" value="OFFLINE" class="btn--danger" ${device.status == 'OFFLINE' ? 'disabled' : ''}
-                            data-confirm="Đánh dấu thiết bị là mất kết nối?" data-confirm-danger>Đánh dấu mất kết nối</button>
+                            data-confirm="Mark the device as offline?" data-confirm-danger>Mark as offline</button>
                 </form>
             </section>
         </c:if>
@@ -89,28 +89,28 @@
             </c:choose>
         </c:forEach>
         <section class="panel esc-panel">
-            <h3>Lượt gửi quá hạn đã chuyển xử lý</h3>
-            <p class="hint">Đồ vẫn nằm trong ngăn, tủ đang khóa. Liên hệ người dùng; việc báo cơ quan chức năng (nếu cần) làm ngoài hệ thống.</p>
+            <h3>Overdue booking escalated to staff</h3>
+            <p class="hint">The items are still in the slot and the locker is locked. Contact the user; reporting to the authorities (if needed) is done outside the system.</p>
             <%-- the UTC text is read as a wall clock in the JVM zone, the same frame as JDBC timestamps, so ui:dt prints it in Vietnam time --%>
             <c:if test="${not empty escDue}"><c:catch var="escDueBad"><fmt:parseDate var="escDueAt" value="${escDue}" pattern="yyyy-MM-dd HH:mm:ss"/></c:catch></c:if>
             <dl class="kv">
-                <dt>Lượt gửi</dt><dd><c:out value="#${escDeposit}"/>
-                    <c:if test="${perms.contains('DEPOSIT:READ')}"><c:url var="escLink" value="/DepositController"><c:param name="q" value="${escUser}"/></c:url><a href="<c:out value='${escLink}'/>">Xem lượt gửi</a></c:if></dd>
-                <dt>Người dùng</dt><dd><b><c:out value="${escUser}"/></b></dd>
-                <dt>Ngăn</dt><dd><c:out value="${escSlot}"/></dd>
-                <dt>Hạn trả</dt><dd><ui:dt value="${escDueAt}"/></dd>
-                <dt>Số giờ trễ</dt><dd class="num"><c:out value="${escHours}"/> giờ</dd>
-                <dt>Phụ phí đã thu</dt><dd><span class="money"><fmt:formatNumber value="${escFee}" groupingUsed="true"/> đ</span></dd>
-                <dt>Số tiền đang nợ</dt><dd><span class="money ${escBalance lt 0 ? 'text-danger' : ''}"><fmt:formatNumber value="${escBalance lt 0 ? -escBalance : 0}" groupingUsed="true"/> đ</span>
-                    <span class="muted">(số dư lúc chuyển: <fmt:formatNumber value="${escBalance}" groupingUsed="true"/> đ)</span></dd>
+                <dt>Booking</dt><dd><c:out value="#${escDeposit}"/>
+                    <c:if test="${perms.contains('DEPOSIT:READ')}"><c:url var="escLink" value="/DepositController"><c:param name="q" value="${escUser}"/></c:url><a href="<c:out value='${escLink}'/>">View booking</a></c:if></dd>
+                <dt>User</dt><dd><b><c:out value="${escUser}"/></b></dd>
+                <dt>Slot</dt><dd><c:out value="${escSlot}"/></dd>
+                <dt>Due</dt><dd><ui:dt value="${escDueAt}"/></dd>
+                <dt>Hours late</dt><dd class="num"><c:out value="${escHours}"/> h</dd>
+                <dt>Late fee charged</dt><dd><span class="money"><fmt:formatNumber value="${escFee}" groupingUsed="true"/> VND</span></dd>
+                <dt>Amount owed</dt><dd><span class="money ${escBalance lt 0 ? 'text-danger' : ''}"><fmt:formatNumber value="${escBalance lt 0 ? -escBalance : 0}" groupingUsed="true"/> VND</span>
+                    <span class="muted">(balance when escalated: <fmt:formatNumber value="${escBalance}" groupingUsed="true"/> VND)</span></dd>
             </dl>
         </section>
     </c:if>
 
-    <h3>Bằng chứng</h3>
+    <h3>Evidence</h3>
     <div class="tablewrap">
     <table class="grid">
-        <tr><th>Mục</th><th>Giá trị ghi nhận</th></tr>
+        <tr><th>Item</th><th>Recorded value</th></tr>
         <c:forEach var="ev" items="${alert.evidence}">
             <tr>
                 <td><b><c:out value="${ev[0]}"/></b></td>
@@ -118,16 +118,16 @@
             </tr>
         </c:forEach>
         <c:if test="${empty alert.evidence}">
-            <tr><td colspan="2" class="empty">Không có bằng chứng đính kèm.</td></tr>
+            <tr><td colspan="2" class="empty">No evidence attached.</td></tr>
         </c:if>
     </table>
     </div>
 
     <c:if test="${not empty session}">
-        <h3>Phiên mở tủ gây ra cảnh báo (#${session.sessionId})</h3>
+        <h3>Opening session that raised the alert (#${session.sessionId})</h3>
         <div class="tablewrap">
         <table class="grid">
-            <tr><th>Ngăn</th><th>Mã thẻ</th><th>Cách mở</th><th class="r">Mở cửa (giây)</th><th class="r">Thay đổi khối lượng (g)</th><th class="r">Số lần mở</th><th class="r">Thời gian gửi (phút)</th><th>Đo lúc</th></tr>
+            <tr><th>Slot</th><th>Card UID</th><th>Open method</th><th class="r">Door open (s)</th><th class="r">Weight change (g)</th><th class="r">Openings</th><th class="r">Storage time (min)</th><th>Measured</th></tr>
             <tr>
                 <td><c:out value="${session.slotCode}"/></td>
                 <td><code><c:out value="${session.cardUid}"/></code></td>
@@ -146,45 +146,45 @@
 <%-- ================= LIST ================= --%>
 <c:otherwise>
     <div class="page-head">
-        <h2>Cảnh báo <span class="count">(${total})</span></h2>
+        <h2>Alerts <span class="count">(${total})</span></h2>
     </div>
 
     <form class="filter" method="get" action="${ctx}/AlertController">
-        <select name="status" aria-label="Trạng thái">
-            <option value="">Tất cả trạng thái</option>
-            <option value="OPEN" ${status == 'OPEN' ? 'selected' : ''}>Chưa xử lý</option>
-            <option value="RESOLVED" ${status == 'RESOLVED' ? 'selected' : ''}>Đã xử lý</option>
+        <select name="status" aria-label="Status">
+            <option value="">All statuses</option>
+            <option value="OPEN" ${status == 'OPEN' ? 'selected' : ''}>Open</option>
+            <option value="RESOLVED" ${status == 'RESOLVED' ? 'selected' : ''}>Resolved</option>
         </select>
-        <input type="text" name="label" value="<c:out value='${label}'/>" placeholder="Lọc theo loại cảnh báo" aria-label="Loại cảnh báo">
-        <button type="submit">Lọc</button>
-        <a class="btn ghost" href="${ctx}/AlertController">Xóa lọc</a>
+        <input type="text" name="label" value="<c:out value='${label}'/>" placeholder="Filter by alert type" aria-label="Alert type">
+        <button type="submit">Filter</button>
+        <a class="btn ghost" href="${ctx}/AlertController">Clear filters</a>
     </form>
 
     <div class="tablewrap">
     <table class="grid">
-        <tr><th>#</th><th>Thời điểm</th><th>Thiết bị</th><th>Loại</th><th>Nguồn</th><th class="r">Rủi ro</th><th>Trạng thái</th><th>Thao tác</th></tr>
+        <tr><th>#</th><th>Time</th><th>Device</th><th>Type</th><th>Source</th><th class="r">Risk</th><th>Status</th><th>Actions</th></tr>
         <c:forEach var="a" items="${items}">
         <tr class="${a.status == 'OPEN' ? 'locked' : ''}">
             <td><a href="${ctx}/AlertController?id=${a.alertId}">#${a.alertId}</a></td>
             <td><ui:dt value="${a.createdAt}"/></td>
-            <td><c:choose><c:when test="${not empty a.deviceCode}"><b><c:out value="${a.deviceCode}"/></b></c:when><c:otherwise>Thiết bị #${a.deviceId}</c:otherwise></c:choose></td>
+            <td><c:choose><c:when test="${not empty a.deviceCode}"><b><c:out value="${a.deviceCode}"/></b></c:when><c:otherwise>Device #${a.deviceId}</c:otherwise></c:choose></td>
             <td><b><c:out value="${a.label}"/></b></td>
             <td><c:out value="${a.source}"/></td>
             <td class="r num"><c:choose><c:when test="${not empty a.riskScore}"><fmt:formatNumber value="${a.riskScore}" type="percent" maxFractionDigits="0"/></c:when><c:otherwise>–</c:otherwise></c:choose></td>
             <td><ui:status value="${a.status}"/></td>
             <td class="ops">
-                <a href="${ctx}/AlertController?id=${a.alertId}">Chi tiết</a>
+                <a href="${ctx}/AlertController?id=${a.alertId}">Details</a>
                 <c:if test="${a.status == 'OPEN' and perms.contains('ALERT:WRITE')}">
-                    <form method="post" action="${ctx}/AlertController" data-confirm="Đánh dấu cảnh báo này là đã xử lý?">
+                    <form method="post" action="${ctx}/AlertController" data-confirm="Mark this alert as resolved?">
                         <input type="hidden" name="action" value="resolve">
                         <input type="hidden" name="id" value="${a.alertId}">
-                        <button type="submit" class="link">Đã xử lý</button>
+                        <button type="submit" class="link">Resolve</button>
                     </form>
                 </c:if>
             </td>
         </tr>
         </c:forEach>
-        <c:if test="${empty items}"><tr><td colspan="8" class="empty">Không có cảnh báo nào.</td></tr></c:if>
+        <c:if test="${empty items}"><tr><td colspan="8" class="empty">No alerts.</td></tr></c:if>
     </table>
     </div>
 

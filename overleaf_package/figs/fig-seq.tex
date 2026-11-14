@@ -1,0 +1,32 @@
+% Fig. 4 (fig:seq): sequence of the device protocol. Needs figs/colors.tex. Natural width about 17.3 cm.
+% Solid arrows are requests, dashed arrows are replies; every arrow starts and ends on a lifeline.
+\begin{tikzpicture}[
+  head/.style={minimum width=2.6cm, font=\small\bfseries},
+  t/.style={sllbl, above, inner sep=2pt}]
+  \def\xU{1.3}\def\xE{5.5}\def\xS{12.0}\def\xD{16.0}\def\yEnd{-7.75}
+  % fill of the opt fragment first, so that the lifelines and arrows are drawn over it
+  \fill[slYellow!55] (3.5,-4.45) rectangle (17.3,-7.5);
+  % lifelines
+  \node[slcoral, head] (u) at (\xU,0) {User};
+  \node[slpeach, head] (e) at (\xE,0) {ESP32 box};
+  \node[slmint,  head] (s) at (\xS,0) {Server};
+  \node[slblue,  head] (d) at (\xD,0) {SQL Server};
+  \foreach \n/\x in {u/\xU, e/\xE, s/\xS, d/\xD}
+    \draw[draw=slInk, densely dashed, line width=0.6pt] (\n.south) -- (\x,\yEnd);
+  % frame and tag of the opt fragment, over the lifelines
+  \draw[draw=slYellowD, line width=0.7pt] (3.5,-4.45) rectangle (17.3,-7.5);
+  \node[draw=slYellowD, fill=slYellow, line width=0.7pt, font=\small, anchor=north west, inner sep=3pt]
+       at (3.5,-4.45) {\textbf{opt} [remote or phone open]};
+  % opening at the box
+  \draw[slarr] (\xU,-1.05) -- node[t] {PIN, card or finger} (\xE,-1.05);
+  \draw[slarr] (\xE,-1.65) -- node[t] {\texttt{/api/device/auth}: credential} (\xS,-1.65);
+  \draw[slarr] (\xS,-2.25) -- node[t] {key, lockout, booking} (\xD,-2.25);
+  \draw[slret] (\xD,-2.85) -- node[t] {decision, attempts left} (\xS,-2.85);
+  \draw[slret] (\xS,-3.45) -- node[t] {\texttt{UNLOCK} / \texttt{CHOOSE} / \texttt{DENY}} (\xE,-3.45);
+  \draw[slret] (\xE,-4.05) -- node[t] {servo, LCD} (\xU,-4.05);
+  % remote or phone open, carried by the heartbeat
+  \draw[slarr] (\xE,-5.45) -- node[t] {\texttt{/api/health} (heartbeat)} (\xS,-5.45);
+  \draw[slret] (\xS,-6.05) -- node[t] {queued \texttt{UNLOCK} (staff or phone)} (\xE,-6.05);
+  \draw[slarr] (\xE,-6.65) -- node[t] {\texttt{/api/locker/batch} (command id)} (\xS,-6.65);
+  \draw[slarr] (\xS,-7.25) -- node[t] {rules, risk, alert, audit} (\xD,-7.25);
+\end{tikzpicture}

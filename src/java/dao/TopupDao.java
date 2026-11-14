@@ -142,7 +142,7 @@ public class TopupDao {
                 }
 
                 appendAudit(conn, adminId, "TOPUP_APPROVE", requestId,
-                        "Approved " + req.getAmount() + " VND for user " + req.getUsername());
+                        "Approved " + String.format(java.util.Locale.US, "%,d", req.getAmount()) + " VND for user " + req.getUsername());
                 conn.commit();
                 return true;
             } catch (SQLException e) {

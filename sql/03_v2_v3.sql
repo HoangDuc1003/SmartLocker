@@ -141,7 +141,7 @@ UPDATE dbo.OperatingProfile
 SET params_json = REPLACE(params_json, N'"demo":false', N'"demo":true')
 WHERE device_id <> @oneDev AND params_json LIKE N'%"demo":false%';
 
--- B2. Demo 2 minutes is off: deposits refer to it, so it is not deleted (found by duration: 07 renames the plans)
+-- B2. Demo 2 minutes is off: deposits refer to it, so it is not deleted (found by duration, never by name)
 UPDATE dbo.StoragePlan SET is_active = 0 WHERE duration_min = 2 AND is_active = 1;
 
 -- B3. Four operators, one per locker area: operator1..4 take LIB, DOMA, CANT, GYM; the others are DISABLED
@@ -678,7 +678,7 @@ BEGIN
 END;
 GO
 
--- "Tủ của tôi": a new enroll code when the old one ran out of its 10 minutes
+-- "My locker": a new enroll code when the old one ran out of its 10 minutes
 CREATE OR ALTER PROCEDURE Enroll_NewCode @deposit_id BIGINT, @actor INT, @code CHAR(6) OUTPUT
 AS
 BEGIN
@@ -738,26 +738,27 @@ USE PRJ301_LOCKER;
 GO
 SET NOCOUNT ON;
 
--- Storage plans
-UPDATE p SET plan_name = v.vi
+-- Storage plans: the names are UI labels, so they stay English (PRJ301); an older build renamed them to
+-- Vietnamese, this turns them back (the same UPDATE is in 06_english_messages.sql)
+UPDATE p SET plan_name = v.en
 FROM dbo.StoragePlan p
-JOIN (VALUES (N'2 hours', N'2 giờ'), (N'4 hours', N'4 giờ'), (N'Day pass', N'Trọn ngày'),
-             (N'Demo 2 minutes', N'Demo 2 phút')) v(en, vi) ON p.plan_name = v.en;
+JOIN (VALUES (N'2 hours', N'2 giờ', 120), (N'4 hours', N'4 giờ', 240), (N'Day pass', N'Trọn ngày', 1440),
+             (N'Demo 2 minutes', N'Demo 2 phút', 2)) v(en, vi, minutes)
+  ON p.plan_name = v.vi AND p.duration_min = v.minutes;
 
--- Areas: name and location
+-- Areas: name and location (place names). The OPS area (staff office, "Operations") is ordinary words
+-- and stays English; 06_english_messages.sql turns back the Vietnamese an older build wrote.
 UPDATE a SET name = v.vi
 FROM dbo.LockerArea a
 JOIN (VALUES (N'LIB', N'Library', N'Thư viện'), (N'DOMA', N'Dormitory A', N'Ký túc xá A'),
-             (N'CANT', N'Canteen', N'Căng tin'), (N'GYM', N'Sports Hall', N'Nhà thi đấu'),
-             (N'OPS', N'Operations', N'Vận hành')) v(code, en, vi)
+             (N'CANT', N'Canteen', N'Căng tin'), (N'GYM', N'Sports Hall', N'Nhà thi đấu')) v(code, en, vi)
   ON a.area_code = v.code AND a.name = v.en;
 
 UPDATE a SET location = v.vi
 FROM dbo.LockerArea a
 JOIN (VALUES (N'Library, 1st floor', N'Thư viện, tầng 1'), (N'Dorm A lobby', N'Sảnh ký túc xá A'),
              (N'Next to the canteen entrance', N'Cạnh lối vào căng tin'),
-             (N'Sports hall changing room', N'Phòng thay đồ nhà thi đấu'),
-             (N'Staff office, no locker slots', N'Văn phòng nhân viên, không có ngăn tủ')) v(en, vi)
+             (N'Sports hall changing room', N'Phòng thay đồ nhà thi đấu')) v(en, vi)
   ON a.location = v.en;
 
 -- Devices: location (the same texts as the areas)
@@ -768,17 +769,11 @@ JOIN (VALUES (N'Library, 1st floor', N'Thư viện, tầng 1'), (N'Dorm A lobby'
              (N'Sports hall changing room', N'Phòng thay đồ nhà thi đấu')) v(en, vi)
   ON d.location = v.en;
 
--- Locker banks: "Bank A" -> "Dãy A"
-UPDATE dbo.LockerBank SET name = N'Dãy ' + SUBSTRING(name, 6, 10)
-WHERE name LIKE N'Bank _%';
+-- Locker bank names ("Bank A") and the system account ("System account", the actor of automatic audit rows)
+-- stay English: the UI is English. 06_english_messages.sql reverts the Vietnamese names an older build wrote.
 
--- The system account is shown as the actor of automatic audit rows
-UPDATE dbo.Users SET full_name = N'Tài khoản hệ thống'
-WHERE username = N'system' AND full_name = N'System account';
-
--- One seeded ticket note still says "Bank CANT-A"
-UPDATE dbo.MaintenanceTicket SET note = REPLACE(note, N'Bank CANT-A', N'dãy CANT-A')
-WHERE note LIKE N'%Bank CANT-A%';
+-- The seeded ticket notes are English now (02_data_v1.sql), so "bank CANT-A" is no longer turned into "dãy CANT-A";
+-- 06_english_messages.sql fixes a note an older build changed.
 GO
 
 SELECT plan_id, plan_name, is_active FROM dbo.StoragePlan ORDER BY plan_id;
@@ -849,9 +844,9 @@ GO
 INSERT INTO dbo.SlotSize (size_code, size_cm, price_pct, items, sort_no)
 SELECT v.c, v.cm, v.pct, v.items, v.n
 FROM (VALUES
-    ('S', N'20x20x20', 100, N'Ví;Điện thoại;Chìa khóa;Tai nghe;Sạc dự phòng;Sổ tay nhỏ', 1),
-    ('M', N'40x40x40', 130, N'Laptop tới 15,6 inch;Túi xách;Balo nhỏ (dưới 40 cm);Một đôi giày;Áo khoác gấp gọn', 2),
-    ('L', N'60x60x60', 169, N'Balo lớn;Vali cabin (55x40x20 cm);Mũ bảo hiểm fullface;Túi thể thao;Thùng đồ nhỏ', 3)) v(c, cm, pct, items, n)
+    ('S', N'20x20x20', 100, N'Wallet;Phone;Keys;Headphones;Power bank;Small notebook', 1),
+    ('M', N'40x40x40', 130, N'Laptop up to 15.6 inch;Handbag;Small backpack (under 40 cm);A pair of shoes;Folded jacket', 2),
+    ('L', N'60x60x60', 169, N'Large backpack;Cabin suitcase (55x40x20 cm);Full-face helmet;Sports bag;Small box', 3)) v(c, cm, pct, items, n)
 WHERE NOT EXISTS (SELECT 1 FROM dbo.SlotSize s WHERE s.size_code = v.c);
 GO
 
@@ -872,7 +867,7 @@ IF COL_LENGTH('dbo.Deposit', 'escalated_at') IS NULL
 IF COL_LENGTH('dbo.Deposit', 'due_reminder_at') IS NULL
     ALTER TABLE dbo.Deposit ADD due_reminder_at DATETIME2 NULL;          -- the due reminder e-mail was sent
 IF COL_LENGTH('dbo.Deposit', 'custom_min') IS NULL
-    ALTER TABLE dbo.Deposit ADD custom_min INT NULL;                     -- "Tự chọn": booked minutes (NULL = the plan's)
+    ALTER TABLE dbo.Deposit ADD custom_min INT NULL;                     -- "Custom" duration: booked minutes (NULL = the plan's)
 GO
 
 IF COL_LENGTH('dbo.LockerArea', 'latitude') IS NULL
@@ -934,10 +929,10 @@ GO
 --     your lockers; only empty values are filled, so your own values are never overwritten.
 UPDATE a SET a.latitude = v.lat, a.longitude = v.lng
 FROM dbo.LockerArea a
-JOIN (VALUES (N'LIB',  21.013210, 105.526540),     -- Thư viện (giả)
-             (N'DOMA', 21.010850, 105.527900),     -- Ký túc xá A (giả)
-             (N'CANT', 21.012300, 105.528700),     -- Căng tin (giả)
-             (N'GYM',  21.014400, 105.524800))     -- Nhà thi đấu (giả)
+JOIN (VALUES (N'LIB',  21.013210, 105.526540),     -- library (made-up point)
+             (N'DOMA', 21.010850, 105.527900),     -- dormitory A (made-up point)
+             (N'CANT', 21.012300, 105.528700),     -- canteen (made-up point)
+             (N'GYM',  21.014400, 105.524800))     -- sports hall (made-up point)
      v(code, lat, lng) ON v.code = a.area_code
 WHERE a.latitude IS NULL AND a.longitude IS NULL;
 GO
@@ -999,7 +994,7 @@ BEGIN
 END;
 GO
 
--- "Tự chọn" (custom duration): N whole hours (1..CUSTOM_MAX_HOURS) or N whole days (1..CUSTOM_MAX_DAYS).
+-- "Custom" duration: N whole hours (1..CUSTOM_MAX_HOURS) or N whole days (1..CUSTOM_MAX_DAYS).
 -- Hours: min(hour of the size x N, sized day pass). Days: day pass x N x (100% for 1 day, CUSTOM_MULTI_DAY_PCT
 -- for 2-6, CUSTOM_WEEK_PCT from 7), by size, rounded up once to 100 VND. The day pass is the active plan of
 -- 1440 minutes. NULL when the minutes are not allowed or there is no day pass.
@@ -1057,7 +1052,7 @@ GO
 
 -- v3: price by size and open method; after paying, BOOKING_BUFFER (10,000 VND) must stay in the wallet
 -- (with the card deposit of a first card on top). The late fee of the size is fixed now.
--- "Tự chọn": @custom_min (whole hours or whole days, priced by fn_CustomPrice) replaces @plan_id; the booking
+-- "Custom" duration: @custom_min (whole hours or whole days, priced by fn_CustomPrice) replaces @plan_id; the booking
 -- keeps the longest active plan not longer than it (the day pass for days) for its grace time, and its minutes.
 CREATE OR ALTER PROCEDURE Deposit_Reserve
     @user_id INT, @slot_id INT, @plan_id INT, @new_id BIGINT OUTPUT, @open_method NVARCHAR(12) = N'PIN',
@@ -1165,7 +1160,7 @@ BEGIN
 END;
 GO
 
--- the first open starts the clock: due = now + the booked minutes ("Tự chọn") or the plan's
+-- the first open starts the clock: due = now + the booked minutes ("Custom" duration) or the plan's
 -- @locker_slot_id (optional): see Deposit_Complete; Device_Authorize and RemoteCommand_TakePending pass it
 CREATE OR ALTER PROCEDURE Deposit_CheckIn @device_id INT, @slot_code NVARCHAR(20), @locker_slot_id INT = NULL
 AS
@@ -2040,11 +2035,11 @@ WHERE (area_code = N'DOMA' AND latitude IN (10.883000) AND longitude IN (106.781
    OR (area_code = N'CANT' AND latitude IN (10.882600) AND longitude IN (106.781500));
 UPDATE a SET a.latitude = v.lat, a.longitude = v.lng
 FROM dbo.LockerArea a
-JOIN (VALUES (N'DOMA', 10.880078, 106.807655),    -- A14 KTX A ĐHQG TPHCM (Google Maps)
-             (N'DOMB', 10.883592, 106.779613),    -- Ký túc xá khu B, ĐHQG (nhà C6) (Google Maps)
-             (N'GYM',  10.875131, 106.800723),    -- Nhà Văn hóa Sinh viên TP.HCM (Google Maps)
-             (N'LIB',  10.841100, 106.809900),    -- Thư viện, Đại học FPT TP.HCM (Khu Công nghệ cao, Thủ Đức)
-             (N'CANT', 10.880278, 106.807855))    -- Căng tin KTX khu A: cùng chỗ với A14, lệch khoảng 30 m để hai ghim không đè nhau
+JOIN (VALUES (N'DOMA', 10.880078, 106.807655),    -- dormitory A, building A14 (Google Maps)
+             (N'DOMB', 10.883592, 106.779613),    -- dormitory B, building C6 (Google Maps)
+             (N'GYM',  10.875131, 106.800723),    -- student cultural house (Google Maps)
+             (N'LIB',  10.841100, 106.809900),    -- library of FPT University HCMC (Hi-Tech Park, Thu Duc)
+             (N'CANT', 10.880278, 106.807855))    -- dormitory A canteen: next to A14, about 30 m apart so the two pins do not overlap
      v(code, lat, lng) ON v.code = a.area_code
 WHERE a.latitude IS NULL OR a.longitude IS NULL
    OR (a.area_code = N'LIB' AND a.latitude = 10.875000 AND a.longitude = 106.801000)   -- the first draft of this file

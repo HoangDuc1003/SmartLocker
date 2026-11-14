@@ -20,7 +20,7 @@ import util.Pricing;
 import util.Web;
 
 /**
- * "Tủ của tôi" as JSON for the signed-in user (BOOKING resource): the open booking with its PIN or enroll code,
+ * "My locker" as JSON for the signed-in user (BOOKING resource): the open booking with its PIN or enroll code,
  * cards, fingerprints, prices by open method and the recent history. The Postman collection reads it to chain steps.
  *
  * GET  -> {"username","balance","booking":{...}|null,"cards":[...],"fingerprints":[...],"plans":[...],"history":[...]}
@@ -119,7 +119,7 @@ public class MyLockerApi extends HttpServlet {
             ApiJson.write(res, 200, reply);
         } catch (SQLException e) {
             log("My locker failed for user " + me.getUserId(), e);
-            ApiJson.error(res, 500, "SERVER_ERROR", "Lỗi máy chủ, hãy thử lại.");
+            ApiJson.error(res, 500, "SERVER_ERROR", "Server error, please try again.");
         }
     }
 
@@ -137,7 +137,7 @@ public class MyLockerApi extends HttpServlet {
                 new DeviceAuthDao().deleteFingerprint(Web.intParam(req, "fpId", 0), me.getUserId());
                 reply.addProperty("ok", true);
             } else {
-                ApiJson.error(res, 400, "BAD_REQUEST", "Thao tác không hợp lệ");
+                ApiJson.error(res, 400, "BAD_REQUEST", "Invalid action");
                 return;
             }
             ApiJson.write(res, 200, reply);
@@ -147,7 +147,7 @@ public class MyLockerApi extends HttpServlet {
                 return;
             }
             log("My locker action failed", e);
-            ApiJson.error(res, 500, "SERVER_ERROR", "Lỗi máy chủ, hãy thử lại.");
+            ApiJson.error(res, 500, "SERVER_ERROR", "Server error, please try again.");
         }
     }
 }

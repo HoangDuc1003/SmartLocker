@@ -52,7 +52,7 @@ public class MaintenanceController extends HttpServlet {
             String note = Web.trimmed(req, "note");
             try {
                 dao.close(ticketId, me.getUserId(), note);
-                Web.flash(req.getSession(), "Đã đóng phiếu #" + ticketId + ". Ngăn tủ liên quan trở lại trạng thái AVAILABLE.", false);
+                Web.flash(req.getSession(), "Ticket #" + ticketId + " closed. The related slot is AVAILABLE again.", false);
             } catch (SQLException e) {
                 if (e.getErrorCode() >= 50000) {
                     Web.flash(req.getSession(), Web.sqlMessage(e), true);

@@ -1,10 +1,10 @@
-Subject: Smart Locker: yêu cầu nạp {{amount}} chưa được duyệt
+Subject: Smart Locker: your top-up of {{amount}} was not approved
 
-Chào {{name}},
+Hello {{name}},
 
-Yêu cầu nạp tiền {{amount}} của bạn chưa được duyệt.
-Lý do: {{reason}}
+Your top-up request of {{amount}} was not approved.
+Reason: {{reason}}
 
-Bạn có thể kiểm tra lại nội dung chuyển khoản rồi tạo yêu cầu mới.
+Check the transfer note, then create a new request.
 
-?Nạp tiền: {{topup_url}}
+?Top up: {{topup_url}}

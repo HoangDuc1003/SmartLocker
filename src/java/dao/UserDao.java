@@ -297,12 +297,12 @@ public class UserDao {
                     ps.setInt(1, userId);
                     int n = ps.executeUpdate();
                     conn.commit();
-                    return n == 1 ? null : "Không tìm thấy người dùng";
+                    return n == 1 ? null : "User not found";
                 }
             } catch (SQLException e) {
                 conn.rollback();
                 if (e.getErrorCode() == 547) {
-                    return "Người dùng đã có dữ liệu liên quan (thẻ, lượt gửi, nhật ký), hãy chuyển sang DISABLED hoặc LOCKED thay vì xóa";
+                    return "The user has related data (cards, bookings, logs); set the user to DISABLED or LOCKED instead of deleting";
                 }
                 throw e;
             }

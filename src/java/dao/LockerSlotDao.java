@@ -206,10 +206,10 @@ public class LockerSlotDao {
         try (Connection conn = DbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM LockerSlot WHERE locker_slot_id = ?")) {
             ps.setInt(1, slotId);
-            return ps.executeUpdate() == 1 ? null : "Ngăn tủ không còn tồn tại";
+            return ps.executeUpdate() == 1 ? null : "The slot no longer exists";
         } catch (SQLException e) {
             if (e.getErrorCode() == 547) {
-                return "Ngăn đã có lượt gửi hoặc phiên mở tủ, hãy chuyển sang MAINTENANCE thay vì xóa";
+                return "The slot has bookings or door sessions; set it to MAINTENANCE instead of deleting it";
             }
             throw e;
         }

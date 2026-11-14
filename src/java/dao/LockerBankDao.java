@@ -175,10 +175,10 @@ public class LockerBankDao {
         try (Connection conn = DbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM LockerBank WHERE bank_id = ?")) {
             ps.setInt(1, bankId);
-            return ps.executeUpdate() == 1 ? null : "Không tìm thấy dãy tủ";
+            return ps.executeUpdate() == 1 ? null : "Locker bank not found";
         } catch (SQLException e) {
             if (e.getErrorCode() == 547) {
-                return "Dãy tủ còn ngăn, hãy xóa hoặc chuyển các ngăn trước";
+                return "The bank still has slots; delete or move them first";
             }
             throw e;
         }

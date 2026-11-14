@@ -1,18 +1,18 @@
-Subject: Smart Locker: ngăn {{slot_code}} đã quá hạn và đang bị khóa
+Subject: Smart Locker: slot {{slot_code}} is overdue and locked
 
-Chào {{name}},
+Hello {{name}},
 
-Lượt gửi đồ của bạn ở ngăn {{slot_code}} (dãy {{bank_code}}, {{area_name}}) đã hết hạn lúc {{due_at}} và tủ hiện đang bị khóa. Đồ của bạn vẫn nằm yên trong ngăn.
+Your booking of slot {{slot_code}} (bank {{bank_code}}, {{area_name}}) was due at {{due_at}} and the locker is now locked. Your things are still safe in the slot.
 
-Phụ phí trễ hạn: {{overdue_rate}} mỗi giờ.
-Đã tính: {{overdue_hours}} giờ, tổng {{overdue_fee}}, được trừ vào ví.
-Số dư ví hiện tại: {{balance}}.
+Late fee: {{overdue_rate}} per hour.
+Charged so far: {{overdue_hours}} h, {{overdue_fee}} in total, taken from your wallet.
+Current wallet balance: {{balance}}.
 
-Để mở lại tủ:
-1. Nạp tiền để số dư ví từ 0 đ trở lên.
-2. Mở tủ như thường lệ (mật mã, thẻ hoặc vân tay) và lấy đồ.
+To open the locker again:
+1. Top up so that your wallet balance is 0 VND or more.
+2. Open the locker as usual (PIN, card, phone or fingerprint) and pick up your things.
 
-Nếu quá hạn kéo dài khoảng {{escalate_hours}} giờ, lượt gửi sẽ được chuyển cho nhân viên xử lý.
+If the booking stays overdue for about {{escalate_hours}} h, it is escalated to the staff.
 
-?Nạp tiền: {{topup_url}}
-?Tủ của tôi: {{my_locker_url}}
+?Top up: {{topup_url}}
+?My locker: {{my_locker_url}}

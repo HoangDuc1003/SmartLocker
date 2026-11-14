@@ -157,12 +157,12 @@
       (isTarget ? '<span class="pin__wave" aria-hidden="true"><i></i><i></i><i></i></span>' : '') +
       '<span class="ring" style="--p:' + pct + '"><b>' + esc(a.available) + '</b></span>' +
       (a.alert ? '<span class="pin__alert" aria-hidden="true">!</span>' : '') +
-      '<span class="pin__label">' + (isTarget ? 'Tủ của bạn<span class="pin__name"> · ' + esc(a.name) + '</span>' : esc(a.name)) +
+      '<span class="pin__label">' + (isTarget ? 'Your locker<span class="pin__name"> · ' + esc(a.name) + '</span>' : esc(a.name)) +
       '</span></div>';
   }
 
   function pinTitle(a, tone, isTarget) {
-    return (isTarget ? 'Tủ của bạn ở đây. ' : '') + a.name + ': trống ' + a.available + '/' + a.slot_count + ' ngăn, ' + tone.label;
+    return (isTarget ? 'Your locker is here. ' : '') + a.name + ': ' + a.available + '/' + a.slot_count + ' slots free, ' + tone.label;
   }
 
   // two areas a few metres apart: the labels would cover each other, so a lower one hides its label
@@ -208,7 +208,7 @@
     var placed = 0;
 
     if (!L) {
-      host.innerHTML = '<p class="map-fallback">Không tải được thư viện bản đồ. Hãy chọn khu ở danh sách bên cạnh.</p>';
+      host.innerHTML = '<p class="map-fallback">Could not load the map library. Pick an area from the list instead.</p>';
       return { update: function () { return 0; }, setUser: function () {}, focus: function () {},
                setRoute: function () {}, fitAll: function () {}, zoom: function () {}, invalidate: function () {},
                hasUser: function () { return false; }, focusUser: function () {} };
@@ -253,7 +253,7 @@
       notice.className = 'area-map__notice';
       notice.setAttribute('role', 'status');
       notice.hidden = true;
-      notice.textContent = 'Không tải được nền bản đồ (cần Internet). Các khu vẫn nằm đúng vị trí.';
+      notice.textContent = 'Could not load the map tiles (Internet needed). The areas are still shown in the right places.';
       host.parentNode.insertBefore(notice, host.nextSibling);
     } else {
       map.attributionControl.setPosition('bottomleft');
@@ -358,7 +358,7 @@
       document.body.classList.remove('map-moving');
     });
 
-    /* "tải sẵn": once per browser and tile style, save the whole of Vietnam at low zoom and the areas at street zoom,
+    /* "prefetch": once per browser and tile style, save the whole of Vietnam at low zoom and the areas at street zoom,
        so the next visit draws at once and works without the Internet. Street zooms of the whole country would be
        millions of tiles and break the providers' terms, so only the areas get them. */
     var prefetchTimer = null;
@@ -559,7 +559,7 @@
       if (!userMarker) {
         userCircle = L.circle(ll, { radius: 60, className: 'me-acc', interactive: false }).addTo(map);
         userMarker = L.marker(ll, {
-          icon: L.divIcon({ className: 'pin-wrap', html: '<span class="me-dot" role="img" aria-label="Vị trí của bạn"></span>',
+          icon: L.divIcon({ className: 'pin-wrap', html: '<span class="me-dot" role="img" aria-label="Your location"></span>',
                             iconSize: [18, 18], iconAnchor: [9, 9] }),
           keyboard: false, interactive: false, zIndexOffset: 2000
         }).addTo(map);

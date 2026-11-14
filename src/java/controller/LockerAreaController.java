@@ -67,25 +67,25 @@ public class LockerAreaController extends HttpServlet {
 
     private String validate(model.LockerArea a) throws SQLException {
         if ((a.getLatitude() == null) != (a.getLongitude() == null)) {
-            return "Nhập cả vĩ độ và kinh độ, hoặc để trống cả hai";
+            return "Enter both latitude and longitude, or leave both empty";
         }
         if (a.getLatitude() != null && (a.getLatitude() < -90 || a.getLatitude() > 90)) {
-            return "Vĩ độ nằm trong khoảng -90 đến 90";
+            return "The latitude must be between -90 and 90";
         }
         if (a.getLongitude() != null && (a.getLongitude() < -180 || a.getLongitude() > 180)) {
-            return "Kinh độ nằm trong khoảng -180 đến 180";
+            return "The longitude must be between -180 and 180";
         }
         if (!AREA_CODE.matcher(a.getAreaCode()).matches()) {
-            return "Mã khu vực gồm 2 đến 16 chữ cái hoặc chữ số";
+            return "The area code has 2 to 16 letters or digits";
         }
         if (a.getName().length() < 2 || a.getName().length() > 80) {
-            return "Tên dài từ 2 đến 80 ký tự";
+            return "The name must be 2 to 80 characters long";
         }
         if (a.getLocation() != null && a.getLocation().length() > 120) {
-            return "Vị trí dài tối đa 120 ký tự";
+            return "The location can be at most 120 characters long";
         }
         if (dao.codeExists(a.getAreaCode(), a.getAreaId())) {
-            return "Mã khu vực " + a.getAreaCode() + " đã tồn tại";
+            return "Area code " + a.getAreaCode() + " already exists";
         }
         return null;
     }
@@ -102,7 +102,7 @@ public class LockerAreaController extends HttpServlet {
                 int id = util.Web.intParam(req, "id", 0);
                 model.LockerArea item = dao.findById(id);
                 if (item == null) {
-                    util.Web.flash(req.getSession(), "Không tìm thấy khu vực", true);
+                    util.Web.flash(req.getSession(), "Area not found", true);
                     res.sendRedirect("LockerAreaController");
                     return;
                 }
@@ -129,9 +129,9 @@ public class LockerAreaController extends HttpServlet {
                 String reason = dao.delete(id);
                 if (reason == null && old != null) {
                     auditDao.append(me.getUserId(), "DELETE", "AREA", id, old.getAreaCode());
-                    util.Web.flash(req.getSession(), "Đã xóa khu vực " + old.getAreaCode(), false);
+                    util.Web.flash(req.getSession(), "Area " + old.getAreaCode() + " deleted", false);
                 } else {
-                    util.Web.flash(req.getSession(), reason == null ? "Không có gì bị xóa" : reason, true);
+                    util.Web.flash(req.getSession(), reason == null ? "Nothing was deleted" : reason, true);
                 }
                 res.sendRedirect("LockerAreaController");
                 return;
@@ -146,7 +146,7 @@ public class LockerAreaController extends HttpServlet {
                 a.setLatitude(parseCoord(util.Web.trimmed(req, "latitude")));
                 a.setLongitude(parseCoord(util.Web.trimmed(req, "longitude")));
             } catch (NumberFormatException e) {
-                req.setAttribute("error", "Vĩ độ và kinh độ phải là số, ví dụ 10.8411 và 106.8099");
+                req.setAttribute("error", "Latitude and longitude must be numbers, e.g. 10.8411 and 106.8099");
                 showForm(req, res, a, a.getAreaId() == 0);
                 return;
             }
@@ -162,11 +162,11 @@ public class LockerAreaController extends HttpServlet {
             if ("create".equals(action) || a.getAreaId() == 0) {
                 int id = dao.insert(a);
                 auditDao.append(me.getUserId(), "CREATE", "AREA", id, a.getAreaCode());
-                util.Web.flash(req.getSession(), "Đã tạo khu vực " + a.getAreaCode(), false);
+                util.Web.flash(req.getSession(), "Area " + a.getAreaCode() + " created", false);
             } else {
                 dao.update(a);
                 auditDao.append(me.getUserId(), "UPDATE", "AREA", a.getAreaId(), a.getAreaCode());
-                util.Web.flash(req.getSession(), "Đã lưu khu vực " + a.getAreaCode(), false);
+                util.Web.flash(req.getSession(), "Area " + a.getAreaCode() + " saved", false);
             }
             res.sendRedirect("LockerAreaController");
         } catch (SQLException e) {

@@ -2,11 +2,11 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="activeNav" value="map"/>
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Sơ đồ tủ · Smart Locker</title>
+    <title>Locker map · Smart Locker</title>
     <script src="${pageContext.request.contextPath}/js/theme.js"></script>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/js/vendor/leaflet/leaflet.css">
@@ -26,8 +26,8 @@
       data-alert-url="${ctx}/AlertController"
       data-ticket-url="${ctx}/MaintenanceController?status=OPEN"
       data-slot-url="${ctx}/LockerSlotController">
-    <p class="app-loading">Đang tải sơ đồ tủ…</p>
-    <noscript><p class="app-loading">Sơ đồ tủ cần JavaScript. Hãy bật JavaScript trong trình duyệt.</p></noscript>
+    <p class="app-loading">Loading the locker map…</p>
+    <noscript><p class="app-loading">The locker map needs JavaScript. Please turn on JavaScript in your browser.</p></noscript>
 </main>
 </div>
 

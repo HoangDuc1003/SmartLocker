@@ -18,7 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import util.Web;
 
 /**
- * "Dữ liệu cảm biến": every open/close session a box posted to /api/locker/batch (LockerSessionApi), the IoT input of
+ * "Sensor data": every open/close session a box posted to /api/locker/batch (LockerSessionApi), the IoT input of
  * the project, newest first. GET only (the table is append-only): search by a word, filter by box and by a range of
  * measured dates (Vietnam time), sort by a column, 20 rows a page. A record sent during the demo shows up on reload.
  */
@@ -68,15 +68,15 @@ public class LockerSessionController extends HttpServlet {
             LocalDate fromDay = parseDate(from);
             LocalDate toDay = parseDate(to);
             if (!inRange(fromDay) || !inRange(toDay)) {
-                error = "Năm phải nằm trong khoảng " + MIN_YEAR + " đến " + MAX_YEAR + ".";
+                error = "The year must be between " + MIN_YEAR + " and " + MAX_YEAR + ".";
             } else if (fromDay != null && toDay != null && fromDay.isAfter(toDay)) {
-                error = "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.";
+                error = "The start date must be on or before the end date.";
             } else {
                 f.fromUtc = startOfDayUtc(fromDay);
                 f.toUtc = startOfDayUtc(toDay == null ? null : toDay.plusDays(1));   // the whole last day is included
             }
         } catch (DateTimeParseException e) {
-            error = "Ngày phải có dạng năm-tháng-ngày, ví dụ 2026-11-10.";
+            error = "Dates must be year-month-day, e.g. 2026-11-10.";
         }
         try {
             // a bad filter lists nothing: the whole table under an error would look like a filtered result

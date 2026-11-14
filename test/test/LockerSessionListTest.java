@@ -16,7 +16,7 @@ import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 /**
- * The "Dữ liệu cảm biến" list: the Vietnam dates of the filter become UTC bounds, and the DAO filters, sorts and
+ * The "Sensor data" list: the Vietnam dates of the filter become UTC bounds, and the DAO filters, sorts and
  * escapes the keyword. The database part only reads, and is skipped when the database is not there.
  */
 public class LockerSessionListTest {

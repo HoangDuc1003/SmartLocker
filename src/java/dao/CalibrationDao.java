@@ -117,10 +117,10 @@ public class CalibrationDao {
         try (Connection conn = DbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM Calibration WHERE calib_id = ?")) {
             ps.setInt(1, calibId);
-            return ps.executeUpdate() == 1 ? null : "Không tìm thấy bản ghi hiệu chuẩn";
+            return ps.executeUpdate() == 1 ? null : "Calibration record not found";
         } catch (SQLException e) {
             if (e.getErrorCode() == 547) {
-                return "Bản ghi hiệu chuẩn đang được dùng, không xóa được";
+                return "The calibration record is in use and cannot be deleted";
             }
             throw e;
         }

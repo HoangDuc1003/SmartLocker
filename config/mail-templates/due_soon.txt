@@ -1,10 +1,10 @@
-Subject: Smart Locker: ngăn {{slot_code}} sắp hết hạn lúc {{due_at}}
+Subject: Smart Locker: slot {{slot_code}} is due at {{due_at}}
 
-Chào {{name}},
+Hello {{name}},
 
-Lượt gửi đồ của bạn ở ngăn {{slot_code}} (dãy {{bank_code}}, {{area_name}}) sẽ hết hạn lúc {{due_at}}.
+Your booking of slot {{slot_code}} (bank {{bank_code}}, {{area_name}}) is due at {{due_at}}.
 
-Hãy tới lấy đồ hoặc gia hạn trên trang Tủ của tôi trước giờ đó.
-Nếu quá hạn và hết thời gian ân hạn, tủ sẽ bị khóa và mỗi giờ trễ bị tính phụ phí {{overdue_rate}}. Khi số dư ví âm, bạn cần nạp tiền rồi mới mở được tủ.
+Pick up your things or extend the booking on My locker before then.
+After the due time and the grace period, the locker is locked and every late hour costs a late fee of {{overdue_rate}}. If your wallet balance is negative, top up first; then you can open the locker.
 
-?Tủ của tôi: {{my_locker_url}}
+?My locker: {{my_locker_url}}

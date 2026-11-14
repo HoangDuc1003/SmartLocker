@@ -53,7 +53,7 @@ public class RemoteCommandController extends HttpServlet {
         User me = Web.currentUser(req);
         try {
             long id = dao.create(Web.intParam(req, "slotId", 0), Web.trimmed(req, "reason"), me.getUserId());
-            Web.flash(req.getSession(), "Đã xếp lệnh #" + id + ", ngăn tủ sẽ mở trong khoảng 10 giây.", false);
+            Web.flash(req.getSession(), "Command #" + id + " queued; the slot opens in about 10 seconds.", false);
         } catch (SQLException e) {
             if (e.getErrorCode() >= 50000) {
                 Web.flash(req.getSession(), Web.sqlMessage(e), true);

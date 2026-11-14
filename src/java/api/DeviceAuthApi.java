@@ -19,21 +19,21 @@ import service.MailService;
  * v2, spec 4.2: a code, a card or a finger at the box. The server decides "open" or "not open"; the box has one latch.
  *
  * Request: {"method":"PIN","pin":"482913"} | {"method":"CARD","card_uid":"04A1B2C3"} | {"method":"FINGERPRINT","sensor_slot":7}
- * Reply:   {"result":"UNLOCK","phase":"CHECK_IN","deposit_id":120,"slot_code":"A04","open_sec":8,"message":"Moi cat do\nNgan A04",
+ * Reply:   {"result":"UNLOCK","phase":"CHECK_IN","deposit_id":120,"slot_code":"A04","open_sec":8,"message":"Store your items\nSlot A04",
  *           "physical":true}   (false: the slot has no servo, the box only shows OK; see sql/demo_box.sql)
- *          {"result":"DENY","reason":"WRONG_CODE","attempts_left":3,"retry_after_sec":0,"message":"Sai ma\nCon 3 lan"}
+ *          {"result":"DENY","reason":"WRONG_CODE","attempts_left":3,"retry_after_sec":0,"message":"Wrong PIN\n3 tries left"}
  *          v3: {"result":"DENY","reason":"OVERDUE_UNPAID","deposit_id":120,"debt":9700,"overdue_fee":14700,...}
  * v6, open many times: an optional "intent" for an ACTIVE booking (a RESERVED one always checks in):
  *          "ASK"      -> {"result":"CHOOSE","deposit_id":120,"slot_code":"A04","choose_sec":15,"options":["OPEN","CHECKOUT"],
- *                         "message":"A: Mo tu  * huy\nB: Tra tu A04"}   opens nothing, changes nothing, not a wrong guess
+ *                         "message":"A: Open * cancel\nB: Checkout A04"}   opens nothing, changes nothing, not a wrong guess
  *          "OPEN"     -> UNLOCK phase ACCESS (the booking stays ACTIVE)
  *          "CHECKOUT" or no intent (old firmware, Postman) -> UNLOCK phase PICKUP as before
  *          An overdue-locked booking with a wallet >= 0 answers PICKUP to every intent.
  * A card, when e-mail works and its owner has a real address:
- *          {"result":"CONFIRM_EMAIL","phase":"PICKUP","deposit_id":120,"slot_code":"A04","confirm_sec":300,"message":"Mo Gmail/web de\nxac nhan mo tu"}
+ *          {"result":"CONFIRM_EMAIL","phase":"PICKUP","deposit_id":120,"slot_code":"A04","confirm_sec":300,"message":"Confirm in your\ne-mail or web"}
  *          nothing opens now: the link in the e-mail (or the signed-in owner on the map) queues the UNLOCK, the box takes it
  *          with its heartbeat like a phone open.
- *          {"result":"DENY","reason":"WRONG_PLACE","right_bank":"CANT-B","message":"Sai cho! Tu o\nCANT-B"}   the booking is at another box
+ *          {"result":"DENY","reason":"WRONG_PLACE","right_bank":"CANT-B","message":"Wrong box! Go to\nCANT-B"}   the booking is at another box
  * HTTP 200 for every decision, 400 for a bad body, 401 for a bad key (SecurityFilter), 500 when the database failed.
  */
 @WebServlet(name = "DeviceAuthApi", urlPatterns = {"/api/device/auth"})
@@ -106,7 +106,7 @@ public class DeviceAuthApi extends HttpServlet {
         String method = ApiJson.text(body, "method");
         String intent = intent(body);
         if ("".equals(intent)) {
-            ApiJson.error(res, 400, "BAD_REQUEST", "Sai du lieu");
+            ApiJson.error(res, 400, "BAD_REQUEST", "Bad request data");
             return;
         }
         String pin = null, uid = null;
@@ -114,24 +114,24 @@ public class DeviceAuthApi extends HttpServlet {
         if ("PIN".equals(method)) {
             pin = ApiJson.text(body, "pin");
             if (pin == null || !pin.matches(PIN_FORMAT)) {
-                ApiJson.error(res, 400, "BAD_REQUEST", "Sai du lieu");
+                ApiJson.error(res, 400, "BAD_REQUEST", "Bad request data");
                 return;
             }
         } else if ("CARD".equals(method)) {
             uid = ApiJson.text(body, "card_uid");
             uid = uid == null ? null : uid.toUpperCase();
             if (uid == null || !uid.matches(UID_FORMAT)) {
-                ApiJson.error(res, 400, "BAD_REQUEST", "Sai du lieu");
+                ApiJson.error(res, 400, "BAD_REQUEST", "Bad request data");
                 return;
             }
         } else if ("FINGERPRINT".equals(method)) {
             sensorSlot = ApiJson.integer(body, "sensor_slot");
             if (sensorSlot == null || sensorSlot < 1 || sensorSlot > 160) {
-                ApiJson.error(res, 400, "BAD_REQUEST", "Sai du lieu");
+                ApiJson.error(res, 400, "BAD_REQUEST", "Bad request data");
                 return;
             }
         } else {
-            ApiJson.error(res, 400, "BAD_REQUEST", "Sai du lieu");
+            ApiJson.error(res, 400, "BAD_REQUEST", "Bad request data");
             return;
         }
         try {
@@ -162,7 +162,7 @@ public class DeviceAuthApi extends HttpServlet {
             ApiJson.write(res, 200, reply);
         } catch (SQLException e) {
             log("Device auth failed for device " + deviceId, e);
-            ApiJson.error(res, 500, "SERVER_ERROR", "Loi may chu");
+            ApiJson.error(res, 500, "SERVER_ERROR", "Server error");
         }
     }
 }

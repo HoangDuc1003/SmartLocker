@@ -1,13 +1,13 @@
-Subject: Smart Locker: xác nhận mở ngăn {{slot_code}}
+Subject: Smart Locker: confirm opening slot {{slot_code}}
 
-Chào {{name}},
+Hello {{name}},
 
-Thẻ của bạn vừa được quét tại hộp tủ để {{action}}.
+Your card was just scanned at the locker box to {{action}}.
 
-Ngăn: {{slot_code}}, dãy {{bank_code}}
-Khu vực: {{area_name}}
+Slot: {{slot_code}}, bank {{bank_code}}
+Area: {{area_name}}
 
-Mở liên kết này rồi bấm "Xác nhận mở tủ" để hộp mở ngăn (hiệu lực {{expires_min}} phút):
+Open this link and press "Confirm opening" so the box opens the slot (valid for {{expires_min}} min):
 {{confirm_url}}
 
-Nếu không phải bạn quét thẻ, hãy mở liên kết và bấm "Không phải tôi", rồi báo nhân viên để khóa thẻ.
+If you did not scan the card, open the link, press "It was not me" and ask the staff to block the card.

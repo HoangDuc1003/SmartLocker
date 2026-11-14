@@ -25,7 +25,7 @@
             try { localStorage.setItem(KEY, next); } catch (e) { /* private mode: still switches for this page */ }
             var btns = document.querySelectorAll('.theme-toggle');
             for (var i = 0; i < btns.length; i++) {
-                btns[i].setAttribute('aria-label', next === 'dark' ? 'Chuyển sang nền sáng' : 'Chuyển sang nền tối');
+                btns[i].setAttribute('aria-label', next === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
             }
             document.dispatchEvent(new CustomEvent('sl-theme-change', { detail: next }));
         }

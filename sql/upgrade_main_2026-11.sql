@@ -89,7 +89,7 @@ BEGIN
 END;
 GO
 
--- the first open starts the clock: due = now + the booked minutes ("Tự chọn") or the plan's
+-- the first open starts the clock: due = now + the booked minutes ("Custom" duration) or the plan's
 -- @locker_slot_id (optional): see Deposit_Complete; Device_Authorize and RemoteCommand_TakePending pass it
 CREATE OR ALTER PROCEDURE Deposit_CheckIn @device_id INT, @slot_code NVARCHAR(20), @locker_slot_id INT = NULL
 AS
