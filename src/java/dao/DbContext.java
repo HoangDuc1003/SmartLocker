@@ -18,7 +18,7 @@ import java.util.Deque;
  */
 public class DbContext {
 
-    // DB_URL / DB_USER / DB_PASSWORD come from the environment on a hosted server (docs/deploy-render.md);
+    // DB_URL / DB_USER / DB_PASSWORD come from environment variables or JVM system properties (-D);
     // without them the local demo machine is used
     private static final String URL = env("DB_URL",
             "jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false");
@@ -44,6 +44,9 @@ public class DbContext {
 
     private static String env(String name, String fallback) {
         String value = System.getenv(name);
+        if (value == null || value.trim().isEmpty()) {
+            value = System.getProperty(name);
+        }
         return value == null || value.trim().isEmpty() ? fallback : value.trim();
     }
 

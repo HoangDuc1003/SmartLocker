@@ -364,7 +364,7 @@ BEGIN
             BEGIN
                 INSERT INTO RemoteCommand (device_id, slot_id, action, reason, requested_by, status, expires_at, source, deposit_id,
                                            phase, confirm_hash)
-                VALUES (@device_id, @slot_id, N'UNLOCK', N'Quét thẻ, xác nhận qua email', @user, N'AWAITING_EMAIL',
+                VALUES (@device_id, @slot_id, N'UNLOCK', N'Card scan, confirmed by e-mail', @user, N'AWAITING_EMAIL',
                         DATEADD(MINUTE, 5, @now), N'PHONE', @deposit, @phase, @confirm_hash);
                 SET @command = SCOPE_IDENTITY();
             END
@@ -390,7 +390,7 @@ BEGIN
             IF @command IS NULL
             BEGIN
                 INSERT INTO RemoteCommand (device_id, slot_id, action, reason, requested_by, expires_at, source, deposit_id, phase)
-                VALUES (@device_id, @slot_id, N'UNLOCK', N'Mở bằng điện thoại', @user, DATEADD(MINUTE, 2, @now), N'PHONE',
+                VALUES (@device_id, @slot_id, N'UNLOCK', N'Opened with the phone', @user, DATEADD(MINUTE, 2, @now), N'PHONE',
                         @deposit, @phase);
                 SET @command = SCOPE_IDENTITY();
             END

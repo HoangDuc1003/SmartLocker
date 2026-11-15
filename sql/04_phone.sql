@@ -290,7 +290,7 @@ BEGIN
             BEGIN
                 INSERT INTO RemoteCommand (device_id, slot_id, action, reason, requested_by, status, expires_at, source, deposit_id,
                                            phase, confirm_hash)
-                VALUES (@device_id, @slot_id, N'UNLOCK', N'Quét thẻ, xác nhận qua email', @user, N'AWAITING_EMAIL',
+                VALUES (@device_id, @slot_id, N'UNLOCK', N'Card scan, confirmed by e-mail', @user, N'AWAITING_EMAIL',
                         DATEADD(MINUTE, 5, @now), N'PHONE', @deposit, @phase, @confirm_hash);
                 SET @command = SCOPE_IDENTITY();
             END
@@ -317,7 +317,7 @@ BEGIN
             BEGIN
                 INSERT INTO RemoteCommand (device_id, slot_id, action, reason, requested_by, expires_at, source, deposit_id, phase)
                 VALUES (@device_id, @slot_id, N'UNLOCK',
-                        CASE WHEN @method = N'PHONE' THEN N'Chạm điện thoại' ELSE N'Mở bằng điện thoại' END,
+                        CASE WHEN @method = N'PHONE' THEN N'Phone tap' ELSE N'Opened with the phone' END,
                         @user, DATEADD(MINUTE, 2, @now), N'PHONE', @deposit, @phase);
                 SET @command = SCOPE_IDENTITY();
             END
@@ -502,7 +502,7 @@ BEGIN
         BEGIN
             -- a second enroll replaces the old finger: the box erases its template with the next heartbeat
             INSERT INTO RemoteCommand (device_id, slot_id, action, reason, requested_by, expires_at, sensor_slot, source)
-            SELECT device_id, NULL, N'DELETE_FP', N'Thay vân tay', @user, DATEADD(DAY, 7, SYSUTCDATETIME()), sensor_slot, N'SYSTEM'
+            SELECT device_id, NULL, N'DELETE_FP', N'Fingerprint replaced', @user, DATEADD(DAY, 7, SYSUTCDATETIME()), sensor_slot, N'SYSTEM'
             FROM Fingerprint WHERE device_id = @device_id AND user_id = @user AND status = N'ACTIVE';
             UPDATE Fingerprint SET status = N'DELETED'
             WHERE device_id = @device_id AND user_id = @user AND status = N'ACTIVE';

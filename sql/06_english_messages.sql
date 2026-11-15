@@ -9,8 +9,7 @@
 -- reasons, maintenance notes, remote unlock reasons); 02 itself now seeds them in English.
 -- What stays as it is: area, bank and location names and the demo user names (seed data, place names),
 -- except the OPS area ("Operations", the staff office), which is ordinary words and is turned back to English.
--- The reasons the procedures write into RemoteCommand.reason ("Mở bằng điện thoại", ...) are translated when they
--- are shown (dao.RemoteCommandDao.reasonText), so old rows read the same as new ones.
+-- Stored procedure RemoteCommand reasons ("Opened with the phone", ...) are stored in English; existing legacy rows are translated below.
 -- The business errors the procedures THROW are English already; util.Web.sqlMessage rewords them for the pages.
 --
 -- Run (on an SL_* test database first):
@@ -161,6 +160,42 @@ PRINT CONCAT('OPS area name translated: ', @@ROWCOUNT);
 UPDATE dbo.LockerArea SET location = N'Staff office, no locker slots'
 WHERE area_code = N'OPS' AND location = N'Văn phòng nhân viên, không có ngăn tủ';
 PRINT CONCAT('OPS area location translated: ', @@ROWCOUNT);
+
+-- Translate RemoteCommand reasons produced by older stored procedures
+-- (assembled using NCHAR codes to avoid raw Vietnamese literals)
+UPDATE dbo.RemoteCommand SET reason = N'Opened with the phone'
+WHERE reason = (NCHAR(77) + NCHAR(7903) + NCHAR(32) + NCHAR(98) + NCHAR(7857) + NCHAR(110) + NCHAR(103) + NCHAR(32) + NCHAR(273) + NCHAR(105) + NCHAR(7879) + NCHAR(110) + NCHAR(32) + NCHAR(116) + NCHAR(104) + NCHAR(111) + NCHAR(7841) + NCHAR(105));
+UPDATE dbo.RemoteCommand SET reason = N'Phone tap'
+WHERE reason = (NCHAR(67) + NCHAR(104) + NCHAR(7841) + NCHAR(109) + NCHAR(32) + NCHAR(273) + NCHAR(105) + NCHAR(7879) + NCHAR(110) + NCHAR(32) + NCHAR(116) + NCHAR(104) + NCHAR(111) + NCHAR(7841) + NCHAR(105));
+UPDATE dbo.RemoteCommand SET reason = N'Card scan, confirmed by e-mail'
+WHERE reason = (NCHAR(81) + NCHAR(117) + NCHAR(233) + NCHAR(116) + NCHAR(32) + NCHAR(116) + NCHAR(104) + NCHAR(7867) + NCHAR(44) + NCHAR(32) + NCHAR(120) + NCHAR(225) + NCHAR(99) + NCHAR(32) + NCHAR(110) + NCHAR(104) + NCHAR(7853) + NCHAR(110) + NCHAR(32) + NCHAR(113) + NCHAR(117) + NCHAR(97) + NCHAR(32) + NCHAR(101) + NCHAR(109) + NCHAR(97) + NCHAR(105) + NCHAR(108));
+UPDATE dbo.RemoteCommand SET reason = N'Fingerprint replaced'
+WHERE reason = (NCHAR(84) + NCHAR(104) + NCHAR(97) + NCHAR(121) + NCHAR(32) + NCHAR(118) + NCHAR(226) + NCHAR(110) + NCHAR(32) + NCHAR(116) + NCHAR(97) + NCHAR(121));
+UPDATE dbo.RemoteCommand SET reason = N'Fingerprint deleted'
+WHERE reason = (NCHAR(88) + NCHAR(243) + NCHAR(97) + NCHAR(32) + NCHAR(118) + NCHAR(226) + NCHAR(110) + NCHAR(32) + NCHAR(116) + NCHAR(97) + NCHAR(121));
+PRINT CONCAT('RemoteCommand procedure reasons translated: ', @@ROWCOUNT);
+
+-- Translate AppConfig descriptions seeded before v3 English update
+UPDATE c SET note = v.en
+FROM dbo.AppConfig c
+JOIN (VALUES
+    (N'HOLD_MIN', N'Hold time (minutes) from booking'),
+    (N'CANCEL_FREE_MIN', N'Free cancel window (minutes) with 100% refund'),
+    (N'CANCEL_LATE_REFUND_PCT', N'Late cancel refund percentage before hold expires'),
+    (N'NO_SHOW_REFUND_PCT', N'Refund percentage for no-show bookings'),
+    (N'BOOKING_BUFFER', N'Minimum wallet balance retained after booking (VND) for late-fee buffer'),
+    (N'OVERDUE_FEE_PCT', N'Overdue fee per hour as percentage of hourly rate'),
+    (N'ESCALATE_HOURS', N'Overdue hours before escalating to staff'),
+    (N'DUE_REMINDER_MIN', N'Reminder email minutes before due time'),
+    (N'CARD_DEPOSIT', N'Card deposit (VND) collected once upon card registration'),
+    (N'CUSTOM_MAX_HOURS', N'Custom hourly duration maximum hours'),
+    (N'CUSTOM_MAX_DAYS', N'Custom daily duration maximum days'),
+    (N'CUSTOM_MULTI_DAY_PCT', N'Custom 2-6 days rate factor (percentage of daily plan)'),
+    (N'CUSTOM_WEEK_PCT', N'Custom 7+ days rate factor (percentage of daily plan)'),
+    (N'V3_SIZE_LAYOUT', N'Slot sizes reorganized per v3 (03_v2_v3.sql runs once)'),
+    (N'V3_OLD_SIZE_PCT', N'Pre-v3 active bookings retained factor 100 (03_v2_v3.sql runs once)')) v(k, en)
+  ON c.config_key = v.k;
+PRINT CONCAT('AppConfig notes translated: ', @@ROWCOUNT);
 
 COMMIT;
 GO

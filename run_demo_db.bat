@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-title SmartLocker Database Setup & Seed
+title SmartLocker Database Setup and Seed
 color 0b
 
 echo ============================================================
@@ -10,7 +10,7 @@ echo.
 echo Running PowerShell setup script...
 echo.
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0run_demo_db.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0run_demo_db.ps1" %*
 
 if %ERRORLEVEL% NEQ 0 (
     echo.

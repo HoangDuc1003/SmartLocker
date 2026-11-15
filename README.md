@@ -48,7 +48,7 @@ A real ESP32 box talks to the server through an API with its own key per box.**
 | Map | Leaflet vendored in the repo, Mapbox when a token is set | Without Internet the pins still show over a plain grid |
 | Alerts | Fixed rules (`RuleEngine`) and a Weka model (`RiskScorer`) | Rules decide, the model only adds a risk score |
 
-The pages use no CDN, the visible text is Vietnamese, and there are light and dark themes.
+The pages use no CDN, the visible text is English, and there are light and dark themes.
 
 ## Features
 
@@ -62,7 +62,7 @@ The pages use no CDN, the visible text is Vietnamese, and there are light and da
 - **Clear booking.** A popup states the amount taken now, the balance left, the cancel rules and the late fee. After booking, the wallet must keep at least 10,000 VND to cover late fees.
 - **Cancel.** Full refund in the first 5 minutes, then 50% until the 15-minute hold ends.
 - **Automatic check-in.** When the 15-minute hold ends, the booking starts by itself and can no longer be cancelled. The slot stays locked for its owner. If it was never opened by the due time plus the grace period, the booking ends as `NO_SHOW`, the slot is free, no late fee is charged and nothing is refunded; 3 of these in 7 days block booking for a while.
-- **Open many times in one booking.** The first time stores the items (CHECK_IN). After that the box asks `A: Mo tu` / `B: Tra tu`: key A opens the slot and the booking goes on; key B collects the items and ends the booking.
+- **Open many times in one booking.** The first time stores the items (CHECK_IN). After that the box asks "A: Open / B: Checkout": key A opens the slot and the booking goes on; key B collects the items and ends the booking.
 - **Extend** up to 3 times, at the hourly rate of the slot size.
 - **Overdue.** A slot never frees itself because the items are still inside. After the grace period the slot locks, each late hour is charged, the wallet may go negative and the box refuses to open (`OVERDUE_UNPAID`) until the debt is paid. After 48 hours the booking goes to staff with an alert.
 - **Wallet.** Top up with a VietQR code; staff approve before the money is added.
@@ -232,7 +232,7 @@ Two optional features: copy the `.example` file in `config/` to a `.local.proper
 
 ### 3. Database connection
 
-`dao/DbContext` is the only place that opens a connection. It reads three **environment variables** (not JVM `-D` properties). A variable that is unset or empty falls back to its default:
+`dao/DbContext` is the only place that opens a connection. It reads three **environment variables** (with fallback to JVM `-D` system properties). A variable that is unset or empty falls back to its default:
 
 | Environment variable | Default |
 |---|---|
@@ -260,7 +260,17 @@ setx DB_USER "smartlocker_app"
 setx DB_PASSWORD "Change-Me#2026"
 ```
 
-**Windows, Tomcat installed as a service:** the service does not read `setenv.bat`, and the Java Options box of `Tomcat9w.exe` only adds `-D` properties, which `DbContext` does not read. Set system variables with `setx /M DB_USER "smartlocker_app"` (and likewise `DB_URL`, `DB_PASSWORD`) in an elevated PowerShell. Services only see new system variables after Windows restarts; restarting the service alone is usually not enough.
+**Evaluator setup with named instances (e.g. SQL Server Express):**
+If you are evaluating on a machine with a named SQL Server instance (such as `SQLEXPRESS`), configure the connection using the instance name or port:
+
+```powershell
+# PowerShell
+$env:DB_URL = "jdbc:sqlserver://localhost;instanceName=SQLEXPRESS;databaseName=PRJ301_LOCKER;encrypt=false;trustServerCertificate=true"
+# Or run the setup batch script forwarding named instance parameters:
+.\run_demo_db.bat -Server "localhost\SQLEXPRESS" -User "sa" -Password "12345"
+```
+
+**Windows, Tomcat installed as a service:** the service does not read `setenv.bat`, but the Java Options box of `Tomcat9w.exe` accepts `-D` properties (e.g., `-DDB_URL=...`, `-DDB_USER=...`, `-DDB_PASSWORD=...`), which `DbContext` checks if environment variables are not set. Alternatively, set system environment variables with `setx /M DB_USER "smartlocker_app"` (and likewise `DB_URL`, `DB_PASSWORD`) in an elevated PowerShell. Services only see new system variables after Windows restarts; restarting the service alone is usually not enough.
 
 **Linux:** create `$CATALINA_BASE/bin/setenv.sh`:
 
@@ -439,7 +449,7 @@ sequenceDiagram
     S-->>B: UNLOCK + physical
     U->>B: Authenticate again
     B->>S: POST /api/device/auth (intent ASK)
-    S-->>B: CHOOSE, LCD "A: Mo tu / B: Tra tu"
+    S-->>B: CHOOSE, LCD "A: Open / B: Checkout"
     alt Key A: open, booking goes on
         B->>S: intent OPEN
         S-->>B: UNLOCK ACCESS
@@ -480,7 +490,7 @@ The firmware does not send `/api/locker/batch` today because the box has no door
 powershell -ExecutionPolicy Bypass -File scripts\send-demo.ps1 -Count 5 -Fault -Bad
 ```
 
-Every case and error code (Vietnamese): [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md).
+Every case and error code: [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md).
 
 ---
 
@@ -533,7 +543,7 @@ More (Vietnamese): [docs/postman/README.md](./docs/postman/README.md) and [scrip
 
 ## Deploying to the Internet
 
-| Option | Document (Vietnamese) |
+| Option | Document |
 |---|---|
 | Render (Docker) + Azure SQL Database. **Each push to `main` makes Render build and deploy again** | [docs/deploy-render.md](./docs/deploy-render.md) |
 | Run on your own PC through a Cloudflare tunnel, for demos | [docs/deploy.md](./docs/deploy.md) |
@@ -569,8 +579,8 @@ flowchart TD
     DAO --> DB[("SQL Server")]
 ```
 
-- `DbContext` is the only place that opens JDBC connections and keeps a small pool; DAOs close them with try-with-resources.
-- Money and time rules live in SQL procedures; Java calls them and translates errors to Vietnamese (`Web.sqlMessage`).
+- DbContext is the only place that opens JDBC connections and keeps a small pool; DAOs close them with try-with-resources.
+- Money and time rules live in SQL procedures; Java calls them and formats business errors into user-facing English sentences (`Web.sqlMessage`).
 - Views live in `WEB-INF/views` and are reachable only through controllers.
 - `/api/dashboard` reads the in-memory snapshot of `LockerMonitor`, not the database; chart numbers are at `/api/dashboard/stats`.
 
@@ -640,7 +650,7 @@ Device API contract (Vietnamese): [docs/spec/smart-locker-v2.md](./docs/spec/sma
 
 The paper *Smart Locker with Anomalous Access Detection Based on IoT Device Telemetry* is
 [docs/paper/smartlocker-10p.tex](./docs/paper/smartlocker-10p.tex): IEEE template (`IEEEtran`, one column, about 10
-pages), six authors from FPT University, Ho Chi Minh Campus; the corresponding author is Kieu Trong Khanh.
+pages), six authors from FPT University, Ho Chi Minh Campus; the corresponding author is Duc Hoang Nguyen* (`duchoang.nguyen103@gmail.com`).
 
 | Part | Content |
 |---|---|

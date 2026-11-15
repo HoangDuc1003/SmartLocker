@@ -516,7 +516,7 @@ BEGIN
             IF @command IS NULL
             BEGIN
                 INSERT INTO RemoteCommand (device_id, slot_id, action, reason, requested_by, expires_at, source, deposit_id, phase)
-                VALUES (@device_id, @slot_id, N'UNLOCK', N'Mở bằng điện thoại', @user, DATEADD(MINUTE, 2, @now), N'PHONE',
+                VALUES (@device_id, @slot_id, N'UNLOCK', N'Opened with the phone', @user, DATEADD(MINUTE, 2, @now), N'PHONE',
                         @deposit, @phase);
                 SET @command = SCOPE_IDENTITY();
             END
@@ -625,7 +625,7 @@ BEGIN
         BEGIN
             -- a second enroll replaces the old finger: the box erases its template with the next heartbeat
             INSERT INTO RemoteCommand (device_id, slot_id, action, reason, requested_by, expires_at, sensor_slot, source)
-            SELECT device_id, NULL, N'DELETE_FP', N'Thay vân tay', @user, DATEADD(DAY, 7, SYSUTCDATETIME()), sensor_slot, N'SYSTEM'
+            SELECT device_id, NULL, N'DELETE_FP', N'Fingerprint replaced', @user, DATEADD(DAY, 7, SYSUTCDATETIME()), sensor_slot, N'SYSTEM'
             FROM Fingerprint WHERE device_id = @device_id AND user_id = @user AND status = N'ACTIVE';
             UPDATE Fingerprint SET status = N'DELETED'
             WHERE device_id = @device_id AND user_id = @user AND status = N'ACTIVE';
@@ -706,7 +706,7 @@ BEGIN
     BEGIN TRAN;
     UPDATE Fingerprint SET status = N'DELETED' WHERE fp_id = @fp_id;
     INSERT INTO RemoteCommand (device_id, slot_id, action, reason, requested_by, expires_at, sensor_slot, source)
-    VALUES (@device, NULL, N'DELETE_FP', N'Xóa vân tay', @actor, DATEADD(DAY, 7, SYSUTCDATETIME()), @slot, N'SYSTEM');
+    VALUES (@device, NULL, N'DELETE_FP', N'Fingerprint deleted', @actor, DATEADD(DAY, 7, SYSUTCDATETIME()), @slot, N'SYSTEM');
     EXEC Audit_Append @actor, N'DELETE_FINGER', N'FINGERPRINT', @fp_id, @slot;
     -- an open fingerprint booking on this box can no longer be opened: give it an enroll code to register again
     DECLARE @open BIGINT = (SELECT TOP 1 d.deposit_id FROM Deposit d
@@ -813,19 +813,19 @@ GO
 INSERT INTO dbo.AppConfig (config_key, int_value, note)
 SELECT v.k, v.v, v.n
 FROM (VALUES
-    (N'HOLD_MIN',           15,    N'Giữ chỗ (phút) tính từ lúc đặt'),
-    (N'CANCEL_FREE_MIN',    5,     N'Được hủy và hoàn 100% trong chừng này phút sau khi đặt'),
-    (N'CANCEL_LATE_REFUND_PCT', 50, N'Hủy sau CANCEL_FREE_MIN phút, trước khi hết giữ chỗ: hoàn chừng này phần trăm'),
-    (N'NO_SHOW_REFUND_PCT', 0,     N'Phần trăm hoàn lại khi không đến'),
-    (N'BOOKING_BUFFER',     10000, N'Số dư tối thiểu còn lại sau khi đặt (đ), dự phòng phụ phí'),
-    (N'OVERDUE_FEE_PCT',    150,   N'Phụ phí một giờ trễ, phần trăm của giá một giờ'),
-    (N'ESCALATE_HOURS',     48,    N'Quá hạn chừng này giờ thì chuyển nhân viên xử lý'),
-    (N'DUE_REMINDER_MIN',   15,    N'Gửi email nhắc trước hạn trả chừng này phút'),
-    (N'CARD_DEPOSIT',       10000, N'Tiền cọc thẻ từ, thu một lần khi đăng ký thẻ tại hộp'),
-    (N'CUSTOM_MAX_HOURS',   23,    N'Tự chọn theo giờ: tối đa chừng này giờ'),
-    (N'CUSTOM_MAX_DAYS',    7,     N'Tự chọn theo ngày: tối đa chừng này ngày'),
-    (N'CUSTOM_MULTI_DAY_PCT', 90,  N'Tự chọn 2 đến 6 ngày: mỗi ngày bằng chừng này phần trăm giá gói trọn ngày'),
-    (N'CUSTOM_WEEK_PCT',    80,    N'Tự chọn từ 7 ngày: mỗi ngày bằng chừng này phần trăm giá gói trọn ngày')) v(k, v, n)
+    (N'HOLD_MIN',           15,    N'Hold time (minutes) from booking'),
+    (N'CANCEL_FREE_MIN',    5,     N'Free cancel window (minutes) with 100% refund'),
+    (N'CANCEL_LATE_REFUND_PCT', 50, N'Late cancel refund percentage before hold expires'),
+    (N'NO_SHOW_REFUND_PCT', 0,     N'Refund percentage for no-show bookings'),
+    (N'BOOKING_BUFFER',     10000, N'Minimum wallet balance retained after booking (VND) for late-fee buffer'),
+    (N'OVERDUE_FEE_PCT',    150,   N'Overdue fee per hour as percentage of hourly rate'),
+    (N'ESCALATE_HOURS',     48,    N'Overdue hours before escalating to staff'),
+    (N'DUE_REMINDER_MIN',   15,    N'Reminder email minutes before due time'),
+    (N'CARD_DEPOSIT',       10000, N'Card deposit (VND) collected once upon card registration'),
+    (N'CUSTOM_MAX_HOURS',   23,    N'Custom hourly duration maximum hours'),
+    (N'CUSTOM_MAX_DAYS',    7,     N'Custom daily duration maximum days'),
+    (N'CUSTOM_MULTI_DAY_PCT', 90,  N'Custom 2-6 days rate factor (percentage of daily plan)'),
+    (N'CUSTOM_WEEK_PCT',    80,    N'Custom 7+ days rate factor (percentage of daily plan)')) v(k, v, n)
 WHERE NOT EXISTS (SELECT 1 FROM dbo.AppConfig c WHERE c.config_key = v.k);
 -- v5: the card deposit is 10,000 VND; a database made before still has the first default, 30,000
 UPDATE dbo.AppConfig SET int_value = 10000 WHERE config_key = N'CARD_DEPOSIT' AND int_value = 30000;
@@ -908,7 +908,7 @@ BEGIN
             ELSE 'S' END
     FROM dbo.LockerSlot s JOIN pos p ON p.locker_slot_id = s.locker_slot_id;
     INSERT INTO dbo.AppConfig (config_key, int_value, note)
-    VALUES (N'V3_SIZE_LAYOUT', 1, N'Đã xếp lại cỡ ngăn theo v3 (03_v2_v3.sql chỉ làm một lần)');
+    VALUES (N'V3_SIZE_LAYOUT', 1, N'Slot sizes reorganized per v3 (03_v2_v3.sql runs once)');
 END
 GO
 -- open bookings made before v3 were priced as size S: they keep factor 100 after the resize (once)
@@ -916,7 +916,7 @@ IF NOT EXISTS (SELECT 1 FROM dbo.AppConfig WHERE config_key = N'V3_OLD_SIZE_PCT'
 BEGIN
     UPDATE dbo.Deposit SET size_pct = 100 WHERE size_pct IS NULL AND status IN (N'RESERVED', N'ACTIVE');
     INSERT INTO dbo.AppConfig (config_key, int_value, note)
-    VALUES (N'V3_OLD_SIZE_PCT', 1, N'Lượt mở từ trước v3 giữ hệ số cỡ 100 (03_v2_v3.sql chỉ làm một lần)');
+    VALUES (N'V3_OLD_SIZE_PCT', 1, N'Pre-v3 active bookings retained factor 100 (03_v2_v3.sql runs once)');
 END
 GO
 -- the measures always follow SlotSize
@@ -1692,7 +1692,7 @@ BEGIN
             BEGIN
                 INSERT INTO RemoteCommand (device_id, slot_id, action, reason, requested_by, status, expires_at, source, deposit_id,
                                            phase, confirm_hash)
-                VALUES (@device_id, @slot_id, N'UNLOCK', N'Quét thẻ, xác nhận qua email', @user, N'AWAITING_EMAIL',
+                VALUES (@device_id, @slot_id, N'UNLOCK', N'Card scan, confirmed by e-mail', @user, N'AWAITING_EMAIL',
                         DATEADD(MINUTE, 5, @now), N'PHONE', @deposit, @phase, @confirm_hash);
                 SET @command = SCOPE_IDENTITY();
             END
@@ -1718,7 +1718,7 @@ BEGIN
             IF @command IS NULL
             BEGIN
                 INSERT INTO RemoteCommand (device_id, slot_id, action, reason, requested_by, expires_at, source, deposit_id, phase)
-                VALUES (@device_id, @slot_id, N'UNLOCK', N'Mở bằng điện thoại', @user, DATEADD(MINUTE, 2, @now), N'PHONE',
+                VALUES (@device_id, @slot_id, N'UNLOCK', N'Opened with the phone', @user, DATEADD(MINUTE, 2, @now), N'PHONE',
                         @deposit, @phase);
                 SET @command = SCOPE_IDENTITY();
             END
@@ -1863,7 +1863,7 @@ BEGIN
         BEGIN
             -- a second enroll replaces the old finger: the box erases its template with the next heartbeat
             INSERT INTO RemoteCommand (device_id, slot_id, action, reason, requested_by, expires_at, sensor_slot, source)
-            SELECT device_id, NULL, N'DELETE_FP', N'Thay vân tay', @user, DATEADD(DAY, 7, SYSUTCDATETIME()), sensor_slot, N'SYSTEM'
+            SELECT device_id, NULL, N'DELETE_FP', N'Fingerprint replaced', @user, DATEADD(DAY, 7, SYSUTCDATETIME()), sensor_slot, N'SYSTEM'
             FROM Fingerprint WHERE device_id = @device_id AND user_id = @user AND status = N'ACTIVE';
             UPDATE Fingerprint SET status = N'DELETED'
             WHERE device_id = @device_id AND user_id = @user AND status = N'ACTIVE';
