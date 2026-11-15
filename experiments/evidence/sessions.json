@@ -17,7 +17,7 @@
     "rfid_ok": true,
     "stay_min": 8.1,
     "network_latency_ms": 0.0,
-    "seq": 769097002,
+    "seq": 769292002,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -26,7 +26,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 20.13,
+    "duration_ms": 51.0,
     "seed": 415450
   },
   {
@@ -47,7 +47,7 @@
     "rfid_ok": true,
     "stay_min": 19.9,
     "network_latency_ms": 0.0,
-    "seq": 769097003,
+    "seq": 769292003,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -56,7 +56,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 8.85,
+    "duration_ms": 31.91,
     "seed": 126574
   },
   {
@@ -77,7 +77,7 @@
     "rfid_ok": true,
     "stay_min": 25.2,
     "network_latency_ms": 0.0,
-    "seq": 769097004,
+    "seq": 769292004,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -86,7 +86,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 7.68,
+    "duration_ms": 31.39,
     "seed": 598801
   },
   {
@@ -107,7 +107,7 @@
     "rfid_ok": true,
     "stay_min": 12.5,
     "network_latency_ms": 0.0,
-    "seq": 769097005,
+    "seq": 769292005,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -116,7 +116,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 10.1,
+    "duration_ms": 32.25,
     "seed": 836469
   },
   {
@@ -137,7 +137,7 @@
     "rfid_ok": true,
     "stay_min": 18.2,
     "network_latency_ms": 0.0,
-    "seq": 769097006,
+    "seq": 769292006,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -146,7 +146,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 4.01,
+    "duration_ms": 31.88,
     "seed": 903475
   },
   {
@@ -167,7 +167,7 @@
     "rfid_ok": true,
     "stay_min": 5.8,
     "network_latency_ms": 0.0,
-    "seq": 769097007,
+    "seq": 769292007,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -176,7 +176,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 15.88,
+    "duration_ms": 32.04,
     "seed": 853044
   },
   {
@@ -197,7 +197,7 @@
     "rfid_ok": true,
     "stay_min": 26.8,
     "network_latency_ms": 0.0,
-    "seq": 769097008,
+    "seq": 769292008,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -206,7 +206,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 31.78,
+    "duration_ms": 31.76,
     "seed": 793205
   },
   {
@@ -227,7 +227,7 @@
     "rfid_ok": true,
     "stay_min": 9.4,
     "network_latency_ms": 0.0,
-    "seq": 769097009,
+    "seq": 769292009,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -236,7 +236,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 31.67,
+    "duration_ms": 33.96,
     "seed": 968694
   },
   {
@@ -257,7 +257,7 @@
     "rfid_ok": true,
     "stay_min": 29.9,
     "network_latency_ms": 0.0,
-    "seq": 769097010,
+    "seq": 769292010,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -266,7 +266,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 15.84,
+    "duration_ms": 30.62,
     "seed": 734398
   },
   {
@@ -287,7 +287,7 @@
     "rfid_ok": true,
     "stay_min": 15.5,
     "network_latency_ms": 0.0,
-    "seq": 769097011,
+    "seq": 769292011,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -296,7 +296,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 15.88,
+    "duration_ms": 40.42,
     "seed": 269317
   },
   {
@@ -317,7 +317,7 @@
     "rfid_ok": true,
     "stay_min": 7.8,
     "network_latency_ms": 0.0,
-    "seq": 769097012,
+    "seq": 769292012,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -326,7 +326,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 16.09,
+    "duration_ms": 34.67,
     "seed": 468698
   },
   {
@@ -347,7 +347,7 @@
     "rfid_ok": true,
     "stay_min": 6.8,
     "network_latency_ms": 0.0,
-    "seq": 769097013,
+    "seq": 769292013,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -356,7 +356,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 9.38,
+    "duration_ms": 16.97,
     "seed": 285994
   },
   {
@@ -377,7 +377,7 @@
     "rfid_ok": true,
     "stay_min": 25.7,
     "network_latency_ms": 0.0,
-    "seq": 769097014,
+    "seq": 769292014,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -386,7 +386,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 6.49,
+    "duration_ms": 24.65,
     "seed": 831303
   },
   {
@@ -407,7 +407,7 @@
     "rfid_ok": true,
     "stay_min": 11.1,
     "network_latency_ms": 0.0,
-    "seq": 769097015,
+    "seq": 769292015,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -416,7 +416,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 34.67,
     "seed": 835384
   },
   {
@@ -437,7 +437,7 @@
     "rfid_ok": true,
     "stay_min": 12.1,
     "network_latency_ms": 0.0,
-    "seq": 769097016,
+    "seq": 769292016,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -446,7 +446,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 15.7,
+    "duration_ms": 19.74,
     "seed": 917272
   },
   {
@@ -467,7 +467,7 @@
     "rfid_ok": true,
     "stay_min": 15.6,
     "network_latency_ms": 0.0,
-    "seq": 769097017,
+    "seq": 769292017,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -476,7 +476,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 9.31,
+    "duration_ms": 28.78,
     "seed": 938665
   },
   {
@@ -497,7 +497,7 @@
     "rfid_ok": true,
     "stay_min": 25.5,
     "network_latency_ms": 0.0,
-    "seq": 769097018,
+    "seq": 769292018,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -506,7 +506,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 38.4,
+    "duration_ms": 35.36,
     "seed": 574255
   },
   {
@@ -527,7 +527,7 @@
     "rfid_ok": true,
     "stay_min": 17.1,
     "network_latency_ms": 0.0,
-    "seq": 769097019,
+    "seq": 769292019,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -536,7 +536,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 15.84,
+    "duration_ms": 13.94,
     "seed": 759327
   },
   {
@@ -557,7 +557,7 @@
     "rfid_ok": true,
     "stay_min": 12.5,
     "network_latency_ms": 0.0,
-    "seq": 769097020,
+    "seq": 769292020,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -566,7 +566,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 16.06,
+    "duration_ms": 34.09,
     "seed": 301701
   },
   {
@@ -587,7 +587,7 @@
     "rfid_ok": true,
     "stay_min": 26.6,
     "network_latency_ms": 0.0,
-    "seq": 769097021,
+    "seq": 769292021,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -596,7 +596,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 31.74,
+    "duration_ms": 12.87,
     "seed": 877061
   },
   {
@@ -617,7 +617,7 @@
     "rfid_ok": false,
     "stay_min": 11.7,
     "network_latency_ms": 0.0,
-    "seq": 769097022,
+    "seq": 769292022,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -626,7 +626,7 @@
     "b1_rule": "B1_AUTH_DENIED",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 32.55,
+    "duration_ms": 20.79,
     "seed": 199566
   },
   {
@@ -647,7 +647,7 @@
     "rfid_ok": false,
     "stay_min": 17.0,
     "network_latency_ms": 0.0,
-    "seq": 769097023,
+    "seq": 769292023,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R3_LOST_CARD",
@@ -656,7 +656,7 @@
     "b1_rule": "B1_LOST_CARD_USED",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 35.96,
+    "duration_ms": 15.74,
     "seed": 148529
   },
   {
@@ -677,7 +677,7 @@
     "rfid_ok": false,
     "stay_min": 17.4,
     "network_latency_ms": 0.0,
-    "seq": 769097024,
+    "seq": 769292024,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -686,7 +686,7 @@
     "b1_rule": "B1_AUTH_DENIED",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 27.1,
+    "duration_ms": 20.0,
     "seed": 351460
   },
   {
@@ -707,7 +707,7 @@
     "rfid_ok": false,
     "stay_min": 9.5,
     "network_latency_ms": 0.0,
-    "seq": 769097025,
+    "seq": 769292025,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -716,7 +716,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 13.65,
+    "duration_ms": 29.81,
     "seed": 641352
   },
   {
@@ -737,7 +737,7 @@
     "rfid_ok": false,
     "stay_min": 14.3,
     "network_latency_ms": 0.0,
-    "seq": 769097026,
+    "seq": 769292026,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -746,7 +746,7 @@
     "b1_rule": "B1_AUTH_DENIED",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 35.02,
+    "duration_ms": 32.68,
     "seed": 815039
   },
   {
@@ -767,7 +767,7 @@
     "rfid_ok": false,
     "stay_min": 5.9,
     "network_latency_ms": 0.0,
-    "seq": 769097027,
+    "seq": 769292027,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -776,7 +776,7 @@
     "b1_rule": "B1_AUTH_DENIED",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 34.52,
+    "duration_ms": 28.12,
     "seed": 295821
   },
   {
@@ -797,7 +797,7 @@
     "rfid_ok": false,
     "stay_min": 5.2,
     "network_latency_ms": 0.0,
-    "seq": 769097028,
+    "seq": 769292028,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -806,7 +806,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 33.35,
+    "duration_ms": 22.89,
     "seed": 257341
   },
   {
@@ -827,7 +827,7 @@
     "rfid_ok": false,
     "stay_min": 19.9,
     "network_latency_ms": 0.0,
-    "seq": 769097029,
+    "seq": 769292029,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R3_LOST_CARD",
@@ -836,7 +836,7 @@
     "b1_rule": "B1_LOST_CARD_USED",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 36.21,
+    "duration_ms": 25.85,
     "seed": 182643
   },
   {
@@ -857,7 +857,7 @@
     "rfid_ok": false,
     "stay_min": 8.4,
     "network_latency_ms": 0.0,
-    "seq": 769097030,
+    "seq": 769292030,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -866,7 +866,7 @@
     "b1_rule": "B1_AUTH_DENIED",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 12.39,
+    "duration_ms": 30.08,
     "seed": 670180
   },
   {
@@ -887,7 +887,7 @@
     "rfid_ok": false,
     "stay_min": 10.0,
     "network_latency_ms": 0.0,
-    "seq": 769097031,
+    "seq": 769292031,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R3_LOST_CARD",
@@ -896,7 +896,7 @@
     "b1_rule": "B1_LOST_CARD_USED",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 31.07,
+    "duration_ms": 25.41,
     "seed": 618974
   },
   {
@@ -917,7 +917,7 @@
     "rfid_ok": false,
     "stay_min": 10.6,
     "network_latency_ms": 0.0,
-    "seq": 769097032,
+    "seq": 769292032,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R3_LOST_CARD",
@@ -926,7 +926,7 @@
     "b1_rule": "B1_LOST_CARD_USED",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 16.49,
+    "duration_ms": 27.36,
     "seed": 266667
   },
   {
@@ -947,7 +947,7 @@
     "rfid_ok": false,
     "stay_min": 9.0,
     "network_latency_ms": 0.0,
-    "seq": 769097033,
+    "seq": 769292033,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -956,7 +956,7 @@
     "b1_rule": "B1_AUTH_DENIED",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 31.17,
+    "duration_ms": 20.78,
     "seed": 638551
   },
   {
@@ -977,7 +977,7 @@
     "rfid_ok": false,
     "stay_min": 14.9,
     "network_latency_ms": 0.0,
-    "seq": 769097034,
+    "seq": 769292034,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -986,7 +986,7 @@
     "b1_rule": "B1_AUTH_DENIED",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 17.72,
+    "duration_ms": 27.81,
     "seed": 965226
   },
   {
@@ -1007,7 +1007,7 @@
     "rfid_ok": false,
     "stay_min": 13.2,
     "network_latency_ms": 0.0,
-    "seq": 769097035,
+    "seq": 769292035,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -1016,7 +1016,7 @@
     "b1_rule": "B1_AUTH_DENIED",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 13.79,
+    "duration_ms": 27.89,
     "seed": 916607
   },
   {
@@ -1037,7 +1037,7 @@
     "rfid_ok": false,
     "stay_min": 18.3,
     "network_latency_ms": 0.0,
-    "seq": 769097036,
+    "seq": 769292036,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -1046,7 +1046,7 @@
     "b1_rule": "B1_NORMAL_OPERATION",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 25.68,
+    "duration_ms": 28.19,
     "seed": 852847
   },
   {
@@ -1067,7 +1067,7 @@
     "rfid_ok": false,
     "stay_min": 16.4,
     "network_latency_ms": 0.0,
-    "seq": 769097037,
+    "seq": 769292037,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -1076,7 +1076,7 @@
     "b1_rule": "B1_AUTH_DENIED",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 10.84,
+    "duration_ms": 33.01,
     "seed": 846366
   },
   {
@@ -1097,7 +1097,7 @@
     "rfid_ok": false,
     "stay_min": 19.1,
     "network_latency_ms": 0.0,
-    "seq": 769097038,
+    "seq": 769292038,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R3_LOST_CARD",
@@ -1106,7 +1106,7 @@
     "b1_rule": "B1_LOST_CARD_USED",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 39.8,
+    "duration_ms": 18.62,
     "seed": 452860
   },
   {
@@ -1127,7 +1127,7 @@
     "rfid_ok": false,
     "stay_min": 15.7,
     "network_latency_ms": 0.0,
-    "seq": 769097039,
+    "seq": 769292039,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -1136,7 +1136,7 @@
     "b1_rule": "B1_AUTH_DENIED",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 37.61,
+    "duration_ms": 20.4,
     "seed": 456764
   },
   {
@@ -1157,7 +1157,7 @@
     "rfid_ok": false,
     "stay_min": 10.1,
     "network_latency_ms": 0.0,
-    "seq": 769097040,
+    "seq": 769292040,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -1166,7 +1166,7 @@
     "b1_rule": "B1_AUTH_DENIED",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 25.88,
+    "duration_ms": 17.64,
     "seed": 993156
   },
   {
@@ -1187,7 +1187,7 @@
     "rfid_ok": false,
     "stay_min": 19.6,
     "network_latency_ms": 0.0,
-    "seq": 769097041,
+    "seq": 769292041,
     "b0_predicted_label": "UNAUTHORIZED_ACCESS",
     "b0_is_anomaly": true,
     "b0_rule": "B0_AUTH_DENY",
@@ -1196,7 +1196,7 @@
     "b1_rule": "B1_AUTH_DENIED",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 31.87,
+    "duration_ms": 29.72,
     "seed": 910928
   },
   {
@@ -1217,7 +1217,7 @@
     "rfid_ok": false,
     "stay_min": 19.8,
     "network_latency_ms": 0.0,
-    "seq": 769097042,
+    "seq": 769292042,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1226,7 +1226,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 18.04,
     "seed": 245313
   },
   {
@@ -1247,7 +1247,7 @@
     "rfid_ok": false,
     "stay_min": 32.4,
     "network_latency_ms": 0.0,
-    "seq": 769097043,
+    "seq": 769292043,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1256,7 +1256,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 15.88,
+    "duration_ms": 8.0,
     "seed": 482628
   },
   {
@@ -1277,7 +1277,7 @@
     "rfid_ok": false,
     "stay_min": 10.2,
     "network_latency_ms": 0.0,
-    "seq": 769097044,
+    "seq": 769292044,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1286,7 +1286,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 5.61,
     "seed": 583462
   },
   {
@@ -1307,7 +1307,7 @@
     "rfid_ok": false,
     "stay_min": 37.7,
     "network_latency_ms": 0.0,
-    "seq": 769097045,
+    "seq": 769292045,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1316,7 +1316,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 16.09,
+    "duration_ms": 0.0,
     "seed": 484360
   },
   {
@@ -1337,7 +1337,7 @@
     "rfid_ok": false,
     "stay_min": 33.0,
     "network_latency_ms": 0.0,
-    "seq": 769097046,
+    "seq": 769292046,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1346,7 +1346,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 16.36,
     "seed": 759328
   },
   {
@@ -1367,7 +1367,7 @@
     "rfid_ok": false,
     "stay_min": 34.7,
     "network_latency_ms": 0.0,
-    "seq": 769097047,
+    "seq": 769292047,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1397,7 +1397,7 @@
     "rfid_ok": false,
     "stay_min": 31.4,
     "network_latency_ms": 0.0,
-    "seq": 769097048,
+    "seq": 769292048,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1406,7 +1406,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 15.98,
+    "duration_ms": 19.15,
     "seed": 671234
   },
   {
@@ -1427,7 +1427,7 @@
     "rfid_ok": false,
     "stay_min": 33.1,
     "network_latency_ms": 0.0,
-    "seq": 769097049,
+    "seq": 769292049,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1436,7 +1436,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 5.67,
     "seed": 145801
   },
   {
@@ -1457,7 +1457,7 @@
     "rfid_ok": false,
     "stay_min": 27.1,
     "network_latency_ms": 0.0,
-    "seq": 769097050,
+    "seq": 769292050,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1466,7 +1466,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 15.82,
+    "duration_ms": 6.21,
     "seed": 740391
   },
   {
@@ -1487,7 +1487,7 @@
     "rfid_ok": false,
     "stay_min": 13.0,
     "network_latency_ms": 0.0,
-    "seq": 769097051,
+    "seq": 769292051,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1496,7 +1496,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 15.36,
     "seed": 544715
   },
   {
@@ -1517,7 +1517,7 @@
     "rfid_ok": false,
     "stay_min": 25.6,
     "network_latency_ms": 0.0,
-    "seq": 769097052,
+    "seq": 769292052,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1526,7 +1526,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 16.02,
+    "duration_ms": 16.47,
     "seed": 108623
   },
   {
@@ -1547,7 +1547,7 @@
     "rfid_ok": false,
     "stay_min": 19.6,
     "network_latency_ms": 0.0,
-    "seq": 769097053,
+    "seq": 769292053,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1556,7 +1556,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 15.11,
     "seed": 477507
   },
   {
@@ -1577,7 +1577,7 @@
     "rfid_ok": false,
     "stay_min": 31.2,
     "network_latency_ms": 0.0,
-    "seq": 769097054,
+    "seq": 769292054,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1586,7 +1586,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 8.68,
+    "duration_ms": 8.13,
     "seed": 682016
   },
   {
@@ -1607,7 +1607,7 @@
     "rfid_ok": false,
     "stay_min": 38.1,
     "network_latency_ms": 0.0,
-    "seq": 769097055,
+    "seq": 769292055,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1616,7 +1616,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 7.88,
+    "duration_ms": 23.81,
     "seed": 413897
   },
   {
@@ -1637,7 +1637,7 @@
     "rfid_ok": false,
     "stay_min": 17.1,
     "network_latency_ms": 0.0,
-    "seq": 769097056,
+    "seq": 769292056,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1646,7 +1646,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 15.89,
     "seed": 908692
   },
   {
@@ -1667,7 +1667,7 @@
     "rfid_ok": false,
     "stay_min": 56.0,
     "network_latency_ms": 0.0,
-    "seq": 769097057,
+    "seq": 769292057,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1676,7 +1676,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 15.1,
+    "duration_ms": 19.94,
     "seed": 897655
   },
   {
@@ -1697,7 +1697,7 @@
     "rfid_ok": false,
     "stay_min": 17.9,
     "network_latency_ms": 0.0,
-    "seq": 769097058,
+    "seq": 769292058,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1706,7 +1706,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 15.32,
     "seed": 440803
   },
   {
@@ -1727,7 +1727,7 @@
     "rfid_ok": false,
     "stay_min": 21.4,
     "network_latency_ms": 0.0,
-    "seq": 769097059,
+    "seq": 769292059,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1736,7 +1736,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 12.37,
     "seed": 723571
   },
   {
@@ -1757,7 +1757,7 @@
     "rfid_ok": false,
     "stay_min": 29.9,
     "network_latency_ms": 0.0,
-    "seq": 769097060,
+    "seq": 769292060,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1766,7 +1766,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 15.73,
+    "duration_ms": 0.0,
     "seed": 470664
   },
   {
@@ -1787,7 +1787,7 @@
     "rfid_ok": false,
     "stay_min": 48.9,
     "network_latency_ms": 0.0,
-    "seq": 769097061,
+    "seq": 769292061,
     "b0_predicted_label": "FORCED_DOOR_OPEN",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R4_FORCED_OPEN",
@@ -1796,7 +1796,7 @@
     "b1_rule": "B1_FORCED_DOOR_UNAUTHORIZED",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 15.64,
+    "duration_ms": 15.68,
     "seed": 497496
   },
   {
@@ -1817,7 +1817,7 @@
     "rfid_ok": true,
     "stay_min": 104.0,
     "network_latency_ms": 0.0,
-    "seq": 769097062,
+    "seq": 769292062,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -1826,7 +1826,7 @@
     "b1_rule": "B1_TAMPER_VIBRATION",
     "b1_confidence": 0.96,
     "status": "PASS",
-    "duration_ms": 15.73,
+    "duration_ms": 20.06,
     "seed": 947957
   },
   {
@@ -1847,7 +1847,7 @@
     "rfid_ok": true,
     "stay_min": 60.9,
     "network_latency_ms": 0.0,
-    "seq": 769097063,
+    "seq": 769292063,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -1856,7 +1856,7 @@
     "b1_rule": "B1_TAMPER_SHOCK_IMPACT",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 15.64,
+    "duration_ms": 19.88,
     "seed": 441239
   },
   {
@@ -1877,7 +1877,7 @@
     "rfid_ok": true,
     "stay_min": 113.9,
     "network_latency_ms": 0.0,
-    "seq": 769097064,
+    "seq": 769292064,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -1886,7 +1886,7 @@
     "b1_rule": "B1_TAMPER_VIBRATION",
     "b1_confidence": 0.96,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 4.92,
     "seed": 191313
   },
   {
@@ -1907,7 +1907,7 @@
     "rfid_ok": true,
     "stay_min": 63.9,
     "network_latency_ms": 0.0,
-    "seq": 769097065,
+    "seq": 769292065,
     "b0_predicted_label": "PHYSICAL_TAMPER",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R6_SPOOF_WEIGHT",
@@ -1916,7 +1916,7 @@
     "b1_rule": "B1_TAMPER_WEIGHT_LOCKED",
     "b1_confidence": 0.95,
     "status": "PASS",
-    "duration_ms": 16.1,
+    "duration_ms": 20.0,
     "seed": 874180
   },
   {
@@ -1937,7 +1937,7 @@
     "rfid_ok": true,
     "stay_min": 78.5,
     "network_latency_ms": 0.0,
-    "seq": 769097066,
+    "seq": 769292066,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -1946,7 +1946,7 @@
     "b1_rule": "B1_TAMPER_TILT",
     "b1_confidence": 0.96,
     "status": "PASS",
-    "duration_ms": 14.86,
+    "duration_ms": 13.68,
     "seed": 320144
   },
   {
@@ -1967,7 +1967,7 @@
     "rfid_ok": true,
     "stay_min": 71.3,
     "network_latency_ms": 0.0,
-    "seq": 769097067,
+    "seq": 769292067,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -1976,7 +1976,7 @@
     "b1_rule": "B1_TAMPER_SHOCK_IMPACT",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 19.88,
+    "duration_ms": 15.89,
     "seed": 956747
   },
   {
@@ -1997,7 +1997,7 @@
     "rfid_ok": true,
     "stay_min": 88.2,
     "network_latency_ms": 0.0,
-    "seq": 769097068,
+    "seq": 769292068,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2006,7 +2006,7 @@
     "b1_rule": "B1_TAMPER_VIBRATION",
     "b1_confidence": 0.96,
     "status": "PASS",
-    "duration_ms": 29.3,
+    "duration_ms": 0.0,
     "seed": 906786
   },
   {
@@ -2027,7 +2027,7 @@
     "rfid_ok": true,
     "stay_min": 42.2,
     "network_latency_ms": 0.0,
-    "seq": 769097069,
+    "seq": 769292069,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2036,7 +2036,7 @@
     "b1_rule": "B1_TAMPER_SHOCK_IMPACT",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 16.1,
     "seed": 200619
   },
   {
@@ -2057,7 +2057,7 @@
     "rfid_ok": true,
     "stay_min": 31.4,
     "network_latency_ms": 0.0,
-    "seq": 769097070,
+    "seq": 769292070,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2066,7 +2066,7 @@
     "b1_rule": "B1_TAMPER_SHOCK_IMPACT",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 11.28,
+    "duration_ms": 0.0,
     "seed": 136050
   },
   {
@@ -2087,7 +2087,7 @@
     "rfid_ok": true,
     "stay_min": 86.7,
     "network_latency_ms": 0.0,
-    "seq": 769097071,
+    "seq": 769292071,
     "b0_predicted_label": "PHYSICAL_TAMPER",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R6_SPOOF_WEIGHT",
@@ -2096,7 +2096,7 @@
     "b1_rule": "B1_TAMPER_WEIGHT_LOCKED",
     "b1_confidence": 0.95,
     "status": "PASS",
-    "duration_ms": 7.98,
+    "duration_ms": 16.04,
     "seed": 527049
   },
   {
@@ -2117,7 +2117,7 @@
     "rfid_ok": true,
     "stay_min": 29.6,
     "network_latency_ms": 0.0,
-    "seq": 769097072,
+    "seq": 769292072,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2147,7 +2147,7 @@
     "rfid_ok": true,
     "stay_min": 97.8,
     "network_latency_ms": 0.0,
-    "seq": 769097073,
+    "seq": 769292073,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2177,7 +2177,7 @@
     "rfid_ok": true,
     "stay_min": 69.8,
     "network_latency_ms": 0.0,
-    "seq": 769097074,
+    "seq": 769292074,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2186,7 +2186,7 @@
     "b1_rule": "B1_TAMPER_VIBRATION",
     "b1_confidence": 0.96,
     "status": "PASS",
-    "duration_ms": 15.94,
+    "duration_ms": 16.92,
     "seed": 566462
   },
   {
@@ -2207,7 +2207,7 @@
     "rfid_ok": true,
     "stay_min": 42.1,
     "network_latency_ms": 0.0,
-    "seq": 769097075,
+    "seq": 769292075,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2237,7 +2237,7 @@
     "rfid_ok": true,
     "stay_min": 17.4,
     "network_latency_ms": 0.0,
-    "seq": 769097076,
+    "seq": 769292076,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2246,7 +2246,7 @@
     "b1_rule": "B1_TAMPER_TILT",
     "b1_confidence": 0.96,
     "status": "PASS",
-    "duration_ms": 15.86,
+    "duration_ms": 15.22,
     "seed": 570758
   },
   {
@@ -2267,7 +2267,7 @@
     "rfid_ok": true,
     "stay_min": 83.5,
     "network_latency_ms": 0.0,
-    "seq": 769097077,
+    "seq": 769292077,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2297,7 +2297,7 @@
     "rfid_ok": true,
     "stay_min": 40.2,
     "network_latency_ms": 0.0,
-    "seq": 769097078,
+    "seq": 769292078,
     "b0_predicted_label": "PHYSICAL_TAMPER",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R6_SPOOF_WEIGHT",
@@ -2306,7 +2306,7 @@
     "b1_rule": "B1_TAMPER_WEIGHT_LOCKED",
     "b1_confidence": 0.95,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 15.37,
     "seed": 877519
   },
   {
@@ -2327,7 +2327,7 @@
     "rfid_ok": true,
     "stay_min": 33.1,
     "network_latency_ms": 0.0,
-    "seq": 769097079,
+    "seq": 769292079,
     "b0_predicted_label": "PHYSICAL_TAMPER",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R6_SPOOF_WEIGHT",
@@ -2336,7 +2336,7 @@
     "b1_rule": "B1_TAMPER_WEIGHT_LOCKED",
     "b1_confidence": 0.95,
     "status": "PASS",
-    "duration_ms": 31.76,
+    "duration_ms": 0.0,
     "seed": 663899
   },
   {
@@ -2357,7 +2357,7 @@
     "rfid_ok": true,
     "stay_min": 57.6,
     "network_latency_ms": 0.0,
-    "seq": 769097080,
+    "seq": 769292080,
     "b0_predicted_label": "PHYSICAL_TAMPER",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R6_SPOOF_WEIGHT",
@@ -2366,7 +2366,7 @@
     "b1_rule": "B1_TAMPER_WEIGHT_LOCKED",
     "b1_confidence": 0.95,
     "status": "PASS",
-    "duration_ms": 19.74,
+    "duration_ms": 15.67,
     "seed": 229797
   },
   {
@@ -2387,7 +2387,7 @@
     "rfid_ok": true,
     "stay_min": 56.1,
     "network_latency_ms": 0.0,
-    "seq": 769097081,
+    "seq": 769292081,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2417,7 +2417,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 25.0,
-    "seq": 769097082,
+    "seq": 769292082,
     "b0_predicted_label": "SENSOR_MALFUNCTION",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R1_WEIGHT_RANGE",
@@ -2426,7 +2426,7 @@
     "b1_rule": "B1_WEIGHT_RANGE_FAULT",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 15.88,
+    "duration_ms": 15.97,
     "seed": 218451
   },
   {
@@ -2447,7 +2447,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 25.0,
-    "seq": 769097083,
+    "seq": 769292083,
     "b0_predicted_label": "SENSOR_MALFUNCTION",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R1_WEIGHT_RANGE",
@@ -2456,7 +2456,7 @@
     "b1_rule": "B1_WEIGHT_RANGE_FAULT",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 15.85,
+    "duration_ms": 15.97,
     "seed": 218083
   },
   {
@@ -2477,7 +2477,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 25.0,
-    "seq": 769097084,
+    "seq": 769292084,
     "b0_predicted_label": "SENSOR_MALFUNCTION",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R1_WEIGHT_RANGE",
@@ -2486,7 +2486,7 @@
     "b1_rule": "B1_WEIGHT_RANGE_FAULT",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 15.86,
+    "duration_ms": 15.73,
     "seed": 424469
   },
   {
@@ -2507,7 +2507,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 25.0,
-    "seq": 769097085,
+    "seq": 769292085,
     "b0_predicted_label": "SENSOR_MALFUNCTION",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R1_WEIGHT_RANGE",
@@ -2516,7 +2516,7 @@
     "b1_rule": "B1_WEIGHT_RANGE_FAULT",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 16.11,
+    "duration_ms": 18.02,
     "seed": 748899
   },
   {
@@ -2537,7 +2537,7 @@
     "rfid_ok": true,
     "stay_min": 2.0,
     "network_latency_ms": 25.0,
-    "seq": 769097086,
+    "seq": 769292086,
     "b0_predicted_label": "SENSOR_MALFUNCTION",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R1_DOOR_GT_STAY",
@@ -2546,7 +2546,7 @@
     "b1_rule": "B1_DOOR_GT_STAY_FAULT",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 13.69,
     "seed": 365213
   },
   {
@@ -2567,7 +2567,7 @@
     "rfid_ok": true,
     "stay_min": 2.0,
     "network_latency_ms": 25.0,
-    "seq": 769097087,
+    "seq": 769292087,
     "b0_predicted_label": "SENSOR_MALFUNCTION",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R1_DOOR_GT_STAY",
@@ -2576,7 +2576,7 @@
     "b1_rule": "B1_DOOR_GT_STAY_FAULT",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 15.74,
+    "duration_ms": 9.22,
     "seed": 940617
   },
   {
@@ -2597,7 +2597,7 @@
     "rfid_ok": true,
     "stay_min": 2.0,
     "network_latency_ms": 25.0,
-    "seq": 769097088,
+    "seq": 769292088,
     "b0_predicted_label": "SENSOR_MALFUNCTION",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R1_DOOR_GT_STAY",
@@ -2606,7 +2606,7 @@
     "b1_rule": "B1_DOOR_GT_STAY_FAULT",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 8.86,
     "seed": 740337
   },
   {
@@ -2627,7 +2627,7 @@
     "rfid_ok": true,
     "stay_min": 2.0,
     "network_latency_ms": 25.0,
-    "seq": 769097089,
+    "seq": 769292089,
     "b0_predicted_label": "SENSOR_MALFUNCTION",
     "b0_is_anomaly": true,
     "b0_rule": "B0_R1_DOOR_GT_STAY",
@@ -2636,7 +2636,7 @@
     "b1_rule": "B1_DOOR_GT_STAY_FAULT",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 0.0,
+    "duration_ms": 7.46,
     "seed": 467145
   },
   {
@@ -2657,7 +2657,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 25.0,
-    "seq": 769097090,
+    "seq": 769292090,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2666,7 +2666,7 @@
     "b1_rule": "B1_SONAR_STUCK_FAULT",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 15.8,
+    "duration_ms": 5.33,
     "seed": 783962
   },
   {
@@ -2687,7 +2687,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 25.0,
-    "seq": 769097091,
+    "seq": 769292091,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2696,7 +2696,7 @@
     "b1_rule": "B1_SONAR_STUCK_FAULT",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 16.11,
+    "duration_ms": 4.25,
     "seed": 101044
   },
   {
@@ -2717,7 +2717,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 25.0,
-    "seq": 769097092,
+    "seq": 769292092,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2726,7 +2726,7 @@
     "b1_rule": "B1_SONAR_STUCK_FAULT",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 18.22,
+    "duration_ms": 11.99,
     "seed": 122873
   },
   {
@@ -2747,7 +2747,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 25.0,
-    "seq": 769097093,
+    "seq": 769292093,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2756,7 +2756,7 @@
     "b1_rule": "B1_SONAR_STUCK_FAULT",
     "b1_confidence": 0.98,
     "status": "PASS",
-    "duration_ms": 14.59,
+    "duration_ms": 19.69,
     "seed": 375791
   },
   {
@@ -2777,7 +2777,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 25.0,
-    "seq": 769097094,
+    "seq": 769292094,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2786,7 +2786,7 @@
     "b1_rule": "B1_IMU_DROPOUT_FAULT",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 15.47,
+    "duration_ms": 0.86,
     "seed": 239558
   },
   {
@@ -2807,7 +2807,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 25.0,
-    "seq": 769097095,
+    "seq": 769292095,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2816,7 +2816,7 @@
     "b1_rule": "B1_IMU_DROPOUT_FAULT",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 15.95,
+    "duration_ms": 0.0,
     "seed": 427548
   },
   {
@@ -2837,7 +2837,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 25.0,
-    "seq": 769097096,
+    "seq": 769292096,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2846,7 +2846,7 @@
     "b1_rule": "B1_IMU_DROPOUT_FAULT",
     "b1_confidence": 1.0,
     "status": "PASS",
-    "duration_ms": 18.98,
+    "duration_ms": 10.81,
     "seed": 808794
   },
   {
@@ -2867,7 +2867,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 6500.0,
-    "seq": 769097097,
+    "seq": 769292097,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2876,7 +2876,7 @@
     "b1_rule": "B1_NET_TIMEOUT",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 10.03,
+    "duration_ms": 0.0,
     "seed": 403658
   },
   {
@@ -2897,7 +2897,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 6500.0,
-    "seq": 769097098,
+    "seq": 769292098,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2906,7 +2906,7 @@
     "b1_rule": "B1_NET_TIMEOUT",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 7.27,
+    "duration_ms": 18.65,
     "seed": 980082
   },
   {
@@ -2927,7 +2927,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 6500.0,
-    "seq": 769097099,
+    "seq": 769292099,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2936,7 +2936,7 @@
     "b1_rule": "B1_NET_TIMEOUT",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 4.39,
+    "duration_ms": 15.09,
     "seed": 768338
   },
   {
@@ -2957,7 +2957,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 25.0,
-    "seq": 769097099,
+    "seq": 769292099,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2966,7 +2966,7 @@
     "b1_rule": "B1_NET_DUPLICATE_REPLAY",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 2.52,
+    "duration_ms": 6.86,
     "seed": 257756
   },
   {
@@ -2987,7 +2987,7 @@
     "rfid_ok": true,
     "stay_min": 10.0,
     "network_latency_ms": 25.0,
-    "seq": 769097099,
+    "seq": 769292099,
     "b0_predicted_label": "NORMAL_USAGE",
     "b0_is_anomaly": false,
     "b0_rule": "B0_NORMAL",
@@ -2996,7 +2996,7 @@
     "b1_rule": "B1_NET_DUPLICATE_REPLAY",
     "b1_confidence": 0.99,
     "status": "PASS",
-    "duration_ms": 13.38,
+    "duration_ms": 13.98,
     "seed": 706479
   }
 ]

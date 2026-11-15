@@ -4,10 +4,10 @@
   "failed": 0,
   "blocked": 0,
   "pass_rate_pct": 100.0,
-  "total_duration_sec": 1.45,
-  "mean_session_ms": 14.53,
+  "total_duration_sec": 1.75,
+  "mean_session_ms": 17.45,
   "min_session_ms": 0.0,
-  "max_session_ms": 39.8,
+  "max_session_ms": 51.0,
   "stratified_distribution": {
     "NORMAL_AUTHORIZED": 20,
     "UNAUTHORIZED_CREDENTIAL": 20,
@@ -23,5 +23,8 @@
     "SENSOR_MALFUNCTION": 15,
     "NETWORK_MALFUNCTION": 5
   },
-  "timestamp_utc": "2026-11-15T18:58:18Z"
+  "timestamp_utc": "2026-11-15T19:01:33Z",
+  "code_commit_sha": "b369468",
+  "commit_timestamp": "2026-11-16 01:59:56 +0700",
+  "post_commit_execution_timestamp": "2026-11-15T19:01:33Z"
 }

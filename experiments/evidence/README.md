@@ -9,10 +9,10 @@ This directory contains the complete raw evidence files for 100 independently pr
 - **Failed**: 0
 - **Blocked**: 0
 - **Pass Rate**: 100.0%
-- **Total Duration**: 1.45 s
-- **Mean Session Latency**: 14.53 ms
+- **Total Duration**: 1.75 s
+- **Mean Session Latency**: 17.45 ms
 - **Min Latency**: 0.0 ms
-- **Max Latency**: 39.8 ms
+- **Max Latency**: 51.0 ms
 
 ## Stratified Category Distribution (5 Categories, >=20 each)
 - `NORMAL_AUTHORIZED`: 20 sessions

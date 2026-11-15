@@ -266,13 +266,13 @@
   },
   "latency_evaluation": {
     "count": 100,
-    "mean_ms": 14.53,
-    "std_ms": 11.16,
-    "median_p50_ms": 15.73,
-    "p95_ms": 35.02,
-    "p99_ms": 38.4,
+    "mean_ms": 17.45,
+    "std_ms": 11.12,
+    "median_p50_ms": 16.1,
+    "p95_ms": 34.09,
+    "p99_ms": 40.42,
     "min_ms": 0.0,
-    "max_ms": 39.8
+    "max_ms": 51.0
   },
   "e5_audit_integrity": {
     "hash_chain_algorithm": "SHA-256 (UTF-16LE)",
