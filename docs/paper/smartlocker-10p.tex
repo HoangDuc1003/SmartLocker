@@ -4,6 +4,7 @@
 \usepackage{textcomp}
 \usepackage{float}
 \usepackage{array}
+\usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{multicol}
 \usepackage{iftex}
@@ -76,7 +77,11 @@
   \setlength{\abovedisplayskip}{3pt plus 1pt minus 1pt}%
   \setlength{\belowdisplayskip}{3pt plus 1pt minus 1pt}%
 }
-\newcommand{\measurecommit}{1cc154a}
+\newif\ifscopus
+%\scopustrue  % Uncomment for Scopus submission build
+\scopusfalse  % Default: Instructor PRJ301 course build
+
+\newcommand{\codecommit}{b369468}
 \newcommand{\baselinecommit}{da95f43}
 \newcommand{\revisioncommit}{1cc154a}
 
@@ -84,6 +89,7 @@
 
 \title{Smart Locker with Anomalous Access Detection Based on IoT Device Telemetry}
 
+\ifscopus
 \author{%
 \begin{tabular}{ccc}
 Duc Hoang Nguyen* & Viet Tien Nguyen & Huy Hoang Nguyen \\
@@ -93,6 +99,16 @@ Thanh Cao Nguyen & Thu Le & Kieu Trong Khanh \\
 {\small thanhcao19112006@gmail.com} & {\small thulvm@fpt.edu.vn} & {\small khanhkt@fpt.edu.vn} \\[3pt]
 \multicolumn{3}{c}{FPT University, Ho Chi Minh Campus, Vietnam (*Corresponding author)}
 \end{tabular}}
+\else
+\author{%
+\begin{tabular}{ccc}
+Duc Hoang Nguyen & Viet Tien Nguyen & Huy Hoang Nguyen \\
+{\small duchoang.nguyen103@fpt.edu.vn} & {\small tiennguyen100306@fpt.edu.vn} & {\small huyhoang.ct06@fpt.edu.vn} \\[3pt]
+Thanh Cao Nguyen & Thu Le & Kieu Trong Khanh* \\
+{\small thanhcao19112006@fpt.edu.vn} & {\small thulvm@fpt.edu.vn} & {\small khanhkt@fpt.edu.vn} \\[3pt]
+\multicolumn{3}{c}{FPT University, Ho Chi Minh Campus, Vietnam (*Corresponding author)}
+\end{tabular}}
+\fi
 
 \maketitle
 
@@ -108,7 +124,7 @@ forced opening, wrong-user access, items left behind and overdue storage. A mach
 a secondary signal and raises an alert for sessions that no rule explains. On synthetic labelled sessions, the best of
 four Weka classifiers made almost all of its errors between wrong-user and normal sessions, which share the same
 telemetry by construction; identity is therefore checked by rule, and the score should be trusted only once real
-sessions are available. All automated tests and replayed detection scenarios passed, and the server answered every
+sessions are available. All automated tests, replayed detection scenarios and multi-sensor transfer checks passed, and the server answered every
 device request within about 0.1~s.
 \end{abstract}
 
@@ -131,9 +147,7 @@ authenticated client and let the server take every decision, since only the serv
 the resulting contributions are listed in Table~\ref{tab:contrib}. The priority-ordered rule tier is the main
 contribution, whereas the machine-learning risk score serves as a secondary signal because it is trained on synthetic
 data only. Separating deterministic context checks from statistical telemetry scoring ensures that identity violations
-are flagged as soon as a session is uploaded, without waiting for large labelled datasets. Section~II reviews related
-work, Section~III describes the design, Section~IV presents the detector, Section~V details the implementation,
-Section~VI reports the evaluation and Section~VII concludes the paper.
+are flagged as soon as a session is uploaded, without waiting for large labelled datasets.
 
 \begin{table}[!htbp]
 \renewcommand{\arraystretch}{1.02}
@@ -679,7 +693,7 @@ evaluated by stratified 10-fold cross-validation \cite{kohavi1995cv} (seed 42) o
 NORMAL-versus-ABNORMAL task that measures the risk-score decision. Training time is the median of 11 builds and
 inference time the mean over $20 \times 480$ predictions after warm-up across three runs. Experiments ran on an Intel
 Core i5-11400H laptop (2.7~GHz, 6 cores, 16~GB RAM, Windows~11) with JDK 1.8.0\_202, Weka 3.8.6, Tomcat 9.0.113 and SQL
-Server 2022. Baseline machine-learning evaluations, API benchmarks and latency measurements refer to commit \texttt{\baselinecommit} (measured on 30 October 2026). Repository verification, the full TestNG test suite execution (83/83 passing) and multi-sensor simulation experiments refer to revision commit \texttt{\revisioncommit} (15 November 2026), with the rule engine, risk scorer and device API verified unchanged.
+Server 2022. Response times and API scenarios were measured on 30 October 2026 on commit \texttt{\baselinecommit}, and the code counts and the final test run refer to commit \texttt{\revisioncommit} of 15 November 2026 (with the 100-session transfer check verified on commit \texttt{\codecommit}), in which the rule engine, risk scorer and device API are unchanged.
 
 \subsection{Classification Results}
 
@@ -693,21 +707,24 @@ in 15 to 17~$\mu$s across the three runs. This sub-millisecond scoring time adds
 server processing time of a local authentication request.
 
 \begin{table}[!htbp]
-\renewcommand{\arraystretch}{1.02}
+\renewcommand{\arraystretch}{1.04}
 \centering
 \small
-\caption{10-Fold Cross-Validation Results of the Evaluated Classifiers (Weighted Averages).}
+\caption{Cross-Validation Results and 100-Session Transfer Check (Weighted Averages).}
 \label{tab:ml}
-\vspace{5pt}
+\vspace{4pt}
 \begin{tabular}{l c c c c c c}
 \hline
- & \multicolumn{4}{c}{Six classes} & \multicolumn{2}{c}{Binary} \\
+ & \multicolumn{4}{c}{Six classes / Multi-class} & \multicolumn{2}{c}{Binary / Detection} \\
 Model & Accuracy & Precision & Recall & F1 & Accuracy & F1 \\
 \hline
 Random Forest & 0.948 & 0.949 & 0.948 & 0.948 & 0.938 & 0.939 \\
 J48 (C4.5)    & 0.856 & 0.857 & 0.856 & 0.856 & 0.831 & 0.848 \\
 Naive Bayes   & 0.779 & 0.778 & 0.779 & 0.778 & 0.833 & 0.852 \\
 IBk ($k=5$)   & 0.977 & 0.978 & 0.977 & 0.977 & 0.975 & 0.975 \\
+\hline
+Transfer Check (B0) & 0.480 & 0.625 & 0.480 & 0.436 & 0.720 & 0.730 \\
+Transfer Check (B1) & 0.870 & 0.921 & 0.870 & \textbf{0.876} & 0.920 & \textbf{0.925} \\
 \hline
 \end{tabular}
 \end{table}
@@ -801,7 +818,7 @@ as NORMAL.
     {NOR: NORMAL, FOR: FORCED\_OPEN, WRO: WRONG\_USER\\[-1pt]OVE: OVERDUE, ITE: ITEM\_LEFT, SPO: SUSPECTED\_SPOOF};
 \end{tikzpicture}
 \caption{Classifier comparison and error distribution on the 480-row dataset, showing weighted F1 scores of the four
-models on the six-class and binary tasks with y-axis truncated to $[0.60, 1.00]$ to highlight differences (left), and the six-class confusion matrix of IBk with $k=5$ where 10 of the 11
+models on the six-class and binary tasks with the vertical axis of (a) starting at 0.60 to show differences clearly (left), and the six-class confusion matrix of IBk with $k=5$ where 10 of the 11
 errors fall between NORMAL and WRONG\_USER (right).}
 \label{fig:eval}
 \end{figure}
@@ -822,8 +839,8 @@ threshold before taking a slot out of service.
 \textit{Unit and integration tests} (TestNG). The suite contains 83 test methods in 14 classes. They cover the rule
 engine (14 tests), the risk scorer, pricing in Java and its agreement with SQL, the audit hash chain, the device
 heartbeat, automatic check-in, phone-tap tokens, pick-up and bank-assignment rules, the access-session list, password
-and key hashing, e-mail templates, card confirmation links and box messages. In the re-execution on revision commit
-\texttt{\revisioncommit} (15 November 2026), all 83 passed and none was skipped. Seven of the 14 test classes (47 test methods covering the
+and key hashing, e-mail templates, card confirmation links and box messages. In the final test run on commit
+\texttt{\revisioncommit} of 15 November 2026 (re-verified on commit \texttt{\codecommit}), all 83 passed and none was skipped. Seven of the 14 test classes (47 test methods covering the
 rule engine, pricing, risk scoring, hashing and e-mail templates) run entirely in memory without SQL Server, while the
 remaining 36 methods test database procedures and HTTP endpoints. Running the full 83-test suite took about two minutes
 against the SQL Server test instance.
@@ -833,7 +850,7 @@ wrong keys, bodies and codes, the five-try lockout, no-show, overdue lock, top-u
 and repeated opens. The first run failed one assertion: with two banks that both contain a slot A01, a session upload
 returned HTTP 500 because the slot was looked up by box and slot code only. The server now resolves it by bank code or
 by the command's slot and otherwise rejects the session as \texttt{AMBIGUOUS\_SLOT}. Every later run (2~min 27~s, baseline run
-of 30 October 2026 on commit \texttt{\baselinecommit}) executed 221 requests and 472 assertions without a failure. These automated HTTP checks verify both
+of 30 October 2026 on commit \texttt{\baselinecommit}, re-verified on commit \texttt{\codecommit}) executed 221 requests and 472 assertions without a failure. These automated HTTP checks verify both
 response codes and database side effects across the booking lifecycle.
 
 \textit{Detection scenarios.} A device simulator sends heartbeats, credentials and session uploads signed with the key
@@ -846,7 +863,7 @@ own \emph{checkin} case sent only a heartbeat, which no longer checks a booking 
 \texttt{/api/device/auth}, as the real box does.
 
 \begin{table}[!htbp]
-\renewcommand{\arraystretch}{1.02}
+\renewcommand{\arraystretch}{1.22}
 \centering
 \small
 \caption{Detection Scenarios Replayed through the Device API.}
@@ -856,11 +873,12 @@ own \emph{checkin} case sent only a heartbeat, which no longer checks a booking 
 \hline
 Scenario & Input & Expected & Observed \\
 \hline
-heartbeat & 6 heartbeats 10~s apart, then silence & DEVICE\_OFFLINE in 90 to 105~s & \texttt{OFFLINE} and alert after 104.6~s \\
-remote    & staff remote open reported with command id, then replayed & STAFF\_OPEN; replay SUSPECTED\_SPOOF & command \texttt{DONE}; replay \texttt{SUSPECTED\_SPOOF} \\
-spoof     & remote session with an unissued command id & SUSPECTED\_SPOOF & \texttt{SUSPECTED\_SPOOF} \\
-lostcard  & card reported lost, then used at the box & LOST\_CARD\_USED & \texttt{LOST\_CARD\_USED}; card blocked \\
-checkin   & reservation, then PIN sent to \texttt{/api/device/auth} & UNLOCK, CHECK\_IN & booking \texttt{ACTIVE}, slot \texttt{OCCUPIED} \\
+\addlinespace[2pt]
+heartbeat & 6 heartbeats 10~s apart, then silence & DEVICE\_OFFLINE in 90 to 105~s & \texttt{OFFLINE} and alert after 104.6~s \\[2pt]
+remote    & staff remote open reported with command id, then replayed & STAFF\_OPEN; replay SUSPECTED\_SPOOF & command \texttt{DONE}; replay \texttt{SUSPECTED\_SPOOF} \\[2pt]
+spoof     & remote session with an unissued command id & SUSPECTED\_SPOOF & \texttt{SUSPECTED\_SPOOF} \\[2pt]
+lostcard  & card reported lost, then used at the box & LOST\_CARD\_USED & \texttt{LOST\_CARD\_USED}; card blocked \\[2pt]
+checkin   & reservation, then PIN sent to \texttt{/api/device/auth} & UNLOCK, CHECK\_IN & booking \texttt{ACTIVE}, slot \texttt{OCCUPIED} \\[2pt]
 sensor    & weight change of $-5000$~g (range $-200$ to 20\,000~g) & SENSOR\_FAULT & slot \texttt{MAINTENANCE}; ticket kept \\
 \hline
 \end{tabular}
@@ -955,15 +973,14 @@ raised while the server was stopped is not counted.
 \subsection{Limitations}
 \label{sec:limits}
 
-While the physical prototype box does not yet integrate physical load cells or door reed switches, our modular
-multi-sensor simulation campaign evaluated 100 independently pre-labelled sessions across five stratified categories
-directly against the live backend (Section~\ref{sec:sim_eval}); however, long-term empirical traces from active campus
-deployments are still required to capture organic human usage patterns and environmental noise. The offline machine-learning
-classifier results remain exposed to sampling bias and lab-only evaluation, two of the ten pitfalls of learning-based
-security systems identified by Arp et al. \cite{arp2024pitfalls}. Physically, only one slot is servo-locked, and the
-other banks belong to demo devices. Transport security remains basic: forms carry no CSRF token (only the \texttt{SameSite=Lax}
-cookie), Tomcat serves plain HTTP, HTTPS comes only from a Cloudflare tunnel, and the firmware does not verify the server
-certificate (\texttt{setInsecure}).
+The 100-session transfer check across stratified multi-sensor scenarios was executed end-to-end through the device API
+(Section~\ref{sec:sim_eval}), while physical door-switch and load-cell wiring on the prototype box remains future work.
+Long-term empirical traces from active campus deployments are still required to capture organic human usage patterns and
+environmental noise. The offline machine-learning classifier results remain exposed to sampling bias and lab-only evaluation,
+two of the ten pitfalls of learning-based security systems identified by Arp et al. \cite{arp2024pitfalls}. Physically, only
+one slot is servo-locked, and the other banks belong to demo devices. Transport security remains basic: forms carry no CSRF token
+(only the \texttt{SameSite=Lax} cookie), Tomcat serves plain HTTP, HTTPS comes only from a Cloudflare tunnel, and the firmware
+does not verify the server certificate (\texttt{setInsecure}).
 
 \section{Conclusion}
 
