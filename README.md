@@ -14,7 +14,7 @@
 **Rent a locker on the web: pick a slot on a map, pay from a wallet, open it with a PIN, an RFID card, a phone (NFC tap) or a fingerprint.
 A real ESP32 box talks to the server through an API with its own key per box.**
 
-*PRJ301 course project (FALL2026). Bản tiếng Việt: [README.vi.md](./README.vi.md).*
+*PRJ301 course project (FALL2026).*
 
 </div>
 
@@ -68,7 +68,7 @@ The pages use no CDN, the visible text is Vietnamese, and there are light and da
 - **Wallet.** Top up with a VietQR code; staff approve before the money is added.
 - **My locker.** PIN (show/hide), card or fingerprint enrollment code, countdowns, extension, debt, number of openings, history, e-mail reminder 15 minutes before the due time.
 - **RFID cards.** Enroll at the box with a 6-digit code, report lost, replace. A card scan by an owner with a real e-mail address must be confirmed by e-mail or on the map.
-- **Phone page** `/k/{device_code}`: scan the QR code on the box and type the PIN, or tap the phone on the reader and press "Mở tủ của tôi".
+- **Phone page** `/k/{device_code}`: scan the QR code on the box and type the PIN, or tap the phone on the reader and press "Open my locker".
 
 ### Staff
 
@@ -80,7 +80,7 @@ The pages use no CDN, the visible text is Vietnamese, and there are light and da
 | ADMIN | Everything, including roles and permissions |
 
 The **Dashboard** shows slot status, use per area, devices, alerts, bookings per hour and 7-day revenue (revenue for ADMIN and OPERATOR only).
-The **Sensor data** page ("Dữ liệu cảm biến") lists the open/close sessions the boxes sent, with search, filters by box and date, sorting and paging.
+The **Sensor data** page lists the open/close sessions the boxes sent, with search, filters by box and date, sorting and paging.
 
 ### Devices
 
@@ -367,7 +367,7 @@ Banks of one box must have different slot codes. When the real box is off, its b
 
 At the box: `0-9` + `#` sends a PIN; `B` + enrollment code enrolls a card; `C` + enrollment code enrolls a fingerprint; `D` shows the IP and server status.
 
-**Phone tap:** the PN532 emulates an NFC tag holding the link `/k/LOCKER-01?n=<token>`. The token comes with the heartbeat, changes every minute and after each opening, and lasts 5 minutes. A tap opens the box's page; the signed-in owner presses "Mở tủ của tôi". In each loop the PN532 alternates between reading cards and emulating the tag. Some iPhones cannot read the emulated tag; use the QR code then.
+**Phone tap:** the PN532 emulates an NFC tag holding the link `/k/LOCKER-01?n=<token>`. The token comes with the heartbeat, changes every minute and after each opening, and lasts 5 minutes. A tap opens the box's page; the signed-in owner presses "Open my locker". In each loop the PN532 alternates between reading cards and emulating the tag. Some iPhones cannot read the emulated tag; use the QR code then.
 
 `firmware/SmartLocker_Local` is a hardware test without network and still uses an RC522 reader.
 
