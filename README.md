@@ -1,4 +1,4 @@
-# SmartLocker - Hệ thống tủ gửi đồ thông minh
+# SmartLocker - Smart locker rental system
 
 <div align="center">
 
@@ -11,248 +11,281 @@
 ![TestNG](https://img.shields.io/badge/TestNG-FF6C37?style=for-the-badge&logo=testng&logoColor=white)
 ![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)
 
-**Thuê tủ gửi đồ trên web: chọn ngăn trên bản đồ, trả tiền bằng ví, mở tủ bằng mật mã, thẻ RFID, điện thoại (chạm NFC) hoặc vân tay.
-Hộp tủ ESP32 thật nói chuyện với máy chủ qua API có khóa riêng cho từng hộp.**
+**Rent a locker on the web: pick a slot on a map, pay from a wallet, open it with a PIN, an RFID card, a phone (NFC tap) or a fingerprint.
+A real ESP32 box talks to the server through an API with its own key per box.**
 
-*Đồ án môn PRJ301 (FALL2026). English version: [README.en.md](./README.en.md).*
+*PRJ301 course project (FALL2026). Bản tiếng Việt: [README.vi.md](./README.vi.md).*
 
 </div>
 
 ---
 
-## Mục lục
+## Contents
 
-1. [Hệ thống gồm những gì](#hệ-thống-gồm-những-gì)
-2. [Chức năng](#chức-năng)
-3. [Ảnh chụp màn hình](#ảnh-chụp-màn-hình)
-4. [Cài đặt và chạy](#cài-đặt-và-chạy)
-5. [Hộp tủ ESP32](#hộp-tủ-esp32)
-6. [Bảng giá và luật](#bảng-giá-và-luật)
-7. [Luồng hoạt động](#luồng-hoạt-động)
-8. [Kiểm thử](#kiểm-thử)
-9. [Triển khai lên Internet](#triển-khai-lên-internet)
-10. [Kiến trúc và mã nguồn](#kiến-trúc-và-mã-nguồn)
-11. [Bảo mật và hạn chế đã biết](#bảo-mật-và-hạn-chế-đã-biết)
-12. [Bài báo khoa học](#bài-báo-khoa-học)
-13. [Tài liệu liên quan](#tài-liệu-liên-quan)
+1. [What the system is made of](#what-the-system-is-made-of)
+2. [Features](#features)
+3. [Screenshots](#screenshots)
+4. [Install and run](#install-and-run)
+5. [The ESP32 box](#the-esp32-box)
+6. [Pricing and rules](#pricing-and-rules)
+7. [Flows](#flows)
+8. [Testing](#testing)
+9. [Deploying to the Internet](#deploying-to-the-internet)
+10. [Architecture and source](#architecture-and-source)
+11. [Security and known limits](#security-and-known-limits)
+12. [Research paper](#research-paper)
+13. [Related documents](#related-documents)
 
 ---
 
-## Hệ thống gồm những gì
+## What the system is made of
 
-| Thành phần | Công nghệ | Vai trò |
+| Part | Technology | Role |
 |---|---|---|
-| Web | Java 8, Servlet/JSP (MVC2), Tomcat 9 | Bản đồ tủ, đặt ngăn, ví, trang nhân viên, API cho hộp tủ |
-| Cơ sở dữ liệu | SQL Server | Toàn bộ luật về tiền và thời gian nằm trong stored procedure |
-| Hộp tủ | ESP32, PN532, AS608, keypad, LCD, servo | Nhận mật mã, thẻ, vân tay, chạm điện thoại; máy chủ quyết định có mở hay không |
-| Bản đồ | Leaflet đặt sẵn trong repo, Mapbox nếu có token | Mất Internet vẫn thấy các ghim trên nền lưới |
-| Cảnh báo | Luật cố định (`RuleEngine`) và mô hình Weka (`RiskScorer`) | Luật quyết định, mô hình chỉ cho thêm điểm rủi ro |
+| Web | Java 8, Servlet/JSP (MVC2), Tomcat 9 | Locker map, booking, wallet, staff pages, API for the boxes |
+| Database | SQL Server | Every money and time rule lives in stored procedures |
+| Box | ESP32, PN532, AS608, keypad, LCD, servos | Takes PIN, card, fingerprint and phone tap; the server decides whether to open |
+| Map | Leaflet vendored in the repo, Mapbox when a token is set | Without Internet the pins still show over a plain grid |
+| Alerts | Fixed rules (`RuleEngine`) and a Weka model (`RiskScorer`) | Rules decide, the model only adds a risk score |
 
-Trang web không dùng CDN, chữ hiển thị là tiếng Việt, có giao diện sáng và tối.
+The pages use no CDN, the visible text is Vietnamese, and there are light and dark themes.
 
-## Chức năng
+## Features
 
-### Người dùng
+### Users
 
-- **Bản đồ là trang chính.** Khách xem được không cần đăng nhập. Đăng nhập và đăng ký nằm trong popup trên bản đồ, không có trang riêng.
-- **Khu, dãy, ngăn.** 5 khu trong ĐHQG-HCM, tự làm mới 10 giây một lần. "Tìm tủ gần tôi" sắp khu theo khoảng cách, vị trí chỉ tính trên trình duyệt.
-- **Ba cỡ ngăn:** S 20x20x20, M 40x40x40, L 60x60x60 cm.
-- **Gói gửi:** 2 giờ, 4 giờ, Trọn ngày, hoặc Tự chọn 1-23 giờ / 1-7 ngày.
-- **Bốn cách mở, cùng một giá, không tiền cọc:** mật mã 6 số, thẻ RFID, chạm điện thoại, vân tay.
-- **Đặt rõ ràng.** Popup ghi số tiền trừ ngay, số dư còn lại, luật hủy và phụ phí. Sau khi đặt, ví phải còn ít nhất 10.000 đ dự phòng phụ phí.
-- **Hủy.** Trong 5 phút đầu hoàn đủ, sau đó tới hết 15 phút giữ chỗ hoàn 50%.
-- **Tự check-in.** Hết 15 phút giữ chỗ, lượt tự bắt đầu tính giờ và không hủy được nữa. Ngăn vẫn khóa cho người đặt. Nếu quá hạn trả cộng ân hạn mà chưa từng mở, lượt kết thúc `NO_SHOW`, ngăn trống lại, không tính phụ phí, không hoàn tiền; 3 lần như vậy trong 7 ngày thì bị tạm cấm đặt.
-- **Mở nhiều lần trong một lượt.** Lần đầu cất đồ (CHECK_IN). Các lần sau hộp hỏi `A: Mo tu` / `B: Tra tu`: phím A mở tủ, lượt vẫn chạy; phím B lấy đồ và kết thúc lượt.
-- **Gia hạn** tối đa 3 lần, tính theo giá một giờ của cỡ ngăn.
-- **Quá hạn.** Ngăn không tự giải phóng vì đồ còn trong đó. Quá ân hạn thì tủ khóa, mỗi giờ trễ trừ phụ phí, ví có thể âm, hộp từ chối mở (`OVERDUE_UNPAID`) tới khi nạp đủ tiền. Quá 48 giờ, lượt được chuyển cho nhân viên kèm cảnh báo.
-- **Ví.** Nạp tiền bằng mã VietQR, nhân viên duyệt rồi mới cộng tiền.
-- **Tủ của tôi.** Mật mã (ẩn/hiện), mã đăng ký thẻ hoặc vân tay, đếm ngược, gia hạn, số nợ, số lần đã mở, lịch sử, email nhắc hạn 15 phút trước giờ trả.
-- **Thẻ từ.** Đăng ký tại hộp bằng mã 6 số, báo mất, đổi thẻ. Quẹt thẻ của người có email thật cần bấm xác nhận qua email hoặc trên bản đồ.
-- **Trang điện thoại** `/k/{device_code}`: quét QR dán trên hộp rồi nhập mật mã, hoặc chạm điện thoại vào đầu đọc rồi bấm "Mở tủ của tôi".
+- **The map is the home page.** Visitors can browse it without signing in. Sign-in and sign-up are popups on the map; there are no separate pages.
+- **Areas, banks, slots.** 5 areas in VNU-HCM, refreshed every 10 seconds. "Find a locker near me" sorts areas by distance; the position is only used in the browser.
+- **Three slot sizes:** S 20x20x20, M 40x40x40, L 60x60x60 cm.
+- **Plans:** 2 hours, 4 hours, Full day, or Custom 1-23 hours / 1-7 days.
+- **Four ways to open, same price, no deposit:** 6-digit PIN, RFID card, phone tap, fingerprint.
+- **Clear booking.** A popup states the amount taken now, the balance left, the cancel rules and the late fee. After booking, the wallet must keep at least 10,000 VND to cover late fees.
+- **Cancel.** Full refund in the first 5 minutes, then 50% until the 15-minute hold ends.
+- **Automatic check-in.** When the 15-minute hold ends, the booking starts by itself and can no longer be cancelled. The slot stays locked for its owner. If it was never opened by the due time plus the grace period, the booking ends as `NO_SHOW`, the slot is free, no late fee is charged and nothing is refunded; 3 of these in 7 days block booking for a while.
+- **Open many times in one booking.** The first time stores the items (CHECK_IN). After that the box asks `A: Mo tu` / `B: Tra tu`: key A opens the slot and the booking goes on; key B collects the items and ends the booking.
+- **Extend** up to 3 times, at the hourly rate of the slot size.
+- **Overdue.** A slot never frees itself because the items are still inside. After the grace period the slot locks, each late hour is charged, the wallet may go negative and the box refuses to open (`OVERDUE_UNPAID`) until the debt is paid. After 48 hours the booking goes to staff with an alert.
+- **Wallet.** Top up with a VietQR code; staff approve before the money is added.
+- **My locker.** PIN (show/hide), card or fingerprint enrollment code, countdowns, extension, debt, number of openings, history, e-mail reminder 15 minutes before the due time.
+- **RFID cards.** Enroll at the box with a 6-digit code, report lost, replace. A card scan by an owner with a real e-mail address must be confirmed by e-mail or on the map.
+- **Phone page** `/k/{device_code}`: scan the QR code on the box and type the PIN, or tap the phone on the reader and press "Mở tủ của tôi".
 
-### Nhân viên
+### Staff
 
-| Vai trò | Quyền chính |
+| Role | Main rights |
 |---|---|
-| OPERATOR | Bản đồ nhân viên, mở từ xa, duyệt nạp tiền, quản lý khu, dãy, ngăn, gói gửi, thẻ, lượt gửi, người dùng |
-| TECHNICIAN | Cảnh báo, phiếu bảo trì, hiệu chuẩn cảm biến, trạng thái ngăn và thiết bị |
-| AUDITOR | Chỉ đọc, kiểm tra chuỗi băm của nhật ký audit |
-| ADMIN | Toàn quyền, gồm vai trò và phân quyền |
+| OPERATOR | Staff map, remote open, top-up approval, areas, banks, slots, plans, cards, bookings, users |
+| TECHNICIAN | Alerts, maintenance tickets, sensor calibration, slot and device status |
+| AUDITOR | Read only, checks the hash chain of the audit log |
+| ADMIN | Everything, including roles and permissions |
 
-Trang **Tổng quan** có trạng thái ngăn, mức dùng theo khu, thiết bị, cảnh báo, lượt đặt theo giờ và doanh thu 7 ngày (doanh thu chỉ cho ADMIN và OPERATOR).
-Trang **Dữ liệu cảm biến** liệt kê các phiên mở/đóng do hộp gửi lên, có tìm kiếm, lọc theo hộp và ngày, sắp xếp, phân trang.
+The **Dashboard** shows slot status, use per area, devices, alerts, bookings per hour and 7-day revenue (revenue for ADMIN and OPERATOR only).
+The **Sensor data** page ("Dữ liệu cảm biến") lists the open/close sessions the boxes sent, with search, filters by box and date, sorting and paging.
 
-### Thiết bị
+### Devices
 
-- **Khóa API riêng cho mỗi hộp.** Máy chủ chỉ lưu SHA-256 của khóa; `device_id` lấy từ khóa, không tin nội dung gửi lên.
-- **Một hộp quản lý nhiều dãy.** Servo chỉ mở ở ngăn vật lý, các ngăn khác chỉ báo trên LCD.
-- **Heartbeat.** Hộp im lặng quá 90 giây thì chuyển OFFLINE và các dãy của nó không đặt được.
-- **Khóa nhập sai.** 5 lần đoán sai trong 5 phút trên cùng một kênh (tại hộp hoặc trang điện thoại) thì kênh đó tạm khóa 2 phút.
+- **One API key per box.** The server stores only its SHA-256; `device_id` comes from the key, never from the request body.
+- **One box manages many banks.** The servo moves only for the physical slot; other slots only report on the LCD.
+- **Heartbeat.** A box silent for more than 90 seconds goes OFFLINE and its banks cannot be booked.
+- **Wrong-guess lockout.** 5 wrong guesses within 5 minutes on one channel (the box or the phone page) lock that channel for 2 minutes.
 
 ---
 
-## Ảnh chụp màn hình
+## Screenshots
 
-Chụp từ bản chạy thật trên dữ liệu demo, không có dữ liệu cá nhân thật.
+Taken from the running app with demo data; no real personal data.
 
-| Bản đồ tủ (khách, chưa đăng nhập) | Bản đồ trên điện thoại |
+| Locker map (visitor) | Map on a phone |
 |---|---|
-| ![Bản đồ tủ cho khách](docs/images/map-visitor.png) | <img src="docs/images/map-phone.png" alt="Bản đồ trên điện thoại" width="260"> |
+| ![Locker map for visitors](docs/images/map-visitor.png) | <img src="docs/images/map-phone.png" alt="Map on a phone" width="260"> |
 
-| Một khu: các dãy và ngăn khóa quá hạn | Thẻ ngăn: gói gửi và bốn cách mở |
+| One area: banks and locked overdue slots | Slot card: plans and four ways to open |
 |---|---|
-| ![Khu Căng tin với ngăn quá hạn](docs/images/map-area.png) | ![Thẻ đặt ngăn](docs/images/booking-plan.png) |
+| ![Canteen area with overdue slots](docs/images/map-area.png) | ![Booking card](docs/images/booking-plan.png) |
 
-| Tự chọn theo giờ | Tự chọn theo ngày |
+| Custom by hours | Custom by days |
 |---|---|
-| ![Tự chọn theo giờ](docs/images/booking-custom-hours.png) | ![Tự chọn theo ngày](docs/images/booking-custom-days.png) |
+| ![Custom by hours](docs/images/booking-custom-hours.png) | ![Custom by days](docs/images/booking-custom-days.png) |
 
-| Popup xác nhận đặt | Tủ của tôi: mật mã, nút hủy kèm đếm ngược |
+| Booking confirmation | My locker: PIN and cancel countdown |
 |---|---|
-| ![Popup xác nhận](docs/images/booking-confirm.png) | ![Tủ của tôi với mật mã](docs/images/my-locker-pin.png) |
+| ![Confirmation popup](docs/images/booking-confirm.png) | ![My locker with PIN](docs/images/my-locker-pin.png) |
 
-| Tủ của tôi: đang gửi, gia hạn | Tủ của tôi: quá hạn, tủ khóa, đang nợ |
+| My locker: in use, extend | My locker: overdue, locked, in debt |
 |---|---|
-| ![Gia hạn](docs/images/my-locker-extend.png) | ![Lượt quá hạn bị khóa](docs/images/my-locker-overdue.png) |
+| ![Extend](docs/images/my-locker-extend.png) | ![Locked overdue booking](docs/images/my-locker-overdue.png) |
 
-| Tổng quan cho nhân viên | Dữ liệu cảm biến |
+| Staff dashboard | Sensor data |
 |---|---|
-| ![Dashboard](docs/images/dashboard.png) | ![Dữ liệu cảm biến](docs/images/sensor-data.png) |
+| ![Dashboard](docs/images/dashboard.png) | ![Sensor data](docs/images/sensor-data.png) |
 
-| Cảnh báo chuyển xử lý sau 48 giờ | Danh sách cảnh báo |
+| Alert escalated after 48 hours | Alert list |
 |---|---|
-| ![Cảnh báo OVERDUE_ESCALATED](docs/images/alert-escalated.png) | ![Danh sách cảnh báo](docs/images/alerts.png) |
+| ![OVERDUE_ESCALATED alert](docs/images/alert-escalated.png) | ![Alert list](docs/images/alerts.png) |
 
-| Dãy tủ: hộp thật và ngăn có khóa thật | Trang mở tủ trên điện thoại |
+| Banks: real box and slot with a real lock | Phone page to open a slot |
 |---|---|
-| ![Trang Dãy tủ](docs/images/locker-banks.png) | <img src="docs/images/kiosk-phone.png" alt="Trang mở tủ trên điện thoại" width="260"> |
+| ![Banks page](docs/images/locker-banks.png) | <img src="docs/images/kiosk-phone.png" alt="Phone page" width="260"> |
 
 ---
 
-## Cài đặt và chạy
+## Install and run
 
-Cần có JDK 8, Apache Tomcat 9, SQL Server 2019/2022 kèm `sqlcmd`, Git Bash cho các script `.sh`. NetBeans là tùy chọn. Chạy Postman thì cần thêm Node.js và `npm install -g newman`.
+You need JDK 8, Apache Tomcat 9, SQL Server 2019/2022 with `sqlcmd`, and Git Bash for the `.sh` scripts. NetBeans is optional. Postman runs also need Node.js and `npm install -g newman`.
 
-### 1. Tạo cơ sở dữ liệu
+### 1. Create the database & Database Configuration
 
-Chạy một lệnh (lệnh này **xóa và tạo lại** database `PRJ301_LOCKER`):
+#### Database Initialization
+To initialize the full database with schema and 100 demo accounts, run one of the following commands from the project root:
+- **Windows Command Prompt (Batch):**
+  ```cmd
+  run_demo_db.bat
+  ```
+- **PowerShell:**
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File .\run_demo_db.ps1
+  ```
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\run_demo_db.ps1
-```
+Both execute the 5 scripts listed in sql/build-order.txt in exact sequence:
 
-Script chạy lần lượt các file `01` tới `05` dưới đây. Tham số mặc định là `localhost`, `sa`, `12345`.
+1. sql/01_schema.sql - Database creation, tables, views, triggers, Audit_Append, and security schema.
+2. sql/02_data_v1.sql - 100 demo accounts, initial locker areas, and baseline transaction records.
+3. sql/03_v2_v3.sql - Auth methods, lockout rules, Device_Authorize, AppConfig, sizes (S/M/L), pricing plans, and campus areas.
+4. sql/04_phone.sql - Phone unlocking (PHONE), NFC tap session tokens, and instant booking without card.
+5. sql/05_auto_checkin.sql - Automatic check-in procedures when reservation holds expire.
 
-| File | Nội dung |
-|---|---|
-| `sql/01_schema.sql` | Database, bảng, view, trigger, `Audit_Append`, quyền cơ bản |
-| `sql/02_data_v1.sql` | Dữ liệu mẫu, procedure của các tình huống, ví và nạp tiền |
-| `sql/03_v2_v3.sql` | Cách mở, khóa nhập sai, `Device_Authorize`, `AppConfig`, cỡ S/M/L, giá, Tự chọn, hủy, quá hạn, nhắc hạn, các khu trong ĐHQG-HCM |
-| `sql/04_phone.sql` | Cách mở `PHONE`, mã chạm NFC, bỏ cọc thẻ |
-| `sql/05_auto_checkin.sql` | Hết giờ giữ chỗ thì tự check-in |
-| `sql/demo_box.sql` | Chọn hộp thật, các dãy nó quản lý và ngăn có servo (chạy riêng, xem [Hộp tủ ESP32](#hộp-tủ-esp32)) |
-| `sql/upgrade_main_2026-11.sql` | Nâng cấp DB đang chạy, dùng khi [triển khai](#triển-khai-lên-internet) |
-| `sql/test_setup.sql`, `test_overdue.sql`, `test_cleanup.sql` | Dữ liệu cho Postman, demo quá hạn, dọn dữ liệu test |
+Additional standalone scripts for specific workflows:
+- sql/06_english_messages.sql: Standalone migration for upgrading existing legacy Vietnamese databases to English without re-seeding.
+- sql/demo_box.sql: Configures the physical ESP32 box, assigned banks, and the solenoid servo slot (run separately, see [The ESP32 box](#the-esp32-box)).
+- sql/upgrade_main_2026-11.sql: Upgrades an existing running database, used when [deploying to the Internet](#deploying-to-the-internet).
+- sql/test_setup.sql, 	est_overdue.sql, 	est_cleanup.sql: Postman test fixtures, overdue demo scenario, and test data cleanup.
 
-Lưu ý khi chạy lại từng file:
-
-- Luôn dùng `sqlcmd -I -b -f 65001`. File có chữ Việt phải giữ UTF-8 BOM.
-- Không chạy lại riêng `02` trên DB đã qua `03`, hãy dựng lại bằng `run_demo_db.ps1`. Chạy lại `03` phải chạy lại `04`, `05`. Chạy lại `04` phải chạy lại `05`.
-- `03_v2_v3.sql` đặt khóa của `LOCKER-01` về khóa mẫu công khai. Trước khi cắm hộp thật, tạo khóa riêng bằng lệnh sau (khóa lưu trong `config/device-keys.local.properties`, không commit):
-
+When running single files again:
+- Always use `sqlcmd -I -b -f 65001`.
+- Do not run `02` alone on a database that went through `03`; rebuild with `run_demo_db.ps1` or `run_demo_db.bat`.
+- `03_v2_v3.sql` resets the key of `LOCKER-01` to the public sample key. Before plugging in a real box, create your own key (stored in `config/device-keys.local.properties`, not committed):
   ```powershell
   powershell -ExecutionPolicy Bypass -File scripts\set-device-key.ps1
   ```
 
-### 2. Build và chạy
+#### Database Configuration & Production Security
 
-**NetBeans 13:** File > Open Project, chọn thư mục repo, rồi Clean and Build và Run trên Tomcat 9.
+> [!WARNING]
+> **Classroom Demo vs. Production Security**:
+> By default, `src/java/dao/DbContext.java` (lines 24-26) falls back to `sa` with password `12345` on `localhost:1433` so that evaluators and instructors can test and grade the application out-of-the-box in the exam room without prerequisite setup.
+> **In production or on a public server, NEVER use the `sa` account.** Create a dedicated, least-privileged SQL Server user (e.g. `PRJ301_LOCKER_APP`) with access strictly limited to executing the required stored procedures and accessing application tables.
 
-- Thư viện chạy ứng dụng nằm sẵn trong `web/WEB-INF/lib`: `mssql-jdbc-12.8.1.jre8.jar`, `gson-2.10.1.jar`, `jbcrypt-0.4.jar`, `weka.jar`, `jstl-1.2.jar`. Chúng đi vào WAR cùng thư mục `web/`, không cần thêm jar nào bằng tay.
-- `lib/` chỉ chứa jar để chạy test: `testng-7.5.jar`, `jcommander-1.78.jar`, `slf4j-api-1.7.36.jar`. Các jar này không vào WAR.
-- Máy mới chưa có `nbproject/private/` (không commit), nên NetBeans báo project thiếu server. Thêm Tomcat 9 ở Tools > Servers, rồi chuột phải project > Resolve Project Problems (hoặc Properties > Run) và chọn server đó. Project dùng JDK mà NetBeans đang chạy (`default_platform`), nên tốt nhất NetBeans chạy bằng JDK 8 (`netbeans_jdkhome` trong `etc/netbeans.conf`). Nếu không, thêm JDK 8 ở Tools > Java Platforms rồi chọn nó ở hai chỗ: Properties của project > Libraries > Java Platform (NetBeans ghi `platform.active` vào `nbproject/project.properties`), và Tools > Servers > Tomcat 9 > tab Platform > Java Platform.
+You can override database credentials dynamically at runtime without modifying Java code using environment variables:
 
-**Git Bash:** lần đầu, tạo file `conf/Catalina/localhost/SmartLocker.xml` trong thư mục Tomcat (thay đường dẫn repo của bạn):
+| Environment Variable | Description | Fallback Default |
+|---|---|---|
+| `DB_URL` | JDBC Connection String | `jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false` |
+| `DB_USER` | SQL Server Username | `sa` |
+| `DB_PASSWORD` | SQL Server Password | `12345` |
+
+**Example (Setting in Windows PowerShell):**
+```powershell
+$env:DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false"
+$env:DB_USER = "app_user"
+$env:DB_PASSWORD = "YourSecurePassword123!"
+```
+
+**Example (Configuring in Apache Tomcat `setenv.bat` or `setenv.sh`):**
+```bat
+set "DB_URL=jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false"
+set "DB_USER=app_user"
+set "DB_PASSWORD=YourSecurePassword123!"
+```
+
+### 2. Build and run
+
+**NetBeans 13:** File > Open Project, pick the repo folder, then Clean and Build and Run on Tomcat 9.
+
+- The runtime libraries are already in `web/WEB-INF/lib`: `mssql-jdbc-12.8.1.jre8.jar`, `gson-2.10.1.jar`, `jbcrypt-0.4.jar`, `weka.jar`, `jstl-1.2.jar`. They go into the WAR with the `web/` folder; no jar has to be added by hand.
+- `lib/` holds only the test jars: `testng-7.5.jar`, `jcommander-1.78.jar`, `slf4j-api-1.7.36.jar`. They never go into the WAR.
+- A fresh machine has no `nbproject/private/` (not committed), so NetBeans reports a missing server. Add Tomcat 9 under Tools > Servers, then right-click the project > Resolve Project Problems (or Properties > Run) and pick that server. The project uses the JDK NetBeans runs on (`default_platform`), so it is best to run NetBeans on JDK 8 (`netbeans_jdkhome` in `etc/netbeans.conf`). Otherwise add a JDK 8 under Tools > Java Platforms and select it in two places: project Properties > Libraries > Java Platform (NetBeans then writes `platform.active` into `nbproject/project.properties`), and Tools > Servers > Tomcat 9 > Platform tab > Java Platform.
+
+**Git Bash:** the first time, create `conf/Catalina/localhost/SmartLocker.xml` in the Tomcat folder (use your repo path):
 
 ```xml
-<Context docBase="C:\duong-dan-repo\build\web" reloadable="false">
+<Context docBase="C:\path-to-repo\build\web" reloadable="false">
   <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor" sameSiteCookies="lax" />
 </Context>
 ```
 
-Sau đó lệnh dưới đây biên dịch vào `build/web` rồi báo Tomcat tải lại. Máy bạn khác mặc định thì đặt biến `TOMCAT` (thư mục Tomcat) và `JAVAC` (đường dẫn file `javac`).
+The command below then compiles into `build/web` and asks Tomcat to reload. If your machine differs from the defaults, set `TOMCAT` (the Tomcat folder) and `JAVAC` (the path of `javac`).
 
 ```bash
 sh scripts/build-dev.sh
 ```
 
-Chờ khoảng 15 giây rồi mở <http://localhost:8080/SmartLocker/>.
+Wait about 15 seconds, then open <http://localhost:8080/SmartLocker/>.
 
-Kết nối DB cấu hình ở mục [Kết nối cơ sở dữ liệu](#3-kết-nối-cơ-sở-dữ-liệu) ngay dưới.
+The database connection is configured in [Database connection](#3-database-connection) just below.
 
-Hai tính năng tùy chọn, chép file `.example` trong `config/` thành file `.local.properties` rồi điền:
+Two optional features: copy the `.example` file in `config/` to a `.local.properties` file and fill it in.
 
-| File | Tác dụng khi có file |
+| File | Effect when present |
 |---|---|
-| `config/mail.local.properties` | Gửi email nhắc hạn và xác nhận thẻ; không có thì tắt gửi mail |
-| `config/mapbox.local.properties` | Dùng bản đồ Mapbox (`pk.*`); không có thì dùng Leaflet |
+| `config/mail.local.properties` | Sends due reminders and card confirmations; without it, mail is off |
+| `config/mapbox.local.properties` | Uses Mapbox (`pk.*`); without it, Leaflet |
 
-### 3. Kết nối cơ sở dữ liệu
+### 3. Database connection
 
-`dao/DbContext` là nơi duy nhất mở kết nối. Nó đọc ba **biến môi trường** (không đọc tham số `-D` của JVM). Biến chưa đặt hoặc để trống thì dùng giá trị mặc định:
+`dao/DbContext` is the only place that opens a connection. It reads three **environment variables** (not JVM `-D` properties). A variable that is unset or empty falls back to its default:
 
-| Biến môi trường | Giá trị mặc định |
+| Environment variable | Default |
 |---|---|
 | `DB_URL` | `jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false` |
 | `DB_USER` | `sa` |
 | `DB_PASSWORD` | `12345` |
 
-Giá trị mặc định **chỉ dùng cho demo trên máy cá nhân**, nơi SQL Server cài sẵn với tài khoản `sa`. Ở mọi máy khác hãy đặt cả ba biến. `DbContext` đọc biến một lần khi ứng dụng khởi động, nên đặt biến xong phải khởi động lại Tomcat (hoặc NetBeans, nếu Tomcat chạy từ NetBeans).
+The defaults are **only for the demo on a personal machine**, where SQL Server is installed locally with the `sa` account. On any other machine set all three. `DbContext` reads them once when the application starts, so restart Tomcat (or NetBeans, when Tomcat runs from NetBeans) after setting them.
 
-Các ví dụ dưới dùng mật khẩu mẫu `Doi-Mat-Khau#2026` (đủ chữ hoa, chữ thường, số, ký hiệu nên qua được `CHECK_POLICY`). Hãy thay bằng mật khẩu của bạn, đừng dùng nguyên mẫu.
+The examples below use the sample password `Change-Me#2026` (upper and lower case, digits and a symbol, so it passes `CHECK_POLICY`). Replace it with your own; never use the sample as is.
 
-**Windows, Tomcat chạy bằng `startup.bat` hoặc từ NetBeans:** tạo file `bin\setenv.bat` trong thư mục Tomcat. `catalina.bat` tự gọi file này khi khởi động. Trong file `.bat`, ký tự `%` trong mật khẩu phải viết thành `%%`.
+**Windows, Tomcat started with `startup.bat` or from NetBeans:** create `bin\setenv.bat` in the Tomcat folder. `catalina.bat` calls it on start. In a `.bat` file, a `%` in the password must be written `%%`.
 
 ```bat
 set "DB_URL=jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false"
 set "DB_USER=smartlocker_app"
-set "DB_PASSWORD=Doi-Mat-Khau#2026"
+set "DB_PASSWORD=Change-Me#2026"
 ```
 
-Hoặc lưu biến cho tài khoản Windows bằng `setx`, rồi mở lại cửa sổ dòng lệnh và NetBeans:
+Or store them for your Windows account with `setx`, then reopen the console and NetBeans:
 
 ```powershell
 setx DB_URL "jdbc:sqlserver://localhost:1433;databaseName=PRJ301_LOCKER;encrypt=false"
 setx DB_USER "smartlocker_app"
-setx DB_PASSWORD "Doi-Mat-Khau#2026"
+setx DB_PASSWORD "Change-Me#2026"
 ```
 
-**Windows, Tomcat cài dạng dịch vụ (service):** dịch vụ không đọc `setenv.bat`, và ô Java Options của `Tomcat9w.exe` chỉ thêm tham số `-D` mà `DbContext` không đọc. Hãy đặt biến hệ thống bằng `setx /M DB_USER "smartlocker_app"` (tương tự cho `DB_URL`, `DB_PASSWORD`) trong cửa sổ PowerShell chạy quyền quản trị. Dịch vụ chỉ nhận biến hệ thống mới sau khi Windows khởi động lại; chỉ khởi động lại dịch vụ thường chưa đủ.
+**Windows, Tomcat installed as a service:** the service does not read `setenv.bat`, and the Java Options box of `Tomcat9w.exe` only adds `-D` properties, which `DbContext` does not read. Set system variables with `setx /M DB_USER "smartlocker_app"` (and likewise `DB_URL`, `DB_PASSWORD`) in an elevated PowerShell. Services only see new system variables after Windows restarts; restarting the service alone is usually not enough.
 
-**Linux:** tạo `$CATALINA_BASE/bin/setenv.sh`:
+**Linux:** create `$CATALINA_BASE/bin/setenv.sh`:
 
 ```bash
 export DB_URL='jdbc:sqlserver://db-host:1433;databaseName=PRJ301_LOCKER;encrypt=true'
 export DB_USER='smartlocker_app'
-export DB_PASSWORD='Doi-Mat-Khau#2026'
+export DB_PASSWORD='Change-Me#2026'
 ```
 
-**Docker:** truyền biến khi chạy image (trên Render, khai báo ở mục Environment, xem [docs/deploy-render.md](./docs/deploy-render.md)):
+**Docker:** pass the variables when running the image (on Render, set them under Environment, see [docs/deploy-render.md](./docs/deploy-render.md)):
 
 ```bash
 docker run -p 8080:8080 \
   -e DB_URL='jdbc:sqlserver://db-host:1433;databaseName=PRJ301_LOCKER;encrypt=true' \
-  -e DB_USER='smartlocker_app' -e DB_PASSWORD='Doi-Mat-Khau#2026' smartlocker
+  -e DB_USER='smartlocker_app' -e DB_PASSWORD='Change-Me#2026' smartlocker
 ```
 
-Với `encrypt=true`, driver kiểm tra chứng chỉ TLS của máy chủ. Azure SQL có sẵn chứng chỉ hợp lệ. SQL Server tự cài thường dùng chứng chỉ tự ký và sẽ báo lỗi `PKIX path building failed`: cài chứng chỉ do CA tin cậy cấp, hoặc chỉ khi mạng giữa Tomcat và SQL Server là mạng tin cậy thì thêm `;trustServerCertificate=true` (tắt kiểm tra chứng chỉ).
+With `encrypt=true` the driver checks the server's TLS certificate. Azure SQL has a valid one. A self-hosted SQL Server usually has a self-signed certificate and fails with `PKIX path building failed`: install a certificate from a trusted CA, or, only when the network between Tomcat and SQL Server is trusted, add `;trustServerCertificate=true` (turns the certificate check off).
 
-> **Không dùng tài khoản `sa` (hay server admin của Azure) trên máy chủ.** Tài khoản đó có toàn quyền trên mọi database; ai lấy được mật khẩu trong cấu hình là chiếm được cả máy chủ. Tạo một tài khoản riêng chỉ có quyền đọc, ghi dữ liệu và gọi procedure trong database của ứng dụng. Ứng dụng không tạo hay sửa bảng khi chạy, nên tài khoản này không cần quyền DDL hay `db_owner`.
+> **Never use `sa` (or the Azure server admin) on a server.** That account has full rights on every database; whoever reads the password from the configuration owns the whole server. Create a dedicated account that can only read and write data and run procedures in the application's database. The application never creates or alters tables at run time, so this account needs no DDL rights and no `db_owner`.
 
-SQL Server cài trên máy (chạy bằng tài khoản quản trị, sau khi đã dựng database bằng `run_demo_db.ps1`):
+Self-hosted SQL Server (run as an administrator, after building the database with `run_demo_db.ps1`):
 
 ```sql
-CREATE LOGIN smartlocker_app WITH PASSWORD = N'Doi-Mat-Khau#2026', CHECK_POLICY = ON;
+CREATE LOGIN smartlocker_app WITH PASSWORD = N'Change-Me#2026', CHECK_POLICY = ON;
 GO
 USE PRJ301_LOCKER;
 GO
@@ -261,212 +294,212 @@ GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON SCHEMA::dbo TO smartlocker_app;
 GO
 ```
 
-`run_demo_db.ps1` xóa và tạo lại database trên máy, nên login vẫn còn nhưng user trong database và quyền `GRANT` mất theo. Sau mỗi lần dựng lại, chạy lại ba dòng từ `USE PRJ301_LOCKER;` trở xuống.
+`run_demo_db.ps1` drops and recreates the database on a local server: the login survives, but the database user and its `GRANT` are lost. After each rebuild, run the lines from `USE PRJ301_LOCKER;` down again.
 
-Azure SQL Database (không có `USE`, còn `CREATE LOGIN` chỉ chạy trong `master`): dùng *contained user*, tức tài khoản nằm ngay trong database. Kết nối thẳng vào database `PRJ301_LOCKER` bằng server admin (ví dụ trong Query editor của Azure Portal, hoặc `sqlcmd -S <server>.database.windows.net -d PRJ301_LOCKER -U <server admin> -P <mật khẩu> -N -I`) rồi chạy:
+Azure SQL Database (no `USE`, and `CREATE LOGIN` runs only in `master`): use a *contained user*, an account that lives inside the database. Connect straight to the `PRJ301_LOCKER` database as the server admin (for example the Query editor in the Azure Portal, or `sqlcmd -S <server>.database.windows.net -d PRJ301_LOCKER -U <server admin> -P <password> -N -I`) and run:
 
 ```sql
-CREATE USER smartlocker_app WITH PASSWORD = N'Doi-Mat-Khau#2026';
+CREATE USER smartlocker_app WITH PASSWORD = N'Change-Me#2026';
 GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON SCHEMA::dbo TO smartlocker_app;
 GO
 ```
 
-Sau đó đặt `DB_USER=smartlocker_app`. `DB_URL` phải có `databaseName=PRJ301_LOCKER`, vì contained user chỉ đăng nhập được vào đúng database đó. Chạy lại `run_demo_db.ps1 -Azure` không xóa tài khoản này và quyền cấp trên schema `dbo` vẫn còn.
+Then set `DB_USER=smartlocker_app`. `DB_URL` must contain `databaseName=PRJ301_LOCKER`, because a contained user can only sign in to that database. Running `run_demo_db.ps1 -Azure` again keeps this user, and the rights granted on schema `dbo` stay.
 
-*Tăng cường (tùy chọn, chưa chạy thử với ứng dụng):* nhật ký audit `AuditLog` và chuỗi băm `HashChain` chỉ được ghi thêm qua procedure `Audit_Append`; mã Java không sửa hay xóa trực tiếp hai bảng này. Có thể cấm thêm:
+*Hardening (optional, not tested with the application):* the audit log `AuditLog` and the hash chain `HashChain` are only appended to through the `Audit_Append` procedure; the Java code never updates or deletes them directly. You can also deny:
 
 ```sql
 DENY UPDATE, DELETE ON dbo.AuditLog TO smartlocker_app;
 DENY UPDATE, DELETE ON dbo.HashChain TO smartlocker_app;
 ```
 
-Procedure của `dbo` vẫn ghi được (ownership chaining). Quyền cấm gắn với bảng, nên phải chạy lại sau mỗi lần dựng lại database.
+Procedures owned by `dbo` can still write (ownership chaining). The deny is attached to the tables, so run it again after every database rebuild.
 
-Các script dựng database (`run_demo_db.ps1`, `sql/*.sql`) tạo bảng và procedure nên vẫn chạy bằng tài khoản quản trị: `run_demo_db.ps1 -Server <máy> -User <tài khoản quản trị> -Password <mật khẩu>`. Không ghi mật khẩu thật vào file trong repo.
+The database build scripts (`run_demo_db.ps1`, `sql/*.sql`) create tables and procedures, so they still run as an administrator: `run_demo_db.ps1 -Server <host> -User <admin login> -Password <password>`. Never write a real password into a file of the repo.
 
-### 4. Tài khoản demo
+### 4. Demo accounts
 
-Mật khẩu chung: `123456`.
+Common password: `123456`.
 
-| Vai trò | Tài khoản | Không đăng nhập được |
+| Role | Accounts | Cannot sign in |
 |---|---|---|
 | ADMIN | `admin`, `admin_ops`, `admin_lib`, `admin_doma`, `admin_cant`, `admin_gym`, `sysadmin1`, `manager1`, `manager2` | `sysadmin2` |
-| OPERATOR | `operator1` ... `operator4` (mỗi người một khu) | `operator5` ... `operator22` |
+| OPERATOR | `operator1` ... `operator4` (one area each) | `operator5` ... `operator22` |
 | TECHNICIAN | `tech1` ... `tech22` | `tech20`, `tech22` |
 | AUDITOR | `auditor1` ... `auditor16` | `auditor15`, `auditor16` |
 | END_USER | `student1` ... `student28`, `user1` | `locked1`, `student27`, `student28` |
 
-Một số tài khoản mẫu đã có sẵn lượt gửi. Muốn thử đặt ngăn mới, dùng tài khoản chưa có lượt đang mở, ví dụ `student10`.
+Some demo accounts already have a booking. To try a new one, use an account without an open booking, for example `student10`.
 
 ---
 
-## Hộp tủ ESP32
+## The ESP32 box
 
-Bản demo có **một hộp ESP32 thật** (`LOCKER-01`) với **một ngăn có servo**. Hộp này quản lý mọi ngăn của các dãy gắn với nó. Mở ngăn nào lượt gửi cũng chạy đúng, nhưng phản hồi `UNLOCK` có cờ `physical`:
+The demo has **one real ESP32 box** (`LOCKER-01`) with **one slot with a servo**. It manages every slot of the banks attached to it. Any of those slots works as a booking, but the `UNLOCK` reply has a `physical` flag:
 
-- `true`: đúng ngăn vật lý, servo mở cửa.
-- `false`: ngăn khác, servo không chạy, LCD chỉ báo kết quả.
+- `true`: the physical slot, the servo opens the door.
+- `false`: another slot, the servo stays still and the LCD only reports the result.
 
-Các dãy còn lại gắn với hộp minh họa (`"demo":true`), được máy chủ giả heartbeat nên luôn trực tuyến.
+The other banks belong to demo boxes (`"demo":true`) whose heartbeat the server simulates, so they are always online.
 
-**Chọn dãy cho hộp thật:** sửa 4 biến ở đầu `sql/demo_box.sql` rồi chạy trong database của app. Mặc định hộp quản lý dãy `LIB-A`, ngăn servo `A01`.
+**Picking the banks of the real box:** edit the 4 variables at the top of `sql/demo_box.sql` and run it in the app's database. By default the box manages bank `LIB-A`, servo slot `A01`.
 
 ```sql
 DECLARE @device_code   NVARCHAR(30)  = N'LOCKER-01';
-DECLARE @banks         NVARCHAR(400) = N'LIB-A';     -- nhiều dãy thì cách nhau bằng dấu phẩy
+DECLARE @banks         NVARCHAR(400) = N'LIB-A';     -- several banks: comma separated
 DECLARE @physical_bank NVARCHAR(20)  = N'LIB-A';
-DECLARE @physical_slot NVARCHAR(20)  = N'A01';       -- cả hai NULL: mọi ngăn đều mở servo
+DECLARE @physical_slot NVARCHAR(20)  = N'A01';       -- both NULL: every slot moves the servo
 ```
 
-Các dãy cùng một hộp phải có mã ngăn khác nhau. Khi hộp thật tắt, sau 90 giây các dãy của nó thành OFFLINE; muốn thử chỉ trên trình duyệt thì đặt ở dãy minh họa như `CANT-B`.
+Banks of one box must have different slot codes. When the real box is off, its banks go OFFLINE after 90 seconds; to test in a browser only, book on a demo bank such as `CANT-B`.
 
-**Firmware** là `firmware/SmartLocker_Online` (bản 4.3, board ESP32 Dev Module). Chép `secrets.example.h` thành `secrets.h` rồi điền Wi-Fi, địa chỉ máy chủ và khóa hộp. Hướng dẫn nạp đầy đủ: [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md).
+**Firmware** is `firmware/SmartLocker_Online` (version 4.1, board ESP32 Dev Module). Copy `secrets.example.h` to `secrets.h` and fill in the Wi-Fi, the server address and the box key. Full guide (Vietnamese): [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md).
 
-| Thiết bị | Chân ESP32 |
+| Device | ESP32 pins |
 |---|---|
-| PN532 (thẻ và chạm NFC, I2C, địa chỉ 0x24) | SDA 21, SCL 22 |
-| LCD 1602 I2C (địa chỉ 0x27) | SDA 21, SCL 22 |
-| AS608 (vân tay) | TX → 35, RX → 15 |
-| Servo chốt | 32 |
-| Servo kéo ngăn | 2 (cắm dây tín hiệu sau khi nạp xong) |
-| SRF05 | TRIG 5, ECHO 18 (qua mạch chia áp) |
-| Keypad 4x4 | Hàng 13, 14, 25, 26; cột 33, 19, 23, 27 |
+| PN532 (cards and NFC tap, I2C, address 0x24) | SDA 21, SCL 22 |
+| LCD 1602 I2C (address 0x27) | SDA 21, SCL 22 |
+| AS608 (fingerprint) | TX → 35, RX → 15 |
+| Bolt servo | 32 |
+| Drawer servo | 2 (plug its signal wire in after the upload) |
+| SRF05 | TRIG 5, ECHO 18 (through a voltage divider) |
+| Keypad 4x4 | Rows 13, 14, 25, 26; columns 33, 19, 23, 27 |
 
-Thao tác tại hộp: `0-9` + `#` gửi mật mã; `B` + mã đăng ký để đăng ký thẻ; `C` + mã đăng ký để đăng ký vân tay; `D` xem IP và tình trạng máy chủ.
+At the box: `0-9` + `#` sends a PIN; `B` + enrollment code enrolls a card; `C` + enrollment code enrolls a fingerprint; `D` shows the IP and server status.
 
-**Chạm điện thoại:** PN532 giả làm một thẻ NFC chứa link `/k/LOCKER-01?n=<mã>`. Mã do máy chủ cấp qua heartbeat, đổi mỗi phút và sau mỗi lần mở, dùng được 5 phút. Điện thoại chạm vào là mở trang của hộp; người đã đăng nhập bấm "Mở tủ của tôi". Mỗi vòng lặp PN532 luân phiên đọc thẻ và giả lập thẻ NFC. Một số iPhone không đọc được thẻ giả lập, khi đó dùng QR.
+**Phone tap:** the PN532 emulates an NFC tag holding the link `/k/LOCKER-01?n=<token>`. The token comes with the heartbeat, changes every minute and after each opening, and lasts 5 minutes. A tap opens the box's page; the signed-in owner presses "Mở tủ của tôi". In each loop the PN532 alternates between reading cards and emulating the tag. Some iPhones cannot read the emulated tag; use the QR code then.
 
-`firmware/SmartLocker_Local` là bản thử phần cứng không nối mạng và vẫn dùng đầu đọc RC522.
+`firmware/SmartLocker_Local` is a hardware test without network and still uses an RC522 reader.
 
 ---
 
-## Bảng giá và luật
+## Pricing and rules
 
-Giá = giá gói × hệ số cỡ (S 100%, M 130%, L 169%), làm tròn lên 100 đ. Đơn vị là đồng.
+Price = plan price × size factor (S 100%, M 130%, L 169%), rounded up to 100 VND. Amounts are in VND.
 
-| Gói (ân hạn) | S | M | L |
+| Plan (grace) | S | M | L |
 |---|---:|---:|---:|
-| 2 giờ (10 phút) | 5.000 | 6.500 | 8.500 |
-| 4 giờ (10 phút) | 9.000 | 11.700 | 15.300 |
-| Trọn ngày (30 phút) | 25.000 | 32.500 | 42.300 |
-| Giá một giờ (gia hạn, Tự chọn theo giờ) | 2.500 | 3.300 | 4.300 |
-| Phụ phí mỗi giờ trễ (150% giá một giờ) | 3.800 | 4.900 | 6.400 |
+| 2 hours (10 minutes) | 5,000 | 6,500 | 8,500 |
+| 4 hours (10 minutes) | 9,000 | 11,700 | 15,300 |
+| Full day (30 minutes) | 25,000 | 32,500 | 42,300 |
+| Hourly rate (extension, Custom by hours) | 2,500 | 3,300 | 4,300 |
+| Late fee per hour (150% of the hourly rate) | 3,800 | 4,900 | 6,400 |
 
-**Tự chọn** do máy chủ tính lại, trang chỉ hiển thị:
+**Custom** is computed again by the server; the page only displays it:
 
-- Theo giờ (1-23): `min(giá một giờ × N, giá trọn ngày)`.
-- Theo ngày (1-7): `giá trọn ngày × N × hệ số`. Hệ số 100% cho 1 ngày, 90% cho 2-6 ngày, 80% cho 7 ngày, làm tròn lên 100 đ.
+- By hours (1-23): `min(hourly rate × N, full-day price)`.
+- By days (1-7): `full-day price × N × factor`. Factor 100% for 1 day, 90% for 2-6 days, 80% for 7 days, rounded up to 100 VND.
 
-| Tự chọn | S | M | L |
+| Custom | S | M | L |
 |---|---:|---:|---:|
-| 3 giờ | 7.500 | 9.900 | 12.900 |
-| 9 giờ | 22.500 | 29.700 | 38.700 |
-| 10-23 giờ | 25.000 | 32.500 | 42.300 |
-| 2 ngày | 45.000 | 58.500 | 76.100 |
-| 3 ngày | 67.500 | 87.800 | 114.100 |
-| 6 ngày | 135.000 | 175.500 | 228.200 |
-| 7 ngày | 140.000 | 182.000 | 236.600 |
+| 3 hours | 7,500 | 9,900 | 12,900 |
+| 9 hours | 22,500 | 29,700 | 38,700 |
+| 10-23 hours | 25,000 | 32,500 | 42,300 |
+| 2 days | 45,000 | 58,500 | 76,100 |
+| 3 days | 67,500 | 87,800 | 114,100 |
+| 6 days | 135,000 | 175,500 | 228,200 |
+| 7 days | 140,000 | 182,000 | 236,600 |
 
-| Luật | Giá trị | Khóa trong `AppConfig` |
+| Rule | Value | `AppConfig` key |
 |---|---|---|
-| Giữ chỗ | 15 phút | `HOLD_MIN` |
-| Hủy hoàn đủ | 5 phút đầu | `CANCEL_FREE_MIN` |
-| Hủy muộn, tới hết giữ chỗ | hoàn 50%, làm tròn xuống 100 đ | `CANCEL_LATE_REFUND_PCT` |
-| Số dư tối thiểu sau khi đặt | 10.000 đ | `BOOKING_BUFFER` |
-| Email nhắc trước hạn | 15 phút | `DUE_REMINDER_MIN` |
-| Chuyển nhân viên xử lý | 48 giờ | `ESCALATE_HOURS` |
+| Hold | 15 minutes | `HOLD_MIN` |
+| Full refund on cancel | first 5 minutes | `CANCEL_FREE_MIN` |
+| Late cancel, until the hold ends | 50% back, rounded down to 100 VND | `CANCEL_LATE_REFUND_PCT` |
+| Minimum balance after booking | 10,000 VND | `BOOKING_BUFFER` |
+| Reminder e-mail before the due time | 15 minutes | `DUE_REMINDER_MIN` |
+| Escalation to staff | 48 hours | `ESCALATE_HOURS` |
 
-Các con số nằm trong `AppConfig`, `SlotSize`, `StoragePlan`, và `util.Pricing` tính giống hệt SQL. Đổi một con số thì sửa cả hai nơi rồi chạy `PricingDatabaseIntegrationTest`.
+The numbers live in `AppConfig`, `SlotSize` and `StoragePlan`, and `util.Pricing` computes exactly what SQL does. To change a number, change both and run `PricingDatabaseIntegrationTest`.
 
 ---
 
-## Luồng hoạt động
+## Flows
 
-### Đặt tủ, gửi và lấy đồ
+### Book, store and collect
 
 ```mermaid
 sequenceDiagram
-    participant U as Người dùng
-    participant W as Trình duyệt
+    participant U as User
+    participant W as Browser
     participant S as Tomcat
     participant D as SQL Server
-    participant B as Hộp ESP32
+    participant B as ESP32 box
 
-    U->>W: Chọn ngăn, gói, cách mở
-    W->>U: Popup: trừ ngay, số dư còn lại, luật hủy
-    U->>W: Xác nhận
+    U->>W: Pick slot, plan, open method
+    W->>U: Popup: taken now, balance left, cancel rules
+    U->>W: Confirm
     W->>S: POST /BookingController (action=reserve)
     S->>D: Deposit_Reserve (UPDLOCK, HOLDLOCK)
-    D-->>S: RESERVED, đã trừ ví
-    S-->>W: Giữ chỗ 15 phút, mật mã ở Tủ của tôi
-    U->>B: Mật mã, thẻ, vân tay hoặc chạm điện thoại
+    D-->>S: RESERVED, wallet charged
+    S-->>W: 15-minute hold, PIN in My locker
+    U->>B: PIN, card, fingerprint or phone tap
     B->>S: POST /api/device/auth (X-API-Key)
     S->>D: Device_Authorize
-    D-->>S: UNLOCK CHECK_IN, lượt ACTIVE
+    D-->>S: UNLOCK CHECK_IN, booking ACTIVE
     S-->>B: UNLOCK + physical
-    U->>B: Xác thực lại
+    U->>B: Authenticate again
     B->>S: POST /api/device/auth (intent ASK)
     S-->>B: CHOOSE, LCD "A: Mo tu / B: Tra tu"
-    alt Phím A: mở tủ, lượt vẫn chạy
+    alt Key A: open, booking goes on
         B->>S: intent OPEN
         S-->>B: UNLOCK ACCESS
-    else Phím B: trả tủ
+    else Key B: return the slot
         B->>S: intent CHECKOUT
-        S-->>B: UNLOCK PICKUP, lượt COMPLETED, ngăn trống
+        S-->>B: UNLOCK PICKUP, booking COMPLETED, slot free
     end
 ```
 
-### Quá hạn
+### Overdue
 
 ```mermaid
 flowchart TD
-    A["Lượt ACTIVE"] -->|"quá hạn trả + ân hạn"| L["Tủ khóa, phụ phí mỗi giờ trễ, ví có thể âm"]
-    L -->|"mở khi ví âm"| E["Từ chối OVERDUE_UNPAID kèm số nợ"]
-    E -->|"nạp tiền, nhân viên duyệt"| L
-    L -->|"mở khi ví không âm"| P["PICKUP, COMPLETED"]
-    L -->|"quá hạn 48 giờ"| X["Cảnh báo OVERDUE_ESCALATED"]
-    X --> ST["Nhân viên liên hệ, mở từ xa, kết thúc lượt"]
+    A["ACTIVE booking"] -->|"past due + grace"| L["Slot locks, late fee per hour, wallet may go negative"]
+    L -->|"open with a negative wallet"| E["Refused OVERDUE_UNPAID with the debt"]
+    E -->|"top up, staff approve"| L
+    L -->|"open with wallet not negative"| P["PICKUP, COMPLETED"]
+    L -->|"48 hours past due"| X["OVERDUE_ESCALATED alert"]
+    X --> ST["Staff contact the user, open remotely, end the booking"]
     ST --> P
 ```
 
-### Cảnh báo
+### Alerts
 
 ```mermaid
 flowchart LR
     HB["Heartbeat /api/health"] --> LM["LockerMonitor"]
-    LM -->|"im lặng quá 90 giây"| OFF["Hộp OFFLINE, cảnh báo DEVICE_OFFLINE"]
-    EV["Phiên mở/đóng /api/locker/batch"] --> RE["RuleEngine"]
+    LM -->|"silent over 90 seconds"| OFF["Box OFFLINE, DEVICE_OFFLINE alert"]
+    EV["Open/close sessions /api/locker/batch"] --> RE["RuleEngine"]
     RE --> AL["SUSPECTED_SPOOF, SENSOR_FAULT, LOST_CARD_USED..."]
-    RS["RiskScorer (Weka)"] -.->|"chỉ cho điểm rủi ro"| AL
-    AL --> T["Kỹ thuật viên xem bằng chứng, mở phiếu bảo trì"]
+    RS["RiskScorer (Weka)"] -.->|"risk score only"| AL
+    AL --> T["Technician checks evidence, opens a ticket"]
 ```
 
-Firmware hiện không gửi `/api/locker/batch` vì hộp không có cảm biến cửa và cân. Dữ liệu cho luồng này đến từ dữ liệu mẫu, `scripts/send-demo.ps1` hoặc công cụ `ScenarioSender`:
+The firmware does not send `/api/locker/batch` today because the box has no door sensor or scale. Data for this flow comes from the seed, `scripts/send-demo.ps1` or the `ScenarioSender` tool:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\send-demo.ps1 -Count 5 -Fault -Bad
 ```
 
-Chi tiết từng tình huống và mã lỗi: [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md).
+Every case and error code (Vietnamese): [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md).
 
 ---
 
-## Kiểm thử
+## Testing
 
-Kết quả trên database dựng sạch từ script, ngày 11/11/2026:
+Results on a database built clean from the scripts, on 2026-11-11:
 
-| Bộ kiểm thử | Kết quả |
+| Suite | Result |
 |---|---|
-| TestNG, 14 lớp | 83/83 đạt, không bỏ qua |
-| Postman + newman, 19 kịch bản | 241 request, 514 assertion, 0 lỗi |
-| Trình duyệt: khách, đặt và hủy, mở tủ, quá hạn, trang điện thoại, 17 trang nhân viên | 36/36 mục đạt, không có lỗi JavaScript hay HTTP 500 |
+| TestNG, 14 classes | 83/83 pass, none skipped |
+| Postman + newman, 19 scenarios | 241 requests, 514 assertions, 0 failures |
+| Browser: visitor, book and cancel, open, overdue, phone page, 17 staff pages | 36/36 checks pass, no JavaScript error or HTTP 500 |
 
-Test ghi vào database nên chỉ chạy trên database có tiền tố `SL_`, không chạy trên `PRJ301_LOCKER`. Trước khi dùng các script trong `scripts/proof`:
+The tests write to the database, so run them only on a database named `SL_*`, never on `PRJ301_LOCKER`. Before using the scripts in `scripts/proof`:
 
-- Trên máy khác, hoặc sau khi dựng lại `PRJ301_LOCKER`, sửa `$script:RealDbCreated` trong `scripts/proof/lib.ps1` theo `create_date` thật của database đó. Script dùng mốc này để báo động nếu database thật bị dựng lại.
-- `test.sh` đọc thư mục JDK từ biến `JDK` và Tomcat từ biến `TOMCAT`. `test-stack.ps1` dùng JDK 1.8.0_202 và nhận thư mục Tomcat qua `-TomcatHome`.
+- On another machine, or after rebuilding `PRJ301_LOCKER`, set `$script:RealDbCreated` in `scripts/proof/lib.ps1` to that database's real `create_date`. The scripts raise an alarm when the real database was rebuilt.
+- `test.sh` reads the JDK folder from `JDK` and Tomcat from `TOMCAT`. `test-stack.ps1` uses JDK 1.8.0_202 and takes the Tomcat folder as `-TomcatHome`.
 
-Dựng database test rồi chạy TestNG:
+Build a test database and run TestNG:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\proof\build-db.ps1 -Repo "$PWD" -Database SL_TEST -TestSetup
@@ -476,7 +509,7 @@ powershell -ExecutionPolicy Bypass -File scripts\proof\build-db.ps1 -Repo "$PWD"
 DB_URL='jdbc:sqlserver://localhost:1433;databaseName=SL_TEST;encrypt=false' sh scripts/test.sh
 ```
 
-Chạy Postman trên một Tomcat test riêng ở cổng 8081, trên một database mới dựng và chưa chạy `demo_box.sql`. `test-stack.ps1 start` dừng lại nếu thấy `config/mail.local.properties` để test không gửi mail thật, nên hãy chạy ở một bản clone không có file này:
+Run Postman on a separate test Tomcat on port 8081, on a freshly built database without `demo_box.sql`. `test-stack.ps1 start` stops if it finds `config/mail.local.properties` so the tests send no real mail, so run it in a clone without that file:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\proof\test-stack.ps1 start -Database SL_TEST -Build
@@ -490,28 +523,28 @@ powershell -ExecutionPolicy Bypass -File scripts\proof\newman.ps1 -Database SL_T
 powershell -ExecutionPolicy Bypass -File scripts\proof\test-stack.ps1 clean
 ```
 
-Thêm: [docs/postman/README.md](./docs/postman/README.md) và [scripts/proof/README.md](./scripts/proof/README.md).
+More (Vietnamese): [docs/postman/README.md](./docs/postman/README.md) and [scripts/proof/README.md](./scripts/proof/README.md).
 
-**Demo quá hạn không cần chờ:** mở tủ một lần để lượt thành ACTIVE, sửa `@username` trong `sql/test_overdue.sql` rồi chạy. Trong 15 giây hệ thống khóa tủ và tính phụ phí. Dọn bằng `sql/test_cleanup.sql`.
+**Overdue demo without waiting:** open the slot once so the booking is ACTIVE, set `@username` in `sql/test_overdue.sql` and run it. Within 15 seconds the system locks the slot and charges the fee. Clean up with `sql/test_cleanup.sql`.
 
-**Công cụ chạy tay** trong `test/tool`, không đóng gói vào WAR: `ScenarioSender` (giả hộp ESP32), `DataReplayer`, `ModelTrainer`, `TransferCheck`, `DeviceKey`.
+**Manual tools** in `test/tool`, not packaged in the WAR: `ScenarioSender` (fake ESP32 box), `DataReplayer`, `ModelTrainer`, `TransferCheck`, `DeviceKey`.
 
 ---
 
-## Triển khai lên Internet
+## Deploying to the Internet
 
-| Cách | Tài liệu |
+| Option | Document (Vietnamese) |
 |---|---|
-| Render (Docker) + Azure SQL Database. **Mỗi lần push lên `main`, Render tự build và deploy lại** | [docs/deploy-render.md](./docs/deploy-render.md) |
-| Chạy trên máy cá nhân qua Cloudflare tunnel, dùng khi demo | [docs/deploy.md](./docs/deploy.md) |
+| Render (Docker) + Azure SQL Database. **Each push to `main` makes Render build and deploy again** | [docs/deploy-render.md](./docs/deploy-render.md) |
+| Run on your own PC through a Cloudflare tunnel, for demos | [docs/deploy.md](./docs/deploy.md) |
 
-**Cập nhật database đang chạy** mà giữ nguyên dữ liệu: chỉ chạy các file sau, theo đúng thứ tự, bỏ qua bước đã làm. Đừng chạy lại `03_v2_v3.sql` vì nó đặt lại khóa của hộp.
+**Updating a running database** while keeping its rows: run only these files, in this order, skipping what is already done. Do not run `03_v2_v3.sql` again; it resets the box key.
 
-| Database đang ở bản | Chạy |
+| The database is at | Run |
 |---|---|
-| Dựng từ `main` tại commit `da95f43` | `upgrade_main_2026-11.sql`, `04_phone.sql`, `05_auto_checkin.sql` |
-| Đã có `upgrade_main_2026-11.sql` | `04_phone.sql`, `05_auto_checkin.sql` |
-| Đã có `04_phone.sql` | `05_auto_checkin.sql` |
+| Built from `main` at commit `da95f43` | `upgrade_main_2026-11.sql`, `04_phone.sql`, `05_auto_checkin.sql` |
+| Has `upgrade_main_2026-11.sql` | `04_phone.sql`, `05_auto_checkin.sql` |
+| Has `04_phone.sql` | `05_auto_checkin.sql` |
 
 ```bash
 sqlcmd -I -b -f 65001 -S <server> -d PRJ301_LOCKER -U <user> -P <password> -i sql/05_auto_checkin.sql
@@ -519,13 +552,13 @@ sqlcmd -I -b -f 65001 -S <server> -d PRJ301_LOCKER -U <user> -P <password> -i sq
 
 ---
 
-## Kiến trúc và mã nguồn
+## Architecture and source
 
 ```mermaid
 flowchart TD
-    ESP["Hộp ESP32"] -->|X-API-Key| API["api/*: HealthApi, DeviceAuthApi, DeviceEnrollApi, LockerSessionApi"]
-    Phone["Điện thoại /k/LOCKER-01"] --> Kiosk["api/KioskApi"]
-    Browser["Trình duyệt"] --> Filter["filter/SecurityFilter"]
+    ESP["ESP32 box"] -->|X-API-Key| API["api/*: HealthApi, DeviceAuthApi, DeviceEnrollApi, LockerSessionApi"]
+    Phone["Phone /k/LOCKER-01"] --> Kiosk["api/KioskApi"]
+    Browser["Browser"] --> Filter["filter/SecurityFilter"]
     Filter --> Ctrl["controller/*"]
     Ctrl --> Views["WEB-INF/views/*.jsp"]
     API --> DAO["dao/*, DbContext"]
@@ -536,111 +569,113 @@ flowchart TD
     DAO --> DB[("SQL Server")]
 ```
 
-- `DbContext` là nơi duy nhất mở kết nối JDBC và giữ một pool nhỏ; DAO đóng kết nối bằng try-with-resources.
-- Luật về tiền và thời gian nằm trong procedure SQL; Java gọi procedure và dịch lỗi sang tiếng Việt (`Web.sqlMessage`).
-- View nằm trong `WEB-INF/views`, chỉ vào được qua controller.
-- `/api/dashboard` đọc ảnh chụp trong bộ nhớ của `LockerMonitor`, không truy vấn DB; số liệu biểu đồ ở `/api/dashboard/stats`.
+- `DbContext` is the only place that opens JDBC connections and keeps a small pool; DAOs close them with try-with-resources.
+- Money and time rules live in SQL procedures; Java calls them and translates errors to Vietnamese (`Web.sqlMessage`).
+- Views live in `WEB-INF/views` and are reachable only through controllers.
+- `/api/dashboard` reads the in-memory snapshot of `LockerMonitor`, not the database; chart numbers are at `/api/dashboard/stats`.
 
 ```
 SmartLocker/
-├── config/        # Mẫu email, file cấu hình mẫu (*.local.properties không commit)
-├── docs/          # SYSTEM_FLOWS, spec, deploy, Postman, ảnh, bài báo (paper)
-├── firmware/      # SmartLocker_Online (ESP32 nối web), SmartLocker_Local (thử phần cứng)
-├── lib/           # Chỉ jar để test: TestNG, JCommander, SLF4J (không vào WAR)
-├── scripts/       # build-dev, test, set-device-key, send-demo, proof/ (DB và Tomcat test)
+├── config/        # Mail templates, sample config (*.local.properties are not committed)
+├── docs/          # SYSTEM_FLOWS, specs, deploy, Postman, images, the paper
+├── firmware/      # SmartLocker_Online (web-connected ESP32), SmartLocker_Local (hardware test)
+├── lib/           # Test-only jars: TestNG, JCommander, SLF4J (not in the WAR)
+├── scripts/       # build-dev, test, set-device-key, send-demo, proof/ (test DB and Tomcat)
 ├── sql/           # 01-05, demo_box, upgrade, test_*
 ├── src/java/
-│   ├── api/       # API JSON: thiết bị, điện thoại, dashboard, bản đồ, Tủ của tôi
-│   ├── controller/# Servlet MVC2
+│   ├── api/       # JSON API: devices, phone, dashboard, map, My locker
+│   ├── controller/# MVC2 servlets
 │   ├── dao/       # JDBC
-│   ├── filter/    # SecurityFilter: đăng nhập, phân quyền, khóa API thiết bị
-│   ├── ml/        # Mô hình Weka đã train
-│   ├── model/     # Lớp dữ liệu
+│   ├── filter/    # SecurityFilter: sign-in, permissions, device API keys
+│   ├── ml/        # Trained Weka model
+│   ├── model/     # Data classes
 │   ├── service/   # LockerMonitor, DueReminder, MailService, RuleEngine, RiskScorer, AuditVerifier
 │   └── util/      # Web, Pricing, Csv, SecurityUtils, SlotImages
-├── test/          # test/ (TestNG), tool/ (chạy tay), support/
+├── test/          # test/ (TestNG), tool/ (manual), support/
 └── web/           # JSP, CSS, JS, Leaflet
-    └── WEB-INF/lib/   # Jar chạy ứng dụng: mssql-jdbc, Gson, jBCrypt, Weka, JSTL
+    └── WEB-INF/lib/   # Runtime jars: mssql-jdbc, Gson, jBCrypt, Weka, JSTL
 ```
 
-### API chính
+### Main API
 
-| Method | Endpoint | Mô tả |
+| Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/BookingController` | `action=reserve`, `cancel`, `extend` |
-| `GET` | `/api/locker-map` | Khu, dãy, ngăn, giá; khách xem được |
-| `GET` | `/api/my-locker` | Lượt đang mở, thẻ, vân tay, lịch sử |
-| `POST` | `/TopupController` | Yêu cầu nạp tiền; nhân viên duyệt hoặc từ chối |
-| `POST` | `/api/health` | Heartbeat; trả lệnh đang chờ và `tap_path` cho thẻ NFC |
-| `POST` | `/api/device/auth` | Mật mã, thẻ, vân tay → `UNLOCK` / `CHOOSE` / `CONFIRM_EMAIL` / `DENY` |
-| `POST` | `/api/device/enroll/start`, `/finish` | Đăng ký thẻ hoặc vân tay |
-| `POST` | `/api/locker/batch` | Phiên mở/đóng của hộp |
-| `POST` | `/api/kiosk/unlock` | Mở từ trang điện thoại bằng mật mã hoặc chạm NFC |
-| `GET` | `/api/dashboard`, `/api/dashboard/stats` | Số liệu tổng quan và biểu đồ |
+| `GET` | `/api/locker-map` | Areas, banks, slots, prices; open to visitors |
+| `GET` | `/api/my-locker` | Open bookings, cards, fingerprints, history |
+| `POST` | `/TopupController` | Top-up request; staff approve or reject |
+| `POST` | `/api/health` | Heartbeat; returns pending commands and `tap_path` for the NFC tag |
+| `POST` | `/api/device/auth` | PIN, card, fingerprint → `UNLOCK` / `CHOOSE` / `CONFIRM_EMAIL` / `DENY` |
+| `POST` | `/api/device/enroll/start`, `/finish` | Enroll a card or fingerprint |
+| `POST` | `/api/locker/batch` | Open/close sessions of a box |
+| `POST` | `/api/kiosk/unlock` | Open from the phone page with a PIN or NFC tap |
+| `GET` | `/api/dashboard`, `/api/dashboard/stats` | Dashboard and chart numbers |
 
-Hợp đồng API thiết bị: [docs/spec/smart-locker-v2.md](./docs/spec/smart-locker-v2.md) mục 4.
-
----
-
-## Bảo mật và hạn chế đã biết
-
-**Đã có:**
-
-- `SecurityFilter`: đường dẫn chưa khai báo bị từ chối; GET cần quyền READ, phương thức khác cần WRITE. Khách chỉ xem được bản đồ và `/api/locker-map` (GET); công khai thêm trang mở tủ `/k/*`, `/api/kiosk/unlock`, xác nhận thẻ `/c/*`, đăng nhập và đăng ký.
-- Mật khẩu băm BCrypt. Người dùng được nạp lại ở mỗi request, tài khoản bị khóa bị đăng xuất ngay.
-- Đặt tủ chống tranh chấp bằng khóa trong procedure (`UPDLOCK, HOLDLOCK`).
-- Nhật ký audit chỉ thêm, nối chuỗi băm SHA-256.
-- Khóa API của hộp lưu dạng SHA-256. Cookie phiên SameSite=Lax. Dữ liệu người dùng in bằng `<c:out>` và `esc()`.
-
-**Chưa có, vì đây là đồ án demo.** Cần xử lý trước khi dùng thật:
-
-- Chưa giới hạn số lần đăng nhập sai và chưa có trang đổi mật khẩu. Tài khoản mới do nhân viên tạo hoặc đặt lại đều dùng mật khẩu `123456`.
-- Email lưu ngay khi nhập, chưa xác minh bằng mã.
-- Chưa có CSRF token, hiện dựa vào SameSite=Lax.
-- Chưa có trang lỗi 500 riêng.
-- `DbContext` có sẵn mặc định `sa` / `12345` cho máy demo local; khi triển khai phải đặt `DB_URL`, `DB_USER`, `DB_PASSWORD` và dùng login riêng thay cho `sa` (xem [Kết nối cơ sở dữ liệu](#3-kết-nối-cơ-sở-dữ-liệu)).
-- Firmware dùng `setInsecure()`, không ghim chứng chỉ TLS.
+Device API contract (Vietnamese): [docs/spec/smart-locker-v2.md](./docs/spec/smart-locker-v2.md) section 4.
 
 ---
 
-## Bài báo khoa học
+## Security and known limits
 
-Bài báo *Smart Locker with Anomalous Access Detection Based on IoT Device Telemetry* nằm ở
-[docs/paper/smartlocker-10p.tex](./docs/paper/smartlocker-10p.tex): mẫu IEEE (`IEEEtran`, một cột, khoảng 10 trang),
-6 tác giả của FPT University cơ sở TP. Hồ Chí Minh, tác giả liên hệ là thầy Kieu Trong Khanh.
+**In place:**
 
-| Phần | Nội dung |
+- `SecurityFilter`: undeclared paths are refused; GET needs READ, other methods need WRITE. Visitors can only view the map and `/api/locker-map` (GET); also public are the box page `/k/*`, `/api/kiosk/unlock`, card confirmation `/c/*`, sign-in and sign-up.
+- Passwords are hashed with BCrypt. The user is reloaded on every request, so a locked account is signed out at once.
+- Booking races are stopped by locks in the procedure (`UPDLOCK, HOLDLOCK`).
+- The audit log is append-only with a SHA-256 hash chain.
+- Box API keys are stored as SHA-256. The session cookie is SameSite=Lax. User data is printed with `<c:out>` and `esc()`.
+
+**Not in place, because this is a demo project.** Fix these before real use:
+
+- No limit on failed sign-ins and no change-password page. Accounts created or reset by staff get the password `123456`.
+- E-mail addresses are saved as typed, with no verification code.
+- No CSRF token; it relies on SameSite=Lax.
+- No dedicated error page for HTTP 500.
+- `DbContext` defaults to `sa` / `12345` for the local demo machine; when deploying, set `DB_URL`, `DB_USER`, `DB_PASSWORD` and use a dedicated login instead of `sa` (see [Database connection](#3-database-connection)).
+- The firmware uses `setInsecure()` and does not pin the TLS certificate.
+
+---
+
+## Research paper
+
+The paper *Smart Locker with Anomalous Access Detection Based on IoT Device Telemetry* is
+[docs/paper/smartlocker-10p.tex](./docs/paper/smartlocker-10p.tex): IEEE template (`IEEEtran`, one column, about 10
+pages), six authors from FPT University, Ho Chi Minh Campus; the corresponding author is Kieu Trong Khanh.
+
+| Part | Content |
 |---|---|
-| Hệ thống | Kiến trúc ba tầng, sơ đồ workflow, sơ đồ khối phần cứng, sơ đồ tuần tự của giao thức hộp, sơ đồ trạng thái ngăn |
-| Phát hiện bất thường | Bảng 8 luật theo thứ tự ưu tiên, điểm rủi ro (công thức 1), luật ra cảnh báo (công thức 2), lưu đồ hai tầng |
-| Đánh giá | 4 bộ phân loại Weka trên 480 phiên tổng hợp (IBk, F1 = 0,977), 83 test TestNG, 514 assertion newman, 6 kịch bản phát hiện, thời gian phản hồi 6–31 ms |
-| Hạn chế | Dữ liệu phiên là tổng hợp (hộp chưa có cảm biến cửa và loadcell), một ngăn có khóa thật, chưa có CSRF token và kiểm tra chứng chỉ |
+| System | Three-tier architecture, workflow figure, hardware block diagram, sequence diagram of the box protocol, slot state diagram |
+| Anomaly detection | Table of 8 priority-ordered rules, risk score (Eq. 1), alert rule (Eq. 2), two-tier flowchart |
+| Evaluation | 4 Weka classifiers on 480 synthetic sessions (IBk, F1 = 0.977), 83 TestNG tests, 514 newman assertions, 6 detection scenarios, 6–31 ms response time |
+| Limitations | Synthetic sessions (no door sensor or load cell yet), one physically locked slot, no CSRF token or certificate check |
 
-**Biên dịch trên Overleaf:** tải lên file `.tex` (làm `main.tex`) và thư mục `docs/paper/images/`. Danh mục 22 tài liệu
-tham khảo đã nhúng sẵn trong file (`filecontents*`), không cần tải `references.bib` riêng. Nếu số tài liệu chưa đổi,
-chọn *Recompile from scratch*.
+**Compiling on Overleaf:** upload the `.tex` file (as `main.tex`) and the `docs/paper/images/` folder. The 22
+references are embedded in the file (`filecontents*`), so no separate `references.bib` is needed. If the reference
+count does not change, use *Recompile from scratch*.
 
-**Hình workflow** (`images/workflow.pdf`, `workflow.png`) được vẽ bằng script, linh kiện vẽ lại theo hộp thật, không
-dùng ảnh có bản quyền:
+**The workflow figure** (`images/workflow.pdf`, `workflow.png`) is drawn by a script; the parts are redrawn after the
+real box, no copyrighted photo is used:
 
 ```bash
 python -I docs/paper/tools/make_workflow.py
 ```
 
-Số đo của bài và lệnh tạo ra chúng ở [docs/paper/evidence](./docs/paper/evidence/README.md). Bản dài trước đó vẫn ở
-[docs/paper/smartlocker.tex](./docs/paper/smartlocker.tex).
+The measurements and the commands that produced them are in [docs/paper/evidence](./docs/paper/evidence/README.md).
+The earlier long version is still [docs/paper/smartlocker.tex](./docs/paper/smartlocker.tex).
 
 ---
 
-## Tài liệu liên quan
+## Related documents
 
-- [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md): luồng nghiệp vụ, tình huống, sơ đồ trạng thái.
-- [docs/spec/smart-locker-v2.md](./docs/spec/smart-locker-v2.md), [docs/spec/smart-locker-v3.md](./docs/spec/smart-locker-v3.md): đặc tả.
-- [docs/deploy.md](./docs/deploy.md), [docs/deploy-render.md](./docs/deploy-render.md): triển khai.
-- [docs/postman/README.md](./docs/postman/README.md): Postman và newman.
-- [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md): nạp firmware và dùng hộp thật.
-- [docs/paper/smartlocker-10p.tex](./docs/paper/smartlocker-10p.tex): bài báo (xem [Bài báo khoa học](#bài-báo-khoa-học)), số đo ở [docs/paper/evidence](./docs/paper/evidence/README.md).
+The documents below are in Vietnamese.
 
-## Giấy phép
+- [docs/SYSTEM_FLOWS.md](./docs/SYSTEM_FLOWS.md): business flows, cases, state diagrams.
+- [docs/spec/smart-locker-v2.md](./docs/spec/smart-locker-v2.md), [docs/spec/smart-locker-v3.md](./docs/spec/smart-locker-v3.md): specifications.
+- [docs/deploy.md](./docs/deploy.md), [docs/deploy-render.md](./docs/deploy-render.md): deployment.
+- [docs/postman/README.md](./docs/postman/README.md): Postman and newman.
+- [firmware/SmartLocker_Online/README.md](./firmware/SmartLocker_Online/README.md): flashing the firmware and using the real box.
+- [docs/paper/smartlocker-10p.tex](./docs/paper/smartlocker-10p.tex): the paper (see [Research paper](#research-paper)), with measurements in [docs/paper/evidence](./docs/paper/evidence/README.md).
 
-Đồ án học tập môn PRJ301. Xem [LICENSE](./LICENSE).
+## License
+
+PRJ301 course project. See [LICENSE](./LICENSE).

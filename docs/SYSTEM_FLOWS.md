@@ -1,285 +1,137 @@
-# SmartLocker: luồng hệ thống và nghiệp vụ
+# SmartLocker: System Architecture & Business Flows
 
-Tài liệu mô tả đường đi của dữ liệu và vòng đời một lượt gửi đồ, đúng với code hiện tại (v3).
-Hợp đồng API chi tiết của thiết bị nằm ở [spec/smart-locker-v2.md](spec/smart-locker-v2.md) mục 4; phần thay đổi của v3
-(giá theo cỡ, hủy 5 phút hoàn đủ rồi hoàn 50% tới hết giữ chỗ, hết giữ chỗ thì tự check-in (không hoàn), khóa quá hạn và nợ, chuyển xử lý) ở [spec/smart-locker-v3.md](spec/smart-locker-v3.md).
-Mọi con số (15 phút giữ chỗ, 5 phút hủy hoàn đủ, 50% khi hủy muộn, không hoàn khi hết giữ chỗ (lượt tự check-in), đệm 10.000 đ, phụ phí 150%, 48 giờ) nằm trong bảng `AppConfig`.
+This document details the operational data paths, lifecycle state machines, and business rules implemented in SmartLocker (v3).
+Detailed device API contracts are defined in `spec/smart-locker-v2.md` Section 4; v3 enhancements (size-based pricing, cancellation refunds, automatic check-in on hold expiry, overdue locking, debt handling, and staff escalation) are detailed in `spec/smart-locker-v3.md`.
+All core numerical parameters (15-min hold, 5-min cancellation window, 50% late cancellation refund, 10,000 VND safety buffer, 150% late fee rate, 48-hour escalation threshold) are centralized in database table `AppConfig`.
 
 ---
 
-## Phần 1: Dashboard và tiến trình nền
+## Part 1: Dashboard and Background Daemons
 
-### 1.1 Đường đi dữ liệu
+### 1.1 Data Flow
 
 ```mermaid
 flowchart TD
-    DB[(SQL Server)] -->|truy vấn tổng hợp, 2 giây một lần| LM["LockerMonitor (luồng nền)"]
-    LM -->|thay nguyên ảnh chụp| CACHE["AtomicReference&lt;Snapshot&gt;"]
-    API["DashboardApi /api/dashboard"] -->|chỉ đọc bộ nhớ, không truy vấn DB| CACHE
-    Stats["DashboardStatsApi /api/dashboard/stats"] -->|truy vấn tổng hợp, nhớ 60 giây| DB[(SQL Server)]
-    Charts["js/dash-charts.js"] -->|mỗi 60 giây| Stats
-    Page["dashboard.jsp + js/dashboard.js"] -->|setTimeout 5 giây, hủy sau 8 giây bằng AbortController| API
-    LM -->|15 giây một lần| PROC["Procedure: Device_MarkOffline(90), Deposit_ExpireNoShow,
-    Deposit_ExpireOverdue (khóa + phụ phí), Deposit_Escalate (48 giờ), RemoteCommand_Expire"]
-    LM -->|luồng riêng| MAIL["DueReminder: Deposit_DueSoon, gửi email, Deposit_MarkReminded"]
+    DB[(SQL Server)] -->|aggregated query every 2 seconds| LM["LockerMonitor (daemon thread)"]
+    LM -->|atomically replaces snapshot| CACHE["AtomicReference&lt;Snapshot&gt;"]
+    API["DashboardApi /api/dashboard"] -->|reads memory snapshot, 0 DB queries| CACHE
+    Stats["DashboardStatsApi /api/dashboard/stats"] -->|aggregated metrics, 60-second cache| DB[(SQL Server)]
+    Charts["js/dash-charts.js"] -->|polls every 60 seconds| Stats
+    Page["dashboard.jsp + js/dashboard.js"] -->|polls every 5 s, cancels after 8 s via AbortController| API
+    LM -->|executes every 15 seconds| PROC["Procedures: Device_MarkOffline(90), Deposit_ExpireNoShow,
+    Deposit_ExpireOverdue (locks + assesses late fee), Deposit_Escalate (48 h), RemoteCommand_Expire"]
+    LM -->|dedicated thread| MAIL["DueReminder: Deposit_DueSoon, dispatches emails, Deposit_MarkReminded"]
 ```
 
-### 1.2 Các thành phần
-1. **`LockerMonitor`** (`ServletContextListener`, một luồng nền):
-   - Mỗi 2 giây dựng `Snapshot` (KPI, số ngăn theo trạng thái, cảnh báo mới, tình trạng hộp, lượt mở gần đây) và kết quả kiểm tra chuỗi băm audit (`AuditVerifier`).
-   - Mỗi 15 giây chạy các procedure hết hạn. Hộp im lặng quá 90 giây chuyển `OFFLINE`.
-   - Hộp minh họa (`"demo":true` trong `OperatingProfile`) được giả heartbeat; hộp thật `LOCKER-01` thì không.
-   - `DueReminder` gửi email nhắc 15 phút trước `due_at` cho chủ lượt đã xác nhận email; gửi lỗi thì thử lại ở chu kỳ sau.
-     Không có `config/mail.local.properties` thì việc này tắt.
-2. **`DashboardApi`**: trả JSON từ ảnh chụp; trả 503 nếu ảnh chụp chưa có (vài giây đầu sau khi deploy).
-   `?device=ID` là truy vấn riêng cho biểu đồ của một hộp.
-3. **`dashboard.jsp`**: lần vẽ đầu do server render; sau đó `dashboard.js` hỏi lại theo chu kỳ người dùng chọn,
-   không gửi yêu cầu mới khi yêu cầu cũ chưa xong, và chỉ cập nhật ô có giá trị thay đổi.
+### 1.2 Core Components
+1. **`LockerMonitor`** (`ServletContextListener`, background thread):
+   - Every 2 seconds builds an in-memory `Snapshot` (KPIs, slot status breakdown, active alerts, device connectivity, recent access events) and runs `AuditVerifier` across the cryptographic hash chain.
+   - Every 15 seconds invokes lifecycle expiry stored procedures. Devices silent for >90 seconds transition to `OFFLINE`.
+   - Simulated units (`"demo":true` in `OperatingProfile`) receive synthetic heartbeats; real hardware (`LOCKER-01`) communicates strictly via live HTTP requests.
+   - `DueReminder` dispatches warning emails 15 minutes prior to `due_at` for accounts with verified email addresses.
+2. **`DashboardApi`**: Serves JSON from the cached in-memory snapshot; responds HTTP 503 during cold-boot warmup before the initial snapshot completes.
+   `?device=ID` queries per-device analytics.
+3. **`dashboard.jsp`**: Server renders the initial view; subsequent updates poll asynchronously via `dashboard.js`, skipping redundant polls while an in-flight request is pending and mutating only changed DOM elements.
 
 ---
 
-## Phần 2: Vòng đời một lượt gửi
+## Part 2: Locker Rental Lifecycle
 
-### 2.1 Đặt và dùng tủ
+### 2.1 Reservation & Access Flow
 
 ```mermaid
 flowchart TD
-    Start(["Đăng ký / đăng nhập"]) --> Map["Sơ đồ tủ: chọn ngăn trống"]
-    Map --> Form["Chọn gói (2 giờ, 4 giờ, Trọn ngày hoặc Tự chọn 1-23 giờ / 1-7 ngày) và cách mở; giá theo cỡ S / M / L"]
-    Form --> Confirm["Popup xác nhận: số tiền trừ ngay, số dư còn lại, luật hủy và phụ phí"]
+    Start(["Sign in / Register"]) --> Map["Locker Map: select available slot"]
+    Map --> Form["Select storage plan (2 h, 4 h, Day pass, or Custom 1-23 h / 1-7 days) and access method; pricing scaled by size S/M/L"]
+    Form --> Confirm["Confirmation modal: upfront charge, projected balance, cancellation & late fee policies"]
     Confirm --> Reserve{"Deposit_Reserve"}
-    Reserve -- "50030 thiếu tiền" --> Err["Thông báo lỗi tiếng Việt (Web.sqlMessage)"]
-    Reserve -- "50046 còn dưới 10.000 đ sau khi đặt" --> Err
-    Reserve -- "50031 3 lần không đến trong 7 ngày" --> Err
-    Reserve -- "50032 đang có lượt gửi" --> Err
-    Reserve -- "50033 ngăn vừa bị đặt" --> Err
-    Reserve -- "50035 hộp mất kết nối" --> Err
-    Reserve -- "50050 / 50051 thời gian tự chọn không hợp lệ hoặc chưa có gói trọn ngày" --> Err
-    Reserve -- "Thành công" --> Held["RESERVED, giữ chỗ 15 phút, đã trừ tiền"]
-    Held --> Mine["Tủ của tôi: mật mã hoặc mã đăng ký thẻ/vân tay"]
-    Mine --> Open1{"Mở lần 1 tại hộp (auth) hoặc điện thoại (/k/LOCKER-01)"}
-    Open1 -- "CHECK_IN" --> Active["ACTIVE, ngăn OCCUPIED, due_at = lúc mở + thời gian của gói (hoặc custom_min)"]
-    Held -- "Hủy trong 5 phút đầu" --> Cancel["CANCELLED, hoàn 100%"]
-    Held -- "Hủy sau 5 phút, còn giữ chỗ" --> CancelLate["CANCELLED, hoàn 50% (làm tròn xuống 100 đ)"]
-    Held -- "Popup cũ vẫn ghi hoàn đủ" --> Err2["50052: chưa hủy, hiện lại số mới"]
+    Reserve -- "50030 Insufficient balance" --> Err["Localized error message (Web.sqlMessage)"]
+    Reserve -- "50046 Remaining balance below 10,000 VND buffer" --> Err
+    Reserve -- "50031 >=3 no-shows within 7 days" --> Err
+    Reserve -- "50032 Active booking already exists" --> Err
+    Reserve -- "50033 Slot just reserved by another user" --> Err
+    Reserve -- "50035 Device offline" --> Err
+    Reserve -- "50050/50051 Invalid custom duration or missing day plan" --> Err
+    Reserve -- "Success" --> Held["RESERVED, 15-minute hold, funds deducted"]
+    Held --> Mine["My Locker: PIN or card/fingerprint enrollment code"]
+    Mine --> Open1{"First unlock at box (auth) or smartphone (/k/LOCKER-01)"}
+    Open1 -- "CHECK_IN" --> Active["ACTIVE, slot OCCUPIED, due_at = unlock time + plan duration (or custom_min)"]
+    Held -- "Cancelled within 5 minutes" --> Cancel["CANCELLED, 100% refund"]
+    Held -- "Cancelled after 5 min during hold" --> CancelLate["CANCELLED, 50% refund (floored to 100 VND)"]
+    Held -- "Stale modal quote" --> Err2["50052: cancellation rejected, refreshed quote displayed"]
     Err2 --> Held
-    Held -- "Hết 15 phút, chưa check-in" --> Active["Tự check-in (AUTO_CHECK_IN): ACTIVE, ngăn khóa cho người đặt, không hoàn"]
-    Active -- "Gia hạn trả tiền (tối đa 3 lần)" --> Active
-    Active --> Open2{"Mở trong lúc thuê: hộp hỏi A: Mở tủ / B: Trả tủ (CHOOSE)"}
+    Held -- "15-minute hold expires without check-in" --> Active["Auto check-in (AUTO_CHECK_IN): ACTIVE, slot remains locked, 0 refund"]
+    Active -- "Paid extension (up to 3 times)" --> Active
+    Active --> Open2{"Access during rental: box prompts A: Open slot / B: Check out (CHOOSE)"}
     Open2 -- "A: OPEN -> ACCESS, audit ACCESS" --> Active
-    Open2 -- "B: CHECKOUT -> PICKUP" --> Done["COMPLETED, ngăn AVAILABLE"]
-    Active -- "Quá due_at + ân hạn" --> Locked["Khóa quá hạn: locked_at, phụ phí mỗi giờ trễ, ví có thể âm"]
-    Locked -- "Gia hạn" --> Err3["50048: không gia hạn được"]
-    Locked -- "Mở khi ví âm" --> Deny["DENY OVERDUE_UNPAID, kèm số nợ"]
-    Deny -- "Nạp tiền, nhân viên duyệt" --> Locked
-    Locked -- "Mở khi ví không âm: PICKUP, overdue_fee" --> Done
-    Locked -- "Quá due_at 48 giờ" --> Esc["Chuyển xử lý: escalated_at, cảnh báo OVERDUE_ESCALATED"]
-    Esc -- "Nạp tiền rồi lấy đồ (nhân viên mở từ xa chỉ mở chốt; kết thúc lượt ở trang Lượt gửi)" --> Done
+    Open2 -- "B: CHECKOUT -> PICKUP" --> Done["COMPLETED, slot AVAILABLE"]
+    Active -- "Past due_at + grace period" --> Locked["Overdue lock: locked_at set, hourly late fee charged, wallet may go negative"]
+    Locked -- "Extension attempt" --> Err3["50048: extensions forbidden while overdue"]
+    Locked -- "Access with negative balance" --> Deny["DENY OVERDUE_UNPAID with outstanding debt"]
+    Deny -- "Top up and approved" --> Locked
+    Locked -- "Access with non-negative balance: PICKUP, overdue_fee assessed" --> Done
+    Locked -- "Past due_at by 48 hours" --> Esc["Escalated: escalated_at set, alert OVERDUE_ESCALATED triggered"]
+    Esc -- "Pay debt and retrieve belongings (staff remote open fires solenoid; completed on Sessions page)" --> Done
 ```
 
-**Tự chọn** (`Deposit_Reserve` nhận thêm `@custom_min`, giá do `dbo.fn_CustomPrice` tính lại ở server, trang chỉ hiển thị):
-số giờ nguyên 1–23 (`CUSTOM_MAX_HOURS`) hoặc số ngày nguyên 1–7 (`CUSTOM_MAX_DAYS`).
-Theo giờ: `min(giá 1 giờ của cỡ × N, giá trọn ngày của cỡ)`. Theo ngày: `giá trọn ngày × N × hệ số × cỡ`, hệ số 100% cho 1 ngày,
-90% cho 2–6 ngày (`CUSTOM_MULTI_DAY_PCT`), 80% từ 7 ngày (`CUSTOM_WEEK_PCT`), làm tròn lên 100 đ một lần.
-Lượt tự chọn lưu số phút ở `Deposit.custom_min` và giữ `plan_id` của gói dài nhất không vượt quá nó (trọn ngày khi đặt theo ngày) để lấy ân hạn;
-"Tủ của tôi" hiện "Tự chọn · N giờ/ngày". Gia hạn và phụ phí trễ giữ nguyên luật (giá 1 giờ của cỡ).
+**Custom Duration Plans** (`Deposit_Reserve` accepts `@custom_min`, price recomputed server-side by `dbo.fn_CustomPrice`):
+1–23 hours (`CUSTOM_MAX_HOURS`) or 1–7 days (`CUSTOM_MAX_DAYS`).
+Hourly: `min(hourly_rate * N, day_pass_rate)`. Daily: `day_pass_rate * N * multiplier * size_factor`. Multiplier is 100% for 1 day, 90% for 2–6 days (`CUSTOM_MULTI_DAY_PCT`), 80% for >=7 days (`CUSTOM_WEEK_PCT`).
+Overdue lockers never release automatically (`AUTO_RELEASE_OVERDUE` removed from v1/v2): user possessions remain stored inside.
 
-| Tự chọn | S | M | L |
+| Custom Plan Duration | S (VND) | M (VND) | L (VND) |
 |---|---|---|---|
-| 1 giờ | 2.500 | 3.300 | 4.300 |
-| 3 giờ | 7.500 | 9.900 | 12.900 |
-| 9 giờ | 22.500 | 29.700 | 38.700 |
-| 10–23 giờ (chạm giá trọn ngày) | 25.000 | 32.500 | 42.300 |
-| 1 ngày | 25.000 | 32.500 | 42.300 |
-| 2 ngày (90%) | 45.000 | 58.500 | 76.100 |
-| 3 ngày (90%) | 67.500 | 87.800 | 114.100 |
-| 6 ngày (90%) | 135.000 | 175.500 | 228.200 |
-| 7 ngày (80%) | 140.000 | 182.000 | 236.600 |
+| 1 hour | 2,500 | 3,300 | 4,300 |
+| 3 hours | 7,500 | 9,900 | 12,900 |
+| 9 hours | 22,500 | 29,700 | 38,700 |
+| 10–23 hours (capped at Day Pass) | 25,000 | 32,500 | 42,300 |
+| 1 day | 25,000 | 32,500 | 42,300 |
+| 2 days (90%) | 45,000 | 58,500 | 76,100 |
+| 3 days (90%) | 67,500 | 87,800 | 114,100 |
+| 6 days (90%) | 135,000 | 175,500 | 228,200 |
+| 7 days (80%) | 140,000 | 182,000 | 236,600 |
 
-Ngăn không bao giờ tự giải phóng khi quá hạn (bỏ `AUTO_RELEASE_OVERDUE` của v1/v2): đồ của người dùng vẫn ở trong ngăn.
-Lượt bị khóa vẫn là `ACTIVE` (trạng thái "khóa" là `locked_at IS NOT NULL`), nên ngăn vẫn `OCCUPIED` và không ai đặt được.
-
-### 2.2 Mở tủ tại hộp (`POST /api/device/auth`)
+### 2.2 Hardware Authentication (`POST /api/device/auth`)
 
 ```mermaid
 sequenceDiagram
-    participant Box as Hộp ESP32
+    participant Box as ESP32 Hardware Box
     participant Api as DeviceAuthApi
     participant Db as Device_Authorize
     Box->>Api: X-API-Key + {"method":"PIN","pin":"...","intent":"ASK"}
-    Api->>Api: kiểm tra định dạng (400 nếu sai)
-    Api->>Db: device_id lấy từ khóa, không lấy từ body
-    Db-->>Api: UNLOCK (CHECK_IN / ACCESS / PICKUP), CHOOSE hoặc DENY + reason
-    Api-->>Box: message ASCII cho màn LCD, open_sec, attempts_left, retry_after_sec
-    Note over Box: CHOOSE: LCD "A: Mo tu / B: Tra tu", giữ PIN / UID thẻ / ô vân tay vừa đọc
-    Box->>Api: cùng body, "intent":"OPEN" (phím A) hoặc "CHECKOUT" (phím B)
-    Api-->>Box: UNLOCK ACCESS (lượt vẫn ACTIVE) hoặc UNLOCK PICKUP (kết thúc lượt)
+    Api->>Api: Format validation (400 if malformed)
+    Api->>Db: device_id resolved strictly from API key hash
+    Db-->>Api: UNLOCK (CHECK_IN / ACCESS / PICKUP), CHOOSE or DENY + reason
+    Api-->>Box: ASCII string for LCD 1602, open_sec, attempts_left, retry_after_sec
+    Note over Box: CHOOSE: LCD prompts "A: Open slot / B: Check out", retains PIN/UID/fingerprint
+    Box->>Api: Same credential payload, "intent":"OPEN" (key A) or "CHECKOUT" (key B)
+    Api-->>Box: UNLOCK ACCESS (booking remains ACTIVE) or UNLOCK PICKUP (booking ends)
 ```
 
-**Mở nhiều lần trong một lượt thuê (v6).** Lần xác thực đầu của lượt `RESERVED` vẫn là `CHECK_IN`. Sau đó, mỗi lần xác thực
-lượt `ACTIVE` (chưa bị khóa quá hạn) với `"intent":"ASK"` nhận `{"result":"CHOOSE",...}`: không mở, không đổi gì, không tính
-là đoán sai. Hộp hiện `A: Mo tu` / `B: Tra tu`, giữ thông tin vừa đọc và gửi lại cùng xác thực với `"intent":"OPEN"` hoặc
-`"CHECKOUT"`; bấm `*` hoặc 15 giây không bấm thì hủy.
+**Multi-Access Support (v6).** The initial authentication for a `RESERVED` booking triggers `CHECK_IN`. Subsequent authentications during an `ACTIVE` booking with `"intent":"ASK"` respond with `{"result":"CHOOSE",...}`. The box prompts `A: Open slot / B: Check out`.
 
-| `intent` | Lượt `RESERVED` | Lượt `ACTIVE` chưa khóa | Lượt bị khóa, ví ≥ 0 | Lượt bị khóa, ví âm |
+| `intent` | `RESERVED` Status | `ACTIVE` (On Time) | Overdue (Balance >= 0) | Overdue (Balance < 0) |
 |---|---|---|---|---|
-| không gửi (firmware cũ, Postman cũ) | `UNLOCK CHECK_IN` | `UNLOCK PICKUP` | `UNLOCK PICKUP` | `DENY OVERDUE_UNPAID` |
+| Omitted (legacy firmware) | `UNLOCK CHECK_IN` | `UNLOCK PICKUP` | `UNLOCK PICKUP` | `DENY OVERDUE_UNPAID` |
 | `ASK` | `UNLOCK CHECK_IN` | `CHOOSE` | `UNLOCK PICKUP` | `DENY OVERDUE_UNPAID` |
 | `OPEN` | `UNLOCK CHECK_IN` | `UNLOCK ACCESS` | `UNLOCK PICKUP` | `DENY OVERDUE_UNPAID` |
 | `CHECKOUT` | `UNLOCK CHECK_IN` | `UNLOCK PICKUP` | `UNLOCK PICKUP` | `DENY OVERDUE_UNPAID` |
 
-- `ACCESS`: lượt vẫn `ACTIVE`, ngăn vẫn `OCCUPIED`, hạn trả không đổi; mỗi lần mở ghi một dòng audit `ACCESS`
-  (`{"method":"PIN"}`, `CARD`, `FINGERPRINT` hoặc `PHONE`). "Tủ của tôi" đếm các dòng này: "Đã mở tủ N lần".
-- Hộp mở cho `ACCESS` giống `CHECK_IN`: nhả chốt, bấm D để khóa, tự khóa sau thời gian mở cửa; vẫn theo cờ `physical`.
-- Trang điện thoại `/k/{device_code}` làm giống hệt: gửi mật mã với `ASK`, lượt đang thuê hiện hai nút "Mở tủ" / "Trả tủ",
-  rồi gửi lại cùng mật mã với `OPEN` / `CHECKOUT`. Lệnh `UNLOCK` trong heartbeat có thêm `"phase"` (`CHECK_IN`, `ACCESS`,
-  `PICKUP`); dòng audit `ACCESS` của điện thoại chỉ ghi khi hộp nhận lệnh. Lệnh `ACCESS` của lượt vừa bị khóa quá hạn bị bỏ
-  (audit `PHONE_ACCESS_DROPPED`).
+- `ACCESS`: Booking remains `ACTIVE`, slot stays `OCCUPIED`, due date unchanged. Appends an `ACCESS` audit entry.
+- 5 consecutive failed credential attempts enforce a 120-second lockout on that channel.
 
-- Lý do từ chối thường gặp: `WRONG_CODE`, `UNKNOWN_CARD`, `UNKNOWN_FINGER`, `CARD_BLOCKED`, `METHOD_MISMATCH`, `LOCKED_OUT`, `TAP_EXPIRED`, `NO_BOOKING`, `WRONG_PLACE`,
-  `OVERDUE_UNPAID` (v3: lượt bị khóa quá hạn và ví đang âm; trả thêm `debt` và `overdue_fee`).
-- Với lượt `ACTIVE`, `Device_Authorize` gọi `Deposit_ChargeOverdue` cho lượt đó trước khi quyết định, nên phụ phí luôn tính tới
-  lúc mở, không phải chờ `LockerMonitor`. Chạy lại không thu trùng. `PICKUP` thành công trả `overdue_fee` (0 nếu đúng hạn).
-- Chỉ các lần đoán sai mới tính vào bộ đếm (`OVERDUE_UNPAID` không tính). Sai 5 lần thì hộp tạm khóa 120 giây. Điện thoại có bộ đếm riêng.
-- Điện thoại (`/api/kiosk/unlock`) không mở trực tiếp: máy chủ xếp lệnh `UNLOCK`, hộp nhận lệnh ở heartbeat kế tiếp,
-  và lúc đó lượt gửi mới chuyển CHECK_IN hoặc PICKUP. Hộp không thấy heartbeat trong 10 giây thì trả `DEVICE_OFFLINE`.
-
-**Hộp chính và ngăn vật lý.** Chỉ có một hộp ESP32 thật (mặc định `LOCKER-01`) và một ngăn có servo khóa. Hộp này quản lý
-mọi ngăn của các dãy được gắn với nó: người dùng đặt ngăn nào cũng được, xác thực tại hộp thì lượt gửi vẫn chuyển
-CHECK_IN / PICKUP như thường. Câu trả lời `UNLOCK` (của `/api/device/auth` và lệnh `UNLOCK` trong heartbeat `/api/health`)
-có thêm `"physical"`: `true` khi đó là ngăn vật lý (hoặc chưa cấu hình ngăn nào), thì servo mở cửa; `false` thì hộp không
-động servo, màn LCD chỉ báo `Ngan A07 OK` / `Da gui do` (hoặc `Da lay do`). Lệnh mở từ xa của nhân viên cũng theo cờ này.
-Firmware cũ (không đọc cờ) vẫn mở servo như trước. Trang **Dãy tủ** của nhân viên ghi hộp nào là hộp thật và ngăn nào có khóa thật.
-
-Đổi hộp, dãy hoặc ngăn vật lý: sửa ba dòng đầu của `sql/demo_box.sql` (`@device_code`, `@banks` dạng `N'CANT-A,CANT-B'`,
-`@physical_bank` + `@physical_slot`; để cả hai `NULL` thì mọi ngăn đều mở servo) rồi chạy:
-
-```
-sqlcmd -S localhost -U sa -P 12345 -d PRJ301_LOCKER -I -b -f 65001 -i sql\demo_box.sql
-```
-
-Script chạy lại được nhiều lần: gắn các dãy vào hộp, dãy bị hộp bỏ ra được giao cho một thiết bị `"demo":true` (để không
-thành OFFLINE trên bản đồ), giữ `"demo":false` cho hộp thật, lưu `physical_slot_id` trong `OperatingProfile` của hộp,
-không đổi khóa API, ghi nhật ký `DEMO_BOX` và in bảng dãy → hộp → ngăn vật lý. Các dãy cùng một hộp phải có mã ngăn khác
-nhau (ví dụ `CANT-A` A01–A15 và `CANT-B` B01–B12), vì hộp nhận lượt gửi theo mã ngăn; script từ chối nếu trùng.
-
-### 2.3 Thẻ từ và vân tay
-- Mọi cách mở (mật mã, thẻ RFID, điện thoại, vân tay) cùng một giá. Thẻ không có tiền cọc (v7): đăng ký miễn phí, thẻ được coi là đã đăng ký khi có `registered_device_id`.
-- Đăng ký tại hộp: bấm B/C, nhập mã đăng ký 6 số (hết hạn sau 10 phút, lấy mã mới ở "Tủ của tôi").
-- Báo mất thẻ: thẻ chuyển `LOST`, UID nằm trong `blocked_cards` của heartbeat; dùng lại sẽ bị `CARD_BLOCKED`.
-- Xóa vân tay: máy chủ xếp lệnh `DELETE_FP` cho hộp; nếu đang có lượt gửi bằng vân tay trên hộp đó, lượt đó nhận mã đăng ký mới.
-
-### 2.4 Quét thẻ, xác nhận qua Gmail, rồi mở tủ
-Áp dụng khi máy chủ có cấu hình email và chủ thẻ có địa chỉ thật (địa chỉ mẫu `@smartlocker.edu.vn` không nhận được thư nên thẻ của các tài khoản mẫu vẫn mở ngay như cũ, thiếu cấu hình email cũng vậy).
-
-```mermaid
-sequenceDiagram
-    participant Box as Hộp tủ
-    participant API as /api/device/auth
-    participant Mail as Gmail
-    participant Page as Trang /c/{token}
-    Box->>API: CARD + UID (intent OPEN, CHECKOUT, hoặc lượt RESERVED)
-    API-->>Box: CONFIRM_EMAIL, LCD "Mo Gmail/web de xac nhan mo tu"
-    Note over API: RemoteCommand trạng thái AWAITING_EMAIL, 5 phút, chỉ lưu SHA-256 của liên kết
-    API->>Mail: card_confirm, chứa liên kết một lần
-    Mail->>Page: chủ thẻ mở liên kết (GET không đổi gì)
-    Page->>API: POST approve, lệnh thành PENDING trong 2 phút
-    Box->>API: heartbeat
-    API-->>Box: UNLOCK kèm phase, lượt thuê đổi trạng thái lúc này
-```
-
-- Quét lại trong lúc chờ: không gửi thêm thư. Chọn thao tác khác (Mở tủ rồi lại Trả tủ): thư mới, liên kết cũ hết hiệu lực.
-- Bấm "Không phải tôi": lệnh hết hiệu lực, ghi `CARD_CONFIRM_REJECTED` vào nhật ký, tủ không mở.
-- Không có thư (gõ sai địa chỉ, máy chủ thư lỗi): chủ tủ đăng nhập rồi xác nhận ngay trên bản đồ, cùng một thủ tục `CardConfirm_Decide`. Nếu gửi thư lỗi, lần quét sau gửi lại thư mới.
-- Hộp mất kết nối lúc xác nhận: yêu cầu vẫn chờ, xác nhận lại được khi hộp có kết nối.
-- Thời gian chờ xác nhận không trừ vào giờ giữ chỗ: quét thẻ đúng hạn thì `hold_until` được kéo tới hết thời gian chờ, nên không bị tính là không đến.
-- Địa chỉ email được lưu như người dùng gõ, chưa có bước xác minh: gõ nhầm địa chỉ của người khác thì người đó nhận được thư và liên kết.
-
-### 2.5 Đi sai chỗ: cảnh báo trên bản đồ
-- Bản đồ (`/api/locker-map` trả `my_booking`) cho ghim khu có tủ của người dùng phát sóng và gắn nhãn "Tủ của bạn".
-- Quét thẻ ở hộp khác: `DENY` lý do `WRONG_PLACE`, LCD ghi dãy đúng, không tính vào lượt khóa 5 lần sai; chủ thẻ nhận thư `wrong_place` (tối đa một thư mỗi 10 phút) và bản đồ hiện "Bạn quét thẻ sai hộp tủ" trong 10 phút hoặc đến khi quét đúng.
-- Theo GPS (vị trí chỉ nằm trong trình duyệt, không gửi đi): đứng trong 120 m của khu khác là "Bạn đang đi sai chỗ" kèm đường nối và nút Chỉ đường; đứng đúng khu là "Bạn đến đúng chỗ rồi". GPS sai số trên 300 m thì không kết luận đúng hay sai.
-- Nền bản đồ: Mapbox khi có `config/mapbox.local.properties` (token `pk.*`); thiếu token, token sai hoặc mất mạng thì tự về Leaflet và OpenStreetMap, ghim và sóng giữ nguyên.
-
-### 2.6 Chạm điện thoại (v7)
-
-Cùng đầu PN532 đọc thẻ từ còn giả làm một thẻ NFC chứa liên kết của hộp, hai việc luân phiên trong mỗi vòng lặp của firmware. Điện thoại chạm vào thì tự mở liên kết đó. Điện thoại có ví HCE trả lời lệnh đọc thẻ bằng UID ngẫu nhiên 4 byte bắt đầu bằng `08`; firmware bỏ qua, nên lần chạm không bị tính là `UNKNOWN_CARD`.
-
-```mermaid
-sequenceDiagram
-    participant Box as Hộp ESP32 + PN532
-    participant Api as /api/health, /api/kiosk/unlock
-    participant Db as Device_TapIssue, Device_Authorize
-    participant Phone as Điện thoại (đã đăng nhập)
-    Box->>Api: heartbeat {"nfc":true}
-    Api->>Db: Device_TapIssue: mã 12 ký tự, đổi mỗi phút và sau mỗi lần dùng
-    Api-->>Box: "tap_path": "/k/LOCKER-01?n=<mã>"
-    Note over Box: ghi base URL + tap_path vào thẻ NFC giả lập
-    Phone->>Box: chạm NFC, đọc liên kết
-    Phone->>Api: GET /k/LOCKER-01?n=<mã> (chỉ hiện trang, không đổi gì)
-    Phone->>Api: POST {"method":"PHONE","tap":"<mã>","intent":"ASK"} kèm phiên đăng nhập
-    Api->>Db: Device_Authorize: mã còn mới (5 phút), chưa dùng, đúng hộp
-    Db-->>Api: UNLOCK (xếp lệnh, đánh dấu mã đã dùng) hoặc CHOOSE hoặc DENY
-    Box->>Api: heartbeat kế tiếp
-    Api-->>Box: lệnh UNLOCK kèm phase, mã chạm mới
-```
-
-- Cách mở `PHONE` khi đặt: không có mật mã, không phải đăng ký gì. Điện thoại của chủ tài khoản mở được **mọi** lượt đặt của
-  người đó ở hộp vừa chạm, dù lượt đặt chọn mật mã, thẻ hay vân tay (đăng nhập và mã chạm mạnh hơn một mật mã 6 số).
-- Mã chạm chứng minh người bấm đang đứng ở hộp: ai chép liên kết mang đi thì sau 5 phút, hoặc sau một lần mở, liên kết hết tác dụng.
-  `CHOOSE` không dùng mã, nên sau "Mở tủ" / "Trả tủ" mới tính một lần.
-- Mã sai, cũ hoặc đã dùng là `TAP_EXPIRED`; chưa đăng nhập là HTTP 401 `NOT_SIGNED_IN`. Không lý do nào tính vào giới hạn 5 lần
-  sai, và lần chạm cũng không bị khóa bởi bộ đếm mật mã của trang điện thoại (người lạ đoán mật mã không chặn được chủ tủ).
-- Nhật ký `AuthAttempt` ghi `method = TAP`; lệnh `RemoteCommand` có lý do "Chạm điện thoại".
-- Hộp demo (`"demo":true`) không có đầu đọc: trang `/k/{mã hộp}` của nó cho chủ tủ bấm "Mở tủ của tôi" không cần mã.
-  Trên bản đồ, ngăn của mình có nút "Mở tủ bằng điện thoại" dẫn tới trang này.
-- Firmware gửi `"nfc":true` chỉ khi PN532 trả lời; hộp cũ không gửi thì máy chủ không cấp mã.
-
-### 2.4 Bảng tình huống
-
-| Tình huống | Điều kiện | Hệ thống làm gì | Kết quả |
-|---|---|---|---|
-| Đặt thành công | Đủ tiền, ngăn trống, hộp hoạt động | Trừ giá theo cỡ, giữ chỗ 15 phút, ghi audit `RESERVE` | Lượt `RESERVED`, ngăn `RESERVED` |
-| Đặt tự chọn | Gói "Tự chọn": số giờ nguyên 1–23 hoặc số ngày nguyên 1–7 | `fn_CustomPrice` tính giá theo cỡ, lưu `custom_min`, audit `RESERVE` ghi `custom_min` | Như đặt thành công; hạn trả = lúc mở lần đầu + `custom_min` |
-| Tự chọn sai | Số phút không phải giờ/ngày nguyên trong giới hạn; không còn gói trọn ngày | `THROW 50050` / `50051`, không đổi gì | Báo lỗi |
-| Thiếu tiền | Số dư nhỏ hơn giá | `THROW 50030`, không đổi gì | Báo lỗi |
-| Dưới mức đệm | Đủ giá nhưng sau khi đặt còn dưới 10.000 đ | `THROW 50046`, không đổi gì | Báo lỗi |
-| Đang có lượt gửi | Đã có lượt `RESERVED` hoặc `ACTIVE` | `THROW 50032` | Báo lỗi |
-| Hay không đến | 3 lần `NO_SHOW` trong 7 ngày (lượt tự check-in rồi không mở lần nào tới hạn trả) | `THROW 50031` | Tạm cấm đặt |
-| Hộp mất kết nối | Hộp `OFFLINE` | `THROW 50035` | Báo lỗi |
-| Không đến | Hết 15 phút giữ chỗ | `Deposit_ExpireNoShow` (v7.1): lượt thành `ACTIVE`, `started_at = hold_until`, hạn trả = `hold_until` + thời gian đã trả, ngăn `OCCUPIED` và vẫn khóa, audit `AUTO_CHECK_IN`, không hoàn | Người đặt dùng lúc nào cũng được tới hạn trả |
-| Không đến, không mở lần nào | Lượt tự check-in, tới hạn trả + ân hạn mà chưa có dòng audit `ACCESS` | `Deposit_ExpireOverdue`: kết thúc `NO_SHOW`, không phụ phí | Ngăn trống |
-| Hủy | Người dùng hủy trong 5 phút đầu, chưa mở lần đầu | Hoàn đủ số đã trả | Lượt `CANCELLED`, ngăn trống |
-| Hủy muộn | Quá 5 phút nhưng còn trong 15 phút giữ chỗ | Hoàn `CANCEL_LATE_REFUND_PCT` (50%) số đã trả, làm tròn xuống 100 đ; nút hủy trên web tự đổi số tiền khi qua mốc 5 phút | Lượt `CANCELLED`, ngăn trống ngay cho người khác |
-| Hủy với số tiền cũ | Popup đang ghi "hoàn đủ" thì qua mốc 5 phút (form gửi `expectedRefund`) | `THROW 50052`, không đổi gì | Lượt vẫn `RESERVED`, người dùng hủy lại với số mới |
-| Hủy sau giờ giữ chỗ | `hold_until` đã qua (trước khi `LockerMonitor` kịp tự check-in) | `THROW 50047` | Lượt tự check-in ở chu kỳ kế tiếp |
-| Mở trong lúc thuê | Lượt `ACTIVE`, chưa khóa; hộp/điện thoại gửi `ASK` rồi `OPEN` | `CHOOSE` (không đổi gì), rồi `UNLOCK ACCESS`, audit `ACCESS` | Lượt vẫn `ACTIVE`, "Tủ của tôi" tăng số lần mở |
-| Trả tủ | Lượt `ACTIVE`, chưa khóa; `ASK` rồi `CHECKOUT` (hoặc không gửi `intent`) | `Deposit_Complete`, audit `COMPLETE` | Lượt `COMPLETED`, ngăn trống |
-| Gia hạn | Lượt `ACTIVE`, chưa khóa, dưới 3 lần | Trừ giá một giờ của cỡ × số giờ bắt đầu thêm; thiếu tiền `50049` | `due_at` lùi, audit `EXTEND` |
-| Quá hạn | `due_at` + ân hạn đã qua | `Deposit_ChargeOverdue`: đặt `locked_at`, trừ phụ phí mỗi giờ trễ (cho phép âm), audit `OVERDUE_LOCK`, `OVERDUE_FEE` | Lượt vẫn `ACTIVE`, ngăn vẫn `OCCUPIED`, hiện ổ khóa |
-| Mở khi đang nợ | Lượt bị khóa, ví âm | `DENY OVERDUE_UNPAID` kèm `debt` (không tính lần sai) | Tủ không mở |
-| Gia hạn lượt bị khóa | `locked_at` có giá trị | `THROW 50048` | Báo lỗi, phải nạp tiền rồi lấy đồ |
-| Chuyển xử lý | Quá `due_at` 48 giờ | `Deposit_Escalate`: `escalated_at`, cảnh báo `OVERDUE_ESCALATED` kèm bằng chứng, audit `OVERDUE_ESCALATE` (một transaction) | Nhân viên OPERATOR/ADMIN xử lý |
-| Mở từ xa | Nhân viên gửi lệnh có lý do | `RemoteCommand` chờ hộp nhận ở heartbeat; hết hạn nếu không ai nhận | Hộp mở, luật ghi nhận `STAFF_OPEN` |
-| Mở giả | Lượt mở `REMOTE`/`PHONE` không có lệnh hợp lệ | `RuleEngine` | Cảnh báo `SUSPECTED_SPOOF` |
-| Cảm biến hỏng | Số đo ngoài khoảng, đồng hồ lệch, hết hạn hiệu chuẩn | `RuleEngine` | Cảnh báo `SENSOR_FAULT`, phiếu bảo trì |
-
-### 2.5 Trạng thái ngăn tủ
+### 2.3 Slot State Diagram
 
 ```mermaid
 stateDiagram-v2
     [*] --> AVAILABLE
     AVAILABLE --> RESERVED : Deposit_Reserve
-    RESERVED --> AVAILABLE : hủy
-    RESERVED --> OCCUPIED : hết 15 phút giữ chỗ (tự check-in)
-    OCCUPIED --> AVAILABLE : tới hạn mà chưa từng mở (NO_SHOW, không phụ phí)
-    RESERVED --> OCCUPIED : mở lần 1 (CHECK_IN)
-    OCCUPIED --> AVAILABLE : mở lần 2 (PICKUP), sau khi trả hết nợ nếu bị khóa
-    OCCUPIED --> OCCUPIED : quá hạn, khóa và tính phụ phí (không tự giải phóng)
-    AVAILABLE --> MAINTENANCE : kỹ thuật viên / nhân viên
-    MAINTENANCE --> AVAILABLE : đóng phiếu bảo trì
+    RESERVED --> AVAILABLE : Cancelled
+    RESERVED --> OCCUPIED : 15-min hold expires (Auto check-in)
+    OCCUPIED --> AVAILABLE : Due with zero opens (NO_SHOW, no late fee)
+    RESERVED --> OCCUPIED : First unlock (CHECK_IN)
+    OCCUPIED --> AVAILABLE : Checkout unlock (PICKUP), after debt paid
+    OCCUPIED --> OCCUPIED : Overdue lock & late fee assessment
+    AVAILABLE --> MAINTENANCE : Ticket opened by staff
+    MAINTENANCE --> AVAILABLE : Ticket resolved and closed
 ```
-
-Trên sơ đồ tủ còn có các trạng thái hiển thị `OVERDUE`, `ALERT`, `OFFLINE`: chúng được tính từ lượt gửi, cảnh báo đang mở
-và trạng thái hộp, không lưu trong cột `LockerSlot.status`. v3 thêm `locked` (lượt bị khóa quá hạn, ai cũng thấy ổ khóa)
-và `escalated` (đã chuyển xử lý, chỉ nhân viên thấy) trong `v_LockerSlotMap`.

@@ -18,3 +18,11 @@ firmware/*/secrets.h
 docs/paper/evidence/newman*.json
 /java-core/common/target/
 /java-core/week01/target/
+
+# Agent working artifacts (Table 2 - Item 5)
+.claude/
+CLAUDE.md
+docs/handoff/
+docs/review/
+overleaf_package/
+*.zip

@@ -1,44 +1,41 @@
-# Mẫu email của Smart Locker
+# Smart Locker Email Templates
 
-Mỗi file `*.txt` là một mẫu. Sửa trực tiếp, không cần biên dịch lại; khởi động lại Tomcat để chắc chắn mẫu mới được dùng.
+Each `*.txt` file is an email template. Templates can be edited directly without recompiling; restart Tomcat to ensure new templates take effect.
 
-## Cách viết
+## Format & Syntax
 
-- Dòng đầu: `Subject: tiêu đề` (có thể chứa `{{...}}`), sau đó một dòng trống, rồi nội dung.
-- `{{ten_bien}}` được thay bằng giá trị lúc gửi. Biến không có giá trị thì thành chuỗi rỗng.
-- Dòng bắt đầu bằng `?` là **dòng tuỳ chọn**: bỏ dấu `?` khi gửi, và cả dòng bị bỏ nếu một biến trong dòng rỗng
-  (ví dụ link khi chưa cấu hình `app.base_url`).
-- `_footer.txt` được nối vào cuối mọi email.
-- Chỉ có chữ thuần (không HTML). Mọi giá trị chèn vào đều bị bỏ xuống dòng và cắt tối đa 300 ký tự.
-- `{{name}}` là họ tên người nhận; nếu trống thì dùng "there" ("Hello there,"). Nội dung email bằng tiếng Anh (yêu cầu PRJ301).
+- First line: `Subject: Subject text` (supports placeholders `{{...}}`), followed by an empty line, then the email body.
+- `{{variable_name}}` is replaced with the runtime value. If a variable is null or missing, it evaluates to an empty string.
+- Lines starting with `?` are **optional lines**: the leading `?` is removed when sent, and the entire line is omitted if any variable on that line is empty (e.g. action links when `app.base_url` is unconfigured).
+- `_footer.txt` is automatically appended to the end of all outgoing emails.
+- Plain text only (no HTML). All injected values have newlines stripped and are capped at 300 characters to prevent injection attacks.
+- `{{name}}` represents the recipient's full name; if empty, it defaults to "there" ("Hello there,"). All email content is strictly in English per PRJ301 specifications.
 
-## Các mẫu và biến
+## Templates & Variables
 
-| Mẫu | Khi nào gửi | Biến |
+| Template | Trigger / Event | Variables |
 |---|---|---|
-| `due_soon` | Sắp đến hạn (15 phút trước) — **đang chạy tự động** | name, slot_code, bank_code, area_name, due_at, overdue_rate, my_locker_url |
-| `overdue` | Quá hạn, tủ bị khóa | name, slot_code, bank_code, area_name, due_at, overdue_rate, overdue_hours, overdue_fee, balance, escalate_hours, topup_url, my_locker_url |
-| `overdue_escalated` | Quá hạn lâu, chuyển nhân viên | name, slot_code, bank_code, area_name, due_at, overdue_hours, overdue_fee, balance, my_locker_url |
-| `booking_confirmed` | Đặt ngăn thành công | name, slot_code, bank_code, area_name, plan_name, open_method, amount, hold_until, my_locker_url |
-| `reservation_expired` | Hết giữ chỗ mà không tới | name, slot_code, area_name, hold_min, refund_amount, refund_pct, map_url |
-| `verification_code` | Mã xác nhận email | name, code, expires_min |
-| `welcome` | Đăng ký tài khoản | name, username, map_url, my_locker_url |
-| `topup_approved` | Duyệt nạp tiền | name, amount, balance, topup_url |
-| `topup_rejected` | Từ chối nạp tiền | name, amount, reason, topup_url |
-| `card_confirm` | Quét thẻ, chờ xác nhận mở tủ — **đang chạy tự động** | name, slot_code, bank_code, area_name, action, expires_min, confirm_url |
-| `wrong_place` | Quét thẻ ở sai hộp tủ — **đang chạy tự động** | name, slot_code, bank_code, area_name, map_url |
+| `due_soon` | Booking due soon (15 minutes prior) -- **automated** | name, slot_code, bank_code, area_name, due_at, overdue_rate, my_locker_url |
+| `overdue` | Overdue booking, slot locked | name, slot_code, bank_code, area_name, due_at, overdue_rate, overdue_hours, overdue_fee, balance, escalate_hours, topup_url, my_locker_url |
+| `overdue_escalated` | Extended overdue escalated to staff | name, slot_code, bank_code, area_name, due_at, overdue_hours, overdue_fee, balance, my_locker_url |
+| `booking_confirmed` | Slot booking confirmation | name, slot_code, bank_code, area_name, plan_name, open_method, amount, hold_until, my_locker_url |
+| `reservation_expired` | Hold expired without arrival | name, slot_code, area_name, hold_min, refund_amount, refund_pct, map_url |
+| `verification_code` | Email verification code | name, code, expires_min |
+| `welcome` | New account registration | name, username, map_url, my_locker_url |
+| `topup_approved` | Wallet top-up approved | name, amount, balance, topup_url |
+| `topup_rejected` | Wallet top-up rejected | name, amount, reason, topup_url |
+| `card_confirm` | Card scanned, awaiting opening confirmation -- **automated** | name, slot_code, bank_code, area_name, action, expires_min, confirm_url |
+| `wrong_place` | Card scanned at wrong locker bank -- **automated** | name, slot_code, bank_code, area_name, map_url |
 
-`booking_confirmed` và `reservation_expired` hiện không được gửi ở đâu và còn mô tả luật trước v7.1 (hết giữ chỗ thì hủy; nay tự check-in tại `hold_until`); sửa nội dung trước khi dùng lại.
+Time format follows standard local convention (`23/10/2026 16:00`), currency values are formatted as `14,700 VND`.
 
-Thời gian ghi theo giờ Việt Nam (`23/10/2026 16:00`), tiền ghi `14,700 VND`.
-
-## Xem thử
+## Previewing Templates
 
 ```bash
 sh scripts/mail-preview.sh list
 sh scripts/mail-preview.sh due_soon
-sh scripts/mail-preview.sh due_soon ten@gmail.com
+sh scripts/mail-preview.sh due_soon user@example.com
 ```
 
-Lệnh thứ hai in nội dung với dữ liệu mẫu; lệnh thứ ba gửi thật bản mẫu đó tới địa chỉ đã cho.
-Hiện `due_soon`, `card_confirm` và `wrong_place` được hệ thống gửi tự động; các mẫu còn lại đã sẵn sàng và chưa nối vào sự kiện nào.
+The second command prints rendered content using sample mock data; the third command sends a live test email to the specified address.
+Currently, `due_soon`, `card_confirm`, and `wrong_place` are actively dispatched by background threads; other templates are production-ready for upcoming feature triggers.
