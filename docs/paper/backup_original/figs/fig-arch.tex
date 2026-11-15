@@ -1,0 +1,35 @@
+% Fig. 1 (fig:arch): three-tier architecture. Needs figs/colors.tex. Natural width about 17 cm.
+\begin{tikzpicture}
+  % clients (top row)
+  \node[slblue, minimum width=4.6cm] (esp)   at (2.4,4.3)  {ESP32 locker box\slsub{keypad, RFID, fingerprint}};
+  \node[slblue, minimum width=3.6cm] (phone) at (8.4,4.3)  {Phone page\slsub{\texttt{/k/\{device\_code\}}}};
+  \node[slblue, minimum width=4.6cm] (web)   at (14.4,4.3) {Web browser\slsub{map, users, staff}};
+  % application tier
+  \node[slmint, minimum width=4.6cm, minimum height=1.55cm] (devapi) at (2.4,1.9)
+       {Device APIs\slsub{\texttt{/api/health}, \texttt{/api/device/auth},}\slsub{\texttt{/api/locker/batch}}};
+  \node[slmint, minimum width=3.6cm, minimum height=1.55cm] (kiosk) at (8.4,1.9)
+       {\texttt{KioskApi}\slsub{queued commands}};
+  \node[slmint, minimum width=4.6cm, minimum height=1.55cm] (ctrl) at (14.4,1.9)
+       {\texttt{SecurityFilter} (RBAC)\slsub{MVC2 controllers + JSP}};
+  \node[slyellow, minimum width=4.6cm] (svc) at (2.4,-0.25) {\texttt{AlertService}\slsub{\texttt{RuleEngine} + \texttt{RiskScorer}}};
+  \node[slyellow, minimum width=3.0cm] (mon) at (11.4,-0.25) {\texttt{LockerMonitor}\slsub{background jobs}};
+  \node[slpeach, minimum width=16.6cm] (dao) at (8.4,-1.95) {DAO layer (JDBC, connection pool)};
+  % data tier
+  \node[slcoral, minimum width=16.6cm] (db) at (8.4,-3.45) {SQL Server: tables, stored procedures, hash-chained audit log};
+  % arrows: client to entry point
+  \draw[slarr] (esp)   -- node[sllbl, right] {HTTP(S) + \texttt{X-API-Key}} (devapi);
+  \draw[slarr] (phone) -- (kiosk);
+  \draw[slarr] (web)   -- node[sllbl, right] {session cookie} (ctrl);
+  % arrows inside Tomcat, all straight down onto the DAO layer
+  \draw[slarr] (devapi) -- (svc);
+  \draw[slarr] (svc)    -- (svc |- dao.north);
+  \draw[slarr] (kiosk)  -- (kiosk |- dao.north);
+  \draw[slarr] (mon)    -- (mon |- dao.north);
+  \draw[slarr] (ctrl)   -- (ctrl |- dao.north);
+  \draw[slarr] (dao)    -- (db);
+  % Tomcat container drawn behind the blocks
+  \begin{scope}[on background layer]
+    \node[slgroup, fill=slSky, fit=(devapi)(kiosk)(ctrl)(svc)(mon)(dao), inner xsep=7pt, inner ysep=7pt,
+          label={[slgrouplbl, anchor=south west]north west:Tomcat 9}] (tc) {};
+  \end{scope}
+\end{tikzpicture}

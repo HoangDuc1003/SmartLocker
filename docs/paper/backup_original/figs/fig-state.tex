@@ -1,0 +1,26 @@
+% Fig. 5 (fig:state): states of a locker slot. Needs figs/colors.tex. Natural width about 17.2 cm.
+% Since sql/05_auto_checkin.sql (v7.1) a reservation that nobody checks in starts by itself at the end of the
+% 15-minute hold (AUTO_CHECK_IN); it is no longer freed as a no-show. A booking that was never opened ends as
+% NO_SHOW at due time + grace, which frees the slot.
+\begin{tikzpicture}[
+  st/.style={minimum width=3.0cm, minimum height=0.9cm, font=\small\bfseries},
+  lbl/.style={sllbl, align=center}]
+  \node[slmint,   st] (av) at (0,0)     {AVAILABLE};
+  \node[slyellow, st] (re) at (6.6,0)   {RESERVED};
+  \node[slpeach,  st] (oc) at (13.2,0)  {OCCUPIED};
+  \node[slblue,   st] (mt) at (0,-2.9)  {MAINTENANCE};
+  % initial state
+  \fill[slInk] (-2.3,0) circle (3.5pt);
+  \draw[slarr] (-2.18,0) -- (av);
+  % reserve and cancel: two parallel arrows, labels outside them
+  \draw[slarr] ([yshift=6pt]av.east) -- node[lbl, above] {reserve\\(wallet charged)} ([yshift=6pt]re.west);
+  \draw[slarr] ([yshift=-6pt]re.west) -- node[lbl, below] {cancel\\(during the 15 min hold)} ([yshift=-6pt]av.east);
+  \draw[slarr] (re) -- node[lbl, above] {first open (CHECK\_IN)\\or hold ends\\(AUTO\_CHECK\_IN)} (oc);
+  % the return runs above every label
+  \draw[slarr] (oc.north) -- ++(0,1.55) -| node[lbl, above, pos=0.25]
+       {return (PICKUP) after any debt is paid, or NO\_SHOW if never opened} (av.north);
+  \draw[slarr] ([xshift=-14pt]oc.south) .. controls +(-0.6,-1.6) and +(0.6,-1.6) .. node[lbl, below]
+       {ACCESS;\\overdue: lock + late fee} ([xshift=14pt]oc.south);
+  \draw[slarr] ([xshift=-10pt]av.south) -- node[lbl, left] {staff or\\SENSOR\_FAULT} ([xshift=-10pt]mt.north);
+  \draw[slarr] ([xshift=10pt]mt.north) -- node[lbl, right] {ticket closed} ([xshift=10pt]av.south);
+\end{tikzpicture}

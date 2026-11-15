@@ -16,6 +16,7 @@ firmware/*/secrets.h
 
 # run results of the paper (about 90 MB): kept on the machine, not in git
 docs/paper/evidence/newman*.json
+docs/paper/backup_original/evidence/newman*.json
 /java-core/common/target/
 /java-core/week01/target/
 
@@ -24,5 +25,5 @@ docs/paper/evidence/newman*.json
 CLAUDE.md
 docs/handoff/
 docs/review/
-overleaf_package/
+/overleaf_package/
 *.zip

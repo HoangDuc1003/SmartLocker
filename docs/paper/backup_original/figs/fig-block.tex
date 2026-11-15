@@ -1,0 +1,45 @@
+% Fig. 3 (fig:block): block diagram of the prototype box (firmware 4.3) and the server. Needs figs/colors.tex.
+% SRF05 role from firmware/SmartLocker_Online (4.3): presence wakes the LCD backlight, and the door locks
+% DOOR_OPEN_MS = 20 s after the last person left, or DOOR_OPEN_MAX_MS = 120 s after opening at the latest.
+\begin{tikzpicture}
+  % inputs (left)
+  \node[slblue, minimum width=4.3cm] (kp) at (2.15,1.65)  {Keypad 4$\times$4};
+  \node[slblue, minimum width=4.3cm] (rf) at (2.15,0.6)   {PN532 RFID / NFC};
+  \node[slblue, minimum width=4.3cm] (fp) at (2.15,-0.45) {AS608 fingerprint};
+  \node[slblue, minimum width=4.3cm] (us) at (2.15,-1.65) {SRF05 ultrasonic\slsub{presence, backlight, auto-lock}};
+  % controller
+  \node[slyellow, line width=1.1pt, minimum width=3.4cm, minimum height=4.3cm, font=\normalsize] (esp) at (7.7,0)
+       {ESP32\\Dev Module\slsub{firmware 4.3}};
+  \node[slpeach, minimum width=2.6cm] (pw) at (7.7,3.1) {5~V supply};
+  % outputs (right)
+  \node[slpeach, minimum width=3.5cm] (lcd) at (13.05,1.3)  {LCD 1602};
+  \node[slpeach, minimum width=3.5cm] (sb)  at (13.05,0)    {Bolt servo};
+  \node[slpeach, minimum width=3.5cm] (sd)  at (13.05,-1.4) {Door servo\slsub{closes 20~s after leaving}};
+  % wires
+  \draw[slarr] (kp.east) -- node[slbus] {GPIO} (kp.east -| esp.west);
+  \draw[slarr] (rf.east) -- node[slbus] {I$^2$C} (rf.east -| esp.west);
+  \draw[slarr] (fp.east) -- node[slbus] {UART} (fp.east -| esp.west);
+  \draw[slarr] (us.east) -- node[slbus] {GPIO} (us.east -| esp.west);
+  \draw[slarr] (pw) -- (esp);
+  \draw[slarr] (lcd.west -| esp.east) -- node[slbus] {I$^2$C} (lcd.west);
+  \draw[slarr] (sb.west -| esp.east)  -- node[slbus] {PWM 32} (sb.west);
+  \draw[slarr] (sd.west -| esp.east)  -- node[slbus] {PWM 2} (sd.west);
+  % network, clients and server (bottom)
+  \node[draw=slBlueD, fill=slBlue, ellipse, line width=0.7pt, font=\small, align=center, inner sep=1pt,
+        minimum width=2.9cm, minimum height=1.0cm] (net) at (7.7,-4.05) {Wi-Fi / Internet};
+  \node[slblue, minimum width=3.2cm] (cl) at (2.15,-4.05) {Browser, phone};
+  \node[slmint, minimum width=3.4cm] (tc) at (12.3,-4.05) {Tomcat 9 web app\slsub{device APIs, RBAC}};
+  \node[slmint, minimum width=3.4cm] (ml) at (12.3,-5.75) {Rules + Weka model};
+  \node[slmint, minimum width=2.4cm] (db) at (16.15,-5.75) {SQL Server};
+  \draw[sldbl] (esp) -- node[sllbl, right] {HTTP(S) + \texttt{X-API-Key}} (net);
+  \draw[sldbl] (cl) -- (net);
+  \draw[sldbl] (net) -- (tc);
+  \draw[sldbl] (tc) -- (ml);
+  \draw[sldbl] (ml) -- (db);
+  \begin{scope}[on background layer]
+    \node[slgroup, draw=slPeachD, fill=slPeach!25, fit=(kp)(us)(pw)(esp)(lcd)(sd), inner sep=6pt,
+          label={[slgrouplbl, text=slPeachD, anchor=south east]north east:Locker box}] {};
+    \node[slgroup, fill=slMint!35, fit=(tc)(ml)(db), inner sep=6pt,
+          label={[slgrouplbl, anchor=north east, inner sep=5pt]north east:Server}] {};
+  \end{scope}
+\end{tikzpicture}

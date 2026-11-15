@@ -1,0 +1,27 @@
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, align=center, minimum height=1.0cm, minimum width=3.0cm, font=\footnotesize},
+  tall/.style={box, minimum height=2.1cm},
+  arr/.style={-{Latex[length=2mm]}, thick},
+  lbl/.style={font=\footnotesize, align=left, inner sep=3pt}]
+  \node[box] (esp)   at (0,4.0)  {ESP32 locker box\\(keypad, RFID, fingerprint)};
+  \node[box] (phone) at (5,4.0)  {Phone page\\\texttt{/k/\{device\_code\}}};
+  \node[box] (web)   at (10,4.0) {Web browser\\(map, users, staff)};
+  \node[tall, minimum width=4.6cm] (devapi) at (0,1.6)  {Device APIs\\\texttt{/api/health}\\\texttt{/api/device/auth}\\\texttt{/api/locker/batch}};
+  \node[tall, minimum width=3.0cm] (kiosk)  at (5,1.6)  {\texttt{KioskApi}\\(queued commands)};
+  \node[tall, minimum width=4.4cm] (ctrl)   at (10,1.6) {\texttt{SecurityFilter} (RBAC)\\MVC2 controllers + JSP};
+  \node[box, minimum width=4.6cm] (svc) at (0,-0.7)   {\texttt{AlertService}\\\texttt{RuleEngine} + \texttt{RiskScorer}};
+  \node[box, minimum width=3.0cm] (mon) at (7.2,-0.7) {\texttt{LockerMonitor}\\(background jobs)};
+  \node[box, minimum width=14.5cm] (dao) at (4.95,-2.5) {DAO layer (JDBC, connection pool)};
+  \node[box, minimum width=14.5cm] (db)  at (4.95,-3.8) {SQL Server: tables, stored procedures, hash-chained audit log};
+  \draw[arr] (esp)   -- node[lbl, right] {HTTP(S) + X-API-Key} (devapi);
+  \draw[arr] (phone) -- (kiosk);
+  \draw[arr] (web)   -- node[lbl, right] {session cookie} (ctrl);
+  \draw[arr] (devapi) -- (svc);
+  \draw[arr] (svc)   -- (svc |- dao.north);
+  \draw[arr] (kiosk) -- (kiosk |- dao.north);
+  \draw[arr] (ctrl)  -- (ctrl |- dao.north);
+  \draw[arr] (mon)   -- (mon |- dao.north);
+  \draw[arr] (dao)   -- (db);
+  \node[draw, dashed, rounded corners, fit=(devapi)(kiosk)(ctrl)(svc)(mon)(dao), inner sep=8pt,
+        label={[font=\small, anchor=south west, inner sep=2pt]north west:Tomcat 9}] {};
+\end{tikzpicture}
