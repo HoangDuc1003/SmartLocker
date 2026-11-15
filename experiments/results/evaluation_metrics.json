@@ -3,14 +3,6 @@
   "detection_evaluation": {
     "confusion_matrix_b0": {
       "NORMAL_AUTHORIZED": {
-        "NORMAL_AUTHORIZED": 4,
-        "UNAUTHORIZED_CREDENTIAL": 9,
-        "FORCED_DOOR_OPEN": 0,
-        "LOAD_OR_TAMPER_ANOMALY": 0,
-        "SENSOR_FAULT": 7,
-        "MISSED": 0
-      },
-      "UNAUTHORIZED_CREDENTIAL": {
         "NORMAL_AUTHORIZED": 0,
         "UNAUTHORIZED_CREDENTIAL": 20,
         "FORCED_DOOR_OPEN": 0,
@@ -18,43 +10,51 @@
         "SENSOR_FAULT": 0,
         "MISSED": 0
       },
+      "UNAUTHORIZED_CREDENTIAL": {
+        "NORMAL_AUTHORIZED": 3,
+        "UNAUTHORIZED_CREDENTIAL": 17,
+        "FORCED_DOOR_OPEN": 0,
+        "LOAD_OR_TAMPER_ANOMALY": 0,
+        "SENSOR_FAULT": 0,
+        "MISSED": 0
+      },
       "FORCED_DOOR_OPEN": {
         "NORMAL_AUTHORIZED": 0,
-        "UNAUTHORIZED_CREDENTIAL": 5,
-        "FORCED_DOOR_OPEN": 12,
+        "UNAUTHORIZED_CREDENTIAL": 0,
+        "FORCED_DOOR_OPEN": 20,
         "LOAD_OR_TAMPER_ANOMALY": 0,
-        "SENSOR_FAULT": 3,
+        "SENSOR_FAULT": 0,
         "MISSED": 0
       },
       "LOAD_OR_TAMPER_ANOMALY": {
-        "NORMAL_AUTHORIZED": 16,
+        "NORMAL_AUTHORIZED": 15,
         "UNAUTHORIZED_CREDENTIAL": 0,
         "FORCED_DOOR_OPEN": 0,
-        "LOAD_OR_TAMPER_ANOMALY": 1,
-        "SENSOR_FAULT": 3,
+        "LOAD_OR_TAMPER_ANOMALY": 5,
+        "SENSOR_FAULT": 0,
         "MISSED": 0
       },
       "SENSOR_FAULT": {
-        "NORMAL_AUTHORIZED": 0,
-        "UNAUTHORIZED_CREDENTIAL": 9,
+        "NORMAL_AUTHORIZED": 12,
+        "UNAUTHORIZED_CREDENTIAL": 0,
         "FORCED_DOOR_OPEN": 0,
         "LOAD_OR_TAMPER_ANOMALY": 0,
-        "SENSOR_FAULT": 11,
-        "MISSED": 0
+        "SENSOR_FAULT": 0,
+        "MISSED": 8
       }
     },
     "confusion_matrix_b1": {
       "NORMAL_AUTHORIZED": {
-        "NORMAL_AUTHORIZED": 13,
+        "NORMAL_AUTHORIZED": 20,
         "UNAUTHORIZED_CREDENTIAL": 0,
         "FORCED_DOOR_OPEN": 0,
         "LOAD_OR_TAMPER_ANOMALY": 0,
-        "SENSOR_FAULT": 7,
+        "SENSOR_FAULT": 0,
         "MISSED": 0
       },
       "UNAUTHORIZED_CREDENTIAL": {
-        "NORMAL_AUTHORIZED": 0,
-        "UNAUTHORIZED_CREDENTIAL": 20,
+        "NORMAL_AUTHORIZED": 3,
+        "UNAUTHORIZED_CREDENTIAL": 17,
         "FORCED_DOOR_OPEN": 0,
         "LOAD_OR_TAMPER_ANOMALY": 0,
         "SENSOR_FAULT": 0,
@@ -63,17 +63,17 @@
       "FORCED_DOOR_OPEN": {
         "NORMAL_AUTHORIZED": 0,
         "UNAUTHORIZED_CREDENTIAL": 0,
-        "FORCED_DOOR_OPEN": 17,
+        "FORCED_DOOR_OPEN": 20,
         "LOAD_OR_TAMPER_ANOMALY": 0,
-        "SENSOR_FAULT": 3,
+        "SENSOR_FAULT": 0,
         "MISSED": 0
       },
       "LOAD_OR_TAMPER_ANOMALY": {
         "NORMAL_AUTHORIZED": 0,
         "UNAUTHORIZED_CREDENTIAL": 0,
         "FORCED_DOOR_OPEN": 0,
-        "LOAD_OR_TAMPER_ANOMALY": 17,
-        "SENSOR_FAULT": 3,
+        "LOAD_OR_TAMPER_ANOMALY": 20,
+        "SENSOR_FAULT": 0,
         "MISSED": 0
       },
       "SENSOR_FAULT": {
@@ -81,112 +81,43 @@
         "UNAUTHORIZED_CREDENTIAL": 0,
         "FORCED_DOOR_OPEN": 0,
         "LOAD_OR_TAMPER_ANOMALY": 0,
-        "SENSOR_FAULT": 20,
-        "MISSED": 0
+        "SENSOR_FAULT": 0,
+        "MISSED": 20
       }
     },
     "metrics_b0": {
       "per_class": {
         "NORMAL_AUTHORIZED": {
-          "tp": 4,
-          "fp": 16,
-          "fn": 16,
-          "tn": 64,
-          "precision": 0.2,
-          "recall": 0.2,
-          "f1_score": 0.2,
-          "false_positive_rate": 0.2,
-          "false_negative_rate": 0.8,
+          "tp": 0,
+          "fp": 30,
+          "fn": 20,
+          "tn": 50,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0,
+          "false_positive_rate": 0.375,
+          "false_negative_rate": 1.0,
           "recall_ci_95": [
-            0.0807,
-            0.416
+            0.0,
+            0.1611
           ]
         },
         "UNAUTHORIZED_CREDENTIAL": {
-          "tp": 20,
-          "fp": 23,
-          "fn": 0,
-          "tn": 57,
-          "precision": 0.4651,
-          "recall": 1.0,
-          "f1_score": 0.6349,
-          "false_positive_rate": 0.2875,
-          "false_negative_rate": 0.0,
+          "tp": 17,
+          "fp": 20,
+          "fn": 3,
+          "tn": 60,
+          "precision": 0.4595,
+          "recall": 0.85,
+          "f1_score": 0.5965,
+          "false_positive_rate": 0.25,
+          "false_negative_rate": 0.15,
           "recall_ci_95": [
-            0.8389,
-            1.0
+            0.6396,
+            0.9476
           ]
         },
         "FORCED_DOOR_OPEN": {
-          "tp": 12,
-          "fp": 0,
-          "fn": 8,
-          "tn": 80,
-          "precision": 1.0,
-          "recall": 0.6,
-          "f1_score": 0.75,
-          "false_positive_rate": 0.0,
-          "false_negative_rate": 0.4,
-          "recall_ci_95": [
-            0.3866,
-            0.7812
-          ]
-        },
-        "LOAD_OR_TAMPER_ANOMALY": {
-          "tp": 1,
-          "fp": 0,
-          "fn": 19,
-          "tn": 80,
-          "precision": 1.0,
-          "recall": 0.05,
-          "f1_score": 0.0952,
-          "false_positive_rate": 0.0,
-          "false_negative_rate": 0.95,
-          "recall_ci_95": [
-            0.0089,
-            0.2361
-          ]
-        },
-        "SENSOR_FAULT": {
-          "tp": 11,
-          "fp": 13,
-          "fn": 9,
-          "tn": 67,
-          "precision": 0.4583,
-          "recall": 0.55,
-          "f1_score": 0.5,
-          "false_positive_rate": 0.1625,
-          "false_negative_rate": 0.45,
-          "recall_ci_95": [
-            0.3421,
-            0.7418
-          ]
-        }
-      },
-      "overall_accuracy": 0.48,
-      "macro_precision": 0.6247,
-      "macro_recall": 0.48,
-      "macro_f1": 0.436,
-      "balanced_accuracy": 0.48
-    },
-    "metrics_b1": {
-      "per_class": {
-        "NORMAL_AUTHORIZED": {
-          "tp": 13,
-          "fp": 0,
-          "fn": 7,
-          "tn": 80,
-          "precision": 1.0,
-          "recall": 0.65,
-          "f1_score": 0.7879,
-          "false_positive_rate": 0.0,
-          "false_negative_rate": 0.35,
-          "recall_ci_95": [
-            0.4329,
-            0.8188
-          ]
-        },
-        "UNAUTHORIZED_CREDENTIAL": {
           "tp": 20,
           "fp": 0,
           "fn": 0,
@@ -201,78 +132,147 @@
             1.0
           ]
         },
-        "FORCED_DOOR_OPEN": {
-          "tp": 17,
-          "fp": 0,
-          "fn": 3,
-          "tn": 80,
-          "precision": 1.0,
-          "recall": 0.85,
-          "f1_score": 0.9189,
-          "false_positive_rate": 0.0,
-          "false_negative_rate": 0.15,
-          "recall_ci_95": [
-            0.6396,
-            0.9476
-          ]
-        },
         "LOAD_OR_TAMPER_ANOMALY": {
-          "tp": 17,
+          "tp": 5,
           "fp": 0,
-          "fn": 3,
+          "fn": 15,
           "tn": 80,
           "precision": 1.0,
-          "recall": 0.85,
-          "f1_score": 0.9189,
+          "recall": 0.25,
+          "f1_score": 0.4,
           "false_positive_rate": 0.0,
-          "false_negative_rate": 0.15,
+          "false_negative_rate": 0.75,
           "recall_ci_95": [
-            0.6396,
-            0.9476
+            0.1119,
+            0.4687
           ]
         },
         "SENSOR_FAULT": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 20,
+          "tn": 80,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0,
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 1.0,
+          "recall_ci_95": [
+            0.0,
+            0.1611
+          ]
+        }
+      },
+      "overall_accuracy": 0.42,
+      "macro_precision": 0.4919,
+      "macro_recall": 0.42,
+      "macro_f1": 0.3993,
+      "balanced_accuracy": 0.42
+    },
+    "metrics_b1": {
+      "per_class": {
+        "NORMAL_AUTHORIZED": {
           "tp": 20,
-          "fp": 13,
+          "fp": 3,
           "fn": 0,
-          "tn": 67,
-          "precision": 0.6061,
+          "tn": 77,
+          "precision": 0.8696,
           "recall": 1.0,
-          "f1_score": 0.7547,
-          "false_positive_rate": 0.1625,
+          "f1_score": 0.9302,
+          "false_positive_rate": 0.0375,
           "false_negative_rate": 0.0,
           "recall_ci_95": [
             0.8389,
             1.0
           ]
+        },
+        "UNAUTHORIZED_CREDENTIAL": {
+          "tp": 17,
+          "fp": 0,
+          "fn": 3,
+          "tn": 80,
+          "precision": 1.0,
+          "recall": 0.85,
+          "f1_score": 0.9189,
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.15,
+          "recall_ci_95": [
+            0.6396,
+            0.9476
+          ]
+        },
+        "FORCED_DOOR_OPEN": {
+          "tp": 20,
+          "fp": 0,
+          "fn": 0,
+          "tn": 80,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0,
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ]
+        },
+        "LOAD_OR_TAMPER_ANOMALY": {
+          "tp": 20,
+          "fp": 0,
+          "fn": 0,
+          "tn": 80,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0,
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ]
+        },
+        "SENSOR_FAULT": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 20,
+          "tn": 80,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0,
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 1.0,
+          "recall_ci_95": [
+            0.0,
+            0.1611
+          ]
         }
       },
-      "overall_accuracy": 0.87,
-      "macro_precision": 0.9212,
-      "macro_recall": 0.87,
-      "macro_f1": 0.8761,
-      "balanced_accuracy": 0.87
+      "overall_accuracy": 0.77,
+      "macro_precision": 0.7739,
+      "macro_recall": 0.77,
+      "macro_f1": 0.7698,
+      "balanced_accuracy": 0.77
     },
     "mcnemar_test": {
-      "n00_both_incorrect": 7,
+      "n00_both_incorrect": 3,
       "n01_b0_only_correct": 0,
-      "n10_b1_only_correct": 25,
-      "n11_both_correct": 68,
-      "chi2_statistic": 23.04,
-      "p_value": 2e-06,
+      "n10_b1_only_correct": 47,
+      "n11_both_correct": 50,
+      "chi2_statistic": 45.0213,
+      "p_value": 0.0,
       "statistically_significant_p05": true,
       "statistically_significant_p01": true
     }
   },
   "latency_evaluation": {
     "count": 100,
-    "mean_ms": 22.67,
-    "std_ms": 17.42,
-    "median_p50_ms": 16.1,
-    "p95_ms": 47.54,
-    "p99_ms": 60.18,
+    "mean_ms": 14.53,
+    "std_ms": 11.16,
+    "median_p50_ms": 15.73,
+    "p95_ms": 35.02,
+    "p99_ms": 38.4,
     "min_ms": 0.0,
-    "max_ms": 131.13
+    "max_ms": 39.8
   },
   "e5_audit_integrity": {
     "hash_chain_algorithm": "SHA-256 (UTF-16LE)",

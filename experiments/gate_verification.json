@@ -1,13 +1,13 @@
 {
   "execution_gate_status": "PASSED",
-  "timestamp_utc": "2026-11-15T18:39:32.063674+00:00",
-  "duration_sec": 0.199,
+  "timestamp_utc": "2026-11-15T18:58:10.050052+00:00",
+  "duration_sec": 0.206,
   "backend": {
     "base_url": "http://localhost:8081/SmartLocker/api",
     "device_id": 5,
     "device_code": "LOCKER-01",
     "bank_code": "CANT-A",
-    "slot_code": "A01"
+    "slot_code": "A04"
   },
   "health_check": {
     "status": "PASS",
@@ -15,17 +15,21 @@
     "response": {
       "interval_sec": 3,
       "commands": [],
-      "server_time": "2026-11-15 18:39:32",
+      "server_time": "2026-11-15 18:58:10",
       "blocked_cards": [
         "04DE0012",
         "04E1F205",
-        "C15C039D",
-        "C206670A"
+        "C3059F28"
       ],
-      "reserved": [],
-      "tap_path": "/k/LOCKER-01?n=B3P4eF7888DP"
+      "reserved": [
+        {
+          "slot_code": "A04",
+          "card_uid": "04E1F210"
+        }
+      ],
+      "tap_path": "/k/LOCKER-01?n=fWkkKxLqWVJi"
     },
-    "server_time": "2026-11-15 18:39:32",
+    "server_time": "2026-11-15 18:58:10",
     "interval_sec": 3
   },
   "auth_stage": {
@@ -34,25 +38,25 @@
     "response": {
       "result": "DENY",
       "reason": "WRONG_CODE",
-      "attempts_left": 2,
+      "attempts_left": 1,
       "retry_after_sec": 0,
-      "message": "Wrong PIN\n2 tries left"
+      "message": "Wrong PIN\n1 try left"
     },
     "auth_result": "DENY",
     "slot_code": null,
     "bank_code": null
   },
   "session_ingestion": {
-    "sequence": 1794762220,
+    "sequence": 1794768949,
     "request_payload": {
-      "seq": 1794762220,
-      "measured_at": "2026-11-15 18:39:32",
+      "seq": 1794768949,
+      "measured_at": "2026-11-15 18:58:10",
       "door_open_sec": 6.85,
       "weight_delta_g": 145.2,
       "unlock_count": 1,
       "rfid_ok": true,
       "stay_min": 14.5,
-      "slot_code": "A01",
+      "slot_code": "A04",
       "bank_code": "CANT-A",
       "card_uid": null,
       "open_source": "PIN",
@@ -68,22 +72,22 @@
   "database_persistence": {
     "table": "LockerSession",
     "database": "SL_SIM",
-    "session_id": 1325,
+    "session_id": 155,
     "device_id": 5,
-    "device_seq": 1794762220,
-    "slot_id": 51,
-    "slot_code": "A01",
-    "measured_at": "2026-11-15 18:39:32",
-    "ingested_at": "2026-11-15 18:39:32",
+    "device_seq": 1794768949,
+    "slot_id": 54,
+    "slot_code": "A04",
+    "measured_at": "2026-11-15 18:58:10",
+    "ingested_at": "2026-11-15 18:58:10",
     "door_open_sec": 6.85,
     "weight_delta_g": 145.2,
     "row_verified": true
   },
   "cryptographic_audit": {
     "status": "PASS",
-    "total_nodes_verified": 1416,
+    "total_nodes_verified": 146,
     "genesis_prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
-    "tail_chain_hash": "09f0df90fd5ac1520e59f15218198f53bc4b51cf29ca6fe03993ce917822bbc3",
+    "tail_chain_hash": "afc18f3dc07ac40ff3456381a55a59e18bfad48c9ec4f3c6bcb2c18e3c457c92",
     "chain_intact": true
   }
 }

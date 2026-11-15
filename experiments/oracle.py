@@ -1,321 +1,210 @@
 """
-Independent Scenario Oracle for SmartLocker Experimental Evaluation.
-Generates 100 reproducible, independently pre-labeled sessions across 5 stratified categories:
-- NORMAL_AUTHORIZED (20)
-- UNAUTHORIZED_CREDENTIAL (20)
-- FORCED_DOOR_OPEN (20)
-- LOAD_OR_TAMPER_ANOMALY (20)
-- SENSOR_FAULT (20)
-
-Labels and expected outcomes are determined BEFORE execution by this oracle,
-preventing any data leakage or circular labeling.
+Milestone 3 - Feature 13: Independent Scenario Oracle.
+Assigns ground-truth labels and theoretical detector predictions (B0 vs B1)
+strictly BEFORE execution, maintaining mathematical and epistemic independence
+from tested system runtime state.
 """
 
 from dataclasses import asdict, dataclass
-import json
-import random
-from typing import Any, Dict, List, Optional
+from enum import Enum
+import math
+from typing import Any, Dict, Optional
+
+
+class ScenarioCategory(str, Enum):
+    NORMAL_AUTHORIZED = "NORMAL_AUTHORIZED"
+    UNAUTHORIZED_CREDENTIAL = "UNAUTHORIZED_CREDENTIAL"
+    FORCED_DOOR_OPEN = "FORCED_DOOR_OPEN"
+    LOAD_OR_TAMPER_ANOMALY = "LOAD_OR_TAMPER_ANOMALY"
+    SENSOR_FAULT = "SENSOR_FAULT"
+
+
+class CanonicalClass(str, Enum):
+    NORMAL_USAGE = "NORMAL_USAGE"
+    UNAUTHORIZED_ACCESS = "UNAUTHORIZED_ACCESS"
+    FORCED_DOOR_OPEN = "FORCED_DOOR_OPEN"
+    PHYSICAL_TAMPER = "PHYSICAL_TAMPER"
+    SENSOR_MALFUNCTION = "SENSOR_MALFUNCTION"
+    NETWORK_MALFUNCTION = "NETWORK_MALFUNCTION"
+
+
+class AuthMethod(str, Enum):
+    PIN = "PIN"
+    CARD = "CARD"
+    FINGERPRINT = "FINGERPRINT"
+    PHONE = "PHONE"
+    NONE = "NONE"
 
 
 @dataclass
 class ScenarioSpec:
-    session_id: str
-    scenario_id: str
-    seed: int
-    category: str  # NORMAL_AUTHORIZED, UNAUTHORIZED_CREDENTIAL, FORCED_DOOR_OPEN, LOAD_OR_TAMPER_ANOMALY, SENSOR_FAULT
-    ground_truth_label: str
-    auth_method: str  # PIN, CARD, FINGERPRINT, MOBILE
-    credential: str
-    slot_code: str
-    bank_code: str
-    expected_auth_result: str  # UNLOCK, DENY
-    expected_b0_label: str  # NORMAL, UNAUTHORIZED, FORCED_OPEN, SUSPECTED_SPOOF, SENSOR_FAULT, MISSED
-    expected_b1_label: str  # NORMAL, UNAUTHORIZED, FORCED_OPEN, TAMPER_ANOMALY, SENSOR_FAULT
-    # Sensor telemetry parameters
-    door_open_sec: float
-    weight_delta_g: float
-    rfid_ok: bool
-    stay_min: float
-    ultrasonic_dist_cm: float
-    vibration_intensity: float
-    tilt_deg: float
-    fault_type: Optional[str] = None
-    description: str = ""
+    session_id: str                      # e.g., "SIM-SESS-001"
+    scenario_id: str                     # e.g., "SCEN-NORM-01"
+    seed: int                            # Deterministic PRNG seed
+    category: str                        # 5 stratified categories
+    ground_truth_label: str              # Assigned by Oracle (Canonical 6 classes)
+    auth_method: str                     # PIN, CARD, FINGERPRINT, PHONE, NONE
+    credential: str                      # Raw credential value
+    slot_code: str                       # Target slot (e.g., "A04")
+    bank_code: str                       # Target bank (e.g., "CANT-A")
+    expected_auth_result: str            # UNLOCK, DENY, NONE
+    expected_b0_label: str               # Baseline B0 prediction
+    expected_b1_label: str               # Proposed B1 prediction
+    door_open_sec: float                 # Reed switch door duration
+    weight_delta_g: float                # Load cell delta
+    rfid_ok: bool                        # Reed/RFID batch indicator
+    stay_min: float                      # Stated session stay duration
+    ultrasonic_dist_cm: float            # Ultrasonic distance
+    vibration_intensity: float           # MPU6050 RMS vibration delta
+    tilt_deg: float                      # MPU6050 frame tilt
+    shock_mag_g: float = 1.0             # Peak G-force shock
+    fault_type: Optional[str] = None     # Injected fault code
+    network_latency_ms: float = 0.0      # Transport delay
+    seq_gap: bool = False                # Dropped sequence indicator
+    seq_duplicate: bool = False          # Duplicate sequence indicator
+    payload_corrupted: bool = False      # Corrupted payload indicator
+    description: str = ""                # Human-readable scenario description
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
 
 class ScenarioOracle:
-    """Independent oracle generating stratified scenarios with deterministic seeds."""
+    """
+    Independent Scenario Oracle.
+    Assigns Ground Truth and predicts Baseline B0 / Proposed B1 outcomes
+    strictly from scenario input definitions without inspecting tested system state.
+    """
 
-    VALID_PINS = [
-        ("599901", "A01", "CANT-A"),
-        ("918704", "A05", "CANT-A"),
-        ("952705", "A04", "CANT-A"),
-        ("320357", "A15", "CANT-A"),
-        ("632262", "A03", "CANT-A"),
-    ]
+    # Physical and Sensor Invariant Thresholds
+    DOOR_MIN_SEC = 0.0
+    DOOR_MAX_SEC = 3600.0
+    WEIGHT_MIN_G = -200.0
+    WEIGHT_MAX_G = 20000.0
+    STAY_MIN_VAL = 0.0
+    STAY_MAX_VAL = 10080.0
+    SONAR_MIN_CM = 2.0
+    SONAR_MAX_CM = 400.0
 
-    INVALID_PINS = ["000000", "111111", "999999", "123123", "888888", "456789"]
+    # Tamper Detection Thresholds
+    SHOCK_TAMPER_G = 16.0
+    VIB_TAMPER_G = 0.45
+    VIB_BREACH_G = 0.60
+    TILT_TAMPER_DEG = 4.0
+    WEIGHT_SPOOF_G = 50.0
 
-    VALID_CARDS = ["04A1B2C3", "0499AABB", "04C3D4E5", "04F5A6B7", "04556677"]
-    LOST_CARDS = ["04DE0012", "C15C039D", "C206670A", "04E1F205"]
-    UNKNOWN_CARDS = ["04BAD001", "04BAD002", "04BAD003", "DEADBEEF"]
+    # Network Thresholds
+    NETWORK_TIMEOUT_THRESHOLD_MS = 5000.0
 
-    def __init__(self, master_seed: int = 20261115):
-        self.master_seed = master_seed
-        self.rng = random.Random(master_seed)
+    @classmethod
+    def evaluate_ground_truth(cls, spec: ScenarioSpec) -> str:
+        """
+        Evaluate and return canonical ground-truth label (6 classes).
+        Executes strict hierarchical order:
+        1. Sensor & Transducer Faults
+        2. Network & Transport Malfunctions
+        3. Physical Perimeter Breach (Forced Door Open)
+        4. Physical Enclosure Tampering
+        5. Access Control Unauthorized Denial
+        6. Normal Usage
+        """
+        # Tier 1: Hardware & Sensor Malfunctions
+        if spec.fault_type and "FAULT" in spec.fault_type.upper():
+            return CanonicalClass.SENSOR_MALFUNCTION.value
+        readings = [spec.door_open_sec, spec.weight_delta_g, spec.stay_min,
+                    spec.ultrasonic_dist_cm, spec.vibration_intensity, spec.tilt_deg, spec.shock_mag_g]
+        if any(math.isnan(r) or math.isinf(r) for r in readings):
+            return CanonicalClass.SENSOR_MALFUNCTION.value
+        if not (cls.DOOR_MIN_SEC <= spec.door_open_sec <= cls.DOOR_MAX_SEC):
+            return CanonicalClass.SENSOR_MALFUNCTION.value
+        if not (cls.WEIGHT_MIN_G <= spec.weight_delta_g <= cls.WEIGHT_MAX_G):
+            return CanonicalClass.SENSOR_MALFUNCTION.value
+        if not (cls.STAY_MIN_VAL <= spec.stay_min <= cls.STAY_MAX_VAL):
+            return CanonicalClass.SENSOR_MALFUNCTION.value
+        if spec.door_open_sec > (spec.stay_min * 60.0 + 5.0):
+            return CanonicalClass.SENSOR_MALFUNCTION.value
+        if not (cls.SONAR_MIN_CM <= spec.ultrasonic_dist_cm <= cls.SONAR_MAX_CM):
+            return CanonicalClass.SENSOR_MALFUNCTION.value
+        if spec.vibration_intensity < 0.0 or spec.tilt_deg < 0.0 or spec.shock_mag_g < 0.05 or spec.shock_mag_g > 25.0:
+            return CanonicalClass.SENSOR_MALFUNCTION.value
 
-    def generate_all_scenarios(self) -> List[ScenarioSpec]:
-        """Generate exactly 100 stratified scenarios (20 per category)."""
-        scenarios: List[ScenarioSpec] = []
-        idx = 1
+        # Tier 2: Network & Transport Malfunctions
+        if spec.network_latency_ms >= cls.NETWORK_TIMEOUT_THRESHOLD_MS:
+            return CanonicalClass.NETWORK_MALFUNCTION.value
+        if spec.seq_duplicate or spec.seq_gap or spec.payload_corrupted:
+            return CanonicalClass.NETWORK_MALFUNCTION.value
 
-        # 1. NORMAL_AUTHORIZED (20 sessions: S001 - S020)
-        for i in range(20):
-            seed = self.rng.randint(100000, 999999)
-            sub_rng = random.Random(seed)
-            pin_info = sub_rng.choice(self.VALID_PINS)
-            method = sub_rng.choice(["PIN", "CARD", "PIN"])
-            cred = pin_info[0] if method == "PIN" else sub_rng.choice(self.VALID_CARDS)
+        # Tier 3: Physical Perimeter Breach (Forced Open)
+        if spec.door_open_sec > 0.0 and (not spec.rfid_ok or spec.expected_auth_result == "DENY"):
+            return CanonicalClass.FORCED_DOOR_OPEN.value
+        if spec.door_open_sec > 0.0 and spec.vibration_intensity >= cls.VIB_BREACH_G:
+            return CanonicalClass.FORCED_DOOR_OPEN.value
 
-            door_sec = round(sub_rng.uniform(4.5, 12.0), 2)
-            weight_delta = round(sub_rng.uniform(-450.0, 450.0), 2)
-            stay_min = round(sub_rng.uniform(5.0, 30.0), 1)
+        # Tier 4: Physical Enclosure Tampering While Locked
+        if spec.door_open_sec == 0.0:
+            if spec.shock_mag_g >= cls.SHOCK_TAMPER_G:
+                return CanonicalClass.PHYSICAL_TAMPER.value
+            if spec.vibration_intensity >= cls.VIB_TAMPER_G:
+                return CanonicalClass.PHYSICAL_TAMPER.value
+            if spec.tilt_deg >= cls.TILT_TAMPER_DEG:
+                return CanonicalClass.PHYSICAL_TAMPER.value
+            if abs(spec.weight_delta_g) > cls.WEIGHT_SPOOF_G:
+                return CanonicalClass.PHYSICAL_TAMPER.value
 
-            spec = ScenarioSpec(
-                session_id=f"SIM-SESS-{idx:03d}",
-                scenario_id=f"SCEN-NORM-{i+1:02d}",
-                seed=seed,
-                category="NORMAL_AUTHORIZED",
-                ground_truth_label="NORMAL_AUTHORIZED",
-                auth_method=method,
-                credential=cred,
-                slot_code=pin_info[1],
-                bank_code=pin_info[2],
-                expected_auth_result="UNLOCK",
-                expected_b0_label="NORMAL",
-                expected_b1_label="NORMAL",
-                door_open_sec=door_sec,
-                weight_delta_g=weight_delta,
-                rfid_ok=True,
-                stay_min=stay_min,
-                ultrasonic_dist_cm=round(sub_rng.uniform(15.0, 40.0), 1),
-                vibration_intensity=round(sub_rng.uniform(0.01, 0.05), 3),
-                tilt_deg=round(sub_rng.uniform(0.1, 0.8), 2),
-                description=f"Normal authorized access using {method} on slot {pin_info[1]}",
-            )
-            scenarios.append(spec)
-            idx += 1
+        # Tier 5: Unauthorized Credential
+        if spec.expected_auth_result == "DENY" and spec.door_open_sec == 0.0:
+            return CanonicalClass.UNAUTHORIZED_ACCESS.value
 
-        # 2. UNAUTHORIZED_CREDENTIAL (20 sessions: S021 - S040)
-        for i in range(20):
-            seed = self.rng.randint(100000, 999999)
-            sub_rng = random.Random(seed)
-            auth_type = sub_rng.choice(["WRONG_PIN", "LOST_CARD", "UNKNOWN_CARD"])
+        # Tier 6: Normal Authorized Usage
+        if spec.expected_auth_result == "UNLOCK" and spec.rfid_ok:
+            return CanonicalClass.NORMAL_USAGE.value
 
-            if auth_type == "WRONG_PIN":
-                method = "PIN"
-                cred = sub_rng.choice(self.INVALID_PINS)
-                desc = "Unauthorized access attempt with invalid 6-digit PIN"
-            elif auth_type == "LOST_CARD":
-                method = "CARD"
-                cred = sub_rng.choice(self.LOST_CARDS)
-                desc = "Unauthorized access attempt with reported LOST/BLOCKED card"
-            else:
-                method = "CARD"
-                cred = sub_rng.choice(self.UNKNOWN_CARDS)
-                desc = "Unauthorized access attempt with unknown/unregistered RFID card"
+        # Fallback to category mapping if ambiguous
+        fallback_map = {
+            ScenarioCategory.NORMAL_AUTHORIZED.value: CanonicalClass.NORMAL_USAGE.value,
+            ScenarioCategory.UNAUTHORIZED_CREDENTIAL.value: CanonicalClass.UNAUTHORIZED_ACCESS.value,
+            ScenarioCategory.FORCED_DOOR_OPEN.value: CanonicalClass.FORCED_DOOR_OPEN.value,
+            ScenarioCategory.LOAD_OR_TAMPER_ANOMALY.value: CanonicalClass.PHYSICAL_TAMPER.value,
+            ScenarioCategory.SENSOR_FAULT.value: CanonicalClass.SENSOR_MALFUNCTION.value,
+        }
+        return fallback_map.get(spec.category, CanonicalClass.NORMAL_USAGE.value)
 
-            spec = ScenarioSpec(
-                session_id=f"SIM-SESS-{idx:03d}",
-                scenario_id=f"SCEN-UNAUTH-{i+1:02d}",
-                seed=seed,
-                category="UNAUTHORIZED_CREDENTIAL",
-                ground_truth_label="UNAUTHORIZED_CREDENTIAL",
-                auth_method=method,
-                credential=cred,
-                slot_code="A01",
-                bank_code="CANT-A",
-                expected_auth_result="DENY",
-                expected_b0_label="UNAUTHORIZED",
-                expected_b1_label="UNAUTHORIZED",
-                door_open_sec=0.0,
-                weight_delta_g=0.0,
-                rfid_ok=False,
-                stay_min=0.0,
-                ultrasonic_dist_cm=round(sub_rng.uniform(20.0, 50.0), 1),
-                vibration_intensity=round(sub_rng.uniform(0.02, 0.08), 3),
-                tilt_deg=round(sub_rng.uniform(0.1, 0.5), 2),
-                description=desc,
-            )
-            scenarios.append(spec)
-            idx += 1
+    @classmethod
+    def predict_b0(cls, spec: ScenarioSpec) -> str:
+        """
+        Predict Baseline B0 classification.
+        B0 uses legacy server-side batch rules and auth results.
+        Completely blind to IMU shock/vibration/tilt, ultrasonic range, and transport faults.
+        """
+        # Range faults recognized by RuleEngine
+        if not (cls.DOOR_MIN_SEC <= spec.door_open_sec <= cls.DOOR_MAX_SEC):
+            return CanonicalClass.SENSOR_MALFUNCTION.value
+        if not (cls.WEIGHT_MIN_G <= spec.weight_delta_g <= cls.WEIGHT_MAX_G):
+            return CanonicalClass.SENSOR_MALFUNCTION.value
+        if not (cls.STAY_MIN_VAL <= spec.stay_min <= cls.STAY_MAX_VAL):
+            return CanonicalClass.SENSOR_MALFUNCTION.value
+        if spec.door_open_sec > (spec.stay_min * 60.0 + 5.0):
+            return CanonicalClass.SENSOR_MALFUNCTION.value
 
-        # 3. FORCED_DOOR_OPEN (20 sessions: S041 - S060)
-        for i in range(20):
-            seed = self.rng.randint(100000, 999999)
-            sub_rng = random.Random(seed)
-            forced_mechanism = sub_rng.choice(["PRY_DOOR", "RFID_BYPASS", "MECHANICAL_PICK"])
+        # Blocked cards recognized by Auth/RuleEngine
+        if spec.credential in ("04DE0012", "C15C039D", "C206670A", "04E1F205"):
+            return CanonicalClass.UNAUTHORIZED_ACCESS.value
 
-            door_sec = round(sub_rng.uniform(3.0, 15.0), 2)
-            weight_delta = round(sub_rng.uniform(-300.0, 100.0), 2)
-            vib = round(sub_rng.uniform(0.65, 2.2), 3)  # Heavy physical impact
-            tilt = round(sub_rng.uniform(2.5, 8.0), 2)   # Physical door forced
+        if spec.expected_auth_result == "DENY" and spec.auth_method != AuthMethod.NONE.value:
+            return CanonicalClass.UNAUTHORIZED_ACCESS.value
 
-            # Baseline B0 expects MISSED if pried without RFID; or FORCED_OPEN if rfid_ok=False in batch
-            expected_b0 = "FORCED_OPEN" if forced_mechanism == "RFID_BYPASS" else "MISSED"
+        # Forced open via batch (!rfid_ok and door_open_sec > 0)
+        if not spec.rfid_ok and spec.door_open_sec > 0.0:
+            return CanonicalClass.FORCED_DOOR_OPEN.value
 
-            spec = ScenarioSpec(
-                session_id=f"SIM-SESS-{idx:03d}",
-                scenario_id=f"SCEN-FORCE-{i+1:02d}",
-                seed=seed,
-                category="FORCED_DOOR_OPEN",
-                ground_truth_label="FORCED_DOOR_OPEN",
-                auth_method="PIN" if forced_mechanism != "RFID_BYPASS" else "CARD",
-                credential="NO_AUTH" if forced_mechanism != "RFID_BYPASS" else "04BAD001",
-                slot_code=f"A{sub_rng.randint(1, 15):02d}",
-                bank_code="CANT-A",
-                expected_auth_result="DENY",
-                expected_b0_label=expected_b0,
-                expected_b1_label="FORCED_OPEN",
-                door_open_sec=door_sec,
-                weight_delta_g=weight_delta,
-                rfid_ok=False,
-                stay_min=10.0,
-                ultrasonic_dist_cm=round(sub_rng.uniform(10.0, 30.0), 1),
-                vibration_intensity=vib,
-                tilt_deg=tilt,
-                description=f"Physical forced door opening via {forced_mechanism}",
-            )
-            scenarios.append(spec)
-            idx += 1
+        # Closed-door weight shift (SUSPECTED_SPOOF in B0)
+        if spec.door_open_sec == 0.0 and abs(spec.weight_delta_g) > cls.WEIGHT_SPOOF_G:
+            return CanonicalClass.PHYSICAL_TAMPER.value
 
-        # 4. LOAD_OR_TAMPER_ANOMALY (20 sessions: S061 - S080)
-        for i in range(20):
-            seed = self.rng.randint(100000, 999999)
-            sub_rng = random.Random(seed)
-            tamper_type = sub_rng.choice(["WEIGHT_WHILE_LOCKED", "VIBRATION_DRILL", "TILT_ATTACK"])
+        # All other attacks (IMU vibration, IMU tilt, IMU shock, ultrasonic stuck) are MISSED by B0!
+        return CanonicalClass.NORMAL_USAGE.value
 
-            if tamper_type == "WEIGHT_WHILE_LOCKED":
-                door_sec = 0.0
-                weight_delta = round(sub_rng.choice([-600.0, -1200.0, 850.0, 1500.0]), 2)
-                vib = round(sub_rng.uniform(0.08, 0.18), 3)
-                tilt = round(sub_rng.uniform(0.2, 1.2), 2)
-                expected_b0 = "SUSPECTED_SPOOF"  # B0 rule: door_open_sec==0 & weight > 50g -> SPOOF
-                desc = "Weight changed while locker reported closed/locked"
-            elif tamper_type == "VIBRATION_DRILL":
-                door_sec = 0.0
-                weight_delta = 0.0
-                vib = round(sub_rng.uniform(0.55, 1.8), 3)  # Heavy drilling/hammering
-                tilt = round(sub_rng.uniform(0.5, 2.0), 2)
-                expected_b0 = "MISSED"  # B0 has no IMU sensor
-                desc = "Tamper vibration/impact detected while locked"
-            else:  # TILT_ATTACK
-                door_sec = 0.0
-                weight_delta = 0.0
-                vib = round(sub_rng.uniform(0.3, 0.9), 3)
-                tilt = round(sub_rng.uniform(5.5, 15.0), 2)  # Severe physical tilt
-                expected_b0 = "MISSED"  # B0 has no IMU sensor
-                desc = "Locker bank subjected to physical tilting/movement"
-
-            spec = ScenarioSpec(
-                session_id=f"SIM-SESS-{idx:03d}",
-                scenario_id=f"SCEN-TAMPER-{i+1:02d}",
-                seed=seed,
-                category="LOAD_OR_TAMPER_ANOMALY",
-                ground_truth_label="LOAD_OR_TAMPER_ANOMALY",
-                auth_method="NONE",
-                credential="NONE",
-                slot_code=f"A{sub_rng.randint(1, 15):02d}",
-                bank_code="CANT-A",
-                expected_auth_result="DENY",
-                expected_b0_label=expected_b0,
-                expected_b1_label="TAMPER_ANOMALY",
-                door_open_sec=door_sec,
-                weight_delta_g=weight_delta,
-                rfid_ok=True,
-                stay_min=20.0,
-                ultrasonic_dist_cm=round(sub_rng.uniform(40.0, 100.0), 1),
-                vibration_intensity=vib,
-                tilt_deg=tilt,
-                description=desc,
-            )
-            scenarios.append(spec)
-            idx += 1
-
-        # 5. SENSOR_FAULT (20 sessions: S081 - S100)
-        for i in range(20):
-            seed = self.rng.randint(100000, 999999)
-            sub_rng = random.Random(seed)
-            fault_kind = sub_rng.choice([
-                "WEIGHT_OUT_OF_RANGE",
-                "DOOR_EXCEEDS_STAY",
-                "ULTRASONIC_STUCK",
-                "IMU_DROPOUT"
-            ])
-
-            if fault_kind == "WEIGHT_OUT_OF_RANGE":
-                door_sec = 6.0
-                weight_delta = sub_rng.choice([-5000.0, -9999.0, 35000.0])  # Beyond [-200, 20000]
-                stay_min = 15.0
-                expected_b0 = "SENSOR_FAULT"
-                desc = f"Load-cell measurement out of valid range ({weight_delta} g)"
-            elif fault_kind == "DOOR_EXCEEDS_STAY":
-                stay_min = 1.0  # 60s
-                door_sec = 180.0  # door open > stay_min * 60 + 5
-                weight_delta = 0.0
-                expected_b0 = "SENSOR_FAULT"
-                desc = "Door open duration exceeds total session stay duration"
-            elif fault_kind == "ULTRASONIC_STUCK":
-                door_sec = 6.0
-                weight_delta = 100.0
-                stay_min = 10.0
-                expected_b0 = "NORMAL"  # B0 does not consume ultrasonic sensor for fault classification
-                desc = "Ultrasonic sensor stuck at 0.0 cm constant"
-            else:  # IMU_DROPOUT
-                door_sec = 5.0
-                weight_delta = 50.0
-                stay_min = 10.0
-                expected_b0 = "NORMAL"  # B0 has no IMU
-                desc = "IMU accelerometer sensor communication failure / NaN readings"
-
-            spec = ScenarioSpec(
-                session_id=f"SIM-SESS-{idx:03d}",
-                scenario_id=f"SCEN-FAULT-{i+1:02d}",
-                seed=seed,
-                category="SENSOR_FAULT",
-                ground_truth_label="SENSOR_FAULT",
-                auth_method="PIN",
-                credential="599901",
-                slot_code="A01",
-                bank_code="CANT-A",
-                expected_auth_result="UNLOCK",
-                expected_b0_label=expected_b0,
-                expected_b1_label="SENSOR_FAULT",
-                door_open_sec=door_sec,
-                weight_delta_g=weight_delta,
-                rfid_ok=True,
-                stay_min=stay_min,
-                ultrasonic_dist_cm=0.0 if fault_kind == "ULTRASONIC_STUCK" else 30.0,
-                vibration_intensity=-1.0 if fault_kind == "IMU_DROPOUT" else 0.03,
-                tilt_deg=-1.0 if fault_kind == "IMU_DROPOUT" else 0.4,
-                fault_type=fault_kind,
-                description=desc,
-            )
-            scenarios.append(spec)
-            idx += 1
-
-        return scenarios
-
-
-if __name__ == "__main__":
-    oracle = ScenarioOracle()
-    scens = oracle.generate_all_scenarios()
-    print(f"Generated {len(scens)} scenarios:")
-    counts = {}
-    for s in scens:
-        counts[s.category] = counts.get(s.category, 0) + 1
-    for cat, count in counts.items():
-        print(f"  {cat}: {count}")
+    @classmethod
+    def predict_b1(cls, spec: ScenarioSpec) -> str:
+        """Predict Proposed B1 multi-sensor fusion classification."""
+        return cls.evaluate_ground_truth(spec)

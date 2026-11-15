@@ -26,8 +26,8 @@ API_KEY = "device-1-api-key"
 DEVICE_ID = 5
 DEVICE_CODE = "LOCKER-01"
 BANK_CODE = "CANT-A"
-SLOT_CODE = "A01"
-VALID_PIN = "599901"
+SLOT_CODE = "A04"
+VALID_PIN = "952705"
 
 
 def run_sql(query: str, db: str = "SL_SIM") -> str:

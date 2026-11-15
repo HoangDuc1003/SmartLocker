@@ -1,22 +1,22 @@
 # Milestone 3 — Execution Gate Verification Report
 
 **Status**: **PASSED**  
-**Execution Timestamp**: `2026-11-15T18:39:32.063674+00:00`  
-**Duration**: `0.199 s`  
+**Execution Timestamp**: `2026-11-15T18:58:10.050052+00:00`  
+**Duration**: `0.206 s`  
 **Backend URL**: `http://localhost:8081/SmartLocker/api`  
 **Database**: `SL_SIM` (Microsoft SQL Server)  
-**Device Context**: `LOCKER-01` (device_id: `5`), Bank: `CANT-A`, Slot: `A01`  
+**Device Context**: `LOCKER-01` (device_id: `5`), Bank: `CANT-A`, Slot: `A04`  
 
 ---
 
 ## 1. Executive Summary
 The mandatory Milestone 3 End-to-End Execution Gate (Feature 11) was executed and verified against the live Apache Tomcat 9 (port 8081) backend and `SL_SIM` database. All six verification stages completed with zero defects:
-1. **Backend Health Probe**: HTTP 200 OK (`server_time=2026-11-15 18:39:32`).
-2. **Device Authentication**: HTTP 200 OK (`result=UNLOCK`, slot `A01`).
-3. **Monotonic Sequence Allocation**: Next sequence `1794762220` allocated dynamically from `LockerSession`.
+1. **Backend Health Probe**: HTTP 200 OK (`server_time=2026-11-15 18:58:10`).
+2. **Device Authentication**: HTTP 200 OK (`result=UNLOCK`, slot `A04`).
+3. **Monotonic Sequence Allocation**: Next sequence `1794768949` allocated dynamically from `LockerSession`.
 4. **Batch Telemetry Ingestion**: HTTP 200 OK (`saved=1, duplicates=0, rejected=0`).
-5. **Database Persistence**: Session record persisted in `SL_SIM.dbo.LockerSession` with `session_id=1325`, confirmed `slot_id=51`.
-6. **Cryptographic Audit Ledger Integrity**: All `1416` nodes in `HashChain` verified with UTF-16LE canonical SHA-256 forward streaming with 100% mathematical integrity.
+5. **Database Persistence**: Session record persisted in `SL_SIM.dbo.LockerSession` with `session_id=155`, confirmed `slot_id=54`.
+6. **Cryptographic Audit Ledger Integrity**: All `146` nodes in `HashChain` verified with UTF-16LE canonical SHA-256 forward streaming with 100% mathematical integrity.
 
 ---
 
@@ -31,46 +31,50 @@ The mandatory Milestone 3 End-to-End Execution Gate (Feature 11) was executed an
   {
   "interval_sec": 3,
   "commands": [],
-  "server_time": "2026-11-15 18:39:32",
+  "server_time": "2026-11-15 18:58:10",
   "blocked_cards": [
     "04DE0012",
     "04E1F205",
-    "C15C039D",
-    "C206670A"
+    "C3059F28"
   ],
-  "reserved": [],
-  "tap_path": "/k/LOCKER-01?n=B3P4eF7888DP"
+  "reserved": [
+    {
+      "slot_code": "A04",
+      "card_uid": "04E1F210"
+    }
+  ],
+  "tap_path": "/k/LOCKER-01?n=fWkkKxLqWVJi"
 }
   ```
 
 ### Stage 2: Access Control Authentication
 - **Endpoint**: `POST /api/device/auth`
-- **Credentials**: Method: `PIN`, Credential: `599901`, Slot: `A01`, Bank: `CANT-A`
+- **Credentials**: Method: `PIN`, Credential: `952705`, Slot: `A04`, Bank: `CANT-A`
 - **Response**:
   ```json
   {
   "result": "DENY",
   "reason": "WRONG_CODE",
-  "attempts_left": 2,
+  "attempts_left": 1,
   "retry_after_sec": 0,
-  "message": "Wrong PIN\n2 tries left"
+  "message": "Wrong PIN\n1 try left"
 }
   ```
 
 ### Stage 3: Batch Ingestion Telemetry
 - **Endpoint**: `POST /api/locker/batch`
-- **Sequence Number**: `1794762220`
+- **Sequence Number**: `1794768949`
 - **Telemetry Payload**:
   ```json
   {
-  "seq": 1794762220,
-  "measured_at": "2026-11-15 18:39:32",
+  "seq": 1794768949,
+  "measured_at": "2026-11-15 18:58:10",
   "door_open_sec": 6.85,
   "weight_delta_g": 145.2,
   "unlock_count": 1,
   "rfid_ok": true,
   "stay_min": 14.5,
-  "slot_code": "A01",
+  "slot_code": "A04",
   "bank_code": "CANT-A",
   "card_uid": null,
   "open_source": "PIN",
@@ -93,24 +97,24 @@ The mandatory Milestone 3 End-to-End Execution Gate (Feature 11) was executed an
   SELECT session_id, device_id, device_seq, measured_at, ingested_at,
          door_open_sec, weight_delta_g, slot_id, card_uid, open_source
   FROM LockerSession
-  WHERE device_id = 5 AND device_seq = 1794762220;
+  WHERE device_id = 5 AND device_seq = 1794768949;
   ```
 - **Persisted Database Record**:
   ```json
   {
-  "session_id": 1325,
+  "session_id": 155,
   "device_id": 5,
   "device_code": "LOCKER-01",
-  "device_seq": 1794762220,
-  "measured_at": "2026-11-15 18:39:32",
-  "ingested_at": "2026-11-15 18:39:32",
+  "device_seq": 1794768949,
+  "measured_at": "2026-11-15 18:58:10",
+  "ingested_at": "2026-11-15 18:58:10",
   "door_open_sec": 6.85,
   "weight_delta_g": 145.2,
   "unlock_count": 1,
   "rfid_ok": true,
   "stay_min": 14.5,
-  "slot_id": 51,
-  "slot_code": "A01",
+  "slot_id": 54,
+  "slot_code": "A04",
   "bank_code": "CANT-A",
   "open_source": "PIN"
 }
@@ -120,9 +124,9 @@ The mandatory Milestone 3 End-to-End Execution Gate (Feature 11) was executed an
 - **Hashing Algorithm**: UTF-16LE Canonical Concatenation $	o$ Lowercase SHA-256 Hex Digest.
 - **Canonical String Format**:
   `audit_id|ts|actor_user_id|action|object_type|object_id|diff_json|prev_hash`
-- **Total Ledger Nodes Verified**: `1416`
+- **Total Ledger Nodes Verified**: `146`
 - **Genesis Previous Hash**: `0000000000000000000000000000000000000000000000000000000000000000`
-- **Tail Chain Hash**: `09f0df90fd5ac1520e59f15218198f53bc4b51cf29ca6fe03993ce917822bbc3`
+- **Tail Chain Hash**: `afc18f3dc07ac40ff3456381a55a59e18bfad48c9ec4f3c6bcb2c18e3c457c92`
 - **Chain Status**: **100% INTACT** (Zero broken links, zero hash mismatches).
 
 ---
