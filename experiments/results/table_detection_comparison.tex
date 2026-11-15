@@ -1,0 +1,23 @@
+\begin{table}[!htbp]
+\renewcommand{\arraystretch}{1.05}
+\centering
+\small
+\caption{Comparative Evaluation: Baseline B0 vs. Proposed Multi-Sensor B1.}
+\label{tab:b0_vs_b1}
+\vspace{5pt}
+\begin{tabular}{l c c c c c c}
+\hline
+Category & \multicolumn{3}{c}{Baseline B0 (Existing)} & \multicolumn{3}{c}{Proposed B1 (Multi-Sensor)} \\
+ & Precision & Recall & F1 & Precision & Recall & F1 \\
+\hline
+Normal Authorized & 0.200 & 0.200 & 0.200 & 1.000 & 0.650 & 0.788 \\
+Unauthorized Credential & 0.465 & 1.000 & 0.635 & 1.000 & 1.000 & 1.000 \\
+Forced Door Opening & 1.000 & 0.600 & 0.750 & 1.000 & 0.850 & 0.919 \\
+Load / Tamper Anomaly & 1.000 & 0.050 & 0.095 & 1.000 & 0.850 & 0.919 \\
+Sensor Fault / Dropout & 0.458 & 0.550 & 0.500 & 0.606 & 1.000 & 0.755 \\
+\hline
+Overall / Macro & 0.625 & 0.480 & 0.436 & 0.921 & 0.870 & \textbf{0.876} \\
+Balanced Accuracy & \multicolumn{3}{c}{0.480} & \multicolumn{3}{c}{\textbf{0.870}} \\
+\hline
+\end{tabular}
+\end{table}

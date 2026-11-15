@@ -1,0 +1,89 @@
+{
+  "execution_gate_status": "PASSED",
+  "timestamp_utc": "2026-11-15T18:39:32.063674+00:00",
+  "duration_sec": 0.199,
+  "backend": {
+    "base_url": "http://localhost:8081/SmartLocker/api",
+    "device_id": 5,
+    "device_code": "LOCKER-01",
+    "bank_code": "CANT-A",
+    "slot_code": "A01"
+  },
+  "health_check": {
+    "status": "PASS",
+    "http_status": 200,
+    "response": {
+      "interval_sec": 3,
+      "commands": [],
+      "server_time": "2026-11-15 18:39:32",
+      "blocked_cards": [
+        "04DE0012",
+        "04E1F205",
+        "C15C039D",
+        "C206670A"
+      ],
+      "reserved": [],
+      "tap_path": "/k/LOCKER-01?n=B3P4eF7888DP"
+    },
+    "server_time": "2026-11-15 18:39:32",
+    "interval_sec": 3
+  },
+  "auth_stage": {
+    "status": "PASS",
+    "http_status": 200,
+    "response": {
+      "result": "DENY",
+      "reason": "WRONG_CODE",
+      "attempts_left": 2,
+      "retry_after_sec": 0,
+      "message": "Wrong PIN\n2 tries left"
+    },
+    "auth_result": "DENY",
+    "slot_code": null,
+    "bank_code": null
+  },
+  "session_ingestion": {
+    "sequence": 1794762220,
+    "request_payload": {
+      "seq": 1794762220,
+      "measured_at": "2026-11-15 18:39:32",
+      "door_open_sec": 6.85,
+      "weight_delta_g": 145.2,
+      "unlock_count": 1,
+      "rfid_ok": true,
+      "stay_min": 14.5,
+      "slot_code": "A01",
+      "bank_code": "CANT-A",
+      "card_uid": null,
+      "open_source": "PIN",
+      "command_id": null
+    },
+    "response": {
+      "saved": 1,
+      "duplicates": 0,
+      "rejected": 0,
+      "errors": []
+    }
+  },
+  "database_persistence": {
+    "table": "LockerSession",
+    "database": "SL_SIM",
+    "session_id": 1325,
+    "device_id": 5,
+    "device_seq": 1794762220,
+    "slot_id": 51,
+    "slot_code": "A01",
+    "measured_at": "2026-11-15 18:39:32",
+    "ingested_at": "2026-11-15 18:39:32",
+    "door_open_sec": 6.85,
+    "weight_delta_g": 145.2,
+    "row_verified": true
+  },
+  "cryptographic_audit": {
+    "status": "PASS",
+    "total_nodes_verified": 1416,
+    "genesis_prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "tail_chain_hash": "09f0df90fd5ac1520e59f15218198f53bc4b51cf29ca6fe03993ce917822bbc3",
+    "chain_intact": true
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "platform": "Windows-10-10.0.26200-SP0",
+  "python_version": "3.11.9",
+  "java_version": "1.8.0_202",
+  "backend_url": "http://localhost:8081/SmartLocker/api",
+  "device_code": "LOCKER-01",
+  "device_id": 5,
+  "database_name": "SL_SIM",
+  "execution_date_utc": "2026-11-15"
+}

@@ -1,0 +1,16 @@
+# Reproduction Configuration for 100 Labeled Sessions
+master_seed: 20261115
+total_sessions: 100
+categories:
+  NORMAL_AUTHORIZED: 20
+  UNAUTHORIZED_CREDENTIAL: 20
+  FORCED_DOOR_OPEN: 20
+  LOAD_OR_TAMPER_ANOMALY: 20
+  SENSOR_FAULT: 20
+device:
+  code: LOCKER-01
+  id: 5
+  api_key: device-1-api-key
+backend:
+  url: http://localhost:8081/SmartLocker/api
+  database: SL_SIM

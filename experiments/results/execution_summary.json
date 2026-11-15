@@ -1,0 +1,17 @@
+{
+  "total_sessions": 100,
+  "passed": 100,
+  "failed": 0,
+  "blocked": 0,
+  "pass_rate_pct": 100.0,
+  "total_duration_sec": 2.27,
+  "mean_session_ms": 22.67,
+  "stratified_distribution": {
+    "NORMAL_AUTHORIZED": 20,
+    "UNAUTHORIZED_CREDENTIAL": 20,
+    "FORCED_DOOR_OPEN": 20,
+    "LOAD_OR_TAMPER_ANOMALY": 20,
+    "SENSOR_FAULT": 20
+  },
+  "timestamp_utc": "2026-11-15T18:26:18.340078+00:00"
+}

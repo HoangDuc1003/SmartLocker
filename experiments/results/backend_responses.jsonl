@@ -1,0 +1,180 @@
+{"session_id": "SIM-SESS-001", "response": {"result": "DENY", "reason": "WRONG_CODE", "attempts_left": 4, "retry_after_sec": 0, "message": "Wrong PIN\n4 tries left"}, "timestamp": "2026-11-15T18:26:16.182171+00:00"}
+{"session_id": "SIM-SESS-001", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.182171+00:00"}
+{"session_id": "SIM-SESS-002", "response": {"result": "DENY", "reason": "WRONG_CODE", "attempts_left": 3, "retry_after_sec": 0, "message": "Wrong PIN\n3 tries left"}, "timestamp": "2026-11-15T18:26:16.229516+00:00"}
+{"session_id": "SIM-SESS-002", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.229516+00:00"}
+{"session_id": "SIM-SESS-003", "response": {"result": "DENY", "reason": "WRONG_CODE", "attempts_left": 2, "retry_after_sec": 0, "message": "Wrong PIN\n2 tries left"}, "timestamp": "2026-11-15T18:26:16.245588+00:00"}
+{"session_id": "SIM-SESS-003", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.245588+00:00"}
+{"session_id": "SIM-SESS-004", "response": {"result": "UNLOCK", "phase": "ACCESS", "deposit_id": 90, "slot_code": "A04", "open_sec": 8, "message": "Open the door\nSlot A04", "physical": true}, "timestamp": "2026-11-15T18:26:16.292868+00:00"}
+{"session_id": "SIM-SESS-004", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.292868+00:00"}
+{"session_id": "SIM-SESS-005", "response": {"result": "UNLOCK", "phase": "ACCESS", "deposit_id": 90, "slot_code": "A04", "open_sec": 8, "message": "Open the door\nSlot A04", "physical": true}, "timestamp": "2026-11-15T18:26:16.340406+00:00"}
+{"session_id": "SIM-SESS-005", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.340406+00:00"}
+{"session_id": "SIM-SESS-006", "response": {"result": "UNLOCK", "phase": "ACCESS", "deposit_id": 122, "slot_code": "A15", "open_sec": 8, "message": "Open the door\nSlot A15", "physical": true}, "timestamp": "2026-11-15T18:26:16.395554+00:00"}
+{"session_id": "SIM-SESS-006", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.395554+00:00"}
+{"session_id": "SIM-SESS-007", "response": {"result": "UNLOCK", "phase": "ACCESS", "deposit_id": 90, "slot_code": "A04", "open_sec": 8, "message": "Open the door\nSlot A04", "physical": true}, "timestamp": "2026-11-15T18:26:16.441064+00:00"}
+{"session_id": "SIM-SESS-007", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.441064+00:00"}
+{"session_id": "SIM-SESS-008", "response": {"result": "DENY", "reason": "OVERDUE_UNPAID", "attempts_left": 2, "retry_after_sec": 0, "deposit_id": 125, "debt": 56400, "overdue_fee": 249900, "message": "Overdue\nTop up to open"}, "timestamp": "2026-11-15T18:26:16.488385+00:00"}
+{"session_id": "SIM-SESS-008", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.488385+00:00"}
+{"session_id": "SIM-SESS-009", "response": {"result": "DENY", "reason": "WRONG_PLACE", "attempts_left": 2, "retry_after_sec": 0, "right_bank": "GYM-A", "message": "Wrong box! Go to\nGYM-A"}, "timestamp": "2026-11-15T18:26:16.530729+00:00"}
+{"session_id": "SIM-SESS-009", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.530729+00:00"}
+{"session_id": "SIM-SESS-010", "response": {"result": "UNLOCK", "phase": "ACCESS", "deposit_id": 90, "slot_code": "A04", "open_sec": 8, "message": "Open the door\nSlot A04", "physical": true}, "timestamp": "2026-11-15T18:26:16.551923+00:00"}
+{"session_id": "SIM-SESS-010", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.551923+00:00"}
+{"session_id": "SIM-SESS-011", "response": {"result": "DENY", "reason": "WRONG_CODE", "attempts_left": 1, "retry_after_sec": 0, "message": "Wrong PIN\n1 try left"}, "timestamp": "2026-11-15T18:26:16.585478+00:00"}
+{"session_id": "SIM-SESS-011", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.585478+00:00"}
+{"session_id": "SIM-SESS-012", "response": {"result": "DENY", "reason": "OVERDUE_UNPAID", "attempts_left": 1, "retry_after_sec": 0, "deposit_id": 125, "debt": 56400, "overdue_fee": 249900, "message": "Overdue\nTop up to open"}, "timestamp": "2026-11-15T18:26:16.637220+00:00"}
+{"session_id": "SIM-SESS-012", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.637220+00:00"}
+{"session_id": "SIM-SESS-013", "response": {"result": "UNLOCK", "phase": "ACCESS", "deposit_id": 122, "slot_code": "A15", "open_sec": 8, "message": "Open the door\nSlot A15", "physical": true}, "timestamp": "2026-11-15T18:26:16.664237+00:00"}
+{"session_id": "SIM-SESS-013", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.664237+00:00"}
+{"session_id": "SIM-SESS-014", "response": {"result": "DENY", "reason": "OVERDUE_UNPAID", "attempts_left": 1, "retry_after_sec": 0, "deposit_id": 125, "debt": 56400, "overdue_fee": 249900, "message": "Overdue\nTop up to open"}, "timestamp": "2026-11-15T18:26:16.701270+00:00"}
+{"session_id": "SIM-SESS-014", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.701270+00:00"}
+{"session_id": "SIM-SESS-015", "response": {"result": "DENY", "reason": "WRONG_CODE", "attempts_left": 0, "retry_after_sec": 120, "message": "Wrong PIN\nLocked 2 min"}, "timestamp": "2026-11-15T18:26:16.715951+00:00"}
+{"session_id": "SIM-SESS-015", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.715951+00:00"}
+{"session_id": "SIM-SESS-016", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:16.738414+00:00"}
+{"session_id": "SIM-SESS-016", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.738414+00:00"}
+{"session_id": "SIM-SESS-017", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:16.752430+00:00"}
+{"session_id": "SIM-SESS-017", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.752430+00:00"}
+{"session_id": "SIM-SESS-018", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:16.788221+00:00"}
+{"session_id": "SIM-SESS-018", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.788221+00:00"}
+{"session_id": "SIM-SESS-019", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:16.808998+00:00"}
+{"session_id": "SIM-SESS-019", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.808998+00:00"}
+{"session_id": "SIM-SESS-020", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:16.836193+00:00"}
+{"session_id": "SIM-SESS-020", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.836193+00:00"}
+{"session_id": "SIM-SESS-021", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:16.851874+00:00"}
+{"session_id": "SIM-SESS-021", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.851874+00:00"}
+{"session_id": "SIM-SESS-022", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:16.870555+00:00"}
+{"session_id": "SIM-SESS-022", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.870555+00:00"}
+{"session_id": "SIM-SESS-023", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:16.904247+00:00"}
+{"session_id": "SIM-SESS-023", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.904247+00:00"}
+{"session_id": "SIM-SESS-024", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:16.915900+00:00"}
+{"session_id": "SIM-SESS-024", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.915900+00:00"}
+{"session_id": "SIM-SESS-025", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:16.935035+00:00"}
+{"session_id": "SIM-SESS-025", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.935035+00:00"}
+{"session_id": "SIM-SESS-026", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:16.952773+00:00"}
+{"session_id": "SIM-SESS-026", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.952773+00:00"}
+{"session_id": "SIM-SESS-027", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:16.964171+00:00"}
+{"session_id": "SIM-SESS-027", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.964171+00:00"}
+{"session_id": "SIM-SESS-028", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:16.979709+00:00"}
+{"session_id": "SIM-SESS-028", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:16.979709+00:00"}
+{"session_id": "SIM-SESS-029", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 120, "message": "Locked\nWait 120 s"}, "timestamp": "2026-11-15T18:26:17.011387+00:00"}
+{"session_id": "SIM-SESS-029", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.011387+00:00"}
+{"session_id": "SIM-SESS-030", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.027839+00:00"}
+{"session_id": "SIM-SESS-030", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.027839+00:00"}
+{"session_id": "SIM-SESS-031", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.043147+00:00"}
+{"session_id": "SIM-SESS-031", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.043147+00:00"}
+{"session_id": "SIM-SESS-032", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.079411+00:00"}
+{"session_id": "SIM-SESS-032", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.079411+00:00"}
+{"session_id": "SIM-SESS-033", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.120886+00:00"}
+{"session_id": "SIM-SESS-033", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.120886+00:00"}
+{"session_id": "SIM-SESS-034", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.158231+00:00"}
+{"session_id": "SIM-SESS-034", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.158231+00:00"}
+{"session_id": "SIM-SESS-035", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.174023+00:00"}
+{"session_id": "SIM-SESS-035", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.174023+00:00"}
+{"session_id": "SIM-SESS-036", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.189970+00:00"}
+{"session_id": "SIM-SESS-036", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.189970+00:00"}
+{"session_id": "SIM-SESS-037", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.221809+00:00"}
+{"session_id": "SIM-SESS-037", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.221809+00:00"}
+{"session_id": "SIM-SESS-038", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.237912+00:00"}
+{"session_id": "SIM-SESS-038", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.237912+00:00"}
+{"session_id": "SIM-SESS-039", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.253633+00:00"}
+{"session_id": "SIM-SESS-039", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.253633+00:00"}
+{"session_id": "SIM-SESS-040", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.291621+00:00"}
+{"session_id": "SIM-SESS-040", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.291621+00:00"}
+{"session_id": "SIM-SESS-041", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.339627+00:00"}
+{"session_id": "SIM-SESS-041", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.339627+00:00"}
+{"session_id": "SIM-SESS-042", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.349074+00:00"}
+{"session_id": "SIM-SESS-042", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.349074+00:00"}
+{"session_id": "SIM-SESS-043", "response": {"result": "ERROR", "reason": "BAD_REQUEST", "message": "Bad request data"}, "timestamp": "2026-11-15T18:26:17.380849+00:00"}
+{"session_id": "SIM-SESS-043", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.380849+00:00"}
+{"session_id": "SIM-SESS-044", "response": {"result": "ERROR", "reason": "BAD_REQUEST", "message": "Bad request data"}, "timestamp": "2026-11-15T18:26:17.412670+00:00"}
+{"session_id": "SIM-SESS-044", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.412670+00:00"}
+{"session_id": "SIM-SESS-045", "response": {"result": "ERROR", "reason": "BAD_REQUEST", "message": "Bad request data"}, "timestamp": "2026-11-15T18:26:17.437982+00:00"}
+{"session_id": "SIM-SESS-045", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.437982+00:00"}
+{"session_id": "SIM-SESS-046", "response": {"result": "ERROR", "reason": "BAD_REQUEST", "message": "Bad request data"}, "timestamp": "2026-11-15T18:26:17.445933+00:00"}
+{"session_id": "SIM-SESS-046", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.445933+00:00"}
+{"session_id": "SIM-SESS-047", "response": {"result": "ERROR", "reason": "BAD_REQUEST", "message": "Bad request data"}, "timestamp": "2026-11-15T18:26:17.452933+00:00"}
+{"session_id": "SIM-SESS-047", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.452933+00:00"}
+{"session_id": "SIM-SESS-048", "response": {"result": "ERROR", "reason": "BAD_REQUEST", "message": "Bad request data"}, "timestamp": "2026-11-15T18:26:17.488517+00:00"}
+{"session_id": "SIM-SESS-048", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.488517+00:00"}
+{"session_id": "SIM-SESS-049", "response": {"result": "ERROR", "reason": "BAD_REQUEST", "message": "Bad request data"}, "timestamp": "2026-11-15T18:26:17.504647+00:00"}
+{"session_id": "SIM-SESS-049", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.504647+00:00"}
+{"session_id": "SIM-SESS-050", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.526049+00:00"}
+{"session_id": "SIM-SESS-050", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.526049+00:00"}
+{"session_id": "SIM-SESS-051", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.537179+00:00"}
+{"session_id": "SIM-SESS-051", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.537179+00:00"}
+{"session_id": "SIM-SESS-052", "response": {"result": "ERROR", "reason": "BAD_REQUEST", "message": "Bad request data"}, "timestamp": "2026-11-15T18:26:17.552198+00:00"}
+{"session_id": "SIM-SESS-052", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.552198+00:00"}
+{"session_id": "SIM-SESS-053", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.568226+00:00"}
+{"session_id": "SIM-SESS-053", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.568226+00:00"}
+{"session_id": "SIM-SESS-054", "response": {"result": "ERROR", "reason": "BAD_REQUEST", "message": "Bad request data"}, "timestamp": "2026-11-15T18:26:17.568226+00:00"}
+{"session_id": "SIM-SESS-054", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.568226+00:00"}
+{"session_id": "SIM-SESS-055", "response": {"result": "ERROR", "reason": "BAD_REQUEST", "message": "Bad request data"}, "timestamp": "2026-11-15T18:26:17.584045+00:00"}
+{"session_id": "SIM-SESS-055", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.584045+00:00"}
+{"session_id": "SIM-SESS-056", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.599783+00:00"}
+{"session_id": "SIM-SESS-056", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.599783+00:00"}
+{"session_id": "SIM-SESS-057", "response": {"result": "ERROR", "reason": "BAD_REQUEST", "message": "Bad request data"}, "timestamp": "2026-11-15T18:26:17.615807+00:00"}
+{"session_id": "SIM-SESS-057", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.615807+00:00"}
+{"session_id": "SIM-SESS-058", "response": {"result": "ERROR", "reason": "BAD_REQUEST", "message": "Bad request data"}, "timestamp": "2026-11-15T18:26:17.647593+00:00"}
+{"session_id": "SIM-SESS-058", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.647593+00:00"}
+{"session_id": "SIM-SESS-059", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.663919+00:00"}
+{"session_id": "SIM-SESS-059", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.663919+00:00"}
+{"session_id": "SIM-SESS-060", "response": {"result": "ERROR", "reason": "BAD_REQUEST", "message": "Bad request data"}, "timestamp": "2026-11-15T18:26:17.679151+00:00"}
+{"session_id": "SIM-SESS-060", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.679151+00:00"}
+{"session_id": "SIM-SESS-061", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.695148+00:00"}
+{"session_id": "SIM-SESS-062", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.695148+00:00"}
+{"session_id": "SIM-SESS-063", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.710814+00:00"}
+{"session_id": "SIM-SESS-064", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.710814+00:00"}
+{"session_id": "SIM-SESS-065", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.726773+00:00"}
+{"session_id": "SIM-SESS-066", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.726773+00:00"}
+{"session_id": "SIM-SESS-067", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.742734+00:00"}
+{"session_id": "SIM-SESS-068", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.750750+00:00"}
+{"session_id": "SIM-SESS-069", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.759083+00:00"}
+{"session_id": "SIM-SESS-070", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.779850+00:00"}
+{"session_id": "SIM-SESS-071", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.800570+00:00"}
+{"session_id": "SIM-SESS-072", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.806951+00:00"}
+{"session_id": "SIM-SESS-073", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.814272+00:00"}
+{"session_id": "SIM-SESS-074", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.820959+00:00"}
+{"session_id": "SIM-SESS-075", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.820959+00:00"}
+{"session_id": "SIM-SESS-076", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.834834+00:00"}
+{"session_id": "SIM-SESS-077", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.841742+00:00"}
+{"session_id": "SIM-SESS-078", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.848766+00:00"}
+{"session_id": "SIM-SESS-079", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.860628+00:00"}
+{"session_id": "SIM-SESS-080", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.862489+00:00"}
+{"session_id": "SIM-SESS-081", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.892318+00:00"}
+{"session_id": "SIM-SESS-081", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.892318+00:00"}
+{"session_id": "SIM-SESS-082", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.952495+00:00"}
+{"session_id": "SIM-SESS-082", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.952495+00:00"}
+{"session_id": "SIM-SESS-083", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 119, "message": "Locked\nWait 119 s"}, "timestamp": "2026-11-15T18:26:17.987480+00:00"}
+{"session_id": "SIM-SESS-083", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:17.987480+00:00"}
+{"session_id": "SIM-SESS-084", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.009407+00:00"}
+{"session_id": "SIM-SESS-084", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.009407+00:00"}
+{"session_id": "SIM-SESS-085", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.034989+00:00"}
+{"session_id": "SIM-SESS-085", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.034989+00:00"}
+{"session_id": "SIM-SESS-086", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.071137+00:00"}
+{"session_id": "SIM-SESS-086", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.071137+00:00"}
+{"session_id": "SIM-SESS-087", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.103560+00:00"}
+{"session_id": "SIM-SESS-087", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.103560+00:00"}
+{"session_id": "SIM-SESS-088", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.114975+00:00"}
+{"session_id": "SIM-SESS-088", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.114975+00:00"}
+{"session_id": "SIM-SESS-089", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.141362+00:00"}
+{"session_id": "SIM-SESS-089", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.141362+00:00"}
+{"session_id": "SIM-SESS-090", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.155254+00:00"}
+{"session_id": "SIM-SESS-090", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.155254+00:00"}
+{"session_id": "SIM-SESS-091", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.162164+00:00"}
+{"session_id": "SIM-SESS-091", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.162164+00:00"}
+{"session_id": "SIM-SESS-092", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.175999+00:00"}
+{"session_id": "SIM-SESS-092", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.175999+00:00"}
+{"session_id": "SIM-SESS-093", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.190953+00:00"}
+{"session_id": "SIM-SESS-093", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.190953+00:00"}
+{"session_id": "SIM-SESS-094", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.206981+00:00"}
+{"session_id": "SIM-SESS-094", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.206981+00:00"}
+{"session_id": "SIM-SESS-095", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.222710+00:00"}
+{"session_id": "SIM-SESS-095", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.222710+00:00"}
+{"session_id": "SIM-SESS-096", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.238834+00:00"}
+{"session_id": "SIM-SESS-096", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.238834+00:00"}
+{"session_id": "SIM-SESS-097", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.238834+00:00"}
+{"session_id": "SIM-SESS-097", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.238834+00:00"}
+{"session_id": "SIM-SESS-098", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.273474+00:00"}
+{"session_id": "SIM-SESS-098", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.273474+00:00"}
+{"session_id": "SIM-SESS-099", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.302657+00:00"}
+{"session_id": "SIM-SESS-099", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.302657+00:00"}
+{"session_id": "SIM-SESS-100", "response": {"result": "DENY", "reason": "LOCKED_OUT", "attempts_left": 0, "retry_after_sec": 118, "message": "Locked\nWait 118 s"}, "timestamp": "2026-11-15T18:26:18.318413+00:00"}
+{"session_id": "SIM-SESS-100", "response": {"saved": 1, "duplicates": 0, "rejected": 0, "errors": []}, "timestamp": "2026-11-15T18:26:18.318413+00:00"}
