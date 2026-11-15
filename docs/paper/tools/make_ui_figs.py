@@ -41,17 +41,15 @@ GAP = 10             # white space between stacked crops of one panel (px)
 BORDER = (15, 35, 56)   # dark navy hairline around each panel (no gray, department rule)
 
 # figure name -> list of panels; a panel is a list of (source png, crop box)
+# All 4 source screenshots share the exact same 1024x576 (16:9) aspect ratio and scale
 FIGURES = {
     "ui-user.png": [
-        [("map-area.png", (20, 85, 401, 640))],
-        [("booking-confirm.png", (500, 165, 940, 735))],
+        [("map-area.png", (0, 0, 1024, 576))],
+        [("booking-confirm.png", (0, 0, 1024, 576))],
     ],
     "ui-staff.png": [
-        [("dashboard.png", (728, 90, 1182, 246)),
-         ("dashboard.png", (651, 605, 1025, 985))],
-        [("alert-escalated.png", (262, 22, 730, 66)),
-         ("alert-escalated.png", (262, 337, 730, 388)),
-         ("alert-escalated.png", (262, 408, 730, 633))],
+        [("dashboard.png", (0, 0, 1024, 576))],
+        [("alert-escalated.png", (0, 0, 1024, 576))],
     ],
 }
 
