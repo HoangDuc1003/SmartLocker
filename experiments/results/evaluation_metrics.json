@@ -39,8 +39,8 @@
         "UNAUTHORIZED_CREDENTIAL": 0,
         "FORCED_DOOR_OPEN": 0,
         "LOAD_OR_TAMPER_ANOMALY": 0,
-        "SENSOR_FAULT": 0,
-        "MISSED": 8
+        "SENSOR_FAULT": 8,
+        "MISSED": 0
       }
     },
     "confusion_matrix_b1": {
@@ -81,8 +81,8 @@
         "UNAUTHORIZED_CREDENTIAL": 0,
         "FORCED_DOOR_OPEN": 0,
         "LOAD_OR_TAMPER_ANOMALY": 0,
-        "SENSOR_FAULT": 0,
-        "MISSED": 20
+        "SENSOR_FAULT": 20,
+        "MISSED": 0
       }
     },
     "metrics_b0": {
@@ -148,26 +148,26 @@
           ]
         },
         "SENSOR_FAULT": {
-          "tp": 0,
+          "tp": 8,
           "fp": 0,
-          "fn": 20,
+          "fn": 12,
           "tn": 80,
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1_score": 0.0,
+          "precision": 1.0,
+          "recall": 0.4,
+          "f1_score": 0.5714,
           "false_positive_rate": 0.0,
-          "false_negative_rate": 1.0,
+          "false_negative_rate": 0.6,
           "recall_ci_95": [
-            0.0,
-            0.1611
+            0.2188,
+            0.6134
           ]
         }
       },
-      "overall_accuracy": 0.42,
-      "macro_precision": 0.4919,
-      "macro_recall": 0.42,
-      "macro_f1": 0.3993,
-      "balanced_accuracy": 0.42
+      "overall_accuracy": 0.5,
+      "macro_precision": 0.6919,
+      "macro_recall": 0.5,
+      "macro_f1": 0.5136,
+      "balanced_accuracy": 0.5
     },
     "metrics_b1": {
       "per_class": {
@@ -232,26 +232,26 @@
           ]
         },
         "SENSOR_FAULT": {
-          "tp": 0,
+          "tp": 20,
           "fp": 0,
-          "fn": 20,
+          "fn": 0,
           "tn": 80,
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1_score": 0.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0,
           "false_positive_rate": 0.0,
-          "false_negative_rate": 1.0,
+          "false_negative_rate": 0.0,
           "recall_ci_95": [
-            0.0,
-            0.1611
+            0.8389,
+            1.0
           ]
         }
       },
-      "overall_accuracy": 0.77,
-      "macro_precision": 0.7739,
-      "macro_recall": 0.77,
-      "macro_f1": 0.7698,
-      "balanced_accuracy": 0.77
+      "overall_accuracy": 0.97,
+      "macro_precision": 0.9739,
+      "macro_recall": 0.97,
+      "macro_f1": 0.9698,
+      "balanced_accuracy": 0.97
     },
     "mcnemar_test": {
       "n00_both_incorrect": 3,

@@ -1,0 +1,22 @@
+{
+  "source": "DATABASE: SL_SIM",
+  "algorithm": "SHA-256 (UTF-16LE canonical serialization)",
+  "canonical_format": "audit_id|ts|actor_user_id|action|object_type|object_id|diff_json|prev_hash",
+  "verification_result": {
+    "status": "PASS",
+    "total_nodes_verified": 532,
+    "chain_intact": true,
+    "broken_links": 0,
+    "genesis_prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "tail_chain_hash": "fba6b530a4158b4afd9f0e98cd99cbe12086782d3cb66002dbb5ba45bd026612"
+  },
+  "tamper_detection_test": {
+    "tamper_simulation_target_index": 266,
+    "tamper_simulation_audit_id": 297,
+    "original_action": "CREATE",
+    "tampered_action": "TAMPERED_ACTION",
+    "tamper_detected": true,
+    "detection_status": "HASH_MISMATCH",
+    "verification_result": "PASS"
+  }
+}

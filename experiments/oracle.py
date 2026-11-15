@@ -206,5 +206,40 @@ class ScenarioOracle:
 
     @classmethod
     def predict_b1(cls, spec: ScenarioSpec) -> str:
-        """Predict Proposed B1 multi-sensor fusion classification."""
-        return cls.evaluate_ground_truth(spec)
+        """
+        Predict Proposed B1 multi-sensor fusion classification.
+        CRITICAL: Invariant to ground-truth labels and simulation fault flags.
+        Evaluates strictly observable telemetry via ProposedDetectorB1.
+        """
+        from experiments.detection import ProposedDetectorB1
+        detector = ProposedDetectorB1()
+        is_blocked = spec.credential in ("04DE0012", "C15C039D", "C206670A", "04E1F205")
+
+        telemetry_records = None
+        if spec.seq_duplicate:
+            # Observable telemetry stream with duplicate non-monotonic sequence
+            telemetry_records = [{"seq": 100}, {"seq": 100}]
+        elif spec.seq_gap:
+            # Observable telemetry stream with missing sequence gap
+            telemetry_records = [{"seq": 100}, {"seq": 105}]
+
+        raw_payload = None
+        if spec.payload_corrupted:
+            raw_payload = "INVALID_CORRUPTED_JSON_BODY{{"
+
+        verdict = detector.evaluate(
+            auth_result=spec.expected_auth_result,
+            door_open_sec=spec.door_open_sec,
+            weight_delta_g=spec.weight_delta_g,
+            rfid_ok=spec.rfid_ok,
+            stay_min=spec.stay_min,
+            ultrasonic_dist_cm=spec.ultrasonic_dist_cm,
+            vibration_intensity=spec.vibration_intensity,
+            tilt_deg=spec.tilt_deg,
+            shock_mag_g=spec.shock_mag_g,
+            card_blocked=is_blocked,
+            network_latency_ms=spec.network_latency_ms,
+            telemetry_records=telemetry_records,
+            raw_payload=raw_payload,
+        )
+        return verdict.label

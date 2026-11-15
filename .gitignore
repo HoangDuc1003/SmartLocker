@@ -27,3 +27,6 @@ docs/handoff/
 docs/review/
 /overleaf_package/
 *.zip
+!docs/paper/SmartLocker_Paper_Overleaf.zip
+*.exe
+

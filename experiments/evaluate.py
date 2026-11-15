@@ -9,14 +9,31 @@ Computes:
 - E5: Audit Hash-Chain Integrity Verification
 - E6: Event Consistency Trace Verification
 - E7: Server Performance & Latency Distributions (p50, p95, p99, Mean)
-- Generates LaTeX table snippets and JSON metrics for the manuscript.
+- Generates LaTeX table snippets, evaluation_metrics.json, and statistical_tests.json.
 """
 
+import argparse
 import csv
 import json
 import math
 import os
-from typing import Any, Dict, List, Tuple
+import sys
+from typing import Any, Dict, List, Optional, Tuple
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from experiments.statistical_tests import (
+        wilson_score_interval,
+        mcnemar_test,
+        latency_distribution_statistics,
+    )
+except ImportError:
+    from statistical_tests import (
+        wilson_score_interval,
+        mcnemar_test,
+        latency_distribution_statistics,
+    )
 
 
 class StatisticalEvaluator:
@@ -54,7 +71,7 @@ class StatisticalEvaluator:
                 return "FORCED_DOOR_OPEN"
             if "TAMPER" in p or "SPOOF" in p:
                 return "LOAD_OR_TAMPER_ANOMALY"
-            if "FAULT" in p:
+            if "FAULT" in p or "MALFUNCTION" in p:
                 return "SENSOR_FAULT"
             return "MISSED"
 
@@ -92,15 +109,8 @@ class StatisticalEvaluator:
             else:
                 n00 += 1
 
-        # McNemar's test: chi2 = (|n10 - n01| - 1)^2 / (n10 + n01) with continuity correction
-        mcnemar_discordant = n10 + n01
-        if mcnemar_discordant > 0:
-            mcnemar_chi2 = (abs(n10 - n01) - 1.0) ** 2 / mcnemar_discordant
-            # Approximate p-value for 1 degree of freedom chi2
-            p_value = math.erfc(math.sqrt(mcnemar_chi2) / math.sqrt(2))
-        else:
-            mcnemar_chi2 = 0.0
-            p_value = 1.0
+        # McNemar's test using statistical_tests engine
+        mcnemar_result = mcnemar_test(n00, n01, n10, n11)
 
         metrics_b0 = self._compute_classification_metrics(cm_b0)
         metrics_b1 = self._compute_classification_metrics(cm_b1)
@@ -115,29 +125,41 @@ class StatisticalEvaluator:
                 "n01_b0_only_correct": n01,
                 "n10_b1_only_correct": n10,
                 "n11_both_correct": n11,
-                "chi2_statistic": round(mcnemar_chi2, 4),
-                "p_value": round(p_value, 6),
-                "statistically_significant_p05": p_value < 0.05,
-                "statistically_significant_p01": p_value < 0.01,
+                "chi2_statistic": mcnemar_result["chi2_statistic"],
+                "p_value": mcnemar_result["p_value"],
+                "p_value_formatted": mcnemar_result["p_value_formatted"],
+                "p_value_exact_binomial": mcnemar_result["p_value_exact_binomial"],
+                "p_value_exact_formatted": mcnemar_result["p_value_exact_formatted"],
+                "cohens_g": mcnemar_result["cohens_g"],
+                "effect_size_interpretation": mcnemar_result["effect_size_interpretation"],
+                "statistically_significant_p05": mcnemar_result["significant_p05"],
+                "statistically_significant_p01": mcnemar_result["significant_p01"],
+                "statistically_significant_p001": mcnemar_result["significant_p001"],
             },
         }
         return result
 
     def _compute_classification_metrics(self, cm: Dict[str, Dict[str, int]]) -> Dict[str, Any]:
-        """Compute precision, recall, F1, balanced accuracy, and Wilson confidence intervals."""
+        """Compute precision, recall, F1, balanced accuracy, micro/macro/weighted, and Wilson confidence intervals."""
         per_class = {}
         precisions = []
         recalls = []
         f1s = []
+        supports = []
 
         total_samples = sum(sum(row.values()) for row in cm.values())
         total_correct = sum(cm[cat][cat] for cat in self.CATEGORIES if cat in cm[cat])
+
+        total_tp = 0
+        total_fp = 0
+        total_fn = 0
 
         for cat in self.CATEGORIES:
             tp = cm[cat].get(cat, 0)
             fn = sum(cm[cat].values()) - tp
             fp = sum(cm[other].get(cat, 0) for other in self.CATEGORIES if other != cat)
             tn = total_samples - (tp + fn + fp)
+            support = sum(cm[cat].values())
 
             prec = tp / (tp + fp) if (tp + fp) > 0 else 0.0
             rec = tp / (tp + fn) if (tp + fn) > 0 else 0.0
@@ -145,79 +167,92 @@ class StatisticalEvaluator:
             fpr = fp / (fp + tn) if (fp + tn) > 0 else 0.0
             fnr = fn / (fn + tp) if (fn + tp) > 0 else 0.0
 
-            # 95% Wilson score confidence interval for recall (sensitivity)
-            ci_low, ci_high = self._wilson_ci(tp, tp + fn, z=1.96)
+            # 95% Wilson score confidence interval for recall and precision
+            ci_rec_low, ci_rec_high = wilson_score_interval(tp, tp + fn)
+            ci_prec_low, ci_prec_high = wilson_score_interval(tp, tp + fp) if (tp + fp) > 0 else (0.0, 0.0)
+            ci_f1_low, ci_f1_high = wilson_score_interval(2 * tp, 2 * tp + fp + fn) if (2 * tp + fp + fn) > 0 else (0.0, 0.0)
 
             per_class[cat] = {
+                "support": support,
                 "tp": tp,
                 "fp": fp,
                 "fn": fn,
                 "tn": tn,
                 "precision": round(prec, 4),
+                "precision_ci_95": [ci_prec_low, ci_prec_high],
                 "recall": round(rec, 4),
+                "recall_ci_95": [ci_rec_low, ci_rec_high],
+                "f1": round(f1, 4),
                 "f1_score": round(f1, 4),
+                "f1_ci_95": [ci_f1_low, ci_f1_high],
                 "false_positive_rate": round(fpr, 4),
                 "false_negative_rate": round(fnr, 4),
-                "recall_ci_95": [round(ci_low, 4), round(ci_high, 4)],
             }
             precisions.append(prec)
             recalls.append(rec)
             f1s.append(f1)
+            supports.append(support)
 
-        macro_precision = sum(precisions) / len(precisions)
-        macro_recall = sum(recalls) / len(recalls)
-        macro_f1 = sum(f1s) / len(f1s)
-        accuracy = total_correct / total_samples
+            total_tp += tp
+            total_fp += fp
+            total_fn += fn
+
+        num_classes = len(self.CATEGORIES)
+        macro_precision = sum(precisions) / num_classes if num_classes > 0 else 0.0
+        macro_recall = sum(recalls) / num_classes if num_classes > 0 else 0.0
+        macro_f1 = sum(f1s) / num_classes if num_classes > 0 else 0.0
+        accuracy = total_correct / total_samples if total_samples > 0 else 0.0
+
+        acc_ci_low, acc_ci_high = wilson_score_interval(total_correct, total_samples)
+
+        micro_prec = total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else 0.0
+        micro_rec = total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else 0.0
+        micro_f1 = (2 * micro_prec * micro_rec) / (micro_prec + micro_rec) if (micro_prec + micro_rec) > 0 else 0.0
+
+        weights = [s / total_samples for s in supports] if total_samples > 0 else [0.0] * num_classes
+        weighted_prec = sum(p * w for p, w in zip(precisions, weights))
+        weighted_rec = sum(r * w for r, w in zip(recalls, weights))
+        weighted_f1 = sum(f * w for f, w in zip(f1s, weights))
 
         return {
             "per_class": per_class,
             "overall_accuracy": round(accuracy, 4),
+            "overall_accuracy_ci_95": [acc_ci_low, acc_ci_high],
             "macro_precision": round(macro_precision, 4),
             "macro_recall": round(macro_recall, 4),
             "macro_f1": round(macro_f1, 4),
             "balanced_accuracy": round(macro_recall, 4),
+            "micro_precision": round(micro_prec, 4),
+            "micro_recall": round(micro_rec, 4),
+            "micro_f1": round(micro_f1, 4),
+            "weighted_precision": round(weighted_prec, 4),
+            "weighted_recall": round(weighted_rec, 4),
+            "weighted_f1": round(weighted_f1, 4),
         }
 
     @staticmethod
-    def _wilson_ci(k: int, n: int, z: float = 1.96) -> Tuple[float, float]:
+    def _wilson_ci(k: int, n: int, z: float = 1.95996) -> Tuple[float, float]:
         """Compute Wilson score interval for binomial proportion."""
-        if n == 0:
-            return 0.0, 0.0
-        p = k / n
-        denominator = 1.0 + z * z / n
-        center = (p + z * z / (2 * n)) / denominator
-        half_width = (z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / denominator
-        return max(0.0, center - half_width), min(1.0, center + half_width)
+        return wilson_score_interval(k, n, z)
 
     def evaluate_latencies(self) -> Dict[str, Any]:
-        """Compute latency percentiles (mean, median, p95, p99, min, max)."""
-        durations = sorted([s["duration_ms"] for s in self.sessions])
-        n = len(durations)
-        if n == 0:
-            return {}
+        """Compute latency percentiles (mean, median, p95, p99, min, max, std)."""
+        durations = [s["duration_ms"] for s in self.sessions]
+        stats = latency_distribution_statistics(durations)
+        # Add backwards compatible alias std_ms
+        stats["std_ms"] = stats.get("pop_std_ms", 0.0)
+        return stats
 
-        def percentile(p: float) -> float:
-            idx = int(math.ceil(p * n)) - 1
-            return durations[max(0, min(n - 1, idx))]
-
-        mean_val = sum(durations) / n
-        variance = sum((x - mean_val) ** 2 for x in durations) / n
-        std_val = math.sqrt(variance)
-
-        return {
-            "count": n,
-            "mean_ms": round(mean_val, 2),
-            "std_ms": round(std_val, 2),
-            "median_p50_ms": round(percentile(0.50), 2),
-            "p95_ms": round(percentile(0.95), 2),
-            "p99_ms": round(percentile(0.99), 2),
-            "min_ms": round(durations[0], 2),
-            "max_ms": round(durations[-1], 2),
-        }
-
-    def generate_latex_tables(self, metrics: Dict[str, Any], latencies: Dict[str, Any]) -> None:
+    def generate_latex_tables(
+        self,
+        metrics: Dict[str, Any],
+        latencies: Dict[str, Any],
+        output_dir: Optional[str] = None,
+    ) -> None:
         """Export formatted LaTeX tables for direct manuscript inclusion."""
-        # Table: B0 vs B1 Detection Comparison
+        out = output_dir or self.results_dir
+        os.makedirs(out, exist_ok=True)
+
         m0 = metrics["metrics_b0"]
         m1 = metrics["metrics_b1"]
 
@@ -263,7 +298,7 @@ class StatisticalEvaluator:
             r"\end{table}",
         ])
 
-        with open(os.path.join(self.results_dir, "table_detection_comparison.tex"), "w", encoding="utf-8") as f:
+        with open(os.path.join(out, "table_detection_comparison.tex"), "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
 
         # Table: Latency Distribution
@@ -284,17 +319,20 @@ class StatisticalEvaluator:
             r"\end{tabular}",
             r"\end{table}",
         ]
-        with open(os.path.join(self.results_dir, "table_latency_distribution.tex"), "w", encoding="utf-8") as f:
+        with open(os.path.join(out, "table_latency_distribution.tex"), "w", encoding="utf-8") as f:
             f.write("\n".join(lat_lines) + "\n")
 
-    def run_full_evaluation(self) -> Dict[str, Any]:
+    def run_full_evaluation(self, output_dir: Optional[str] = None) -> Dict[str, Any]:
         """Execute full evaluation pipeline and write all artifact reports."""
+        target_dir = output_dir or self.results_dir
+        os.makedirs(target_dir, exist_ok=True)
+
         det_metrics = self.evaluate_detection()
         lat_metrics = self.evaluate_latencies()
 
         # Save Confusion Matrices to CSV
-        self._save_cm_csv(os.path.join(self.results_dir, "confusion_matrix_b0.csv"), det_metrics["confusion_matrix_b0"])
-        self._save_cm_csv(os.path.join(self.results_dir, "confusion_matrix_b1.csv"), det_metrics["confusion_matrix_b1"])
+        self._save_cm_csv(os.path.join(target_dir, "confusion_matrix_b0.csv"), det_metrics["confusion_matrix_b0"])
+        self._save_cm_csv(os.path.join(target_dir, "confusion_matrix_b1.csv"), det_metrics["confusion_matrix_b1"])
 
         full_report = {
             "total_evaluated_sessions": len(self.sessions),
@@ -313,15 +351,62 @@ class StatisticalEvaluator:
             },
         }
 
-        with open(os.path.join(self.results_dir, "evaluation_metrics.json"), "w", encoding="utf-8") as f:
+        # 1. Write evaluation_metrics.json
+        with open(os.path.join(target_dir, "evaluation_metrics.json"), "w", encoding="utf-8") as f:
             json.dump(full_report, f, indent=2)
 
-        self.generate_latex_tables(det_metrics, lat_metrics)
+        # 2. Write dedicated statistical_tests.json
+        statistical_tests_report = {
+            "experimental_metadata": {
+                "total_sessions": len(self.sessions),
+                "scenario_categories": self.CATEGORIES,
+                "nominal_support_per_category": 20,
+            },
+            "mcnemar_paired_test": det_metrics["mcnemar_test"],
+            "wilson_score_confidence_intervals": {
+                "b0": {
+                    "overall_accuracy": det_metrics["metrics_b0"]["overall_accuracy"],
+                    "overall_accuracy_ci_95": det_metrics["metrics_b0"]["overall_accuracy_ci_95"],
+                    "per_class": {
+                        c: {
+                            "recall": det_metrics["metrics_b0"]["per_class"][c]["recall"],
+                            "recall_ci_95": det_metrics["metrics_b0"]["per_class"][c]["recall_ci_95"],
+                            "precision": det_metrics["metrics_b0"]["per_class"][c]["precision"],
+                            "precision_ci_95": det_metrics["metrics_b0"]["per_class"][c]["precision_ci_95"],
+                            "f1": det_metrics["metrics_b0"]["per_class"][c]["f1"],
+                            "f1_ci_95": det_metrics["metrics_b0"]["per_class"][c]["f1_ci_95"],
+                        }
+                        for c in self.CATEGORIES
+                    },
+                },
+                "b1": {
+                    "overall_accuracy": det_metrics["metrics_b1"]["overall_accuracy"],
+                    "overall_accuracy_ci_95": det_metrics["metrics_b1"]["overall_accuracy_ci_95"],
+                    "per_class": {
+                        c: {
+                            "recall": det_metrics["metrics_b1"]["per_class"][c]["recall"],
+                            "recall_ci_95": det_metrics["metrics_b1"]["per_class"][c]["recall_ci_95"],
+                            "precision": det_metrics["metrics_b1"]["per_class"][c]["precision"],
+                            "precision_ci_95": det_metrics["metrics_b1"]["per_class"][c]["precision_ci_95"],
+                            "f1": det_metrics["metrics_b1"]["per_class"][c]["f1"],
+                            "f1_ci_95": det_metrics["metrics_b1"]["per_class"][c]["f1_ci_95"],
+                        }
+                        for c in self.CATEGORIES
+                    },
+                },
+            },
+            "latency_distribution_statistics": lat_metrics,
+        }
+        with open(os.path.join(target_dir, "statistical_tests.json"), "w", encoding="utf-8") as f:
+            json.dump(statistical_tests_report, f, indent=2)
 
-        print("[+] Full statistical evaluation completed:")
+        # 3. Generate LaTeX tables
+        self.generate_latex_tables(det_metrics, lat_metrics, output_dir=target_dir)
+
+        print(f"[+] Full statistical evaluation completed for {target_dir}:")
         print(f"  - Baseline B0 Macro-F1: {det_metrics['metrics_b0']['macro_f1']:.4f}")
         print(f"  - Proposed B1 Macro-F1: {det_metrics['metrics_b1']['macro_f1']:.4f}")
-        print(f"  - McNemar Chi2: {det_metrics['mcnemar_test']['chi2_statistic']}, p-value: {det_metrics['mcnemar_test']['p_value']}")
+        print(f"  - McNemar Chi2: {det_metrics['mcnemar_test']['chi2_statistic']}, p-value: {det_metrics['mcnemar_test']['p_value_formatted']}")
         print(f"  - Latency: Mean={lat_metrics['mean_ms']}ms, p95={lat_metrics['p95_ms']}ms")
         return full_report
 
@@ -335,6 +420,15 @@ class StatisticalEvaluator:
                 writer.writerow(row)
 
 
+def main():
+    parser = argparse.ArgumentParser(description="Evaluate SmartLocker Detection Performance")
+    parser.add_argument("--results-dir", default="experiments/results", help="Input directory containing sessions.json")
+    parser.add_argument("--output-dir", default=None, help="Output destination folder (defaults to results-dir)")
+    args = parser.parse_args()
+
+    evaluator = StatisticalEvaluator(results_dir=args.results_dir)
+    evaluator.run_full_evaluation(output_dir=args.output_dir)
+
+
 if __name__ == "__main__":
-    evaluator = StatisticalEvaluator()
-    evaluator.run_full_evaluation()
+    main()

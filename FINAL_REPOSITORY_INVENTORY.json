@@ -1,0 +1,297 @@
+{
+  "inventory_metadata": {
+    "generated_at": "2026-11-15T20:12:00Z",
+    "auditor": "Milestone 1 Worker (teamwork_worker)",
+    "repository_root": "c:\\Users\\ADMIN\\OneDrive\\Desktop\\SmartLocker",
+    "git_branch": "research/audit-scopus-revision",
+    "base_commit_sha": "a2e51e843316fb39263c3d818d8832218c54fb3f",
+    "git_remote_url": "https://github.com/HoangDuc1003/SmartLocker.git",
+    "total_filesystem_files_excluding_git": 1005,
+    "total_filesystem_files_prior_to_deliverables": 1002,
+    "total_git_tracked_files_index": 524,
+    "core_git_tracked_files_excluding_backup_assets": 412
+  },
+  "summary_counts": {
+    "java_production_src": 89,
+    "java_test_and_tool": 20,
+    "java_paper_harness": 6,
+    "java_total": 115,
+    "jsp_views_source": 22,
+    "jspf_fragments_source": 4,
+    "jsp_build_artifacts": 26,
+    "python_total_modules": 69,
+    "python_by_subsystem": {
+      "experiments": 7,
+      "simulator": 24,
+      "test_e2e": 25,
+      "tests": 2,
+      "scripts": 1,
+      "paper_tools_and_harness": 10
+    },
+    "sql_scripts": 14,
+    "runtime_jars_web_inf_lib": 5,
+    "test_jars_lib": 3,
+    "latex_manuscript_files_tex": 32,
+    "compiled_manuscript_pdfs": 17,
+    "bibliography_bib_files": 6,
+    "experimental_evidence_and_results_files": 26,
+    "markdown_documentation_files": 34
+  },
+  "breakdown_details": {
+    "java_source_packages": {
+      "src/java/api": 10,
+      "src/java/controller": 25,
+      "src/java/dao": 22,
+      "src/java/filter": 1,
+      "src/java/model": 12,
+      "src/java/service": 14,
+      "src/java/util": 5
+    },
+    "java_test_packages": {
+      "test/support": 1,
+      "test/test": 14,
+      "test/tool": 5
+    },
+    "java_paper_harness": [
+      "docs/paper/evidence/harness/ExtendedEvidence.java",
+      "docs/paper/evidence/harness/MlEvidence.java",
+      "docs/paper/evidence/harness/PrintListener.java",
+      "docs/paper/backup_original/evidence/harness/ExtendedEvidence.java",
+      "docs/paper/backup_original/evidence/harness/MlEvidence.java",
+      "docs/paper/backup_original/evidence/harness/PrintListener.java"
+    ],
+    "jsp_views": [
+      "web/WEB-INF/views/alert.jsp",
+      "web/WEB-INF/views/audit.jsp",
+      "web/WEB-INF/views/calibration.jsp",
+      "web/WEB-INF/views/cardConfirm.jsp",
+      "web/WEB-INF/views/dashboard.jsp",
+      "web/WEB-INF/views/denied.jsp",
+      "web/WEB-INF/views/deposit.jsp",
+      "web/WEB-INF/views/kiosk.jsp",
+      "web/WEB-INF/views/lockerArea.jsp",
+      "web/WEB-INF/views/lockerBank.jsp",
+      "web/WEB-INF/views/lockerMap.jsp",
+      "web/WEB-INF/views/lockerMapStaff.jsp",
+      "web/WEB-INF/views/lockerSession.jsp",
+      "web/WEB-INF/views/lockerSlot.jsp",
+      "web/WEB-INF/views/maintenance.jsp",
+      "web/WEB-INF/views/myLocker.jsp",
+      "web/WEB-INF/views/remoteCommand.jsp",
+      "web/WEB-INF/views/role.jsp",
+      "web/WEB-INF/views/storagePlan.jsp",
+      "web/WEB-INF/views/topup.jsp",
+      "web/WEB-INF/views/user.jsp",
+      "web/WEB-INF/views/userCard.jsp"
+    ],
+    "jspf_fragments": [
+      "web/WEB-INF/views/common/icons.jspf",
+      "web/WEB-INF/views/common/nav-floating.jspf",
+      "web/WEB-INF/views/common/nav.jspf",
+      "web/WEB-INF/views/common/panel-flash.jspf"
+    ],
+    "runtime_jars": [
+      {
+        "name": "gson-2.10.1.jar",
+        "path": "web/WEB-INF/lib/gson-2.10.1.jar",
+        "size_bytes": 283367,
+        "purpose": "Google JSON serialization / deserialization for REST APIs"
+      },
+      {
+        "name": "jbcrypt-0.4.jar",
+        "path": "web/WEB-INF/lib/jbcrypt-0.4.jar",
+        "size_bytes": 17429,
+        "purpose": "Password hashing and verification (Blowfish cipher)"
+      },
+      {
+        "name": "jstl-1.2.jar",
+        "path": "web/WEB-INF/lib/jstl-1.2.jar",
+        "size_bytes": 414240,
+        "purpose": "JavaServer Pages Standard Tag Library for views"
+      },
+      {
+        "name": "mssql-jdbc-12.8.1.jre8.jar",
+        "path": "web/WEB-INF/lib/mssql-jdbc-12.8.1.jre8.jar",
+        "size_bytes": 1464068,
+        "purpose": "Microsoft SQL Server JDBC Type 4 Driver"
+      },
+      {
+        "name": "weka.jar",
+        "path": "web/WEB-INF/lib/weka.jar",
+        "size_bytes": 14163929,
+        "purpose": "Weka Machine Learning runtime for RiskScorer classifier evaluation"
+      }
+    ],
+    "test_jars": [
+      {
+        "name": "jcommander-1.78.jar",
+        "path": "lib/jcommander-1.78.jar",
+        "size_bytes": 83782,
+        "purpose": "Command line parsing library for TestNG"
+      },
+      {
+        "name": "slf4j-api-1.7.36.jar",
+        "path": "lib/slf4j-api-1.7.36.jar",
+        "size_bytes": 41125,
+        "purpose": "Simple Logging Facade for Java"
+      },
+      {
+        "name": "testng-7.5.jar",
+        "path": "lib/testng-7.5.jar",
+        "size_bytes": 941401,
+        "purpose": "TestNG testing framework runner"
+      }
+    ],
+    "sql_scripts": [
+      "sql/01_schema.sql",
+      "sql/02_data_v1.sql",
+      "sql/03_v2_v3.sql",
+      "sql/04_phone.sql",
+      "sql/05_auto_checkin.sql",
+      "sql/06_english_messages.sql",
+      "sql/demo_box.sql",
+      "sql/recreate_overdue_alert.sql",
+      "sql/test_cleanup.sql",
+      "sql/test_overdue.sql",
+      "sql/test_setup.sql",
+      "sql/upgrade_main_2026-11.sql",
+      "docs/paper/evidence/harness/snapshot.sql",
+      "docs/paper/backup_original/evidence/harness/snapshot.sql"
+    ],
+    "key_manuscripts": [
+      "docs/paper/smartlocker-10p.tex",
+      "docs/paper/smartlocker-10p.pdf",
+      "docs/paper/smartlocker-10p-instructor.pdf",
+      "docs/paper/smartlocker-10p-scopus.pdf",
+      "docs/paper/Report_FinalProject_Prj.pdf",
+      "docs/paper/Report_FinalProject_Prj_Scopus.pdf",
+      "docs/paper/smartlocker-iciit.tex",
+      "docs/paper/smartlocker.tex",
+      "docs/paper/acmart.cls",
+      "docs/paper/ACM-Reference-Format.bst",
+      "docs/paper/references.bib",
+      "docs/paper/refs-additions.bib"
+    ]
+  },
+  "security_audit_findings": {
+    "active_secrets_in_git": false,
+    "demo_fallback_credentials": [
+      {
+        "file": "src/java/dao/DbContext.java",
+        "lines": "23-26",
+        "credential": "sa / 12345",
+        "purpose": "Local development demo fallback for Microsoft SQL Server connection when DB_USER and DB_PASSWORD are not specified in environment or JVM properties",
+        "risk_level": "LOW (Documented Demo Default)"
+      },
+      {
+        "file": "src/java/controller/UserController.java",
+        "line": "25",
+        "credential": "DEFAULT_PASSWORD = \"123456\"",
+        "purpose": "Default password assigned to newly created or reset user demo accounts",
+        "risk_level": "LOW (Documented Demo Default)"
+      },
+      {
+        "file": "experiments/gate_verification.py",
+        "line": "25",
+        "credential": "API_KEY = \"device-1-api-key\"",
+        "purpose": "Sample device API key matching public SQL seed hash in sql/03_v2_v3.sql",
+        "risk_level": "LOW (Public Test Seed)"
+      },
+      {
+        "file": "scripts/send-demo.ps1",
+        "line": "16",
+        "credential": "$ApiKey = \"device-3-api-key\"",
+        "purpose": "Sample test device API key matching public SQL seed hash in sql/03_v2_v3.sql",
+        "risk_level": "LOW (Public Test Seed)"
+      }
+    ],
+    "local_ignored_secret_files": [
+      {
+        "path": "config/device-keys.local.properties",
+        "rule": ".gitignore:10:config/*.local.properties",
+        "never_committed_to_git": true
+      },
+      {
+        "path": "firmware/SmartLocker_Online/secrets.h",
+        "rule": ".gitignore:15:firmware/*/secrets.h",
+        "never_committed_to_git": true
+      }
+    ]
+  },
+  "ui_language_verification": {
+    "default_locale": "en_US",
+    "web_xml_configuration": {
+      "path": "web/WEB-INF/web.xml",
+      "param_name": "javax.servlet.jsp.jstl.fmt.locale",
+      "param_value": "en_US",
+      "verified": true
+    },
+    "sql_seed_messages": {
+      "path": "sql/06_english_messages.sql",
+      "translations_verified": [
+        "StoragePlan names (2 hours, 4 hours, Day pass, Demo 2 minutes)",
+        "SlotSize item descriptions (Wallet, Phone, Keys...)",
+        "Alert and maintenance reason texts"
+      ],
+      "verified": true
+    },
+    "jsp_views_lang_attribute": {
+      "total_jsp_checked": 22,
+      "with_html_lang_en": 22,
+      "verified": true
+    }
+  },
+  "author_block_verification": {
+    "corresponding_author": {
+      "name": "Duc Hoang Nguyen",
+      "email_scopus": "duchoang.nguyen103@gmail.com",
+      "email_course": "duchoang.nguyen103@fpt.edu.vn",
+      "orcid": "0009-0006-9780-8146",
+      "affiliation": "FPT University, Ho Chi Minh Campus, Vietnam",
+      "designation": "Corresponding author (*)"
+    },
+    "co_authors": [
+      {
+        "name": "Viet Tien Nguyen",
+        "email_scopus": "tiennguyen100306@gmail.com",
+        "email_course": "tiennguyen100306@fpt.edu.vn"
+      },
+      {
+        "name": "Huy Hoang Nguyen",
+        "email_scopus": "huyhoang.ct06@gmail.com",
+        "email_course": "huyhoang.ct06@fpt.edu.vn"
+      },
+      {
+        "name": "Thanh Cao Nguyen",
+        "email_scopus": "thanhcao19112006@gmail.com",
+        "email_course": "thanhcao19112006@fpt.edu.vn"
+      },
+      {
+        "name": "Thu Le",
+        "email": "thulvm@fpt.edu.vn"
+      },
+      {
+        "name": "Kieu Trong Khanh",
+        "email": "khanhkt@fpt.edu.vn"
+      }
+    ],
+    "scopus_branch_flag": "\\ifscopus in docs/paper/smartlocker-10p.tex lines 80-112",
+    "verified": true
+  },
+  "execution_environment_summary": {
+    "git": "2.54.0.windows.1",
+    "java_runtime_path": "OpenJDK 21.0.12.1 Temurin (PATH) & Oracle JDK 1.8.0_202 (C:\\Program Files\\Java\\jdk1.8.0_202)",
+    "javac_compiler": "21.0.12.1 (PATH) & 1.8.0_202 (C:\\Program Files\\Java\\jdk1.8.0_202\\bin\\javac.exe)",
+    "maven": "Apache Maven 3.9.16 (E:\\apache-maven-3.9.16)",
+    "gradle": "Not installed in PATH",
+    "ant": "Configured via NetBeans, not in PATH",
+    "python": "Python 3.11.9 (PATH)",
+    "pip": "24.0 (PATH)",
+    "pdflatex": "Not found in local PATH",
+    "latexmk": "Not found in local PATH",
+    "xelatex": "Not found in local PATH",
+    "docker": "Docker CLI 29.8.0 (Docker Desktop daemon stopped)",
+    "database_service": "Microsoft SQL Server 2022 (MSSQLSERVER) RUNNING on port 1433",
+    "web_container": "Apache Tomcat 9.0.113 installed at E:\\apache-tomcat-9.0.113"
+  }
+}

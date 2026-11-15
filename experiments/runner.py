@@ -49,6 +49,7 @@ class ExperimentRunner:
         output_dir: str = "experiments/evidence",
         master_seed: int = 20261115,
         total_sessions: int = 100,
+        mirror_results: bool = False,
     ):
         self.base_url = base_url
         self.device_code = device_code
@@ -57,6 +58,7 @@ class ExperimentRunner:
         self.output_dir = output_dir
         self.master_seed = master_seed
         self.total_sessions = total_sessions
+        self.mirror_results = mirror_results
 
         self.device_config = DeviceConfig(
             base_url=self.base_url,
@@ -314,11 +316,9 @@ class ExperimentRunner:
                 tilt_deg=sc.tilt_deg,
                 shock_mag_g=sc.shock_mag_g,
                 card_blocked=is_blocked_card,
-                fault_type=sc.fault_type,
                 network_latency_ms=sc.network_latency_ms,
-                seq_gap=sc.seq_gap,
-                seq_duplicate=sc.seq_duplicate,
-                payload_corrupted=sc.payload_corrupted,
+                packet_seq=allocated_seq,
+                telemetry_records=[telemetry_item],
             )
 
             # Record sensor time series
@@ -392,8 +392,9 @@ class ExperimentRunner:
         self._save_all_evidence(scenarios, sessions_records, sensor_readings, backend_requests,
                                backend_responses, ground_truth_records, failed_sessions, summary)
 
-        # Mirror evidence to experiments/results/ for backwards compatibility
-        self._mirror_results()
+        # Mirror evidence to experiments/results/ for backwards compatibility only if explicitly enabled
+        if self.mirror_results:
+            self._mirror_results()
 
         print(f"[+] Execution complete: 100 sessions executed against Tomcat 8081.")
         print(f"    Passed: {passed_count}, Failed: {failed_count}, Blocked: {blocked_count}, Pass Rate: {summary['pass_rate_pct']}%")
@@ -622,5 +623,20 @@ This directory contains the complete raw evidence files for 100 independently pr
 
 
 if __name__ == "__main__":
-    runner = ExperimentRunner()
+    import argparse
+    parser = argparse.ArgumentParser(description="SmartLocker Automated Experiment Runner")
+    parser.add_argument("--base-url", default="http://localhost:8081/SmartLocker/api", help="Backend API base URL")
+    parser.add_argument("--output-dir", default="experiments/evidence", help="Directory where evidence artifacts are saved")
+    parser.add_argument("--total-sessions", type=int, default=100, help="Total number of sessions to evaluate")
+    parser.add_argument("--seed", type=int, default=20261115, help="Master PRNG seed")
+    parser.add_argument("--mirror", action="store_true", default=False, help="Mirror output artifacts to experiments/results/")
+    args = parser.parse_args()
+
+    runner = ExperimentRunner(
+        base_url=args.base_url,
+        output_dir=args.output_dir,
+        total_sessions=args.total_sessions,
+        master_seed=args.seed,
+        mirror_results=args.mirror,
+    )
     runner.run_all()

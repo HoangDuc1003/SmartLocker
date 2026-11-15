@@ -1,0 +1,420 @@
+{
+  "total_evaluated_sessions": 100,
+  "detection_evaluation": {
+    "confusion_matrix_b0": {
+      "NORMAL_AUTHORIZED": {
+        "NORMAL_AUTHORIZED": 0,
+        "UNAUTHORIZED_CREDENTIAL": 20,
+        "FORCED_DOOR_OPEN": 0,
+        "LOAD_OR_TAMPER_ANOMALY": 0,
+        "SENSOR_FAULT": 0,
+        "MISSED": 0
+      },
+      "UNAUTHORIZED_CREDENTIAL": {
+        "NORMAL_AUTHORIZED": 3,
+        "UNAUTHORIZED_CREDENTIAL": 17,
+        "FORCED_DOOR_OPEN": 0,
+        "LOAD_OR_TAMPER_ANOMALY": 0,
+        "SENSOR_FAULT": 0,
+        "MISSED": 0
+      },
+      "FORCED_DOOR_OPEN": {
+        "NORMAL_AUTHORIZED": 0,
+        "UNAUTHORIZED_CREDENTIAL": 0,
+        "FORCED_DOOR_OPEN": 20,
+        "LOAD_OR_TAMPER_ANOMALY": 0,
+        "SENSOR_FAULT": 0,
+        "MISSED": 0
+      },
+      "LOAD_OR_TAMPER_ANOMALY": {
+        "NORMAL_AUTHORIZED": 15,
+        "UNAUTHORIZED_CREDENTIAL": 0,
+        "FORCED_DOOR_OPEN": 0,
+        "LOAD_OR_TAMPER_ANOMALY": 5,
+        "SENSOR_FAULT": 0,
+        "MISSED": 0
+      },
+      "SENSOR_FAULT": {
+        "NORMAL_AUTHORIZED": 12,
+        "UNAUTHORIZED_CREDENTIAL": 0,
+        "FORCED_DOOR_OPEN": 0,
+        "LOAD_OR_TAMPER_ANOMALY": 0,
+        "SENSOR_FAULT": 8,
+        "MISSED": 0
+      }
+    },
+    "confusion_matrix_b1": {
+      "NORMAL_AUTHORIZED": {
+        "NORMAL_AUTHORIZED": 20,
+        "UNAUTHORIZED_CREDENTIAL": 0,
+        "FORCED_DOOR_OPEN": 0,
+        "LOAD_OR_TAMPER_ANOMALY": 0,
+        "SENSOR_FAULT": 0,
+        "MISSED": 0
+      },
+      "UNAUTHORIZED_CREDENTIAL": {
+        "NORMAL_AUTHORIZED": 3,
+        "UNAUTHORIZED_CREDENTIAL": 17,
+        "FORCED_DOOR_OPEN": 0,
+        "LOAD_OR_TAMPER_ANOMALY": 0,
+        "SENSOR_FAULT": 0,
+        "MISSED": 0
+      },
+      "FORCED_DOOR_OPEN": {
+        "NORMAL_AUTHORIZED": 0,
+        "UNAUTHORIZED_CREDENTIAL": 0,
+        "FORCED_DOOR_OPEN": 20,
+        "LOAD_OR_TAMPER_ANOMALY": 0,
+        "SENSOR_FAULT": 0,
+        "MISSED": 0
+      },
+      "LOAD_OR_TAMPER_ANOMALY": {
+        "NORMAL_AUTHORIZED": 0,
+        "UNAUTHORIZED_CREDENTIAL": 0,
+        "FORCED_DOOR_OPEN": 0,
+        "LOAD_OR_TAMPER_ANOMALY": 20,
+        "SENSOR_FAULT": 0,
+        "MISSED": 0
+      },
+      "SENSOR_FAULT": {
+        "NORMAL_AUTHORIZED": 0,
+        "UNAUTHORIZED_CREDENTIAL": 0,
+        "FORCED_DOOR_OPEN": 0,
+        "LOAD_OR_TAMPER_ANOMALY": 0,
+        "SENSOR_FAULT": 20,
+        "MISSED": 0
+      }
+    },
+    "metrics_b0": {
+      "per_class": {
+        "NORMAL_AUTHORIZED": {
+          "support": 20,
+          "tp": 0,
+          "fp": 30,
+          "fn": 20,
+          "tn": 50,
+          "precision": 0.0,
+          "precision_ci_95": [
+            0.0,
+            0.1135
+          ],
+          "recall": 0.0,
+          "recall_ci_95": [
+            0.0,
+            0.1611
+          ],
+          "f1": 0.0,
+          "f1_score": 0.0,
+          "f1_ci_95": [
+            0.0,
+            0.0713
+          ],
+          "false_positive_rate": 0.375,
+          "false_negative_rate": 1.0
+        },
+        "UNAUTHORIZED_CREDENTIAL": {
+          "support": 20,
+          "tp": 17,
+          "fp": 20,
+          "fn": 3,
+          "tn": 60,
+          "precision": 0.4595,
+          "precision_ci_95": [
+            0.3104,
+            0.6162
+          ],
+          "recall": 0.85,
+          "recall_ci_95": [
+            0.6396,
+            0.9476
+          ],
+          "f1": 0.5965,
+          "f1_score": 0.5965,
+          "f1_ci_95": [
+            0.467,
+            0.7138
+          ],
+          "false_positive_rate": 0.25,
+          "false_negative_rate": 0.15
+        },
+        "FORCED_DOOR_OPEN": {
+          "support": 20,
+          "tp": 20,
+          "fp": 0,
+          "fn": 0,
+          "tn": 80,
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "recall": 1.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "f1": 1.0,
+          "f1_score": 1.0,
+          "f1_ci_95": [
+            0.9124,
+            1.0
+          ],
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.0
+        },
+        "LOAD_OR_TAMPER_ANOMALY": {
+          "support": 20,
+          "tp": 5,
+          "fp": 0,
+          "fn": 15,
+          "tn": 80,
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.5655,
+            1.0
+          ],
+          "recall": 0.25,
+          "recall_ci_95": [
+            0.1119,
+            0.4687
+          ],
+          "f1": 0.4,
+          "f1_score": 0.4,
+          "f1_ci_95": [
+            0.234,
+            0.5926
+          ],
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.75
+        },
+        "SENSOR_FAULT": {
+          "support": 20,
+          "tp": 8,
+          "fp": 0,
+          "fn": 12,
+          "tn": 80,
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.6756,
+            1.0
+          ],
+          "recall": 0.4,
+          "recall_ci_95": [
+            0.2188,
+            0.6134
+          ],
+          "f1": 0.5714,
+          "f1_score": 0.5714,
+          "f1_ci_95": [
+            0.3907,
+            0.7349
+          ],
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.6
+        }
+      },
+      "overall_accuracy": 0.5,
+      "overall_accuracy_ci_95": [
+        0.4038,
+        0.5962
+      ],
+      "macro_precision": 0.6919,
+      "macro_recall": 0.5,
+      "macro_f1": 0.5136,
+      "balanced_accuracy": 0.5,
+      "micro_precision": 0.5,
+      "micro_recall": 0.5,
+      "micro_f1": 0.5,
+      "weighted_precision": 0.6919,
+      "weighted_recall": 0.5,
+      "weighted_f1": 0.5136
+    },
+    "metrics_b1": {
+      "per_class": {
+        "NORMAL_AUTHORIZED": {
+          "support": 20,
+          "tp": 20,
+          "fp": 3,
+          "fn": 0,
+          "tn": 77,
+          "precision": 0.8696,
+          "precision_ci_95": [
+            0.6787,
+            0.9546
+          ],
+          "recall": 1.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "f1": 0.9302,
+          "f1_score": 0.9302,
+          "f1_ci_95": [
+            0.8139,
+            0.976
+          ],
+          "false_positive_rate": 0.0375,
+          "false_negative_rate": 0.0
+        },
+        "UNAUTHORIZED_CREDENTIAL": {
+          "support": 20,
+          "tp": 17,
+          "fp": 0,
+          "fn": 3,
+          "tn": 80,
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8157,
+            1.0
+          ],
+          "recall": 0.85,
+          "recall_ci_95": [
+            0.6396,
+            0.9476
+          ],
+          "f1": 0.9189,
+          "f1_score": 0.9189,
+          "f1_ci_95": [
+            0.787,
+            0.972
+          ],
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.15
+        },
+        "FORCED_DOOR_OPEN": {
+          "support": 20,
+          "tp": 20,
+          "fp": 0,
+          "fn": 0,
+          "tn": 80,
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "recall": 1.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "f1": 1.0,
+          "f1_score": 1.0,
+          "f1_ci_95": [
+            0.9124,
+            1.0
+          ],
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.0
+        },
+        "LOAD_OR_TAMPER_ANOMALY": {
+          "support": 20,
+          "tp": 20,
+          "fp": 0,
+          "fn": 0,
+          "tn": 80,
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "recall": 1.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "f1": 1.0,
+          "f1_score": 1.0,
+          "f1_ci_95": [
+            0.9124,
+            1.0
+          ],
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.0
+        },
+        "SENSOR_FAULT": {
+          "support": 20,
+          "tp": 20,
+          "fp": 0,
+          "fn": 0,
+          "tn": 80,
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "recall": 1.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "f1": 1.0,
+          "f1_score": 1.0,
+          "f1_ci_95": [
+            0.9124,
+            1.0
+          ],
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.0
+        }
+      },
+      "overall_accuracy": 0.97,
+      "overall_accuracy_ci_95": [
+        0.9155,
+        0.9897
+      ],
+      "macro_precision": 0.9739,
+      "macro_recall": 0.97,
+      "macro_f1": 0.9698,
+      "balanced_accuracy": 0.97,
+      "micro_precision": 0.97,
+      "micro_recall": 0.97,
+      "micro_f1": 0.97,
+      "weighted_precision": 0.9739,
+      "weighted_recall": 0.97,
+      "weighted_f1": 0.9698
+    },
+    "mcnemar_test": {
+      "n00_both_incorrect": 3,
+      "n01_b0_only_correct": 0,
+      "n10_b1_only_correct": 47,
+      "n11_both_correct": 50,
+      "chi2_statistic": 45.0213,
+      "p_value": 1.949052256116927e-11,
+      "p_value_formatted": "1.95e-11",
+      "p_value_exact_binomial": 1.4210854715202004e-14,
+      "p_value_exact_formatted": "1.42e-14",
+      "cohens_g": 0.5,
+      "effect_size_interpretation": "Large effect (g >= 0.25)",
+      "statistically_significant_p05": true,
+      "statistically_significant_p01": true,
+      "statistically_significant_p001": true
+    }
+  },
+  "latency_evaluation": {
+    "count": 100,
+    "mean_ms": 17.45,
+    "sample_std_ms": 11.17,
+    "pop_std_ms": 11.12,
+    "min_ms": 0.0,
+    "p25_ms": 8.86,
+    "median_p50_ms": 16.1,
+    "p75_ms": 25.85,
+    "iqr_ms": 16.99,
+    "p90_ms": 32.04,
+    "p95_ms": 34.09,
+    "p99_ms": 40.42,
+    "max_ms": 51.0,
+    "std_ms": 11.12
+  },
+  "e5_audit_integrity": {
+    "hash_chain_algorithm": "SHA-256 (UTF-16LE)",
+    "verified_blocks": 1433,
+    "tamper_detection_rate_pct": 100.0,
+    "immutability_status": "VERIFIED_ON_DATABASE"
+  },
+  "e6_event_consistency": {
+    "device_to_backend_loss_rate_pct": 0.0,
+    "duplicate_suppression_rate_pct": 100.0,
+    "ordering_preservation": "STRICT_MONOTONIC_SEQ"
+  }
+}

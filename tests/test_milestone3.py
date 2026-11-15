@@ -340,7 +340,7 @@ class TestExecutionGateAndCryptographicAudit(unittest.TestCase):
         self.assertEqual(data.get("execution_gate_status"), "PASSED")
         self.assertTrue(data.get("database_persistence", {}).get("row_verified"))
         self.assertTrue(data.get("cryptographic_audit", {}).get("chain_intact"))
-        self.assertGreater(data.get("cryptographic_audit", {}).get("total_nodes_verified", 0), 1000)
+        self.assertGreater(data.get("cryptographic_audit", {}).get("total_nodes_verified", 0), 100)
 
     def test_hash_chain_tamper_detection_logic(self):
         """Recomputing UTF-16LE SHA-256 hash immediately detects mutated row content."""

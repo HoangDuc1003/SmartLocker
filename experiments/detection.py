@@ -17,8 +17,9 @@ Distinguishes 6 canonical classes:
 """
 
 from dataclasses import dataclass, field
+import json
 import math
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -83,10 +84,10 @@ class BaselineDetectorB0:
             )
 
         # 3. Auth credential denial
-        if auth_result == "DENY":
+        if auth_result in ("DENY", "ERROR"):
             return DetectionVerdict(
                 self.LABEL_UNAUTHORIZED, 0.95, "B0_AUTH_DENY",
-                {"auth_result": "DENY"}, True
+                {"auth_result": auth_result}, True
             )
 
         # 4. Forced door breach (batch indicator)
@@ -112,6 +113,7 @@ class ProposedDetectorB1:
     Proposed B1: Enhanced Multi-Sensor Fusion Detection Architecture.
     Fuses Reed switch, Load cell, Ultrasonic SRF05, MPU6050 IMU, and Network telemetry.
     Executes 6-tier hierarchical priority resolution.
+    Operates STRICTLY on observable features without ground-truth simulation leakage.
     """
 
     # Physical Threshold Constants
@@ -132,6 +134,13 @@ class ProposedDetectorB1:
     LABEL_SENSOR_MALFUNCTION = "SENSOR_MALFUNCTION"
     LABEL_NETWORK_MALFUNCTION = "NETWORK_MALFUNCTION"
 
+    def __init__(self) -> None:
+        self._last_seq: Optional[int] = None
+
+    def reset_sequence(self, initial_seq: Optional[int] = None) -> None:
+        """Reset sequence tracker state for a new session or device stream."""
+        self._last_seq = initial_seq
+
     def evaluate(
         self,
         auth_result: str,
@@ -144,24 +153,18 @@ class ProposedDetectorB1:
         tilt_deg: float,
         shock_mag_g: float = 1.0,
         card_blocked: bool = False,
-        fault_type: Optional[str] = None,
         network_latency_ms: float = 0.0,
-        seq_gap: bool = False,
-        seq_duplicate: bool = False,
-        payload_corrupted: bool = False,
+        packet_seq: Optional[int] = None,
+        telemetry_records: Optional[List[Dict[str, Any]]] = None,
+        raw_payload: Optional[Any] = None,
     ) -> DetectionVerdict:
         """
         Evaluate full sensor telemetry and return unambiguous detection verdict.
+        STRICTLY observable inputs only. No ground-truth or test-generator flags.
         """
         # =====================================================================
         # TIER 1: Hardware & Transducer Malfunction Check
         # =====================================================================
-        if fault_type is not None and "FAULT" in fault_type.upper():
-            return DetectionVerdict(
-                self.LABEL_SENSOR_MALFUNCTION, 1.0, f"B1_FAULT_{fault_type}",
-                {"fault_type": fault_type}, True
-            )
-
         # Non-finite floating point checks
         readings = [door_open_sec, weight_delta_g, stay_min, ultrasonic_dist_cm, vibration_intensity, tilt_deg, shock_mag_g]
         if any(math.isnan(r) or math.isinf(r) for r in readings):
@@ -209,26 +212,72 @@ class ProposedDetectorB1:
         # =====================================================================
         # TIER 2: Network & Transport Malfunction Check
         # =====================================================================
+        # Observable transport delay check
         if network_latency_ms >= self.NETWORK_TIMEOUT_THRESHOLD_MS:
             return DetectionVerdict(
                 self.LABEL_NETWORK_MALFUNCTION, 0.99, "B1_NET_TIMEOUT",
                 {"network_latency_ms": network_latency_ms}, True
             )
-        if seq_duplicate:
-            return DetectionVerdict(
-                self.LABEL_NETWORK_MALFUNCTION, 0.99, "B1_NET_DUPLICATE_REPLAY",
-                {"seq_duplicate": True}, True
-            )
-        if seq_gap:
-            return DetectionVerdict(
-                self.LABEL_NETWORK_MALFUNCTION, 0.95, "B1_NET_PACKET_LOSS_GAP",
-                {"seq_gap": True}, True
-            )
-        if payload_corrupted:
-            return DetectionVerdict(
-                self.LABEL_NETWORK_MALFUNCTION, 1.0, "B1_NET_PAYLOAD_CORRUPT",
-                {"payload_corrupted": True}, True
-            )
+
+        # Observable payload syntax / schema corruption check
+        if raw_payload is not None:
+            if isinstance(raw_payload, (bytes, bytearray)):
+                try:
+                    raw_str = raw_payload.decode("utf-8")
+                    json.loads(raw_str)
+                except Exception as ex:
+                    return DetectionVerdict(
+                        self.LABEL_NETWORK_MALFUNCTION, 1.0, "B1_NET_PAYLOAD_CORRUPT",
+                        {"error": str(ex)}, True
+                    )
+            elif isinstance(raw_payload, str):
+                try:
+                    json.loads(raw_payload)
+                except Exception as ex:
+                    return DetectionVerdict(
+                        self.LABEL_NETWORK_MALFUNCTION, 1.0, "B1_NET_PAYLOAD_CORRUPT",
+                        {"error": str(ex)}, True
+                    )
+
+        # Observable sequence checking from telemetry records
+        if telemetry_records is not None:
+            prev_seq = self._last_seq
+            for rec in telemetry_records:
+                if not isinstance(rec, dict):
+                    return DetectionVerdict(
+                        self.LABEL_NETWORK_MALFUNCTION, 1.0, "B1_NET_PAYLOAD_CORRUPT",
+                        {"record": str(rec)}, True
+                    )
+                if "seq" in rec and isinstance(rec["seq"], int):
+                    current_seq = rec["seq"]
+                    if prev_seq is not None:
+                        if current_seq <= prev_seq:
+                            return DetectionVerdict(
+                                self.LABEL_NETWORK_MALFUNCTION, 0.99, "B1_NET_DUPLICATE_REPLAY",
+                                {"seq": current_seq, "last_seq": prev_seq}, True
+                            )
+                        elif current_seq > prev_seq + 1:
+                            return DetectionVerdict(
+                                self.LABEL_NETWORK_MALFUNCTION, 0.95, "B1_NET_PACKET_LOSS_GAP",
+                                {"seq": current_seq, "expected_seq": prev_seq + 1}, True
+                            )
+                    prev_seq = current_seq
+            self._last_seq = prev_seq
+
+        # Observable single packet sequence monotonicity check
+        if packet_seq is not None and telemetry_records is None:
+            if self._last_seq is not None:
+                if packet_seq <= self._last_seq:
+                    return DetectionVerdict(
+                        self.LABEL_NETWORK_MALFUNCTION, 0.99, "B1_NET_DUPLICATE_REPLAY",
+                        {"packet_seq": packet_seq, "last_seq": self._last_seq}, True
+                    )
+                elif packet_seq > self._last_seq + 1:
+                    return DetectionVerdict(
+                        self.LABEL_NETWORK_MALFUNCTION, 0.95, "B1_NET_PACKET_LOSS_GAP",
+                        {"packet_seq": packet_seq, "expected_seq": self._last_seq + 1}, True
+                    )
+            self._last_seq = packet_seq
 
         # =====================================================================
         # TIER 3: Physical Perimeter Breach (FORCED_DOOR_OPEN)
@@ -283,10 +332,10 @@ class ProposedDetectorB1:
                 self.LABEL_UNAUTHORIZED, 1.0, "B1_LOST_CARD_USED",
                 {"card_blocked": True}, True
             )
-        if auth_result == "DENY" and door_open_sec == 0.0:
+        if auth_result in ("DENY", "ERROR"):
             return DetectionVerdict(
                 self.LABEL_UNAUTHORIZED, 0.98, "B1_AUTH_DENIED",
-                {"auth_result": "DENY"}, True
+                {"auth_result": auth_result}, True
             )
 
         # =====================================================================

@@ -1,0 +1,235 @@
+{
+  "experimental_metadata": {
+    "total_sessions": 100,
+    "scenario_categories": [
+      "NORMAL_AUTHORIZED",
+      "UNAUTHORIZED_CREDENTIAL",
+      "FORCED_DOOR_OPEN",
+      "LOAD_OR_TAMPER_ANOMALY",
+      "SENSOR_FAULT"
+    ],
+    "nominal_support_per_category": 20
+  },
+  "mcnemar_paired_test": {
+    "n00_both_incorrect": 3,
+    "n01_b0_only_correct": 0,
+    "n10_b1_only_correct": 47,
+    "n11_both_correct": 50,
+    "chi2_statistic": 45.0213,
+    "p_value": 1.949052256116927e-11,
+    "p_value_formatted": "1.95e-11",
+    "p_value_exact_binomial": 1.4210854715202004e-14,
+    "p_value_exact_formatted": "1.42e-14",
+    "cohens_g": 0.5,
+    "effect_size_interpretation": "Large effect (g >= 0.25)",
+    "statistically_significant_p05": true,
+    "statistically_significant_p01": true,
+    "statistically_significant_p001": true
+  },
+  "wilson_score_confidence_intervals": {
+    "b0": {
+      "overall_accuracy": 0.5,
+      "overall_accuracy_ci_95": [
+        0.4038,
+        0.5962
+      ],
+      "per_class": {
+        "NORMAL_AUTHORIZED": {
+          "recall": 0.0,
+          "recall_ci_95": [
+            0.0,
+            0.1611
+          ],
+          "precision": 0.0,
+          "precision_ci_95": [
+            0.0,
+            0.1135
+          ],
+          "f1": 0.0,
+          "f1_ci_95": [
+            0.0,
+            0.0713
+          ]
+        },
+        "UNAUTHORIZED_CREDENTIAL": {
+          "recall": 0.85,
+          "recall_ci_95": [
+            0.6396,
+            0.9476
+          ],
+          "precision": 0.4595,
+          "precision_ci_95": [
+            0.3104,
+            0.6162
+          ],
+          "f1": 0.5965,
+          "f1_ci_95": [
+            0.467,
+            0.7138
+          ]
+        },
+        "FORCED_DOOR_OPEN": {
+          "recall": 1.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "f1": 1.0,
+          "f1_ci_95": [
+            0.9124,
+            1.0
+          ]
+        },
+        "LOAD_OR_TAMPER_ANOMALY": {
+          "recall": 0.25,
+          "recall_ci_95": [
+            0.1119,
+            0.4687
+          ],
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.5655,
+            1.0
+          ],
+          "f1": 0.4,
+          "f1_ci_95": [
+            0.234,
+            0.5926
+          ]
+        },
+        "SENSOR_FAULT": {
+          "recall": 0.4,
+          "recall_ci_95": [
+            0.2188,
+            0.6134
+          ],
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.6756,
+            1.0
+          ],
+          "f1": 0.5714,
+          "f1_ci_95": [
+            0.3907,
+            0.7349
+          ]
+        }
+      }
+    },
+    "b1": {
+      "overall_accuracy": 0.97,
+      "overall_accuracy_ci_95": [
+        0.9155,
+        0.9897
+      ],
+      "per_class": {
+        "NORMAL_AUTHORIZED": {
+          "recall": 1.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "precision": 0.8696,
+          "precision_ci_95": [
+            0.6787,
+            0.9546
+          ],
+          "f1": 0.9302,
+          "f1_ci_95": [
+            0.8139,
+            0.976
+          ]
+        },
+        "UNAUTHORIZED_CREDENTIAL": {
+          "recall": 0.85,
+          "recall_ci_95": [
+            0.6396,
+            0.9476
+          ],
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8157,
+            1.0
+          ],
+          "f1": 0.9189,
+          "f1_ci_95": [
+            0.787,
+            0.972
+          ]
+        },
+        "FORCED_DOOR_OPEN": {
+          "recall": 1.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "f1": 1.0,
+          "f1_ci_95": [
+            0.9124,
+            1.0
+          ]
+        },
+        "LOAD_OR_TAMPER_ANOMALY": {
+          "recall": 1.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "f1": 1.0,
+          "f1_ci_95": [
+            0.9124,
+            1.0
+          ]
+        },
+        "SENSOR_FAULT": {
+          "recall": 1.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "f1": 1.0,
+          "f1_ci_95": [
+            0.9124,
+            1.0
+          ]
+        }
+      }
+    }
+  },
+  "latency_distribution_statistics": {
+    "count": 100,
+    "mean_ms": 17.45,
+    "sample_std_ms": 11.17,
+    "pop_std_ms": 11.12,
+    "min_ms": 0.0,
+    "p25_ms": 8.86,
+    "median_p50_ms": 16.1,
+    "p75_ms": 25.85,
+    "iqr_ms": 16.99,
+    "p90_ms": 32.04,
+    "p95_ms": 34.09,
+    "p99_ms": 40.42,
+    "max_ms": 51.0,
+    "std_ms": 11.12
+  }
+}

@@ -1,0 +1,29 @@
+# Reproduction Configuration for 100 Labeled Experimental Sessions
+master_seed: 20261115
+total_sessions: 100
+
+categories:
+  NORMAL_AUTHORIZED: 20
+  UNAUTHORIZED_CREDENTIAL: 20
+  FORCED_DOOR_OPEN: 20
+  LOAD_OR_TAMPER_ANOMALY: 20
+  SENSOR_FAULT: 20
+
+thresholds:
+  shock_threshold_g: 16.0
+  vib_tamper_threshold_g: 0.45
+  vib_breach_threshold_g: 0.60
+  tilt_tamper_threshold_deg: 4.0
+  weight_spoof_threshold_g: 50.0
+  ultrasonic_min_cm: 2.0
+  ultrasonic_max_cm: 400.0
+  network_timeout_ms: 5000.0
+
+device:
+  device_code: "LOCKER-01"
+  device_id: 5
+  api_key: "device-1-api-key"
+
+backend:
+  url: "http://localhost:8081/SmartLocker/api"
+  database: "SL_SIM"
