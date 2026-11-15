@@ -71,7 +71,7 @@
 \setlength{\floatsep}{4pt plus 1pt minus 1pt}
 \setlength{\intextsep}{4pt plus 1pt minus 1pt}
 \setlength{\abovecaptionskip}{2pt}
-\setlength{\belowcaptionskip}{0pt}
+\setlength{\belowcaptionskip}{5pt}
 \AtBeginDocument{%
   \setlength{\abovedisplayskip}{3pt plus 1pt minus 1pt}%
   \setlength{\belowdisplayskip}{3pt plus 1pt minus 1pt}%
@@ -138,6 +138,7 @@ Section~VI reports the evaluation and Section~VII concludes the paper.
 \small
 \caption{Contributions of This Work and Where They Are Shown.}
 \label{tab:contrib}
+\vspace{5pt}
 \begin{tabular}{c p{11.9cm} p{2.7cm}}
 \hline
 No. & Contribution & Where it is shown \\
@@ -288,6 +289,7 @@ the I$^2$C bus on GPIO 21 and 22, while the AS608 sensor uses UART on GPIO 35 an
 \small
 \caption{Hardware Components of the Locker Box.}
 \label{tab:hw}
+\vspace{5pt}
 \begin{tabular}{l l l}
 \hline
 Component & Function & ESP32 pins \\
@@ -473,6 +475,7 @@ operational exceptions.
 \small
 \caption{Detection Rules in Priority Order.}
 \label{tab:rules}
+\vspace{5pt}
 \begin{tabular}{c l p{8.6cm} l}
 \hline
 \# & Label & Condition & Action \\
@@ -612,6 +615,7 @@ All opening methods cost the same.
 \small
 \caption{Prices by Plan and Slot Size (VND).}
 \label{tab:price}
+\vspace{5pt}
 \begin{tabular}{l r r r}
 \hline
 Plan & S & M & L \\
@@ -695,6 +699,7 @@ server processing time of a local authentication request.
 \small
 \caption{10-Fold Cross-Validation Results of the Evaluated Classifiers (Weighted Averages).}
 \label{tab:ml}
+\vspace{5pt}
 \begin{tabular}{l c c c c c c}
 \hline
  & \multicolumn{4}{c}{Six classes} & \multicolumn{2}{c}{Binary} \\
@@ -847,6 +852,7 @@ own \emph{checkin} case sent only a heartbeat, which no longer checks a booking 
 \small
 \caption{Detection Scenarios Replayed through the Device API.}
 \label{tab:scen}
+\vspace{5pt}
 \begin{tabular}{l >{\raggedright\arraybackslash}p{4.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{5.2cm}}
 \hline
 Scenario & Input & Expected & Observed \\
@@ -879,6 +885,7 @@ of the box, which comes every 3~s. In a separate session with the box online, 20
 \small
 \caption{Server-Side Response Time of the Device API (localhost, 30 Requests Each, ms).}
 \label{tab:latency}
+\vspace{5pt}
 \begin{tabular}{l c c c c c}
 \hline
 Request & Mean & Median & p95 & Min & Max \\
