@@ -58,9 +58,9 @@
 \newcommand{\slsub}[1]{\\[-1pt]{\footnotesize #1}}
 \tikzset{every picture/.style={line width=0.6pt}}
 
-\addtolength{\topmargin}{-0.24in}
-\addtolength{\textheight}{0.48in}
-\linespread{0.885}
+\addtolength{\topmargin}{-0.25in}
+\addtolength{\textheight}{0.50in}
+\linespread{0.880}
 \renewcommand{\topfraction}{0.98}
 \renewcommand{\bottomfraction}{0.95}
 \renewcommand{\textfraction}{0.02}
@@ -104,7 +104,7 @@ Thanh Cao Nguyen & Thu Le & Kieu Trong Khanh \\
 \begin{tabular}{ccc}
 Duc Hoang Nguyen & Viet Tien Nguyen & Huy Hoang Nguyen \\
 {\small duchoang.nguyen103@fpt.edu.vn} & {\small tiennguyen100306@fpt.edu.vn} & {\small huyhoang.ct06@fpt.edu.vn} \\[3pt]
-Thanh Cao Nguyen & Thu Le & Kieu Trong Khanh* \\
+Thanh Cao Nguyen & Thu Le* & Kieu Trong Khanh \\
 {\small thanhcao19112006@fpt.edu.vn} & {\small thulvm@fpt.edu.vn} & {\small khanhkt@fpt.edu.vn} \\[3pt]
 \multicolumn{3}{c}{FPT University, Ho Chi Minh Campus, Vietnam (*Corresponding author)}
 \end{tabular}}
@@ -160,7 +160,7 @@ are flagged as soon as a session is uploaded, without waiting for large labelled
 \hline
 No. & Contribution & Where it is shown \\
 \hline
-1 & A locker rental system with map reservation, prepaid wallet, four opening methods (PIN, RFID card, fingerprint and
+\rule{0pt}{2.6ex}1 & A locker rental system with map reservation, prepaid wallet, four opening methods (PIN, RFID card, fingerprint and
     phone) and an ESP32 box that forwards credentials signed with a device key; all money and time rules run in SQL transactions. & Sections III and V \\
 2 & A priority-ordered rule engine over telemetry and server context that labels sensor faults, spoofed remote opens,
     lost cards, forced opening, wrong-user access, items left behind and overdue storage, with a hash-chained audit log and a secondary ML risk score. & Section IV \\
@@ -261,7 +261,7 @@ Tomcat application through separate entry points and every outcome is stored in 
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.98\linewidth]{images/workflow.pdf}
+\includegraphics[width=\linewidth]{images/workflow.pdf}
 \caption{Workflow of SmartLocker from input sources through processing to output, with hardware drawn after the
 prototype box and with door time and weight taken from the device simulator because the box has no door sensor or load
 cell yet.}
@@ -309,7 +309,7 @@ the I$^2$C bus on GPIO 21 and 22, while the AS608 sensor uses UART on GPIO 35 an
 \hline
 Component & Function & ESP32 pins \\
 \hline
-ESP32 Dev Module & Controller, Wi-Fi, HTTP(S) client & Built-in \\
+\rule{0pt}{2.6ex}ESP32 Dev Module & Controller, Wi-Fi, HTTP(S) client & Built-in \\
 PN532 & RFID card reader (I$^2$C, 0x24) & SDA 21, SCL 22 (shared with LCD) \\
 AS608 & Fingerprint sensor (UART) & TX$\rightarrow$35, RX 15 \\
 LCD 1602 I$^2$C & User messages & SDA 21, SCL 22 \\
@@ -495,7 +495,7 @@ operational exceptions.
 \hline
 \# & Label & Condition & Action \\
 \hline
-1 & SENSOR\_FAULT & door time, weight change or stay time outside valid range; door open longer than stay; box clock over 300~s ahead; weight calibration expired & Alert, ticket, no ML \\[2pt]
+\rule{0pt}{2.6ex}1 & SENSOR\_FAULT & door time, weight change or stay time outside valid range; door open longer than stay; box clock over 300~s ahead; weight calibration expired & Alert, ticket, no ML \\[2pt]
 2 & STAFF\_OPEN & remote or phone open with a valid, unused command for this slot, issued at most 30~min before the session (box clock up to 60~s behind tolerated) & Command done, no alert \\[2pt]
 2' & SUSPECTED\_SPOOF & remote or phone open without a valid, unused command & Alert \\[2pt]
 3 & LOST\_CARD\_USED & the presented card is not active (reported lost or blocked) & Alert \\[2pt]
@@ -634,7 +634,7 @@ All opening methods cost the same.
 \hline
 Plan & S & M & L \\
 \hline
-2 hours & 5\,000 & 6\,500 & 8\,500 \\
+\rule{0pt}{2.6ex}2 hours & 5\,000 & 6\,500 & 8\,500 \\
 4 hours & 9\,000 & 11\,700 & 15\,300 \\
 Day pass & 25\,000 & 32\,500 & 42\,300 \\
 Hourly rate (extension) & 2\,500 & 3\,300 & 4\,300 \\
@@ -718,12 +718,12 @@ server processing time of a local authentication request.
  & \multicolumn{4}{c}{Six classes / Multi-class} & \multicolumn{2}{c}{Binary / Detection} \\
 Model & Accuracy & Precision & Recall & F1 & Accuracy & F1 \\
 \hline
-Random Forest & 0.948 & 0.949 & 0.948 & 0.948 & 0.938 & 0.939 \\
+\rule{0pt}{2.6ex}Random Forest & 0.948 & 0.949 & 0.948 & 0.948 & 0.938 & 0.939 \\
 J48 (C4.5)    & 0.856 & 0.857 & 0.856 & 0.856 & 0.831 & 0.848 \\
 Naive Bayes   & 0.779 & 0.778 & 0.779 & 0.778 & 0.833 & 0.852 \\
 IBk ($k=5$)   & 0.977 & 0.978 & 0.977 & 0.977 & 0.975 & 0.975 \\
 \hline
-Transfer Check (B0) & 0.480 & 0.625 & 0.480 & 0.436 & 0.720 & 0.730 \\
+\rule{0pt}{2.6ex}Transfer Check (B0) & 0.480 & 0.625 & 0.480 & 0.436 & 0.720 & 0.730 \\
 Transfer Check (B1) & 0.870 & 0.921 & 0.870 & \textbf{0.876} & 0.920 & \textbf{0.925} \\
 \hline
 \end{tabular}
@@ -747,37 +747,38 @@ as NORMAL.
 \begin{figure}[!htbp]
 \centering
 \begin{tikzpicture}
-  % Panel (a): Grouped bar chart of Weighted F1
+  % Panel (a): Grouped bar chart of Weighted F1 (0.00 to 1.00)
   \node[font=\small\bfseries, text=black] at (4.0, 4.35) {(a) Weighted F1 by Classifier};
   \draw[draw=slInk, line width=0.7pt] (0.8,0) -- (7.7,0);
   \draw[draw=slInk, line width=0.7pt] (0.8,0) -- (0.8,3.8);
-  \foreach \y/\lbl in {0.0/0.60, 0.9/0.70, 1.8/0.80, 2.7/0.90, 3.6/1.00} {
+  \foreach \y/\lbl in {0.0/0.00, 0.72/0.20, 1.44/0.40, 2.16/0.60, 2.88/0.80, 3.60/1.00} {
     \draw[draw=slInk] (0.72,\y) -- (0.8,\y);
     \node[font=\footnotesize, left] at (0.72,\y) {\lbl};
   }
-  % Bars: height = (F1 - 0.60) * 9.0
-  \filldraw[draw=slBlueD, fill=slBlue, line width=0.6pt] (1.15,0) rectangle (1.65,3.13);
-  \node[font=\scriptsize\bfseries, above] at (1.40,3.13) {.948};
-  \filldraw[draw=slMintD, fill=slMint, line width=0.6pt] (1.70,0) rectangle (2.20,3.05);
-  \node[font=\scriptsize\bfseries, above] at (1.95,3.05) {.939};
+  % Bars: height = F1 * 3.60
+  % RF (Six-class 0.948 -> 3.41, Binary 0.939 -> 3.38)
+  \filldraw[draw=slBlueD, fill=slBlue, line width=0.6pt] (1.15,0) rectangle (1.65,3.41);
+  \node[font=\scriptsize\bfseries, above] at (1.40,3.41) {.948};
+  \filldraw[draw=slMintD, fill=slMint, line width=0.6pt] (1.70,0) rectangle (2.20,3.38);
+  \node[font=\scriptsize\bfseries, above] at (1.95,3.38) {.939};
   \node[font=\footnotesize] at (1.67,-0.32) {RF};
-  % J48
-  \filldraw[draw=slBlueD, fill=slBlue, line width=0.6pt] (2.75,0) rectangle (3.25,2.30);
-  \node[font=\scriptsize\bfseries, above] at (3.00,2.30) {.856};
-  \filldraw[draw=slMintD, fill=slMint, line width=0.6pt] (3.30,0) rectangle (3.80,2.23);
-  \node[font=\scriptsize\bfseries, above] at (3.55,2.23) {.848};
+  % J48 (Six-class 0.856 -> 3.08, Binary 0.848 -> 3.05)
+  \filldraw[draw=slBlueD, fill=slBlue, line width=0.6pt] (2.75,0) rectangle (3.25,3.08);
+  \node[font=\scriptsize\bfseries, above] at (3.00,3.08) {.856};
+  \filldraw[draw=slMintD, fill=slMint, line width=0.6pt] (3.30,0) rectangle (3.80,3.05);
+  \node[font=\scriptsize\bfseries, above] at (3.55,3.05) {.848};
   \node[font=\footnotesize] at (3.27,-0.32) {J48};
-  % NB
-  \filldraw[draw=slBlueD, fill=slBlue, line width=0.6pt] (4.35,0) rectangle (4.85,1.60);
-  \node[font=\scriptsize\bfseries, above] at (4.60,1.60) {.778};
-  \filldraw[draw=slMintD, fill=slMint, line width=0.6pt] (4.90,0) rectangle (5.40,2.27);
-  \node[font=\scriptsize\bfseries, above] at (5.15,2.27) {.852};
+  % NB (Six-class 0.778 -> 2.80, Binary 0.852 -> 3.07)
+  \filldraw[draw=slBlueD, fill=slBlue, line width=0.6pt] (4.35,0) rectangle (4.85,2.80);
+  \node[font=\scriptsize\bfseries, above] at (4.60,2.80) {.778};
+  \filldraw[draw=slMintD, fill=slMint, line width=0.6pt] (4.90,0) rectangle (5.40,3.07);
+  \node[font=\scriptsize\bfseries, above] at (5.15,3.07) {.852};
   \node[font=\footnotesize] at (4.87,-0.32) {NB};
-  % IBk
-  \filldraw[draw=slBlueD, fill=slBlue, line width=0.6pt] (5.95,0) rectangle (6.45,3.39);
-  \node[font=\scriptsize\bfseries, above] at (6.20,3.39) {.977};
-  \filldraw[draw=slMintD, fill=slMint, line width=0.6pt] (6.50,0) rectangle (7.00,3.37);
-  \node[font=\scriptsize\bfseries, above] at (6.75,3.37) {.975};
+  % IBk (Six-class 0.977 -> 3.52, Binary 0.975 -> 3.51)
+  \filldraw[draw=slBlueD, fill=slBlue, line width=0.6pt] (5.95,0) rectangle (6.45,3.52);
+  \node[font=\scriptsize\bfseries, above] at (6.20,3.52) {.977};
+  \filldraw[draw=slMintD, fill=slMint, line width=0.6pt] (6.50,0) rectangle (7.00,3.51);
+  \node[font=\scriptsize\bfseries, above] at (6.75,3.51) {.975};
   \node[font=\footnotesize] at (6.47,-0.32) {IBk};
   % Legend
   \filldraw[draw=slBlueD, fill=slBlue] (1.6,-0.95) rectangle (2.0,-0.72);
@@ -818,7 +819,7 @@ as NORMAL.
     {NOR: NORMAL, FOR: FORCED\_OPEN, WRO: WRONG\_USER\\[-1pt]OVE: OVERDUE, ITE: ITEM\_LEFT, SPO: SUSPECTED\_SPOOF};
 \end{tikzpicture}
 \caption{Classifier comparison and error distribution on the 480-row dataset, showing weighted F1 scores of the four
-models on the six-class and binary tasks with the vertical axis of (a) starting at 0.60 to show differences clearly (left), and the six-class confusion matrix of IBk with $k=5$ where 10 of the 11
+models on the six-class and binary tasks (left), and the six-class confusion matrix of IBk with $k=5$ where 10 of the 11
 errors fall between NORMAL and WRONG\_USER (right).}
 \label{fig:eval}
 \end{figure}
@@ -873,8 +874,7 @@ own \emph{checkin} case sent only a heartbeat, which no longer checks a booking 
 \hline
 Scenario & Input & Expected & Observed \\
 \hline
-\addlinespace[2pt]
-heartbeat & 6 heartbeats 10~s apart, then silence & DEVICE\_OFFLINE in 90 to 105~s & \texttt{OFFLINE} and alert after 104.6~s \\[2pt]
+\rule{0pt}{2.6ex}heartbeat & 6 heartbeats 10~s apart, then silence & DEVICE\_OFFLINE in 90 to 105~s & \texttt{OFFLINE} and alert after 104.6~s \\[2pt]
 remote    & staff remote open reported with command id, then replayed & STAFF\_OPEN; replay SUSPECTED\_SPOOF & command \texttt{DONE}; replay \texttt{SUSPECTED\_SPOOF} \\[2pt]
 spoof     & remote session with an unissued command id & SUSPECTED\_SPOOF & \texttt{SUSPECTED\_SPOOF} \\[2pt]
 lostcard  & card reported lost, then used at the box & LOST\_CARD\_USED & \texttt{LOST\_CARD\_USED}; card blocked \\[2pt]
@@ -912,13 +912,13 @@ proposed multi-sensor architecture (B1, cross-sensor telemetry combining door st
 Category & \multicolumn{3}{c}{Baseline B0 (Existing)} & \multicolumn{3}{c}{Proposed B1 (Multi-Sensor)} \\
  & Prec. & Rec. & F1 & Prec. & Rec. & F1 \\
 \hline
-Normal Authorized & 0.200 & 0.200 & 0.200 & 1.000 & 0.650 & 0.788 \\
+\rule{0pt}{2.6ex}Normal Authorized & 0.200 & 0.200 & 0.200 & 1.000 & 0.650 & 0.788 \\
 Unauthorized Credential & 0.465 & 1.000 & 0.635 & 1.000 & 1.000 & 1.000 \\
 Forced Door Opening & 1.000 & 0.600 & 0.750 & 1.000 & 0.850 & 0.919 \\
 Load / Tamper Anomaly & 1.000 & 0.050 & 0.095 & 1.000 & 0.850 & 0.919 \\
 Sensor Fault / Dropout & 0.458 & 0.550 & 0.500 & 0.606 & 1.000 & 0.755 \\
 \hline
-Overall / Macro & 0.625 & 0.480 & 0.436 & 0.921 & 0.870 & \textbf{0.876} \\
+\rule{0pt}{2.6ex}Overall / Macro & 0.625 & 0.480 & 0.436 & 0.921 & 0.870 & \textbf{0.876} \\
 Balanced Accuracy & \multicolumn{3}{c}{0.480} & \multicolumn{3}{c}{\textbf{0.870}} \\
 \hline
 \end{tabular}
@@ -956,7 +956,7 @@ of the box, which comes every 3~s. In a separate session with the box online, 20
 \hline
 Request & Mean & Median & p95 & Min & Max \\
 \hline
-Heartbeat (\texttt{/api/health})                     & 5.9  & 6.0  & 6.8  & 4.6  & 7.3 \\
+\rule{0pt}{2.6ex}Heartbeat (\texttt{/api/health})                     & 5.9  & 6.0  & 6.8  & 4.6  & 7.3 \\
 PIN at the box (\texttt{/api/device/auth})           & 17.0 & 15.7 & 19.0 & 14.1 & 48.0 \\
 PIN on the phone page (\texttt{/api/kiosk/unlock})   & 31.1 & 16.2 & 96.0 & 13.4 & 102.7 \\
 \hline
