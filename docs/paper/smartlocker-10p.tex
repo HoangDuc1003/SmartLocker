@@ -78,15 +78,10 @@
   \setlength{\belowdisplayskip}{3pt plus 1pt minus 1pt}%
 }
 \newif\ifscopus
-\scopustrue   % Default: Scopus submission build
-%\scopusfalse  % Course project build
-%%\scopusfalse  % Course project build
-
-\newcommand{\codecommit}{4862f39}
+\scopusfalse
+\newcommand{\codecommit}{62eca9c}
 \newcommand{\baselinecommit}{da95f43}
 \newcommand{\revisioncommit}{1cc154a}
-\newcommand{\auditvonecommit}{1cc154a}
-\newcommand{\auditvtwocommit}{4862f39}
 
 \begin{document}
 
@@ -106,7 +101,7 @@ Thanh Cao Nguyen & Thu Le & Kieu Trong Khanh \\
 \author{%
 \begin{tabular}{ccc}
 Duc Hoang Nguyen & Viet Tien Nguyen & Huy Hoang Nguyen \\
-{\small duchoang.nguyen103@fpt.edu.vn} & {\small tiennguyen100306@fpt.edu.vn} & {\small huyhoang.ct06@fpt.edu.vn} \\[3pt]
+{\small hoangndse200032@fpt.edu.vn} & {\small tiennguyen100306@fpt.edu.vn} & {\small huyhoang.ct06@fpt.edu.vn} \\[3pt]
 Thanh Cao Nguyen & Thu Le* & Kieu Trong Khanh \\
 {\small thanhcao19112006@fpt.edu.vn} & {\small thulvm@fpt.edu.vn} & {\small khanhkt@fpt.edu.vn} \\[3pt]
 \multicolumn{3}{c}{FPT University, Ho Chi Minh Campus, Vietnam (*Corresponding author)}
@@ -116,7 +111,18 @@ Thanh Cao Nguyen & Thu Le* & Kieu Trong Khanh \\
 \maketitle
 
 \begin{abstract}
-Traditional campus lockers rely on mechanical keys or static codes, offer no advance reservations, and provide administrators zero visibility into security anomalies such as forced doors, lost cards, or forgotten items; once networked, remote actuation signals can be spoofed or replayed. This paper presents SmartLocker, a context-aware smart locker platform combining web-based map reservations, prepaid wallet billing, multi-factor credential authentication (PIN, RFID, fingerprint, and mobile web), and a decoupled edge-server architecture. The ESP32 edge controller executes no local authorization decisions; all credentials and multi-sensor batch sessions are forwarded to a central Java Servlet backend executing transactional business logic and two-tier anomaly detection. Abnormal access is evaluated first by a deterministic, priority-ordered rule engine across session telemetry and SQL context, supplemented by a secondary machine-learning risk scorer for unexplained anomalies. To overcome physical hardware constraints without deploying unverified campus chassis, we evaluate the system via a software-based reproducible simulation framework executing authentic HTTP REST transactions against the live enterprise backend. Across a 100-session stratified campaign against the live enterprise backend, our leak-free multi-sensor detector (Proposed B1) achieves a Macro-F1 of 1.0000 (100.0\% accuracy, $p = 5.62 \times 10^{-7}$, exact binomial $p = 1.49 \times 10^{-8}$), decisively outperforming single-telemetry baseline B0 (Macro-F1 0.7137, 73.0\% accuracy). Haber-Stornetta cryptographic audit chains verify up to 1\,433 consecutive events with 100\% tamper detection, with 43.63~ms mean session processing latency.
+Shared lockers on university campuses are still opened with mechanical keys or paper codes, cannot be reserved,
+and give staff no view of forced doors, lost cards or forgotten items; once networked, their unlock signal can also be
+forged or replayed. This paper presents SmartLocker, a locker rental system in which users reserve a slot on a web map,
+pay from a prepaid wallet and open it with a personal identification number (PIN), a radio-frequency identification
+(RFID) card, a fingerprint or a phone page. The ESP32 box takes no access decision: it forwards every credential to the
+server, which replies \texttt{UNLOCK} or \texttt{DENY}. Abnormal access is detected mainly by a priority-ordered rule
+engine over device telemetry and server context, which recognises sensor faults, spoofed remote opens, lost cards,
+forced opening, wrong-user access, items left behind and overdue storage. A machine-learning risk score is kept only as
+a secondary signal and raises an alert for sessions that no rule explains. On synthetic labelled sessions, the best of
+four Weka classifiers made almost all of its errors between wrong-user and normal sessions, which share the same
+telemetry by construction; identity is therefore checked by rule, and the score should be trusted only once real
+sessions are available. All automated tests, replayed detection scenarios and pre-deployment multi-sensor simulation checks passed, and the server answered every device request within about 0.1~s.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -133,7 +139,12 @@ card used by someone else or items left for days are noticed only when reported.
 impersonated, an unlock message forged or replayed, and sensor readings manipulated \cite{sicari2015security,
 roman2013features}. A shared campus facility therefore needs both convenient booking and automated access monitoring.
 
-SmartLocker addresses rental workflows and IoT threats by treating the box as a thin authenticated client while delegating authorization and multi-sensor anomaly detection to the server. The deterministic rule engine serves as the primary detector, supplemented by a secondary machine-learning risk scorer. Key contributions are summarized in Table~\ref{tab:contrib}.
+SmartLocker addresses both the rental service and these threats for a shared campus locker. We treat the box as a thin,
+authenticated client and let the server take every decision, since only the server holds the full booking context, and
+the resulting contributions are listed in Table~\ref{tab:contrib}. The priority-ordered rule tier is the main
+contribution, whereas the machine-learning risk score serves as a secondary signal because it is trained on synthetic
+data only. Separating deterministic context checks from statistical telemetry scoring ensures that identity violations
+are flagged as soon as a session is uploaded, without waiting for large labelled datasets.
 
 \begin{table}[!htbp]
 \renewcommand{\arraystretch}{1.02}
@@ -591,9 +602,23 @@ sequence number.
 
 \section{Implementation}
 
-The server is implemented in Java~8 on Apache Tomcat~9, utilizing JDBC prepared statements in the DAO layer without object-relational mapping. The software stack incorporates Gson, jBCrypt \cite{provos1999bcrypt}, Weka \cite{hall2009weka}, and bundled client mapping (Leaflet, Mapbox~GL). Database credentials and operational parameters are loaded securely from environment variables.
+The server is written in Java~8 (about 11\,700 lines, comments and blank lines included, in 89 source files) with
+22 JSP views and uses Gson, jBCrypt \cite{provos1999bcrypt} and Weka \cite{hall2009weka}. The interface is in English,
+while technical codes such as slot codes, card UIDs and status values are shown as they are. It loads no script from a
+content delivery network (Leaflet and Mapbox GL are bundled) and offers light and dark themes; when map tiles cannot be
+loaded, the pins are drawn over a plain grid. Database access goes exclusively through JDBC prepared statements in the
+DAO layer without object-relational mapping. Configuration parameters such as database credentials (\texttt{DB\_USER}
+and \texttt{DB\_PASSWORD}) and mail settings are read from environment variables with local defaults for classroom
+testing.
 
-\textit{Business rules in the database.} Every rule involving money or time (reservation, refund, extension, overdue fee, escalation) is a stored procedure executing under transactional \texttt{UPDLOCK, HOLDLOCK} concurrency controls. Plan prices scale with compartment size (S 100\%, M 130\%, L 169\%) and hourly late penalties apply after grace periods as specified in Table~\ref{tab:price}. Users may also book flexible hourly or multi-day plans; opening methods incur no surcharge.
+\textit{Business rules in the database.} Every rule involving money or time (reservation, refund, extension,
+overdue fee, escalation) is a stored procedure. Procedures that read and then modify a row lock it with
+\texttt{UPDLOCK, HOLDLOCK} inside the transaction, so a slot cannot be booked twice and an extension cannot be charged
+twice. The price of a plan is multiplied by a size factor (S 100\%, M 130\%, L 169\%) and rounded up to 100~VND
+(Table~\ref{tab:price}); the late fee is 150\% of the unrounded hourly rate derived from the 2-hour plan, rounded once,
+which is why size M pays 4\,900~VND and not 1.5 times 3\,300~VND. Users may also book 1 to 23 whole hours at the hourly
+rate, capped at the day pass, or 1 to 7 whole days (90\% of the day pass per day for 2 to 6 days, 80\% for 7 days).
+All opening methods cost the same.
 
 \begin{table}[!htbp]
 \renewcommand{\arraystretch}{1.02}
@@ -695,8 +720,8 @@ J48 (C4.5)    & 0.856 & 0.857 & 0.856 & 0.856 & 0.831 & 0.848 \\
 Naive Bayes   & 0.779 & 0.778 & 0.779 & 0.778 & 0.833 & 0.852 \\
 IBk ($k=5$)   & 0.977 & 0.978 & 0.977 & 0.977 & 0.975 & 0.975 \\
 \hline
-\rule{0pt}{2.6ex}Transfer Check (B0) & 0.480 & 0.625 & 0.480 & 0.436 & 0.720 & 0.730 \\
-Transfer Check (B1) & 0.870 & 0.921 & 0.870 & \textbf{0.876} & 0.920 & \textbf{0.925} \\
+\rule{0pt}{2.6ex}Transfer Check (B0) & 0.650 & 0.805 & 0.650 & 0.621 & 0.650 & 0.724 \\
+Transfer Check (B1) & 0.910 & 0.923 & 0.910 & 0.913 & 0.910 & 0.942 \\
 \hline
 \end{tabular}
 \end{table}
@@ -836,12 +861,12 @@ own \emph{checkin} case sent only a heartbeat, which no longer checks a booking 
 \texttt{/api/device/auth}, as the real box does.
 
 \begin{table}[!htbp]
-\renewcommand{\arraystretch}{1.22}
+\renewcommand{\arraystretch}{1.12}
 \centering
 \small
 \caption{Detection Scenarios Replayed through the Device API.}
 \label{tab:scen}
-\vspace{5pt}
+\vspace{3pt}
 \begin{tabular}{l >{\raggedright\arraybackslash}p{4.8cm} >{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{5.2cm}}
 \hline
 Scenario & Input & Expected & Observed \\
@@ -859,43 +884,34 @@ sensor    & weight change of $-5000$~g (range $-200$ to 20\,000~g) & SENSOR\_FAU
 \subsection{Multi-Sensor Simulation Campaign and Comparative Evaluation}
 \label{sec:sim_eval}
 
-To evaluate physical anomalies beyond the prototype box without deploying unverified hardware, a modular multi-sensor
-device simulator was implemented in Python following a 5-stage sensor tracking framework (hardware-backed, hardware-configured,
-simulator-extended door switch and load cell, tamper accelerometer, and sensor fault telemetry). The simulator communicates
-directly with the live Tomcat 9 backend and SQL Server test instance via authentic HTTP device API contracts
-(\texttt{/api/health}, \texttt{/api/device/auth}, and \texttt{/api/locker/batch}), generating cryptographic API signatures
-from the real box key.
+To evaluate physical anomalies beyond the prototype box without deploying unverified campus chassis, a modular multi-sensor simulation framework was implemented in Python following a 5-stage tracking methodology (keypad/RFID/fingerprint, ultrasonic, door switch, load cell, tamper accelerometer, and fault telemetry). It executes authentic HTTP requests (\texttt{/api/health}, \texttt{/api/device/auth}, \texttt{/api/locker/batch}) against the live Tomcat~9 backend and SQL Server (\texttt{SL\_SIM}) using HMAC-SHA256 signatures from the real box key. Detector B1-P was evaluated as a host-side prototype; it is not deployed in Tomcat or SQL Server.
 
-An independent experimental oracle generated and executed 100 pre-labelled sessions stratified equally into five categories
-(20 sessions each): Normal Authorized, Unauthorized Credential, Forced Door Opening, Load / Tamper Anomaly, and Sensor Fault.
-All 100 sessions executed against the live backend with a 100\% pass rate (100 passed, 0 failed, 0 blocked). Table~\ref{tab:b0_vs_b1}
-compares the detection performance of the baseline system (B0, single-telemetry rule engine and Weka classifier) against the
-proposed multi-sensor architecture (B1, cross-sensor telemetry combining door state, weight differential, and tamper metrics).
+Ground truth was established from latent physical scenarios before generating observations, preventing circularity. Transducers are modelled with measurement noise, calibration drift, quantization ($Q_q$), and dropouts. The campaign executed 100 pre-labelled sessions stratified across five categories (20 each): Normal Authorized, Unauthorized Credential, Forced Door Opening, Load / Tamper Anomaly, and Sensor or Network Fault. All 100 passed against the live backend (100\% pass rate). Table~\ref{tab:b0_vs_b1} compares Baseline B0 (Java rule engine and Weka model) with Proposed B1 (cross-sensor telemetry).
 
 \begin{table}[!htbp]
-\renewcommand{\arraystretch}{1.04}
+\renewcommand{\arraystretch}{1.02}
 \centering
 \small
-\caption{Comparative Evaluation: Baseline B0 vs. Proposed Multi-Sensor B1 (100 Sessions).}
+\caption{Ablation Study: Detection Performance of Baseline B0 vs. Proposed B1.}
 \label{tab:b0_vs_b1}
-\vspace{4pt}
-\begin{tabular}{l c c c c c c}
+\vspace{2pt}
+\begin{tabular}{l ccc ccc}
 \hline
 Category & \multicolumn{3}{c}{Baseline B0 (Existing)} & \multicolumn{3}{c}{Proposed B1 (Multi-Sensor)} \\
  & Prec. & Rec. & F1 & Prec. & Rec. & F1 \\
 \hline
-\rule{0pt}{2.6ex}Normal Authorized & 0.425 & 1.000 & 0.597 & 1.000 & 1.000 & 1.000 \\
+\rule{0pt}{2.6ex}Normal Authorized & 0.358 & 0.950 & 0.521 & 0.720 & 0.900 & 0.800 \\
 Unauthorized Credential & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
-Forced Door Opening & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
-Load / Tamper Anomaly & 1.000 & 0.250 & 0.400 & 1.000 & 1.000 & 1.000 \\
-Sensor Fault / Dropout & 1.000 & 0.400 & 0.571 & 1.000 & 1.000 & 1.000 \\
+Forced Door Opening & 1.000 & 0.900 & 0.947 & 1.000 & 0.900 & 0.947 \\
+Load / Tamper Anomaly & 0.667 & 0.100 & 0.174 & 0.895 & 0.850 & 0.872 \\
+Sensor or Network Fault & 1.000 & 0.300 & 0.462 & 1.000 & 0.900 & 0.947 \\
 \hline
-\rule{0pt}{2.6ex}Overall / Macro & 0.885 & 0.730 & 0.714 & 1.000 & 1.000 & 1.000 \\
+\rule{0pt}{2.6ex}Overall / Macro & 0.805 & 0.650 & 0.621 & 0.923 & 0.910 & 0.913 \\
 \hline
 \end{tabular}
 \end{table}
 
-Baseline B0 achieves a macro-F1 of 0.714 (balanced accuracy 0.730) because lacking door and load telemetry causes it to miss 75\% of load/tamper anomalies (recall 0.250, F1 0.400) and 60\% of sensor dropouts (recall 0.400, F1 0.571), misclassifying them as normal usage (precision 0.425). In contrast, Proposed B1 observes multi-sensor channels, reaching a macro-F1 of 1.000 (balanced accuracy 1.000, 100.0\% accuracy, 95\% Wilson CI $[0.9630, 1.0000]$ vs. B0 $[0.6357, 0.8073]$). A paired McNemar test confirms that B1 correctly resolves 27 discordant sessions where B0 fails ($n_{01}=27, n_{10}=0, n_{00}=0, n_{11}=73$, $\text{df}=1$), yielding continuity-corrected $\chi^2 = 25.04$ ($p = 5.62 \times 10^{-7}$, exact binomial $p = 1.49 \times 10^{-8}$, Cohen's $g = 0.5000$, $p < 0.001$). End-to-end execution latency across 100 sessions averaged 43.63~ms (median 42.61~ms, p95 67.78~ms, min 15.88~ms, max 78.02~ms); Haber-Stornetta hash chains verified 1\,433 consecutive blocks with 100\% tamper detection.
+Baseline B0 achieves a macro-F1 of 0.621 (balanced accuracy 0.650) because lacking door and load telemetry causes it to miss 90\% of load/tamper anomalies (recall 0.100, F1 0.174) and 70\% of sensor faults (recall 0.300, F1 0.462), misclassifying them as normal access (precision 0.358). In contrast, Proposed B1 resolves cross-sensor discrepancies, reaching a macro-F1 of 0.913 (balanced accuracy 0.910, 91.0\% accuracy, 95\% Wilson CI $[0.8378, 0.9525]$ vs. B0 $[0.5525, 0.7358]$). Because priority-ordered evaluation falls back to normal usage whenever sensor noise keeps an anomaly below its trigger threshold, false negatives map to Normal Authorized, lowering Normal precision (0.358 for B0, 0.720 for B1) while anomaly-class precision remains high. A paired McNemar test on binary detection confirms significant improvement ($n_{01}=27, n_{10}=1, n_{00}=8, n_{11}=64$, continuity-corrected $\chi^2 = 22.32$, exact binomial $p = 2.16 \times 10^{-7}$, $p < 0.001$). Five seeds (42, 101, 202, 303, 404) confirmed stability (B0 macro-F1 $0.677 \pm 0.038$, B1 $0.917 \pm 0.005$). End-to-end session latency averaged 48.55~ms (median 47.38~ms, p95 71.54~ms, min 25.85~ms, max 91.94~ms), and cryptographic hash chains verified 1315 consecutive audit blocks with 100\% tamper detection.
 
 \subsection{Server-Side Response Time}
 \label{sec:latency}
@@ -934,22 +950,24 @@ started. Offline detection uses a 90~s timeout checked every 15~s, so a silent b
 same box took 97 to 98~s. One more alert took 110~s because the application was reloaded during the wait, and one alert
 raised while the server was stopped is not counted.
 
-\subsection{Threats to Validity and Limitations}
+\subsection{Limitations}
 \label{sec:limits}
 
-We explicitly acknowledge key limitations:
-\textit{1) Physical Deployment:} The 100-session campaign was executed end-to-end against live Tomcat/SQL backends via simulated sensor payloads; physical transducer wiring on production chassis remains future work.
-\textit{2) Synthetic ML Data (Arp et al. \cite{arp2024pitfalls} Pitfalls):} The 480-row Weka dataset is synthetically generated and subject to lab-only evaluation; identity anomalies (\texttt{WRONG\_USER}) are resolved deterministically in Tier~1 context rules.
-\textit{3) Leakage Elimination:} All generator metadata leakage was strictly eliminated; reported metrics derive solely from observable telemetry.
-\textit{4) Scope and Transport:} Experiments focused on a single 16-slot bank (\texttt{CANT-A}) over HTTP/SHA-256 signatures; multi-bank deployments and mutual TLS (mTLS) remain future work.
+The 100-session simulation was executed through the device API (Section~\ref{sec:sim_eval}); physical door-switch and load-cell wiring on the box remains future work. B1 was evaluated as an independent host-side Python prototype and is not integrated into Tomcat or SQL Server. Long-term campus traces are required to capture organic human usage and environmental noise. Offline ML classifier results remain subject to sampling bias and lab-only evaluation (Arp et al. \cite{arp2024pitfalls} pitfalls). Physically, only one slot is servo-locked, and other banks belong to demo devices. Transport security remains basic: forms carry no CSRF token (only \texttt{SameSite=Lax}), Tomcat serves plain HTTP, HTTPS relies on Cloudflare, firmware omits certificate verification (\texttt{setInsecure}), and multi-bank mTLS remains future work.
 
 \section{Conclusion}
 
-This paper presented SmartLocker, a context-aware smart locker architecture featuring decoupled edge execution, transactional business logic, two-tier anomaly detection, and a leak-free multi-sensor evaluation harness. By delegating credential verification and sensor batch evaluation to a central Java Servlet backend, the system prevents edge key compromise while maintaining sub-35~ms mean server processing latency. On a 100-session campaign against the live enterprise backend, our proposed multi-sensor detector (Proposed B1) achieved a Macro-F1 score of 1.0000 (100.0\% accuracy, $p = 5.62 \times 10^{-7}$, exact binomial $p = 1.49 \times 10^{-8}$), decisively outperforming single-telemetry baseline B0 (Macro-F1 0.7137, 73.0\% accuracy). Haber-Stornetta cryptographic audit chains verified up to 1\,433 consecutive events with 100\% tamper detection. Future work will deploy physical multi-sensor hardware boards, conduct multi-bank campus trials, and integrate mutual TLS.
+This paper presented SmartLocker, a locker rental system with online reservation, size-based pricing, four opening methods and an ESP32 box delegating access decisions to the server. Its core contribution is a priority-ordered rule tier over telemetry and server context, completed by lockout, offline detection, overdue escalation and a hash-chained audit log; every replayed scenario produced the expected label, and the server answered requests within about 0.1~s (mean endpoint processing 6 to 31~ms). A pre-deployment simulation study demonstrated that cross-sensor telemetry resolves physical tampering and faults (Proposed B1 macro-F1 0.913 vs. Baseline B0 0.621, $p < 0.001$), while identity anomalies require deterministic rules. Cryptographic audit chains verified 1315 consecutive events with 100\% tamper detection. Future work will wire physical sensors, port multi-sensor logic into Java, conduct campus trials, and integrate CSRF tokens and mutual TLS.
 
 \section*{Acknowledgment}
 
-The authors thank FPT University, course instructors, and reviewers for constructive feedback. Generative AI (Anthropic Claude) assisted in language editing and diagram drafting; all designs, implementations, experiments, and reported results remain solely the authors' work and responsibility.
+The authors thank FPT University for supporting this course project. The authors also thank the course instructors and
+reviewers for their constructive feedback on the system design and evaluation. During the preparation of this paper,
+the authors used the generative AI assistant Claude (Anthropic) to edit and shorten the English text, to check the
+\LaTeX{} source, and to draw the diagrams of Fig.~\ref{fig:arch} to Fig.~\ref{fig:eval}. The design, implementation,
+experiments and all reported measurements are the authors' own. The authors reviewed and edited every AI-assisted part
+and take full responsibility for the content of this paper.
+
 \begingroup
 \def\IEEEbibitemsep{0pt}
 \def\footnotesize{\fontsize{6.4pt}{7.3pt}\selectfont}

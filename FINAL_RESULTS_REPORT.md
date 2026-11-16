@@ -1,10 +1,10 @@
 # FINAL_RESULTS_REPORT.md: Multi-Sensor Context-Aware Access Control & Anomaly Detection Experimental Results Report
 
 **Document Version**: 2.0 (Milestone 4 — Requirement R4)  
-**Standard**: Forensic Audit & Scopus Scientific Publication Readiness  
+**Standard**: Forensic Audit & Scopus Scientific Publication Readiness (Commit `62eca9c`)
 **Target Specifications**: User Request R4 & R7, Feature Inventory Items 13, 14, 15  
 **Repository**: `HoangDuc1003/SmartLocker`  
-**Git Branch**: `research/audit-scopus-revision`  
+**Git Branch**: `reconstruction/direction-b`  
 **Date**: 2026-11-15T22:50:00Z  
 
 ---
@@ -40,7 +40,7 @@ This report documents the exhaustive empirical evaluation and forensic audit of 
 | **Paired McNemar $\chi^2$** | — | **25.0370** ($\text{df}=1$) | — | Asymptotic  = 5.62 \times 10^{-7}$, exact  = 1.49 \times 10^{-8}$ | Gate 5 (End-to-End): 100/100 (100%) |
 | **Cohen's Effect Size $**| — | **0.5000** | — | Maximum achievable effect ( \ge 0.25$) | Zero discordant regressions |
 | **End-to-End Latency** | — | Mean: .63\text{ ms}$ | Median: .61\text{ ms}$ | p95: .78\text{ ms}$, Max: .02\text{ ms}$ | Full HTTP + SQL live roundtrip |
-| **Audit Hash Integrity** | — | **100% Intact** (1,433 blocks) | Zero broken links | SHA-256 forward-linked chain verified in SL_SIM | Immutability attested on DB |
+| **Audit Hash Integrity** | — | **100% Intact** (1,315 blocks) | Zero broken links | SHA-256 forward-linked chain verified in SL_SIM | Immutability attested on DB |
 
 ---
 

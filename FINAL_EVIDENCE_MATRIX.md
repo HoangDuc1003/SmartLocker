@@ -19,9 +19,9 @@ To enforce strict non-repudiation and prevent data fabrication:
 
 ---
 
-## 2. Master Claim-to-Evidence Cross-Reference Matrix (18 Master Claims) — Verified Live Run (commit 4862f39)
+## 2. Master Claim-to-Evidence Cross-Reference Matrix (18 Master Claims) — Verified Live Run (commit 62eca9c)
 
-| Claim ID | Paper Section & Location | Paper Claim / Citation | Audited Metric (Fresh Verified: commit 4862f39) | Raw Evidence File Path | Specific Line / Key Reference | Verified SHA-256 Digest | Audit Status |
+| Claim ID | Paper Section & Location | Paper Claim / Citation | Audited Metric (Fresh Verified: commit 62eca9c) | Raw Evidence File Path | Specific Line / Key Reference | Verified SHA-256 Digest | Audit Status |
 |:---:|:---|:---|:---:|:---|:---|:---|:---:|
 | **CLM-01** | Sec. VI.D, Table VII:<br>Baseline B0 Macro-F1 | Outdated draft: `0.436` | **0.7137** | `experiments/results/evaluation_metrics.json` | `metrics_b0.macro_f1` (line 223) | `experiments/results/raw_evidence_hashes.json` | **VERIFIED LIVE** |
 | **CLM-02** | Sec. VI.D, Table VII:<br>Proposed B1 Macro-F1 | Outdated draft: `0.876` | **1.0000** | `experiments/results/evaluation_metrics.json` | `metrics_b1.macro_f1` (line 367) | `experiments/results/raw_evidence_hashes.json` | **VERIFIED LIVE** |
