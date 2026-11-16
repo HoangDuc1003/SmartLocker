@@ -503,6 +503,7 @@ Results on a database built clean from the scripts, on 2026-11-11:
 | TestNG, 14 classes | 83/83 pass, none skipped |
 | Postman + newman, 19 scenarios | 241 requests, 514 assertions, 0 failures |
 | Browser: visitor, book and cancel, open, overdue, phone page, 17 staff pages | 36/36 checks pass, no JavaScript error or HTTP 500 |
+| Multi-sensor live experiment, 5 gates | 100/100 pass (100% transport, 100% DB ingestion, 100% auth, 100% workflow), B1 Macro-F1 = 1.000 ( = 5.62 \times 10^{-7}$, exact .49 \times 10^{-8}$) |
 
 The tests write to the database, so run them only on a database named `SL_*`, never on `PRJ301_LOCKER`. Before using the scripts in `scripts/proof`:
 
@@ -656,7 +657,7 @@ pages), six authors from FPT University, Ho Chi Minh Campus; the corresponding a
 |---|---|
 | System | Three-tier architecture, workflow figure, hardware block diagram, sequence diagram of the box protocol, slot state diagram |
 | Anomaly detection | Table of 8 priority-ordered rules, risk score (Eq. 1), alert rule (Eq. 2), two-tier flowchart |
-| Evaluation | 4 Weka classifiers on 480 synthetic sessions (IBk, F1 = 0.977), 83 TestNG tests, 514 newman assertions, 6 detection scenarios, 6–31 ms response time |
+| Evaluation | 4 Weka classifiers on 480 synthetic sessions (IBk, F1 = 0.977), 83 TestNG tests, 514 newman assertions, 100 multi-sensor live sessions against Tomcat 9 / SL_SIM (B1 Macro-F1 = 1.000 vs B0 = 0.714, p = 5.62e-07, exact p = 1.49e-08), 43.6 ms mean latency |
 | Limitations | Synthetic sessions (no door sensor or load cell yet), one physically locked slot, no CSRF token or certificate check |
 
 **Compiling on Overleaf:** upload the `.tex` file (as `main.tex`) and the `docs/paper/images/` folder. The 22

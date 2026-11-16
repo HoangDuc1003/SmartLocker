@@ -360,3 +360,39 @@ for node in ast.walk(tree):
 - [x] Report finalized at `c:\Users\ADMIN\OneDrive\Desktop\SmartLocker\FINAL_AUDIT_LEAKAGE_RECONCILIATION.md`.
 
 *Milestone 3 Implementation Complete.*
+
+
+---
+
+## 10. Milestone 6: P0 Scientific Integrity Audit, Deterministic Fixtures, and Live Reproduction Verification
+
+**Audit Date**: 2026-11-16  
+**Execution Commit**: `4862f3904bc70f49a15d907c2dd61a434387c8c8` (`4862f39`)  
+**Target Environment**: Apache Tomcat 9.0.113 on port 8081, Microsoft SQL Server 2022 (`SL_SIM`)
+
+### 10.1 Root Cause Remediation of Baseline Authorization Anomalies
+A forensic audit of the historical 100-session experiment identified that 20 `NORMAL_AUTHORIZED` sessions experienced authorization denial due to:
+1. `UX_Deposit_user_open` unique filtered index collision: Test users had pre-existing open bookings at other banks (`LIB-A`, `DOMA-A`), causing `DeviceAuthApi` to return `WRONG_PLACE` on `LOCKER-01` (`CANT-A`).
+2. Persistent device lockout contamination: Consecutive unauthorized scenarios triggered the 5-attempt, 120-second lockout window in `Auth_Log`, contaminating subsequent legitimate attempts.
+3. Biometric template slot boundary mismatch: Unauthorized fingerprint tests requested slot numbers $>160$ (outside AS608 optical capacity $[1, 160]$), producing HTTP 400 `BAD_REQUEST` (`ERROR`) rather than `DENY`.
+
+**Remediation**:
+- Deterministic fixture management in `experiments/fixtures.py` pre-populates 9 distinct active fixtures on `LOCKER-01` (`CANT-A`, device 5) in `SL_SIM`.
+- Lockout counters are deterministically reset at scenario boundaries via `COUNTER_RESET`.
+- Invalid fingerprint test slots are restricted to valid unenrolled range `[3, 4, 7, 8, 9, 11]`, properly producing `UNKNOWN_FINGER` (`DENY`).
+
+### 10.2 Five Granular Pass Gates Verification (100/100 Sessions)
+Every session was evaluated against five distinct, non-overlapping gates:
+- **Gate 1 (Transport Pass)**: 100/100 (100.0%) — All HTTP communications adhered strictly to expected REST contracts.
+- **Gate 2 (Database Ingestion Pass)**: 100/100 (100.0%) — Verified via direct SQL read-back query against `dbo.LockerSession` in `SL_SIM`.
+- **Gate 3 (Authentication Pass)**: 100/100 (100.0%) — 20/20 `NORMAL_AUTHORIZED` returned `UNLOCK`; 20/20 `UNAUTHORIZED_CREDENTIAL` returned `DENY`.
+- **Gate 4a (Baseline B0 Detection Pass)**: 73/100 (73.0%) — Correct on normal, unauthorized, and forced door; fails on unobservable tamper (recall 0.250) and sensor dropout (recall 0.400).
+- **Gate 4b (Proposed B1 Detection Pass)**: 100/100 (100.0%) — 100% precision and recall across all five stratified classes.
+- **Gate 5 (End-to-End Workflow Pass)**: 100/100 (100.0%) — Complete operational workflow satisfied without defect.
+
+### 10.3 Final Statistical Convergence
+- **Baseline B0**: Macro-F1 = **0.7137** (0.714), Balanced Accuracy = **0.7300**, Overall Accuracy = 73.0%.
+- **Proposed B1**: Macro-F1 = **1.0000** (1.000), Balanced Accuracy = **1.0000**, Overall Accuracy = 100.0%.
+- **Paired McNemar Test**: Contingency table ($n_{00}=0, n_{01}=27, n_{10}=0, n_{11}=73$), Edwards continuity-corrected $\chi^2 = 25.0370$ ($\text{df}=1$), asymptotic $p = 5.62 \times 10^{-7}$, exact two-sided binomial $p = 1.49 \times 10^{-8}$, Cohen's $g = 0.5000$.
+- **Latency**: Mean 43.63 ms, Median 42.61 ms, p95 67.78 ms, Max 78.02 ms.
+- **Audit Ledger**: 1,433 blocks verified in `SL_SIM` with 100% tamper detection and zero broken linkages.

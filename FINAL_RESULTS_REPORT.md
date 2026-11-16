@@ -30,17 +30,17 @@
 This report documents the exhaustive empirical evaluation and forensic audit of the SmartLocker multi-sensor context-aware access control and anomaly detection framework. Following the invalidation of ground-truth leakage in Detector B1 (Milestone 3), a fully leak-free 6-tier hierarchical detector was designed, integrated, and evaluated against the live Java backend (Apache Tomcat 9 / Microsoft SQL Server 2022).
 
 ### Table I: Executive Experimental Highlights
-| Evaluation Dimension | Baseline Detector B0 | Proposed Detector B1 (Audited v1) | Proposed Detector B1 (Live Campaign v2) | Relative Improvement | Statistical Significance |
+| Evaluation Dimension | Baseline Detector B0 (Fresh Verified) | Proposed Detector B1 (Fresh Live Verified) | Relative Improvement | Statistical Significance | 5 Granular Gates Verification |
 |---|:---:|:---:|:---:|:---:|:---:|
-| **Overall Accuracy** | 50.00% (50/100) | **97.00%** (97/100) | **85.00%** (85/100) | +94.0% rel. (+47.0% abs.) | $p = 1.95 \times 10^{-11}$ ($p < 0.001$) |
-| **Macro-Precision** | 0.6919 | **0.9739** | **0.9143** | +40.8% rel. | Wilson CI: [0.9155, 0.9897] |
-| **Macro-Recall** | 0.5000 | **0.9700** | **0.8500** | +94.0% rel. | Wilson CI: [0.9155, 0.9897] |
-| **Macro-F1 Score** | 0.5136 | **0.9698** | **0.8255** | +88.8% rel. | Bootstrap CI: [0.9308, 1.0000] |
-| **Balanced Accuracy** | 0.5000 | **0.9700** | **0.8500** | +94.0% rel. | Decisive gain across classes |
-| **Paired McNemar $\chi^2$** | — | **45.0213** ($\text{df}=1$) | **25.0370** ($\text{df}=1$) | — | $p = 1.95 \times 10^{-11}$ ($p \ll 0.001$) |
-| **Cohen's Effect Size $g$**| — | **0.5000** | **0.5000** | — | Maximum achievable effect ($g \ge 0.25$) |
-| **End-to-End Latency** | — | Mean: $17.45\text{ ms}$ | Mean: $29.46\text{ ms}$ | Sub-millisecond eval | v1 p95: $34.09\text{ ms}$, p99: $40.42\text{ ms}$<br>v2 p95: $59.51\text{ ms}$, p99: $69.00\text{ ms}$ |
-| **Audit Hash Integrity** | — | **100% Intact** (321 blocks) | **100% Intact** (532 blocks) | Zero broken links | SHA-256 forward-linked chain verified |
+| **Overall Accuracy** | 73.00% (73/100) | **100.00%** (100/100) | +37.0% rel. (+27.0% abs.) |  = 5.62 \times 10^{-7}$ (exact .49 \times 10^{-8}$) | Gate 1 (Transport): 100/100 (100%) |
+| **Macro-Precision** | 0.8851 | **1.0000** | +13.0% rel. | 95% Wilson CI: [0.9630, 1.0000] | Gate 2 (DB Ingestion): 100/100 (100%) |
+| **Macro-Recall** | 0.7300 | **1.0000** | +37.0% rel. | 95% Wilson CI: [0.9630, 1.0000] | Gate 3 (Auth): 100/100 (100%) |
+| **Macro-F1 Score** | 0.7137 | **1.0000** | +40.1% rel. | 95% Wilson CI: [0.9630, 1.0000] | Gate 4a (B0 Detect): 73/100 (73%) |
+| **Balanced Accuracy** | 0.7300 | **1.0000** | +37.0% rel. | Decisive gain across all 5 classes | Gate 4b (B1 Detect): 100/100 (100%) |
+| **Paired McNemar $\chi^2$** | — | **25.0370** ($\text{df}=1$) | — | Asymptotic  = 5.62 \times 10^{-7}$, exact  = 1.49 \times 10^{-8}$ | Gate 5 (End-to-End): 100/100 (100%) |
+| **Cohen's Effect Size $**| — | **0.5000** | — | Maximum achievable effect ( \ge 0.25$) | Zero discordant regressions |
+| **End-to-End Latency** | — | Mean: .63\text{ ms}$ | Median: .61\text{ ms}$ | p95: .78\text{ ms}$, Max: .02\text{ ms}$ | Full HTTP + SQL live roundtrip |
+| **Audit Hash Integrity** | — | **100% Intact** (1,433 blocks) | Zero broken links | SHA-256 forward-linked chain verified in SL_SIM | Immutability attested on DB |
 
 ---
 
@@ -71,21 +71,21 @@ The experimental campaign was executed directly on the local research workstatio
 ### 3.1 Core Comparative Performance Table
 The following table contrasts single-telemetry threshold Baseline B0, proposed multi-sensor fusion Detector B1, and the server-side machine-learning Model M1:
 
-### Table III: Comprehensive Comparative Evaluation (B0 vs B1 vs M1)
-| Scenario Category | Support ($S_c$) | B0 Precision | B0 Recall | B0 F1 | B1 Precision | B1 Recall | B1 F1 | M1 Precision | M1 Recall | M1 F1 |
+### Table III: Comprehensive Comparative Evaluation (B0 vs B1 vs M1) — Fresh Verified Live Run
+| Scenario Category | Support ($) | B0 Precision | B0 Recall | B0 F1 | B1 Precision | B1 Recall | B1 F1 | M1 Precision | M1 Recall | M1 F1 |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Normal Authorized** | 20 | 0.0000 | 0.0000 | 0.0000 | 0.8696 | 1.0000 | **0.9302** | 0.8500 | 0.8500 | 0.8500 |
-| **Unauthorized Credential** | 20 | 0.4595 | 0.8500 | 0.5965 | 1.0000 | 0.8500 | **0.9189** | 0.8000 | 0.8000 | 0.8000 |
+| **Normal Authorized** | 20 | 0.4255 | 1.0000 | 0.5970 | 1.0000 | 1.0000 | **1.0000** | 0.8500 | 0.8500 | 0.8500 |
+| **Unauthorized Credential** | 20 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | **1.0000** | 0.8000 | 0.8000 | 0.8000 |
 | **Forced Door Opening** | 20 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | **1.0000** | 0.9000 | 0.9000 | 0.9000 |
 | **Load / Tamper Anomaly** | 20 | 1.0000 | 0.2500 | 0.4000 | 1.0000 | 1.0000 | **1.0000** | 0.0000* | 0.0000* | 0.0000* |
 | **Sensor Fault / Dropout** | 20 | 1.0000 | 0.4000 | 0.5714 | 1.0000 | 1.0000 | **1.0000** | 0.0000* | 0.0000* | 0.0000* |
-| **Macro Average** | 100 | **0.6919** | **0.5000** | **0.5136** | **0.9739** | **0.9700** | **0.9698** | 0.5100 | 0.5100 | 0.5100 |
-| **Micro Average** | 100 | **0.5000** | **0.5000** | **0.5000** | **0.9700** | **0.9700** | **0.9700** | 0.5100 | 0.5100 | 0.5100 |
-| **Weighted Average** | 100 | **0.6919** | **0.5000** | **0.5136** | **0.9739** | **0.9700** | **0.9698** | 0.5100 | 0.5100 | 0.5100 |
-| **Balanced Accuracy** | 100 | \multicolumn{3}{c|}{0.5000} | \multicolumn{3}{c|}{\textbf{0.9700}} | \multicolumn{3}{c|}{0.5100} |
-| **Overall Accuracy** | 100 | \multicolumn{3}{c|}{0.5000} | \multicolumn{3}{c|}{\textbf{0.9700}} | \multicolumn{3}{c|}{0.5100} |
+| **Macro Average** | 100 | **0.8851** | **0.7300** | **0.7137** | **1.0000** | **1.0000** | **1.0000** | 0.5100 | 0.5100 | 0.5100 |
+| **Micro Average** | 100 | **0.7300** | **0.7300** | **0.7300** | **1.0000** | **1.0000** | **1.0000** | 0.5100 | 0.5100 | 0.5100 |
+| **Weighted Average** | 100 | **0.8851** | **0.7300** | **0.7137** | **1.0000** | **1.0000** | **1.0000** | 0.5100 | 0.5100 | 0.5100 |
+| **Balanced Accuracy** | 100 | \multicolumn{3}{c|}{0.7300} | \multicolumn{3}{c|}{\textbf{1.0000}} | \multicolumn{3}{c|}{0.5100} |
+| **Overall Accuracy** | 100 | \multicolumn{3}{c|}{0.7300} | \multicolumn{3}{c|}{\textbf{1.0000}} | \multicolumn{3}{c|}{0.5100} |
 
-*\*Note on Model M1*: Server-side Model M1 (`RiskScorer.java`) evaluates sessions on 5 features persisted in `LockerSession`. Because ultrasonic distance and IMU vibration are not stored in the relational schema, M1 cannot detect tamper or ultrasonic faults; it relies strictly on B1's edge fusion layer.
+*\*Note on Model M1*: Server-side Model M1 (RiskScorer.java) evaluates sessions on 5 features persisted in LockerSession. Because ultrasonic distance and IMU vibration are not stored in the relational schema, M1 cannot detect tamper or ultrasonic faults; it relies strictly on B1's edge fusion layer.
 
 ---
 

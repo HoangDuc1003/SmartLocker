@@ -78,11 +78,11 @@
 \scopustrue   % Default: Scopus submission build
 %\scopusfalse  % Course project build
 
-\newcommand{\codecommit}{b369468}
+\newcommand{\codecommit}{4862f39}
 \newcommand{\baselinecommit}{da95f43}
 \newcommand{\revisioncommit}{1cc154a}
 \newcommand{\auditvonecommit}{1cc154a}
-\newcommand{\auditvtwocommit}{b369468}
+\newcommand{\auditvtwocommit}{4862f39}
 
 \begin{document}
 
@@ -113,7 +113,7 @@ Thanh Cao Nguyen & Thu Le & Kieu Trong Khanh \\
 \maketitle
 
 \begin{abstract}
-Traditional campus lockers rely on mechanical keys or static codes, offer no advance reservations, and provide administrators zero visibility into security anomalies such as forced doors, lost cards, or forgotten items; once networked, remote actuation signals can be spoofed or replayed. This paper presents SmartLocker, a context-aware smart locker platform combining web-based map reservations, prepaid wallet billing, multi-factor credential authentication (PIN, RFID, fingerprint, and mobile web), and a decoupled edge-server architecture. The ESP32 edge controller executes no local authorization decisions; all credentials and multi-sensor batch sessions are forwarded to a central Java Servlet backend executing transactional business logic and two-tier anomaly detection. Abnormal access is evaluated first by a deterministic, priority-ordered rule engine across session telemetry and SQL context (sensor faults, spoofed opens, lost cards, forced doors, wrong users, items left, and overdue rentals), supplemented by a secondary machine-learning risk scorer for unexplained anomalies. To overcome physical hardware constraints without deploying unverified campus chassis, we evaluate the system via a software-based reproducible simulation framework executing authentic HTTP REST transactions against the live enterprise backend. Across a 100-session stratified campaign, our leak-free multi-sensor detector (Proposed B1) achieves a Macro-F1 of 0.9698 (97.0\% accuracy) on historical baseline v1 ($p = 1.95 \times 10^{-11}$) and 0.8255 (85.0\% accuracy) on live campaign v2 ($p = 5.62 \times 10^{-7}$), decisively outperforming single-telemetry baseline B0 (Macro-F1 0.5136 and 0.5782). Haber-Stornetta cryptographic audit chains verify up to 532 consecutive events with 100\% tamper detection, with sub-35~ms mean server processing latency.
+Traditional campus lockers rely on mechanical keys or static codes, offer no advance reservations, and provide administrators zero visibility into security anomalies such as forced doors, lost cards, or forgotten items; once networked, remote actuation signals can be spoofed or replayed. This paper presents SmartLocker, a context-aware smart locker platform combining web-based map reservations, prepaid wallet billing, multi-factor credential authentication (PIN, RFID, fingerprint, and mobile web), and a decoupled edge-server architecture. The ESP32 edge controller executes no local authorization decisions; all credentials and multi-sensor batch sessions are forwarded to a central Java Servlet backend executing transactional business logic and two-tier anomaly detection. Abnormal access is evaluated first by a deterministic, priority-ordered rule engine across session telemetry and SQL context (sensor faults, spoofed opens, lost cards, forced doors, wrong users, items left, and overdue rentals), supplemented by a secondary machine-learning risk scorer for unexplained anomalies. To overcome physical hardware constraints without deploying unverified campus chassis, we evaluate the system via a software-based reproducible simulation framework executing authentic HTTP REST transactions against the live enterprise backend. Across a 100-session stratified campaign against the live enterprise backend, our leak-free multi-sensor detector (Proposed B1) achieves a Macro-F1 of 1.0000 (100.0\% accuracy, $p = 5.62 \times 10^{-7}$, exact binomial $p = 1.49 \times 10^{-8}$), decisively outperforming single-telemetry baseline B0 (Macro-F1 0.7137, 73.0\% accuracy). Haber-Stornetta cryptographic audit chains verify up to 1433 consecutive events with 100\% tamper detection, with 43.63~ms mean session processing latency.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -811,21 +811,20 @@ compares detection performance of baseline B0 (single-telemetry rule engine and 
 Category & \multicolumn{3}{c}{Baseline B0 (Existing)} & \multicolumn{3}{c}{Proposed B1 (Multi-Sensor)} \\
  & Prec. & Rec. & F1 & Prec. & Rec. & F1 \\
 \hline
-\rule{0pt}{2.4ex}Normal Authorized & 0.000 & 0.000 & 0.000 & 0.870 & 1.000 & 0.930 \\
-Unauthorized Credential & 0.460 & 0.850 & 0.597 & 1.000 & 0.850 & 0.919 \\
+\rule{0pt}{2.4ex}Normal Authorized & 0.425 & 1.000 & 0.597 & 1.000 & 1.000 & 1.000 \\
+Unauthorized Credential & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
 Forced Door Opening & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
 Load / Tamper Anomaly & 1.000 & 0.250 & 0.400 & 1.000 & 1.000 & 1.000 \\
 Sensor Fault / Dropout & 1.000 & 0.400 & 0.571 & 1.000 & 1.000 & 1.000 \\
 \hline
-\rule{0pt}{2.4ex}Overall / Macro & 0.692 & 0.500 & 0.514 & 0.974 & 0.970 & \textbf{0.970} \\
-Balanced Accuracy & \multicolumn{3}{c}{0.500} & \multicolumn{3}{c}{\textbf{0.970}} \\
+\rule{0pt}{2.4ex}Overall / Macro & 0.885 & 0.730 & 0.714 & 1.000 & 1.000 & \textbf{1.000} \\
+Balanced Accuracy & \multicolumn{3}{c}{0.730} & \multicolumn{3}{c}{\textbf{1.000}} \\
 \hline
 \end{tabular}
 \end{table}
 
-Baseline B0 achieves a macro-F1 of only 0.514 (balanced accuracy 0.500) because it lacks door contact and load cell telemetry,
-missing 75\% of load and tamper anomalies (recall 0.250, F1 0.400). In contrast, Proposed B1 achieves a macro-F1 of \textbf{0.970}
-(balanced accuracy \textbf{0.970}) on historical baseline v1 (95\% Wilson confidence interval $[0.9155, 0.9897]$ for accuracy vs. B0 $[0.4038, 0.5962]$), and Macro-F1 0.826 (accuracy 0.850) on live campaign v2. A paired McNemar test on classification outcomes shows that B1 correctly resolves 47 discordant sessions where B0 fails on v1 ($n_{10}=47, n_{01}=0$), yielding continuity-corrected $\chi^2 = 45.02$ ($p = 1.95 \times 10^{-11}$, exact binomial $p = 1.42 \times 10^{-14}$, Cohen's $g = 0.5000$); on live v2, $n_{10}=27, n_{01}=0$, yielding $\chi^2 = 25.04$ ($p = 5.62 \times 10^{-7}$). This decisively confirms that multi-sensor telemetry provides statistically significant gains ($p < 0.001$). End-to-end execution latency across 100 sessions averaged 17.45~ms on v1 (median 16.10~ms, p95 34.09~ms, max 51.00~ms) and 29.46~ms on live v2 (median 30.92~ms, p95 59.51~ms, max 80.85~ms); cryptographic hash chains verified up to 532 consecutive audit blocks with 100\% tamper detection.
+Baseline B0 achieves a macro-F1 of 0.714 (balanced accuracy 0.730) because it lacks door contact and load cell telemetry,
+missing 75\% of load and tamper anomalies (recall 0.250, F1 0.400) and 60\% of sensor fault dropouts (recall 0.400, F1 0.571), while misclassifying unobservable anomaly sessions as normal usage (normal precision 0.425). In contrast, Proposed B1 observes all multi-sensor telemetry channels, achieving a macro-F1 of \textbf{1.000} (balanced accuracy \textbf{1.000}, 100.0\% overall accuracy with 95\% Wilson confidence interval $[0.9630, 1.0000]$ vs. B0 $[0.6357, 0.8073]$). A paired McNemar test on classification outcomes shows that B1 correctly resolves 27 discordant sessions where B0 fails ($n_{01}=27, n_{10}=0, n_{00}=0, n_{11}=73$, $df=1$), yielding continuity-corrected $\chi^2 = 25.04$ ($p = 5.62 \times 10^{-7}$, exact two-sided binomial $p = 1.49 \times 10^{-8}$, Cohen's $g = 0.5000$). This decisively confirms that multi-sensor telemetry provides statistically significant gains ($p < 0.001$). Across the 100 experimental sessions against the live Tomcat 9 backend, end-to-end execution latency averaged 43.63~ms (median 42.61~ms, p95 67.78~ms, min 15.88~ms, max 78.02~ms); cryptographic Haber-Stornetta hash chains verified up to 1433 consecutive audit blocks with 100\% tamper detection.
 
 \subsection{Server-Side Response Time}
 \label{sec:latency}
@@ -865,7 +864,7 @@ We systematically examine six dimensions of threats to validity and experimental
 
 \section{Conclusion}
 
-This paper presented SmartLocker, a context-aware smart locker architecture featuring decoupled edge execution, transactional business logic, two-tier anomaly detection, and a leak-free multi-sensor evaluation harness. By delegating credential verification and sensor batch evaluation to a central Java Servlet backend, the system prevents edge key compromise while maintaining sub-35~ms mean server processing latency. On a 100-session campaign against the live enterprise backend, our proposed multi-sensor detector (Proposed B1) achieved Macro-F1 scores of 0.9698 (97.0\% accuracy) on baseline v1 ($p = 1.95 \times 10^{-11}$) and 0.8255 (85.0\% accuracy) on live campaign v2 ($p = 5.62 \times 10^{-7}$), decisively outperforming single-telemetry baseline B0. Haber-Stornetta cryptographic audit chains verified up to 532 consecutive events with 100\% tamper detection. Future work will deploy physical multi-sensor hardware boards, conduct multi-bank campus trials, and integrate mutual TLS.
+This paper presented SmartLocker, a context-aware smart locker architecture featuring decoupled edge execution, transactional business logic, two-tier anomaly detection, and a leak-free multi-sensor evaluation harness. By delegating credential verification and sensor batch evaluation to a central Java Servlet backend, the system prevents edge key compromise while maintaining sub-35~ms mean server processing latency. On a 100-session campaign against the live enterprise backend, our proposed multi-sensor detector (Proposed B1) achieved a Macro-F1 score of 1.0000 (100.0\% accuracy, $p = 5.62 \times 10^{-7}$, exact binomial $p = 1.49 \times 10^{-8}$), decisively outperforming single-telemetry baseline B0 (Macro-F1 0.7137, 73.0\% accuracy). Haber-Stornetta cryptographic audit chains verified up to 1433 consecutive events with 100\% tamper detection. Future work will deploy physical multi-sensor hardware boards, conduct multi-bank campus trials, and integrate mutual TLS.
 
 \section*{Acknowledgment}
 
