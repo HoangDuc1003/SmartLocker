@@ -1,6 +1,7 @@
 {
   "run_id": "RUN_20261116_010959_SEED20261115_SL_SIM",
   "total_sessions": 100,
+  "passed": 100,
   "end_to_end_passed": 100,
   "failed": 0,
   "blocked": 0,

@@ -41,7 +41,8 @@
     "seq": 791399002,
     "duration_ms": 68.03,
     "seed": 415450,
-    "timestamp_utc": "2026-11-16T01:09:59.279026Z"
+    "timestamp_utc": "2026-11-16T01:09:59.279026Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-002",
@@ -85,7 +86,8 @@
     "seq": 791399003,
     "duration_ms": 54.72,
     "seed": 126574,
-    "timestamp_utc": "2026-11-16T01:09:59.347054Z"
+    "timestamp_utc": "2026-11-16T01:09:59.347054Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-003",
@@ -129,7 +131,8 @@
     "seq": 791399004,
     "duration_ms": 47.65,
     "seed": 598801,
-    "timestamp_utc": "2026-11-16T01:09:59.401774Z"
+    "timestamp_utc": "2026-11-16T01:09:59.401774Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-004",
@@ -173,7 +176,8 @@
     "seq": 791399005,
     "duration_ms": 55.9,
     "seed": 836469,
-    "timestamp_utc": "2026-11-16T01:09:59.449426Z"
+    "timestamp_utc": "2026-11-16T01:09:59.449426Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-005",
@@ -217,7 +221,8 @@
     "seq": 791399006,
     "duration_ms": 47.68,
     "seed": 903475,
-    "timestamp_utc": "2026-11-16T01:09:59.505326Z"
+    "timestamp_utc": "2026-11-16T01:09:59.505326Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-006",
@@ -261,7 +266,8 @@
     "seq": 791399007,
     "duration_ms": 45.34,
     "seed": 853044,
-    "timestamp_utc": "2026-11-16T01:09:59.553004Z"
+    "timestamp_utc": "2026-11-16T01:09:59.553004Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-007",
@@ -305,7 +311,8 @@
     "seq": 791399008,
     "duration_ms": 59.39,
     "seed": 793205,
-    "timestamp_utc": "2026-11-16T01:09:59.598347Z"
+    "timestamp_utc": "2026-11-16T01:09:59.598347Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-008",
@@ -349,7 +356,8 @@
     "seq": 791399009,
     "duration_ms": 78.02,
     "seed": 968694,
-    "timestamp_utc": "2026-11-16T01:09:59.657736Z"
+    "timestamp_utc": "2026-11-16T01:09:59.657736Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-009",
@@ -393,7 +401,8 @@
     "seq": 791399010,
     "duration_ms": 58.87,
     "seed": 734398,
-    "timestamp_utc": "2026-11-16T01:09:59.735760Z"
+    "timestamp_utc": "2026-11-16T01:09:59.735760Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-010",
@@ -437,7 +446,8 @@
     "seq": 791399011,
     "duration_ms": 47.18,
     "seed": 269317,
-    "timestamp_utc": "2026-11-16T01:09:59.794632Z"
+    "timestamp_utc": "2026-11-16T01:09:59.794632Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-011",
@@ -481,7 +491,8 @@
     "seq": 791399012,
     "duration_ms": 43.08,
     "seed": 468698,
-    "timestamp_utc": "2026-11-16T01:09:59.841814Z"
+    "timestamp_utc": "2026-11-16T01:09:59.841814Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-012",
@@ -525,7 +536,8 @@
     "seq": 791399013,
     "duration_ms": 64.98,
     "seed": 285994,
-    "timestamp_utc": "2026-11-16T01:09:59.884889Z"
+    "timestamp_utc": "2026-11-16T01:09:59.884889Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-013",
@@ -569,7 +581,8 @@
     "seq": 791399014,
     "duration_ms": 60.16,
     "seed": 831303,
-    "timestamp_utc": "2026-11-16T01:09:59.949869Z"
+    "timestamp_utc": "2026-11-16T01:09:59.949869Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-014",
@@ -613,7 +626,8 @@
     "seq": 791399015,
     "duration_ms": 47.93,
     "seed": 835384,
-    "timestamp_utc": "2026-11-16T01:10:00.010032Z"
+    "timestamp_utc": "2026-11-16T01:10:00.010032Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-015",
@@ -657,7 +671,8 @@
     "seq": 791399016,
     "duration_ms": 65.25,
     "seed": 917272,
-    "timestamp_utc": "2026-11-16T01:10:00.057959Z"
+    "timestamp_utc": "2026-11-16T01:10:00.057959Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-016",
@@ -701,7 +716,8 @@
     "seq": 791399017,
     "duration_ms": 55.16,
     "seed": 938665,
-    "timestamp_utc": "2026-11-16T01:10:00.123205Z"
+    "timestamp_utc": "2026-11-16T01:10:00.123205Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-017",
@@ -745,7 +761,8 @@
     "seq": 791399018,
     "duration_ms": 46.49,
     "seed": 574255,
-    "timestamp_utc": "2026-11-16T01:10:00.178367Z"
+    "timestamp_utc": "2026-11-16T01:10:00.178367Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-018",
@@ -789,7 +806,8 @@
     "seq": 791399019,
     "duration_ms": 74.82,
     "seed": 759327,
-    "timestamp_utc": "2026-11-16T01:10:00.224859Z"
+    "timestamp_utc": "2026-11-16T01:10:00.224859Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-019",
@@ -833,7 +851,8 @@
     "seq": 791399020,
     "duration_ms": 54.67,
     "seed": 301701,
-    "timestamp_utc": "2026-11-16T01:10:00.299675Z"
+    "timestamp_utc": "2026-11-16T01:10:00.299675Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-020",
@@ -877,7 +896,8 @@
     "seq": 791399021,
     "duration_ms": 42.61,
     "seed": 877061,
-    "timestamp_utc": "2026-11-16T01:10:00.354343Z"
+    "timestamp_utc": "2026-11-16T01:10:00.354343Z",
+    "auth_result": "UNLOCK"
   },
   {
     "session_id": "SIM-SESS-021",
@@ -921,7 +941,8 @@
     "seq": 791399022,
     "duration_ms": 64.44,
     "seed": 199566,
-    "timestamp_utc": "2026-11-16T01:10:00.396953Z"
+    "timestamp_utc": "2026-11-16T01:10:00.396953Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-022",
@@ -965,7 +986,8 @@
     "seq": 791399023,
     "duration_ms": 48.66,
     "seed": 148529,
-    "timestamp_utc": "2026-11-16T01:10:00.461395Z"
+    "timestamp_utc": "2026-11-16T01:10:00.461395Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-023",
@@ -1009,7 +1031,8 @@
     "seq": 791399024,
     "duration_ms": 39.7,
     "seed": 351460,
-    "timestamp_utc": "2026-11-16T01:10:00.510050Z"
+    "timestamp_utc": "2026-11-16T01:10:00.510050Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-024",
@@ -1053,7 +1076,8 @@
     "seq": 791399025,
     "duration_ms": 41.69,
     "seed": 641352,
-    "timestamp_utc": "2026-11-16T01:10:00.549752Z"
+    "timestamp_utc": "2026-11-16T01:10:00.549752Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-025",
@@ -1097,7 +1121,8 @@
     "seq": 791399026,
     "duration_ms": 68.31,
     "seed": 815039,
-    "timestamp_utc": "2026-11-16T01:10:00.591444Z"
+    "timestamp_utc": "2026-11-16T01:10:00.591444Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-026",
@@ -1141,7 +1166,8 @@
     "seq": 791399027,
     "duration_ms": 48.16,
     "seed": 295821,
-    "timestamp_utc": "2026-11-16T01:10:00.659755Z"
+    "timestamp_utc": "2026-11-16T01:10:00.659755Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-027",
@@ -1185,7 +1211,8 @@
     "seq": 791399028,
     "duration_ms": 47.01,
     "seed": 257341,
-    "timestamp_utc": "2026-11-16T01:10:00.707914Z"
+    "timestamp_utc": "2026-11-16T01:10:00.707914Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-028",
@@ -1229,7 +1256,8 @@
     "seq": 791399029,
     "duration_ms": 55.0,
     "seed": 182643,
-    "timestamp_utc": "2026-11-16T01:10:00.754921Z"
+    "timestamp_utc": "2026-11-16T01:10:00.754921Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-029",
@@ -1273,7 +1301,8 @@
     "seq": 791399030,
     "duration_ms": 55.19,
     "seed": 670180,
-    "timestamp_utc": "2026-11-16T01:10:00.809921Z"
+    "timestamp_utc": "2026-11-16T01:10:00.809921Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-030",
@@ -1317,7 +1346,8 @@
     "seq": 791399031,
     "duration_ms": 31.85,
     "seed": 618974,
-    "timestamp_utc": "2026-11-16T01:10:00.865110Z"
+    "timestamp_utc": "2026-11-16T01:10:00.865110Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-031",
@@ -1361,7 +1391,8 @@
     "seq": 791399032,
     "duration_ms": 31.74,
     "seed": 266667,
-    "timestamp_utc": "2026-11-16T01:10:00.896958Z"
+    "timestamp_utc": "2026-11-16T01:10:00.896958Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-032",
@@ -1405,7 +1436,8 @@
     "seq": 791399033,
     "duration_ms": 67.78,
     "seed": 638551,
-    "timestamp_utc": "2026-11-16T01:10:00.928700Z"
+    "timestamp_utc": "2026-11-16T01:10:00.928700Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-033",
@@ -1449,7 +1481,8 @@
     "seq": 791399034,
     "duration_ms": 41.3,
     "seed": 965226,
-    "timestamp_utc": "2026-11-16T01:10:00.996479Z"
+    "timestamp_utc": "2026-11-16T01:10:00.996479Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-034",
@@ -1493,7 +1526,8 @@
     "seq": 791399035,
     "duration_ms": 67.48,
     "seed": 916607,
-    "timestamp_utc": "2026-11-16T01:10:01.037781Z"
+    "timestamp_utc": "2026-11-16T01:10:01.037781Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-035",
@@ -1537,7 +1571,8 @@
     "seq": 791399036,
     "duration_ms": 47.88,
     "seed": 852847,
-    "timestamp_utc": "2026-11-16T01:10:01.105259Z"
+    "timestamp_utc": "2026-11-16T01:10:01.105259Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-036",
@@ -1581,7 +1616,8 @@
     "seq": 791399037,
     "duration_ms": 70.18,
     "seed": 846366,
-    "timestamp_utc": "2026-11-16T01:10:01.153141Z"
+    "timestamp_utc": "2026-11-16T01:10:01.153141Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-037",
@@ -1625,7 +1661,8 @@
     "seq": 791399038,
     "duration_ms": 55.57,
     "seed": 452860,
-    "timestamp_utc": "2026-11-16T01:10:01.223322Z"
+    "timestamp_utc": "2026-11-16T01:10:01.223322Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-038",
@@ -1669,7 +1706,8 @@
     "seq": 791399039,
     "duration_ms": 54.17,
     "seed": 456764,
-    "timestamp_utc": "2026-11-16T01:10:01.278895Z"
+    "timestamp_utc": "2026-11-16T01:10:01.278895Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-039",
@@ -1713,7 +1751,8 @@
     "seq": 791399040,
     "duration_ms": 48.16,
     "seed": 993156,
-    "timestamp_utc": "2026-11-16T01:10:01.333069Z"
+    "timestamp_utc": "2026-11-16T01:10:01.333069Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-040",
@@ -1757,7 +1796,8 @@
     "seq": 791399041,
     "duration_ms": 48.06,
     "seed": 910928,
-    "timestamp_utc": "2026-11-16T01:10:01.381228Z"
+    "timestamp_utc": "2026-11-16T01:10:01.381228Z",
+    "auth_result": "DENY"
   },
   {
     "session_id": "SIM-SESS-041",
@@ -1801,7 +1841,8 @@
     "seq": 791399042,
     "duration_ms": 63.6,
     "seed": 245313,
-    "timestamp_utc": "2026-11-16T01:10:01.429284Z"
+    "timestamp_utc": "2026-11-16T01:10:01.429284Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-042",
@@ -1845,7 +1886,8 @@
     "seq": 791399043,
     "duration_ms": 31.95,
     "seed": 482628,
-    "timestamp_utc": "2026-11-16T01:10:01.492887Z"
+    "timestamp_utc": "2026-11-16T01:10:01.492887Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-043",
@@ -1889,7 +1931,8 @@
     "seq": 791399044,
     "duration_ms": 31.63,
     "seed": 583462,
-    "timestamp_utc": "2026-11-16T01:10:01.524837Z"
+    "timestamp_utc": "2026-11-16T01:10:01.524837Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-044",
@@ -1933,7 +1976,8 @@
     "seq": 791399045,
     "duration_ms": 34.89,
     "seed": 484360,
-    "timestamp_utc": "2026-11-16T01:10:01.556469Z"
+    "timestamp_utc": "2026-11-16T01:10:01.556469Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-045",
@@ -1977,7 +2021,8 @@
     "seq": 791399046,
     "duration_ms": 27.79,
     "seed": 759328,
-    "timestamp_utc": "2026-11-16T01:10:01.591363Z"
+    "timestamp_utc": "2026-11-16T01:10:01.591363Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-046",
@@ -2021,7 +2066,8 @@
     "seq": 791399047,
     "duration_ms": 47.53,
     "seed": 284295,
-    "timestamp_utc": "2026-11-16T01:10:01.619155Z"
+    "timestamp_utc": "2026-11-16T01:10:01.619155Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-047",
@@ -2065,7 +2111,8 @@
     "seq": 791399048,
     "duration_ms": 38.7,
     "seed": 671234,
-    "timestamp_utc": "2026-11-16T01:10:01.666682Z"
+    "timestamp_utc": "2026-11-16T01:10:01.666682Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-048",
@@ -2109,7 +2156,8 @@
     "seq": 791399049,
     "duration_ms": 33.91,
     "seed": 145801,
-    "timestamp_utc": "2026-11-16T01:10:01.705386Z"
+    "timestamp_utc": "2026-11-16T01:10:01.705386Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-049",
@@ -2153,7 +2201,8 @@
     "seq": 791399050,
     "duration_ms": 36.66,
     "seed": 740391,
-    "timestamp_utc": "2026-11-16T01:10:01.739299Z"
+    "timestamp_utc": "2026-11-16T01:10:01.739299Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-050",
@@ -2197,7 +2246,8 @@
     "seq": 791399051,
     "duration_ms": 23.71,
     "seed": 544715,
-    "timestamp_utc": "2026-11-16T01:10:01.775962Z"
+    "timestamp_utc": "2026-11-16T01:10:01.775962Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-051",
@@ -2241,7 +2291,8 @@
     "seq": 791399052,
     "duration_ms": 41.69,
     "seed": 108623,
-    "timestamp_utc": "2026-11-16T01:10:01.799672Z"
+    "timestamp_utc": "2026-11-16T01:10:01.799672Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-052",
@@ -2285,7 +2336,8 @@
     "seq": 791399053,
     "duration_ms": 43.53,
     "seed": 477507,
-    "timestamp_utc": "2026-11-16T01:10:01.841361Z"
+    "timestamp_utc": "2026-11-16T01:10:01.841361Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-053",
@@ -2329,7 +2381,8 @@
     "seq": 791399054,
     "duration_ms": 31.77,
     "seed": 682016,
-    "timestamp_utc": "2026-11-16T01:10:01.884893Z"
+    "timestamp_utc": "2026-11-16T01:10:01.884893Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-054",
@@ -2373,7 +2426,8 @@
     "seq": 791399055,
     "duration_ms": 31.56,
     "seed": 413897,
-    "timestamp_utc": "2026-11-16T01:10:01.916668Z"
+    "timestamp_utc": "2026-11-16T01:10:01.916668Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-055",
@@ -2417,7 +2471,8 @@
     "seq": 791399056,
     "duration_ms": 32.58,
     "seed": 908692,
-    "timestamp_utc": "2026-11-16T01:10:01.948229Z"
+    "timestamp_utc": "2026-11-16T01:10:01.948229Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-056",
@@ -2461,7 +2516,8 @@
     "seq": 791399057,
     "duration_ms": 30.66,
     "seed": 897655,
-    "timestamp_utc": "2026-11-16T01:10:01.980810Z"
+    "timestamp_utc": "2026-11-16T01:10:01.980810Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-057",
@@ -2505,7 +2561,8 @@
     "seq": 791399058,
     "duration_ms": 38.2,
     "seed": 440803,
-    "timestamp_utc": "2026-11-16T01:10:02.011467Z"
+    "timestamp_utc": "2026-11-16T01:10:02.011467Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-058",
@@ -2549,7 +2606,8 @@
     "seq": 791399059,
     "duration_ms": 31.58,
     "seed": 723571,
-    "timestamp_utc": "2026-11-16T01:10:02.049667Z"
+    "timestamp_utc": "2026-11-16T01:10:02.049667Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-059",
@@ -2593,7 +2651,8 @@
     "seq": 791399060,
     "duration_ms": 31.4,
     "seed": 470664,
-    "timestamp_utc": "2026-11-16T01:10:02.081243Z"
+    "timestamp_utc": "2026-11-16T01:10:02.081243Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-060",
@@ -2637,7 +2696,8 @@
     "seq": 791399061,
     "duration_ms": 27.29,
     "seed": 497496,
-    "timestamp_utc": "2026-11-16T01:10:02.112640Z"
+    "timestamp_utc": "2026-11-16T01:10:02.112640Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-061",
@@ -2681,7 +2741,8 @@
     "seq": 791399062,
     "duration_ms": 47.58,
     "seed": 947957,
-    "timestamp_utc": "2026-11-16T01:10:02.139927Z"
+    "timestamp_utc": "2026-11-16T01:10:02.139927Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-062",
@@ -2725,7 +2786,8 @@
     "seq": 791399063,
     "duration_ms": 39.52,
     "seed": 441239,
-    "timestamp_utc": "2026-11-16T01:10:02.187507Z"
+    "timestamp_utc": "2026-11-16T01:10:02.187507Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-063",
@@ -2769,7 +2831,8 @@
     "seq": 791399064,
     "duration_ms": 46.91,
     "seed": 191313,
-    "timestamp_utc": "2026-11-16T01:10:02.227026Z"
+    "timestamp_utc": "2026-11-16T01:10:02.227026Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-064",
@@ -2813,7 +2876,8 @@
     "seq": 791399065,
     "duration_ms": 41.75,
     "seed": 874180,
-    "timestamp_utc": "2026-11-16T01:10:02.273937Z"
+    "timestamp_utc": "2026-11-16T01:10:02.273937Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-065",
@@ -2857,7 +2921,8 @@
     "seq": 791399066,
     "duration_ms": 32.57,
     "seed": 320144,
-    "timestamp_utc": "2026-11-16T01:10:02.315687Z"
+    "timestamp_utc": "2026-11-16T01:10:02.315687Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-066",
@@ -2901,7 +2966,8 @@
     "seq": 791399067,
     "duration_ms": 34.72,
     "seed": 956747,
-    "timestamp_utc": "2026-11-16T01:10:02.348253Z"
+    "timestamp_utc": "2026-11-16T01:10:02.348253Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-067",
@@ -2945,7 +3011,8 @@
     "seq": 791399068,
     "duration_ms": 31.48,
     "seed": 906786,
-    "timestamp_utc": "2026-11-16T01:10:02.382970Z"
+    "timestamp_utc": "2026-11-16T01:10:02.382970Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-068",
@@ -2989,7 +3056,8 @@
     "seq": 791399069,
     "duration_ms": 39.97,
     "seed": 200619,
-    "timestamp_utc": "2026-11-16T01:10:02.414451Z"
+    "timestamp_utc": "2026-11-16T01:10:02.414451Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-069",
@@ -3033,7 +3101,8 @@
     "seq": 791399070,
     "duration_ms": 43.42,
     "seed": 136050,
-    "timestamp_utc": "2026-11-16T01:10:02.454420Z"
+    "timestamp_utc": "2026-11-16T01:10:02.454420Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-070",
@@ -3077,7 +3146,8 @@
     "seq": 791399071,
     "duration_ms": 31.69,
     "seed": 527049,
-    "timestamp_utc": "2026-11-16T01:10:02.497843Z"
+    "timestamp_utc": "2026-11-16T01:10:02.497843Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-071",
@@ -3121,7 +3191,8 @@
     "seq": 791399072,
     "duration_ms": 31.54,
     "seed": 770328,
-    "timestamp_utc": "2026-11-16T01:10:02.529537Z"
+    "timestamp_utc": "2026-11-16T01:10:02.529537Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-072",
@@ -3165,7 +3236,8 @@
     "seq": 791399073,
     "duration_ms": 23.3,
     "seed": 199209,
-    "timestamp_utc": "2026-11-16T01:10:02.561075Z"
+    "timestamp_utc": "2026-11-16T01:10:02.561075Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-073",
@@ -3209,7 +3281,8 @@
     "seq": 791399074,
     "duration_ms": 31.72,
     "seed": 566462,
-    "timestamp_utc": "2026-11-16T01:10:02.600194Z"
+    "timestamp_utc": "2026-11-16T01:10:02.600194Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-074",
@@ -3253,7 +3326,8 @@
     "seq": 791399075,
     "duration_ms": 31.44,
     "seed": 767280,
-    "timestamp_utc": "2026-11-16T01:10:02.631917Z"
+    "timestamp_utc": "2026-11-16T01:10:02.631917Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-075",
@@ -3297,7 +3371,8 @@
     "seq": 791399076,
     "duration_ms": 32.07,
     "seed": 570758,
-    "timestamp_utc": "2026-11-16T01:10:02.663355Z"
+    "timestamp_utc": "2026-11-16T01:10:02.663355Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-076",
@@ -3341,7 +3416,8 @@
     "seq": 791399077,
     "duration_ms": 31.49,
     "seed": 464182,
-    "timestamp_utc": "2026-11-16T01:10:02.695424Z"
+    "timestamp_utc": "2026-11-16T01:10:02.695424Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-077",
@@ -3385,7 +3461,8 @@
     "seq": 791399078,
     "duration_ms": 56.05,
     "seed": 877519,
-    "timestamp_utc": "2026-11-16T01:10:02.726918Z"
+    "timestamp_utc": "2026-11-16T01:10:02.726918Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-078",
@@ -3429,7 +3506,8 @@
     "seq": 791399079,
     "duration_ms": 32.73,
     "seed": 663899,
-    "timestamp_utc": "2026-11-16T01:10:02.782965Z"
+    "timestamp_utc": "2026-11-16T01:10:02.782965Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-079",
@@ -3473,7 +3551,8 @@
     "seq": 791399080,
     "duration_ms": 34.76,
     "seed": 229797,
-    "timestamp_utc": "2026-11-16T01:10:02.815690Z"
+    "timestamp_utc": "2026-11-16T01:10:02.815690Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-080",
@@ -3517,7 +3596,8 @@
     "seq": 791399081,
     "duration_ms": 28.85,
     "seed": 346786,
-    "timestamp_utc": "2026-11-16T01:10:02.850449Z"
+    "timestamp_utc": "2026-11-16T01:10:02.850449Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-081",
@@ -3561,7 +3641,8 @@
     "seq": 791399082,
     "duration_ms": 65.21,
     "seed": 218451,
-    "timestamp_utc": "2026-11-16T01:10:02.879297Z"
+    "timestamp_utc": "2026-11-16T01:10:02.879297Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-082",
@@ -3605,7 +3686,8 @@
     "seq": 791399083,
     "duration_ms": 35.66,
     "seed": 218083,
-    "timestamp_utc": "2026-11-16T01:10:02.944507Z"
+    "timestamp_utc": "2026-11-16T01:10:02.944507Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-083",
@@ -3649,7 +3731,8 @@
     "seq": 791399084,
     "duration_ms": 32.3,
     "seed": 424469,
-    "timestamp_utc": "2026-11-16T01:10:02.980171Z"
+    "timestamp_utc": "2026-11-16T01:10:02.980171Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-084",
@@ -3693,7 +3776,8 @@
     "seq": 791399085,
     "duration_ms": 43.26,
     "seed": 748899,
-    "timestamp_utc": "2026-11-16T01:10:03.012469Z"
+    "timestamp_utc": "2026-11-16T01:10:03.012469Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-085",
@@ -3737,7 +3821,8 @@
     "seq": 791399086,
     "duration_ms": 46.39,
     "seed": 365213,
-    "timestamp_utc": "2026-11-16T01:10:03.055728Z"
+    "timestamp_utc": "2026-11-16T01:10:03.055728Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-086",
@@ -3781,7 +3866,8 @@
     "seq": 791399087,
     "duration_ms": 32.07,
     "seed": 940617,
-    "timestamp_utc": "2026-11-16T01:10:03.102117Z"
+    "timestamp_utc": "2026-11-16T01:10:03.102117Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-087",
@@ -3825,7 +3911,8 @@
     "seq": 791399088,
     "duration_ms": 31.97,
     "seed": 740337,
-    "timestamp_utc": "2026-11-16T01:10:03.134190Z"
+    "timestamp_utc": "2026-11-16T01:10:03.134190Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-088",
@@ -3869,7 +3956,8 @@
     "seq": 791399089,
     "duration_ms": 31.74,
     "seed": 467145,
-    "timestamp_utc": "2026-11-16T01:10:03.166162Z"
+    "timestamp_utc": "2026-11-16T01:10:03.166162Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-089",
@@ -3913,7 +4001,8 @@
     "seq": 791399090,
     "duration_ms": 47.13,
     "seed": 783962,
-    "timestamp_utc": "2026-11-16T01:10:03.197901Z"
+    "timestamp_utc": "2026-11-16T01:10:03.197901Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-090",
@@ -3957,7 +4046,8 @@
     "seq": 791399091,
     "duration_ms": 47.72,
     "seed": 101044,
-    "timestamp_utc": "2026-11-16T01:10:03.245036Z"
+    "timestamp_utc": "2026-11-16T01:10:03.245036Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-091",
@@ -4001,7 +4091,8 @@
     "seq": 791399092,
     "duration_ms": 27.73,
     "seed": 122873,
-    "timestamp_utc": "2026-11-16T01:10:03.292756Z"
+    "timestamp_utc": "2026-11-16T01:10:03.292756Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-092",
@@ -4045,7 +4136,8 @@
     "seq": 791399093,
     "duration_ms": 47.65,
     "seed": 375791,
-    "timestamp_utc": "2026-11-16T01:10:03.320484Z"
+    "timestamp_utc": "2026-11-16T01:10:03.320484Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-093",
@@ -4089,7 +4181,8 @@
     "seq": 791399094,
     "duration_ms": 31.39,
     "seed": 239558,
-    "timestamp_utc": "2026-11-16T01:10:03.368133Z"
+    "timestamp_utc": "2026-11-16T01:10:03.368133Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-094",
@@ -4133,7 +4226,8 @@
     "seq": 791399095,
     "duration_ms": 31.83,
     "seed": 427548,
-    "timestamp_utc": "2026-11-16T01:10:03.399520Z"
+    "timestamp_utc": "2026-11-16T01:10:03.399520Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-095",
@@ -4177,7 +4271,8 @@
     "seq": 791399096,
     "duration_ms": 50.96,
     "seed": 808794,
-    "timestamp_utc": "2026-11-16T01:10:03.431347Z"
+    "timestamp_utc": "2026-11-16T01:10:03.431347Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-096",
@@ -4221,7 +4316,8 @@
     "seq": 791399097,
     "duration_ms": 31.82,
     "seed": 403658,
-    "timestamp_utc": "2026-11-16T01:10:03.482305Z"
+    "timestamp_utc": "2026-11-16T01:10:03.482305Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-097",
@@ -4265,7 +4361,8 @@
     "seq": 791399098,
     "duration_ms": 28.6,
     "seed": 980082,
-    "timestamp_utc": "2026-11-16T01:10:03.514124Z"
+    "timestamp_utc": "2026-11-16T01:10:03.514124Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-098",
@@ -4309,7 +4406,8 @@
     "seq": 791399099,
     "duration_ms": 48.67,
     "seed": 768338,
-    "timestamp_utc": "2026-11-16T01:10:03.542726Z"
+    "timestamp_utc": "2026-11-16T01:10:03.542726Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-099",
@@ -4353,7 +4451,8 @@
     "seq": 791399099,
     "duration_ms": 15.88,
     "seed": 257756,
-    "timestamp_utc": "2026-11-16T01:10:03.591392Z"
+    "timestamp_utc": "2026-11-16T01:10:03.591392Z",
+    "auth_result": "NONE"
   },
   {
     "session_id": "SIM-SESS-100",
@@ -4397,6 +4496,7 @@
     "seq": 791399099,
     "duration_ms": 50.64,
     "seed": 706479,
-    "timestamp_utc": "2026-11-16T01:10:03.607272Z"
+    "timestamp_utc": "2026-11-16T01:10:03.607272Z",
+    "auth_result": "NONE"
   }
 ]

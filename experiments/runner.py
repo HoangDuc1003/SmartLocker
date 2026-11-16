@@ -450,6 +450,7 @@ class ExperimentRunner:
                 "bank_code": sc.bank_code,
                 "expected_auth_result": sc.expected_auth_result,
                 "actual_auth_result": auth_result,
+                "auth_result": auth_result,
                 "transport_pass": transport_pass,
                 "ingestion_pass": ingestion_pass,
                 "auth_pass": auth_pass,
