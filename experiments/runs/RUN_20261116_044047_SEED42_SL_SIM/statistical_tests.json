@@ -1,0 +1,216 @@
+{
+  "experimental_metadata": {
+    "total_sessions": 100,
+    "scenario_categories": [
+      "NORMAL_AUTHORIZED",
+      "UNAUTHORIZED_CREDENTIAL",
+      "FORCED_DOOR_OPEN",
+      "LOAD_OR_TAMPER_ANOMALY",
+      "SENSOR_OR_NETWORK_FAULT"
+    ],
+    "nominal_support_per_category": 20
+  },
+  "mcnemar_paired_test": {
+    "contingency_table": {
+      "n00": 6,
+      "n01": 29,
+      "n10": 1,
+      "n11": 64,
+      "n00_both_incorrect": 6,
+      "n01_b0_incorrect_b1_correct": 29,
+      "n10_b0_correct_b1_incorrect": 1,
+      "n11_both_correct": 64
+    },
+    "n00": 6,
+    "n01": 29,
+    "n10": 1,
+    "n11": 64,
+    "total_discordant": 30,
+    "discordant_pairs": 30,
+    "chi2_statistic": 24.3,
+    "chi2_continuity_corrected": 24.3,
+    "degrees_of_freedom": 1,
+    "odds_ratio": 29.0,
+    "p_value": 8.243906238216838e-07,
+    "p_value_formatted": "8.24e-07",
+    "p_value_exact": 5.774199962615967e-08,
+    "exact_binomial_p": 5.774199962615967e-08,
+    "p_value_exact_binomial": 5.774199962615967e-08,
+    "p_value_exact_formatted": "5.77e-08",
+    "scientific_notation_p_value": "5.77e-08",
+    "statistical_method": "Exact two-sided binomial McNemar test with Edwards continuity correction",
+    "null_hypothesis": "The marginal probabilities of correct detection for Baseline B0 and Proposed B1 are identical (P(B0 correct) = P(B1 correct)).",
+    "alternative_hypothesis": "The marginal probabilities of correct detection for Baseline B0 and Proposed B1 are significantly different (two-sided).",
+    "interpretation": "Proposed B1 significantly outperforms Baseline B0 (p < 0.001)",
+    "cohens_g": 0.4667,
+    "effect_size_interpretation": "Large effect (g >= 0.25)",
+    "significant_p05": true,
+    "significant_p01": true,
+    "significant_p001": true
+  },
+  "wilson_score_confidence_intervals": {
+    "b0": {
+      "overall_accuracy": 0.65,
+      "overall_accuracy_ci_95": [
+        0.5525,
+        0.7364
+      ],
+      "per_class": {
+        "NORMAL_AUTHORIZED": {
+          "recall": 0.95,
+          "recall_ci_95": [
+            0.7639,
+            0.9911
+          ],
+          "precision": 0.358,
+          "precision_ci_95": [
+            0.243,
+            0.4931
+          ],
+          "f1": 0.521
+        },
+        "UNAUTHORIZED_CREDENTIAL": {
+          "recall": 1.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "f1": 1.0
+        },
+        "FORCED_DOOR_OPEN": {
+          "recall": 0.9,
+          "recall_ci_95": [
+            0.699,
+            0.9721
+          ],
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8241,
+            1.0
+          ],
+          "f1": 0.947
+        },
+        "LOAD_OR_TAMPER_ANOMALY": {
+          "recall": 0.1,
+          "recall_ci_95": [
+            0.0279,
+            0.301
+          ],
+          "precision": 0.667,
+          "precision_ci_95": [
+            0.2077,
+            0.9385
+          ],
+          "f1": 0.174
+        },
+        "SENSOR_OR_NETWORK_FAULT": {
+          "recall": 0.3,
+          "recall_ci_95": [
+            0.1455,
+            0.519
+          ],
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.6097,
+            1.0
+          ],
+          "f1": 0.462
+        }
+      }
+    },
+    "b1": {
+      "overall_accuracy": 0.93,
+      "overall_accuracy_ci_95": [
+        0.8625,
+        0.9657
+      ],
+      "per_class": {
+        "NORMAL_AUTHORIZED": {
+          "recall": 0.9,
+          "recall_ci_95": [
+            0.699,
+            0.9721
+          ],
+          "precision": 0.783,
+          "precision_ci_95": [
+            0.581,
+            0.9034
+          ],
+          "f1": 0.837
+        },
+        "UNAUTHORIZED_CREDENTIAL": {
+          "recall": 1.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "f1": 1.0
+        },
+        "FORCED_DOOR_OPEN": {
+          "recall": 0.9,
+          "recall_ci_95": [
+            0.699,
+            0.9721
+          ],
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8241,
+            1.0
+          ],
+          "f1": 0.947
+        },
+        "LOAD_OR_TAMPER_ANOMALY": {
+          "recall": 0.85,
+          "recall_ci_95": [
+            0.6396,
+            0.9476
+          ],
+          "precision": 0.895,
+          "precision_ci_95": [
+            0.6861,
+            0.9706
+          ],
+          "f1": 0.872
+        },
+        "SENSOR_OR_NETWORK_FAULT": {
+          "recall": 1.0,
+          "recall_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "precision": 1.0,
+          "precision_ci_95": [
+            0.8389,
+            1.0
+          ],
+          "f1": 1.0
+        }
+      }
+    }
+  },
+  "latency_distribution": {
+    "count": 100,
+    "mean_ms": 53.8,
+    "sample_std_ms": 18.35,
+    "pop_std_ms": 18.25,
+    "min_ms": 21.96,
+    "p25_ms": 40.15,
+    "median_p50_ms": 49.74,
+    "p75_ms": 63.01,
+    "iqr_ms": 22.86,
+    "p90_ms": 79.12,
+    "p95_ms": 89.61,
+    "p99_ms": 99.16,
+    "max_ms": 110.22
+  }
+}

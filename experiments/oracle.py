@@ -1,31 +1,66 @@
 """
-Milestone 3 - Feature 13: Independent Scenario Oracle.
-Assigns ground-truth labels and theoretical detector predictions (B0 vs B1)
-strictly BEFORE execution, maintaining mathematical and epistemic independence
-from tested system runtime state.
+experiments/oracle.py
+Independent Scenario Oracle & Latent Physical Action Ground-Truth Specification.
+
+Assigns canonical ground-truth labels strictly BEFORE execution and BEFORE
+sensor observation generation, maintaining mathematical and epistemic independence
+from tested system runtime state, sensor thresholds, and detector logic.
+
+Strictly adheres to Direction B requirements:
+1. No detector imports or calls.
+2. Ground truth assigned directly from latent physical action, not measured sensor values.
+3. No shared classification thresholds with ProposedDetectorB1.
+4. Mathematical mapping from 6 canonical classes to 5 evaluation categories.
 """
 
 from dataclasses import asdict, dataclass
 from enum import Enum
-import math
 from typing import Any, Dict, Optional
 
 
 class ScenarioCategory(str, Enum):
+    """Five stratified evaluation categories for the 100-session campaign."""
     NORMAL_AUTHORIZED = "NORMAL_AUTHORIZED"
     UNAUTHORIZED_CREDENTIAL = "UNAUTHORIZED_CREDENTIAL"
     FORCED_DOOR_OPEN = "FORCED_DOOR_OPEN"
     LOAD_OR_TAMPER_ANOMALY = "LOAD_OR_TAMPER_ANOMALY"
-    SENSOR_FAULT = "SENSOR_FAULT"
+    SENSOR_OR_NETWORK_FAULT = "SENSOR_OR_NETWORK_FAULT"
+    SENSOR_FAULT = "SENSOR_OR_NETWORK_FAULT"  # Backward-compatible alias
 
 
 class CanonicalClass(str, Enum):
+    """Six canonical ground-truth action classes."""
     NORMAL_USAGE = "NORMAL_USAGE"
     UNAUTHORIZED_ACCESS = "UNAUTHORIZED_ACCESS"
     FORCED_DOOR_OPEN = "FORCED_DOOR_OPEN"
     PHYSICAL_TAMPER = "PHYSICAL_TAMPER"
     SENSOR_MALFUNCTION = "SENSOR_MALFUNCTION"
     NETWORK_MALFUNCTION = "NETWORK_MALFUNCTION"
+
+
+class LatentPhysicalAction(str, Enum):
+    """Underlying latent physical action in the real world."""
+    NORMAL_DEPOSIT = "NORMAL_DEPOSIT"
+    NORMAL_RETRIEVAL = "NORMAL_RETRIEVAL"
+    UNAUTHORIZED_WRONG_PIN = "UNAUTHORIZED_WRONG_PIN"
+    UNAUTHORIZED_BLOCKED_CARD = "UNAUTHORIZED_BLOCKED_CARD"
+    UNAUTHORIZED_UNKNOWN_CARD = "UNAUTHORIZED_UNKNOWN_CARD"
+    UNAUTHORIZED_INVALID_FP = "UNAUTHORIZED_INVALID_FP"
+    FORCED_CROWBAR_PRY = "FORCED_CROWBAR_PRY"
+    FORCED_KICK_BREACH = "FORCED_KICK_BREACH"
+    FORCED_LOCK_PICK = "FORCED_LOCK_PICK"
+    TAMPER_DRILL_VIBRATION = "TAMPER_DRILL_VIBRATION"
+    TAMPER_STRUCTURAL_TILT = "TAMPER_STRUCTURAL_TILT"
+    TAMPER_HAMMER_SHOCK = "TAMPER_HAMMER_SHOCK"
+    TAMPER_WEIGHT_CLOSED = "TAMPER_WEIGHT_CLOSED"
+    FAULT_WEIGHT_OUT_OF_RANGE = "FAULT_WEIGHT_OUT_OF_RANGE"
+    FAULT_DOOR_EXCEEDS_STAY = "FAULT_DOOR_EXCEEDS_STAY"
+    FAULT_ULTRASONIC_STUCK = "FAULT_ULTRASONIC_STUCK"
+    FAULT_IMU_DROPOUT = "FAULT_IMU_DROPOUT"
+    FAULT_NETWORK_TIMEOUT = "FAULT_NETWORK_TIMEOUT"
+    FAULT_NETWORK_DUPLICATE_REPLAY = "FAULT_NETWORK_DUPLICATE_REPLAY"
+    FAULT_NETWORK_PACKET_LOSS = "FAULT_NETWORK_PACKET_LOSS"
+    FAULT_NETWORK_PAYLOAD_CORRUPT = "FAULT_NETWORK_PAYLOAD_CORRUPT"
 
 
 class AuthMethod(str, Enum):
@@ -36,34 +71,55 @@ class AuthMethod(str, Enum):
     NONE = "NONE"
 
 
+# Explicit, reproducible mapping from Canonical Ground Truth to 5 Evaluation Categories
+CANONICAL_TO_EVALUATION_MAP: Dict[str, str] = {
+    CanonicalClass.NORMAL_USAGE.value: ScenarioCategory.NORMAL_AUTHORIZED.value,
+    CanonicalClass.UNAUTHORIZED_ACCESS.value: ScenarioCategory.UNAUTHORIZED_CREDENTIAL.value,
+    CanonicalClass.FORCED_DOOR_OPEN.value: ScenarioCategory.FORCED_DOOR_OPEN.value,
+    CanonicalClass.PHYSICAL_TAMPER.value: ScenarioCategory.LOAD_OR_TAMPER_ANOMALY.value,
+    CanonicalClass.SENSOR_MALFUNCTION.value: ScenarioCategory.SENSOR_OR_NETWORK_FAULT.value,
+    CanonicalClass.NETWORK_MALFUNCTION.value: ScenarioCategory.SENSOR_OR_NETWORK_FAULT.value,
+}
+
+
 @dataclass
 class ScenarioSpec:
+    """Complete specification of an experimental session."""
     session_id: str                      # e.g., "SIM-SESS-001"
     scenario_id: str                     # e.g., "SCEN-NORM-01"
     seed: int                            # Deterministic PRNG seed
-    category: str                        # 5 stratified categories
-    ground_truth_label: str              # Assigned by Oracle (Canonical 6 classes)
-    auth_method: str                     # PIN, CARD, FINGERPRINT, PHONE, NONE
-    credential: str                      # Raw credential value
-    slot_code: str                       # Target slot (e.g., "A04")
-    bank_code: str                       # Target bank (e.g., "CANT-A")
-    expected_auth_result: str            # UNLOCK, DENY, NONE
-    expected_b0_label: str               # Baseline B0 prediction
-    expected_b1_label: str               # Proposed B1 prediction
-    door_open_sec: float                 # Reed switch door duration
-    weight_delta_g: float                # Load cell delta
-    rfid_ok: bool                        # Reed/RFID batch indicator
-    stay_min: float                      # Stated session stay duration
-    ultrasonic_dist_cm: float            # Ultrasonic distance
-    vibration_intensity: float           # MPU6050 RMS vibration delta
-    tilt_deg: float                      # MPU6050 frame tilt
-    shock_mag_g: float = 1.0             # Peak G-force shock
-    fault_type: Optional[str] = None     # Injected fault code
+    latent_action: str = ""              # One of LatentPhysicalAction
+    category: str = ""                   # 5 stratified evaluation categories
+    ground_truth_label: str = ""         # Assigned by Oracle (Canonical 6 classes)
+    auth_method: str = "NONE"            # PIN, CARD, FINGERPRINT, PHONE, NONE
+    credential: str = "NONE"             # Raw credential value
+    slot_code: str = "A04"               # Target slot (e.g., "A04")
+    bank_code: str = "CANT-A"            # Target bank (e.g., "CANT-A")
+    expected_auth_result: str = "NONE"   # UNLOCK, DENY, NONE
+    expected_b0_label: str = ""          # Legacy test harness compatibility
+    expected_b1_label: str = ""          # Legacy test harness compatibility
+    door_open_sec: float = 0.0           # Observed reed switch door duration
+    weight_delta_g: float = 0.0          # Observed load cell delta
+    rfid_ok: bool = True                 # Reed/RFID batch indicator
+    stay_min: float = 10.0               # Stated session stay duration
+    ultrasonic_dist_cm: float = 30.0     # Observed ultrasonic distance
+    vibration_intensity: float = 0.02    # Observed MPU6050 RMS vibration delta
+    tilt_deg: float = 0.2                # Observed MPU6050 frame tilt
+    shock_mag_g: float = 1.0             # Observed peak G-force shock
+    fault_type: Optional[str] = None     # Fault code if simulated
     network_latency_ms: float = 0.0      # Transport delay
     seq_gap: bool = False                # Dropped sequence indicator
     seq_duplicate: bool = False          # Duplicate sequence indicator
     payload_corrupted: bool = False      # Corrupted payload indicator
     description: str = ""                # Human-readable scenario description
+
+    # Latent (un-noised) physical states for scientific traceability
+    latent_door_sec: float = 0.0
+    latent_weight_g: float = 0.0
+    latent_dist_cm: float = 30.0
+    latent_vib_g: float = 0.02
+    latent_tilt_deg: float = 0.2
+    latent_shock_g: float = 1.0
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -72,174 +128,67 @@ class ScenarioSpec:
 class ScenarioOracle:
     """
     Independent Scenario Oracle.
-    Assigns Ground Truth and predicts Baseline B0 / Proposed B1 outcomes
-    strictly from scenario input definitions without inspecting tested system state.
+    Assigns Ground Truth strictly from the Latent Physical Action.
+    Maintains zero knowledge of detector implementation, thresholds, or predictions.
     """
 
-    # Physical and Sensor Invariant Thresholds
-    DOOR_MIN_SEC = 0.0
-    DOOR_MAX_SEC = 3600.0
-    WEIGHT_MIN_G = -200.0
-    WEIGHT_MAX_G = 20000.0
-    STAY_MIN_VAL = 0.0
-    STAY_MAX_VAL = 10080.0
-    SONAR_MIN_CM = 2.0
-    SONAR_MAX_CM = 400.0
+    LATENT_TO_CANONICAL: Dict[str, CanonicalClass] = {
+        LatentPhysicalAction.NORMAL_DEPOSIT.value: CanonicalClass.NORMAL_USAGE,
+        LatentPhysicalAction.NORMAL_RETRIEVAL.value: CanonicalClass.NORMAL_USAGE,
+        LatentPhysicalAction.UNAUTHORIZED_WRONG_PIN.value: CanonicalClass.UNAUTHORIZED_ACCESS,
+        LatentPhysicalAction.UNAUTHORIZED_BLOCKED_CARD.value: CanonicalClass.UNAUTHORIZED_ACCESS,
+        LatentPhysicalAction.UNAUTHORIZED_UNKNOWN_CARD.value: CanonicalClass.UNAUTHORIZED_ACCESS,
+        LatentPhysicalAction.UNAUTHORIZED_INVALID_FP.value: CanonicalClass.UNAUTHORIZED_ACCESS,
+        LatentPhysicalAction.FORCED_CROWBAR_PRY.value: CanonicalClass.FORCED_DOOR_OPEN,
+        LatentPhysicalAction.FORCED_KICK_BREACH.value: CanonicalClass.FORCED_DOOR_OPEN,
+        LatentPhysicalAction.FORCED_LOCK_PICK.value: CanonicalClass.FORCED_DOOR_OPEN,
+        LatentPhysicalAction.TAMPER_DRILL_VIBRATION.value: CanonicalClass.PHYSICAL_TAMPER,
+        LatentPhysicalAction.TAMPER_STRUCTURAL_TILT.value: CanonicalClass.PHYSICAL_TAMPER,
+        LatentPhysicalAction.TAMPER_HAMMER_SHOCK.value: CanonicalClass.PHYSICAL_TAMPER,
+        LatentPhysicalAction.TAMPER_WEIGHT_CLOSED.value: CanonicalClass.PHYSICAL_TAMPER,
+        LatentPhysicalAction.FAULT_WEIGHT_OUT_OF_RANGE.value: CanonicalClass.SENSOR_MALFUNCTION,
+        LatentPhysicalAction.FAULT_DOOR_EXCEEDS_STAY.value: CanonicalClass.SENSOR_MALFUNCTION,
+        LatentPhysicalAction.FAULT_ULTRASONIC_STUCK.value: CanonicalClass.SENSOR_MALFUNCTION,
+        LatentPhysicalAction.FAULT_IMU_DROPOUT.value: CanonicalClass.SENSOR_MALFUNCTION,
+        LatentPhysicalAction.FAULT_NETWORK_TIMEOUT.value: CanonicalClass.NETWORK_MALFUNCTION,
+        LatentPhysicalAction.FAULT_NETWORK_DUPLICATE_REPLAY.value: CanonicalClass.NETWORK_MALFUNCTION,
+        LatentPhysicalAction.FAULT_NETWORK_PACKET_LOSS.value: CanonicalClass.NETWORK_MALFUNCTION,
+        LatentPhysicalAction.FAULT_NETWORK_PAYLOAD_CORRUPT.value: CanonicalClass.NETWORK_MALFUNCTION,
+    }
 
-    # Tamper Detection Thresholds
-    SHOCK_TAMPER_G = 16.0
-    VIB_TAMPER_G = 0.45
-    VIB_BREACH_G = 0.60
-    TILT_TAMPER_DEG = 4.0
-    WEIGHT_SPOOF_G = 50.0
-
-    # Network Thresholds
-    NETWORK_TIMEOUT_THRESHOLD_MS = 5000.0
+    @classmethod
+    def assign_ground_truth(cls, latent_action: str) -> str:
+        """
+        Assign canonical ground-truth label strictly from latent physical action.
+        No detector thresholds, no sensor readings, no circular logic.
+        """
+        canonical = cls.LATENT_TO_CANONICAL.get(latent_action)
+        if canonical is None:
+            raise ValueError(f"Unknown latent physical action: {latent_action}")
+        return canonical.value
 
     @classmethod
     def evaluate_ground_truth(cls, spec: ScenarioSpec) -> str:
         """
-        Evaluate and return canonical ground-truth label (6 classes).
-        Executes strict hierarchical order:
-        1. Sensor & Transducer Faults
-        2. Network & Transport Malfunctions
-        3. Physical Perimeter Breach (Forced Door Open)
-        4. Physical Enclosure Tampering
-        5. Access Control Unauthorized Denial
-        6. Normal Usage
+        Wrapper for assigning ground truth from latent_action.
+        Fallback to category mapping if latent_action is not specified.
         """
-        # Tier 1: Hardware & Sensor Malfunctions
-        if spec.fault_type and "FAULT" in spec.fault_type.upper():
-            return CanonicalClass.SENSOR_MALFUNCTION.value
-        readings = [spec.door_open_sec, spec.weight_delta_g, spec.stay_min,
-                    spec.ultrasonic_dist_cm, spec.vibration_intensity, spec.tilt_deg, spec.shock_mag_g]
-        if any(math.isnan(r) or math.isinf(r) for r in readings):
-            return CanonicalClass.SENSOR_MALFUNCTION.value
-        if not (cls.DOOR_MIN_SEC <= spec.door_open_sec <= cls.DOOR_MAX_SEC):
-            return CanonicalClass.SENSOR_MALFUNCTION.value
-        if not (cls.WEIGHT_MIN_G <= spec.weight_delta_g <= cls.WEIGHT_MAX_G):
-            return CanonicalClass.SENSOR_MALFUNCTION.value
-        if not (cls.STAY_MIN_VAL <= spec.stay_min <= cls.STAY_MAX_VAL):
-            return CanonicalClass.SENSOR_MALFUNCTION.value
-        if spec.door_open_sec > (spec.stay_min * 60.0 + 5.0):
-            return CanonicalClass.SENSOR_MALFUNCTION.value
-        if not (cls.SONAR_MIN_CM <= spec.ultrasonic_dist_cm <= cls.SONAR_MAX_CM):
-            return CanonicalClass.SENSOR_MALFUNCTION.value
-        if spec.vibration_intensity < 0.0 or spec.tilt_deg < 0.0 or spec.shock_mag_g < 0.05 or spec.shock_mag_g > 25.0:
-            return CanonicalClass.SENSOR_MALFUNCTION.value
-
-        # Tier 2: Network & Transport Malfunctions
-        if spec.network_latency_ms >= cls.NETWORK_TIMEOUT_THRESHOLD_MS:
-            return CanonicalClass.NETWORK_MALFUNCTION.value
-        if spec.seq_duplicate or spec.seq_gap or spec.payload_corrupted:
-            return CanonicalClass.NETWORK_MALFUNCTION.value
-
-        # Tier 3: Physical Perimeter Breach (Forced Open)
-        if spec.door_open_sec > 0.0 and (not spec.rfid_ok or spec.expected_auth_result == "DENY"):
-            return CanonicalClass.FORCED_DOOR_OPEN.value
-        if spec.door_open_sec > 0.0 and spec.vibration_intensity >= cls.VIB_BREACH_G:
-            return CanonicalClass.FORCED_DOOR_OPEN.value
-
-        # Tier 4: Physical Enclosure Tampering While Locked
-        if spec.door_open_sec == 0.0:
-            if spec.shock_mag_g >= cls.SHOCK_TAMPER_G:
-                return CanonicalClass.PHYSICAL_TAMPER.value
-            if spec.vibration_intensity >= cls.VIB_TAMPER_G:
-                return CanonicalClass.PHYSICAL_TAMPER.value
-            if spec.tilt_deg >= cls.TILT_TAMPER_DEG:
-                return CanonicalClass.PHYSICAL_TAMPER.value
-            if abs(spec.weight_delta_g) > cls.WEIGHT_SPOOF_G:
-                return CanonicalClass.PHYSICAL_TAMPER.value
-
-        # Tier 5: Unauthorized Credential
-        if spec.expected_auth_result == "DENY" and spec.door_open_sec == 0.0:
-            return CanonicalClass.UNAUTHORIZED_ACCESS.value
-
-        # Tier 6: Normal Authorized Usage
-        if spec.expected_auth_result == "UNLOCK" and spec.rfid_ok:
-            return CanonicalClass.NORMAL_USAGE.value
-
-        # Fallback to category mapping if ambiguous
-        fallback_map = {
+        if getattr(spec, "latent_action", None):
+            return cls.assign_ground_truth(spec.latent_action)
+        fallback = {
             ScenarioCategory.NORMAL_AUTHORIZED.value: CanonicalClass.NORMAL_USAGE.value,
             ScenarioCategory.UNAUTHORIZED_CREDENTIAL.value: CanonicalClass.UNAUTHORIZED_ACCESS.value,
             ScenarioCategory.FORCED_DOOR_OPEN.value: CanonicalClass.FORCED_DOOR_OPEN.value,
             ScenarioCategory.LOAD_OR_TAMPER_ANOMALY.value: CanonicalClass.PHYSICAL_TAMPER.value,
-            ScenarioCategory.SENSOR_FAULT.value: CanonicalClass.SENSOR_MALFUNCTION.value,
+            ScenarioCategory.SENSOR_OR_NETWORK_FAULT.value: CanonicalClass.SENSOR_MALFUNCTION.value,
+            "SENSOR_FAULT": CanonicalClass.SENSOR_MALFUNCTION.value,
         }
-        return fallback_map.get(spec.category, CanonicalClass.NORMAL_USAGE.value)
+        return fallback.get(spec.category, CanonicalClass.NORMAL_USAGE.value)
 
     @classmethod
-    def predict_b0(cls, spec: ScenarioSpec) -> str:
-        """
-        Predict Baseline B0 classification.
-        B0 uses legacy server-side batch rules and auth results.
-        Completely blind to IMU shock/vibration/tilt, ultrasonic range, and transport faults.
-        """
-        # Range faults recognized by RuleEngine
-        if not (cls.DOOR_MIN_SEC <= spec.door_open_sec <= cls.DOOR_MAX_SEC):
-            return CanonicalClass.SENSOR_MALFUNCTION.value
-        if not (cls.WEIGHT_MIN_G <= spec.weight_delta_g <= cls.WEIGHT_MAX_G):
-            return CanonicalClass.SENSOR_MALFUNCTION.value
-        if not (cls.STAY_MIN_VAL <= spec.stay_min <= cls.STAY_MAX_VAL):
-            return CanonicalClass.SENSOR_MALFUNCTION.value
-        if spec.door_open_sec > (spec.stay_min * 60.0 + 5.0):
-            return CanonicalClass.SENSOR_MALFUNCTION.value
-
-        # Blocked cards recognized by Auth/RuleEngine
-        if spec.credential in ("04DE0012", "C15C039D", "C206670A", "04E1F205"):
-            return CanonicalClass.UNAUTHORIZED_ACCESS.value
-
-        if spec.expected_auth_result == "DENY" and spec.auth_method != AuthMethod.NONE.value:
-            return CanonicalClass.UNAUTHORIZED_ACCESS.value
-
-        # Forced open via batch (!rfid_ok and door_open_sec > 0)
-        if not spec.rfid_ok and spec.door_open_sec > 0.0:
-            return CanonicalClass.FORCED_DOOR_OPEN.value
-
-        # Closed-door weight shift (SUSPECTED_SPOOF in B0)
-        if spec.door_open_sec == 0.0 and abs(spec.weight_delta_g) > cls.WEIGHT_SPOOF_G:
-            return CanonicalClass.PHYSICAL_TAMPER.value
-
-        # All other attacks (IMU vibration, IMU tilt, IMU shock, ultrasonic stuck) are MISSED by B0!
-        return CanonicalClass.NORMAL_USAGE.value
-
-    @classmethod
-    def predict_b1(cls, spec: ScenarioSpec) -> str:
-        """
-        Predict Proposed B1 multi-sensor fusion classification.
-        CRITICAL: Invariant to ground-truth labels and simulation fault flags.
-        Evaluates strictly observable telemetry via ProposedDetectorB1.
-        """
-        from experiments.detection import ProposedDetectorB1
-        detector = ProposedDetectorB1()
-        is_blocked = spec.credential in ("04DE0012", "C15C039D", "C206670A", "04E1F205")
-
-        telemetry_records = None
-        if spec.seq_duplicate:
-            # Observable telemetry stream with duplicate non-monotonic sequence
-            telemetry_records = [{"seq": 100}, {"seq": 100}]
-        elif spec.seq_gap:
-            # Observable telemetry stream with missing sequence gap
-            telemetry_records = [{"seq": 100}, {"seq": 105}]
-
-        raw_payload = None
-        if spec.payload_corrupted:
-            raw_payload = "INVALID_CORRUPTED_JSON_BODY{{"
-
-        verdict = detector.evaluate(
-            auth_result=spec.expected_auth_result,
-            door_open_sec=spec.door_open_sec,
-            weight_delta_g=spec.weight_delta_g,
-            rfid_ok=spec.rfid_ok,
-            stay_min=spec.stay_min,
-            ultrasonic_dist_cm=spec.ultrasonic_dist_cm,
-            vibration_intensity=spec.vibration_intensity,
-            tilt_deg=spec.tilt_deg,
-            shock_mag_g=spec.shock_mag_g,
-            card_blocked=is_blocked,
-            network_latency_ms=spec.network_latency_ms,
-            telemetry_records=telemetry_records,
-            raw_payload=raw_payload,
-        )
-        return verdict.label
+    def map_to_evaluation_category(cls, canonical_label: str) -> str:
+        """Map canonical 6-class label to 5-class evaluation category."""
+        category = CANONICAL_TO_EVALUATION_MAP.get(canonical_label)
+        if category is None:
+            raise ValueError(f"Unknown canonical label: {canonical_label}")
+        return category

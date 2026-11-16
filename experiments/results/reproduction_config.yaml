@@ -1,6 +1,6 @@
 # Reproduction Configuration for 100 Labeled Experimental Sessions
-run_id: "RUN_20261116_010959_SEED20261115_SL_SIM"
-master_seed: 20261115
+run_id: "RUN_20261116_044130_SEED42_SL_SIM"
+master_seed: 42
 total_sessions: 100
 
 categories:

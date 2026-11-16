@@ -1,0 +1,14 @@
+{
+  "run_id": "RUN_20261116_044130_SEED42_SL_SIM",
+  "os_platform": "Windows-10-10.0.26200-SP0",
+  "python_version": "3.11.9",
+  "java_runtime": "JDK 1.8.0_202 (Oracle Corporation)",
+  "servlet_container": "Apache Tomcat 9.0.113",
+  "database_engine": "Microsoft SQL Server 2022 (localhost:1433)",
+  "database_name": "SL_SIM",
+  "backend_base_url": "http://localhost:8081/SmartLocker/api",
+  "device_code": "LOCKER-01",
+  "device_id": 5,
+  "master_seed": 42,
+  "execution_timestamp_utc": "2026-11-16T04:41:35.640909+00:00"
+}

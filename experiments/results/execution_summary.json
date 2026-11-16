@@ -1,15 +1,15 @@
 {
-  "run_id": "RUN_20261116_010959_SEED20261115_SL_SIM",
+  "run_id": "RUN_20261116_044130_SEED42_SL_SIM",
   "total_sessions": 100,
-  "passed": 100,
   "end_to_end_passed": 100,
+  "passed": 100,
   "failed": 0,
   "blocked": 0,
   "pass_rate_pct": 100.0,
-  "total_duration_sec": 4.38,
-  "mean_session_ms": 43.63,
-  "min_session_ms": 15.88,
-  "max_session_ms": 78.02,
+  "total_duration_sec": 4.86,
+  "mean_session_ms": 48.55,
+  "min_session_ms": 25.85,
+  "max_session_ms": 91.94,
   "gates": {
     "transport_pass": {
       "count": 100,
@@ -24,12 +24,12 @@
       "pct": 100.0
     },
     "b0_detection_pass": {
-      "count": 73,
-      "pct": 73.0
+      "count": 65,
+      "pct": 65.0
     },
     "b1_detection_pass": {
-      "count": 100,
-      "pct": 100.0
+      "count": 91,
+      "pct": 91.0
     },
     "end_to_end_pass": {
       "count": 100,
@@ -41,6 +41,7 @@
     "UNAUTHORIZED_CREDENTIAL": 20,
     "FORCED_DOOR_OPEN": 20,
     "LOAD_OR_TAMPER_ANOMALY": 20,
+    "SENSOR_OR_NETWORK_FAULT": 20,
     "SENSOR_FAULT": 20
   },
   "ground_truth_counts": {
@@ -51,5 +52,5 @@
     "SENSOR_MALFUNCTION": 15,
     "NETWORK_MALFUNCTION": 5
   },
-  "timestamp_utc": "2026-11-16T01:10:03Z"
+  "timestamp_utc": "2026-11-16T04:41:35Z"
 }

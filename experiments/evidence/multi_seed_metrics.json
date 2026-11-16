@@ -1,0 +1,177 @@
+{
+  "evaluated_seeds": [
+    42,
+    101,
+    202,
+    303,
+    404
+  ],
+  "seed_count": 5,
+  "primary_live_seed": 42,
+  "per_seed_results": [
+    {
+      "seed": 42,
+      "is_primary_live_seed": true,
+      "metrics_b0": {
+        "overall_accuracy": 0.65,
+        "balanced_accuracy": 0.65,
+        "macro_precision": 0.805,
+        "macro_recall": 0.65,
+        "macro_f1": 0.6207
+      },
+      "metrics_b1": {
+        "overall_accuracy": 0.91,
+        "balanced_accuracy": 0.91,
+        "macro_precision": 0.9229,
+        "macro_recall": 0.91,
+        "macro_f1": 0.9133
+      },
+      "mcnemar_chi2": 22.3214,
+      "mcnemar_p": 2.1606683731079102e-07,
+      "discordant_n01": 27,
+      "discordant_n10": 1
+    },
+    {
+      "seed": 101,
+      "is_primary_live_seed": false,
+      "metrics_b0": {
+        "overall_accuracy": 0.72,
+        "balanced_accuracy": 0.72,
+        "macro_precision": 0.8626,
+        "macro_recall": 0.72,
+        "macro_f1": 0.7169
+      },
+      "metrics_b1": {
+        "overall_accuracy": 0.91,
+        "balanced_accuracy": 0.91,
+        "macro_precision": 0.9229,
+        "macro_recall": 0.91,
+        "macro_f1": 0.9133
+      },
+      "mcnemar_chi2": 15.4286,
+      "mcnemar_p": 2.09808349609375e-05,
+      "discordant_n01": 20,
+      "discordant_n10": 1
+    },
+    {
+      "seed": 202,
+      "is_primary_live_seed": false,
+      "metrics_b0": {
+        "overall_accuracy": 0.7,
+        "balanced_accuracy": 0.7,
+        "macro_precision": 0.8383,
+        "macro_recall": 0.7,
+        "macro_f1": 0.6975
+      },
+      "metrics_b1": {
+        "overall_accuracy": 0.91,
+        "balanced_accuracy": 0.91,
+        "macro_precision": 0.9229,
+        "macro_recall": 0.91,
+        "macro_f1": 0.9133
+      },
+      "mcnemar_chi2": 19.0476,
+      "mcnemar_p": 9.5367431640625e-07,
+      "discordant_n01": 21,
+      "discordant_n10": 0
+    },
+    {
+      "seed": 303,
+      "is_primary_live_seed": false,
+      "metrics_b0": {
+        "overall_accuracy": 0.7,
+        "balanced_accuracy": 0.7,
+        "macro_precision": 0.8542,
+        "macro_recall": 0.7,
+        "macro_f1": 0.6935
+      },
+      "metrics_b1": {
+        "overall_accuracy": 0.92,
+        "balanced_accuracy": 0.92,
+        "macro_precision": 0.93,
+        "macro_recall": 0.92,
+        "macro_f1": 0.9226
+      },
+      "mcnemar_chi2": 18.375,
+      "mcnemar_p": 2.9802322387695312e-06,
+      "discordant_n01": 23,
+      "discordant_n10": 1
+    },
+    {
+      "seed": 404,
+      "is_primary_live_seed": false,
+      "metrics_b0": {
+        "overall_accuracy": 0.67,
+        "balanced_accuracy": 0.67,
+        "macro_precision": 0.8068,
+        "macro_recall": 0.67,
+        "macro_f1": 0.6591
+      },
+      "metrics_b1": {
+        "overall_accuracy": 0.92,
+        "balanced_accuracy": 0.92,
+        "macro_precision": 0.9289,
+        "macro_recall": 0.92,
+        "macro_f1": 0.9223
+      },
+      "mcnemar_chi2": 23.04,
+      "mcnemar_p": 5.960464477539063e-08,
+      "discordant_n01": 25,
+      "discordant_n10": 0
+    }
+  ],
+  "aggregate_statistics": {
+    "b0": {
+      "macro_f1": {
+        "mean": 0.6775,
+        "std": 0.038,
+        "min": 0.6207,
+        "max": 0.7169,
+        "ci95_low": 0.6442,
+        "ci95_high": 0.7108
+      },
+      "balanced_accuracy": {
+        "mean": 0.688,
+        "std": 0.0277,
+        "min": 0.65,
+        "max": 0.72,
+        "ci95_low": 0.6637,
+        "ci95_high": 0.7123
+      },
+      "overall_accuracy": {
+        "mean": 0.688,
+        "std": 0.0277,
+        "min": 0.65,
+        "max": 0.72,
+        "ci95_low": 0.6637,
+        "ci95_high": 0.7123
+      }
+    },
+    "b1": {
+      "macro_f1": {
+        "mean": 0.917,
+        "std": 0.005,
+        "min": 0.9133,
+        "max": 0.9226,
+        "ci95_low": 0.9126,
+        "ci95_high": 0.9214
+      },
+      "balanced_accuracy": {
+        "mean": 0.914,
+        "std": 0.0055,
+        "min": 0.91,
+        "max": 0.92,
+        "ci95_low": 0.9092,
+        "ci95_high": 0.9188
+      },
+      "overall_accuracy": {
+        "mean": 0.914,
+        "std": 0.0055,
+        "min": 0.91,
+        "max": 0.92,
+        "ci95_low": 0.9092,
+        "ci95_high": 0.9188
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "timestamp_utc": "2026-11-16T01:09:59.243196+00:00",
+  "timestamp_utc": "2026-11-16T04:41:30.662386+00:00",
   "database": "SL_SIM",
   "device_id": 5,
   "locker_code": "LOCKER-01",
@@ -8,10 +8,10 @@
     "is_locked": false,
     "retry_sec": 0
   },
-  "total_active_fixtures": 11,
+  "total_active_fixtures": 10,
   "fixtures": [
     {
-      "deposit_id": 151,
+      "deposit_id": 196,
       "user_id": 72,
       "username": "student1",
       "slot_id": 51,
@@ -25,7 +25,7 @@
       "sensor_slot": null
     },
     {
-      "deposit_id": 152,
+      "deposit_id": 197,
       "user_id": 73,
       "username": "student2",
       "slot_id": 52,
@@ -39,7 +39,7 @@
       "sensor_slot": null
     },
     {
-      "deposit_id": 153,
+      "deposit_id": 198,
       "user_id": 74,
       "username": "student3",
       "slot_id": 53,
@@ -53,7 +53,7 @@
       "sensor_slot": null
     },
     {
-      "deposit_id": 150,
+      "deposit_id": 195,
       "user_id": 91,
       "username": "student18",
       "slot_id": 54,
@@ -81,7 +81,7 @@
       "sensor_slot": null
     },
     {
-      "deposit_id": 154,
+      "deposit_id": 199,
       "user_id": 75,
       "username": "student4",
       "slot_id": 56,
@@ -95,7 +95,7 @@
       "sensor_slot": null
     },
     {
-      "deposit_id": 155,
+      "deposit_id": 200,
       "user_id": 76,
       "username": "student5",
       "slot_id": 57,
@@ -109,7 +109,7 @@
       "sensor_slot": null
     },
     {
-      "deposit_id": 156,
+      "deposit_id": 201,
       "user_id": 77,
       "username": "student6",
       "slot_id": 58,
@@ -123,7 +123,7 @@
       "sensor_slot": 1
     },
     {
-      "deposit_id": 157,
+      "deposit_id": 202,
       "user_id": 104,
       "username": "v2fp",
       "slot_id": 59,
@@ -137,7 +137,7 @@
       "sensor_slot": 2
     },
     {
-      "deposit_id": 158,
+      "deposit_id": 203,
       "user_id": 78,
       "username": "student7",
       "slot_id": 60,
@@ -149,20 +149,6 @@
       "pin_code": null,
       "card_uid": null,
       "sensor_slot": 5
-    },
-    {
-      "deposit_id": 95,
-      "user_id": 105,
-      "username": "v2noshow",
-      "slot_id": 65,
-      "slot_code": "A15",
-      "bank_code": "CANT-A",
-      "deposit_status": "ACTIVE",
-      "slot_status": "AVAILABLE",
-      "open_method": "PIN",
-      "pin_code": "***REDACTED***",
-      "card_uid": null,
-      "sensor_slot": null
     }
   ]
 }

@@ -14,6 +14,7 @@ from typing import Any, Dict, List
 from experiments.oracle import (
     AuthMethod,
     CanonicalClass,
+    LatentPhysicalAction,
     ScenarioCategory,
     ScenarioOracle,
     ScenarioSpec,
@@ -28,153 +29,77 @@ from experiments.runner import ExperimentRunner
 
 
 class TestScenarioOracle(unittest.TestCase):
-    """Test suite for Feature 13: Independent Scenario Oracle."""
-
-    def setUp(self):
-        self.oracle = ScenarioOracle()
-        self.base_spec = ScenarioSpec(
-            session_id="SIM-TEST-001",
-            scenario_id="SCEN-TEST-01",
-            seed=42,
-            category=ScenarioCategory.NORMAL_AUTHORIZED.value,
-            ground_truth_label="",
-            auth_method="PIN",
-            credential="599901",
-            slot_code="A04",
-            bank_code="CANT-A",
-            expected_auth_result="UNLOCK",
-            expected_b0_label="",
-            expected_b1_label="",
-            door_open_sec=6.5,
-            weight_delta_g=120.0,
-            rfid_ok=True,
-            stay_min=15.0,
-            ultrasonic_dist_cm=30.0,
-            vibration_intensity=0.03,
-            tilt_deg=0.4,
-            shock_mag_g=1.0,
-            fault_type=None,
-            network_latency_ms=25.0,
-            seq_gap=False,
-            seq_duplicate=False,
-            payload_corrupted=False,
-            description="Base test spec",
-        )
+    """Test suite for Direction B Independent Scenario Oracle."""
 
     def test_normal_authorized_evaluation(self):
-        """Normal authorized spec resolves to NORMAL_USAGE."""
-        spec = copy.deepcopy(self.base_spec)
-        gt = ScenarioOracle.evaluate_ground_truth(spec)
+        """Normal authorized latent action resolves to NORMAL_USAGE."""
+        gt = ScenarioOracle.assign_ground_truth(LatentPhysicalAction.NORMAL_DEPOSIT.value)
         self.assertEqual(gt, CanonicalClass.NORMAL_USAGE.value)
-        self.assertEqual(ScenarioOracle.predict_b0(spec), CanonicalClass.NORMAL_USAGE.value)
-        self.assertEqual(ScenarioOracle.predict_b1(spec), CanonicalClass.NORMAL_USAGE.value)
+        cat = ScenarioOracle.map_to_evaluation_category(gt)
+        self.assertEqual(cat, ScenarioCategory.NORMAL_AUTHORIZED.value)
 
     def test_unauthorized_credential_evaluation(self):
-        """Denied auth without door opening resolves to UNAUTHORIZED_ACCESS."""
-        spec = copy.deepcopy(self.base_spec)
-        spec.category = ScenarioCategory.UNAUTHORIZED_CREDENTIAL.value
-        spec.expected_auth_result = "DENY"
-        spec.door_open_sec = 0.0
-        spec.weight_delta_g = 0.0
-        spec.rfid_ok = False
-        gt = ScenarioOracle.evaluate_ground_truth(spec)
+        """Unauthorized credentials resolve to UNAUTHORIZED_ACCESS."""
+        gt = ScenarioOracle.assign_ground_truth(LatentPhysicalAction.UNAUTHORIZED_WRONG_PIN.value)
         self.assertEqual(gt, CanonicalClass.UNAUTHORIZED_ACCESS.value)
-        self.assertEqual(ScenarioOracle.predict_b0(spec), CanonicalClass.UNAUTHORIZED_ACCESS.value)
-        self.assertEqual(ScenarioOracle.predict_b1(spec), CanonicalClass.UNAUTHORIZED_ACCESS.value)
+        cat = ScenarioOracle.map_to_evaluation_category(gt)
+        self.assertEqual(cat, ScenarioCategory.UNAUTHORIZED_CREDENTIAL.value)
 
     def test_forced_door_opening_evaluation(self):
-        """Door opened without valid unlock resolves to FORCED_DOOR_OPEN."""
-        spec = copy.deepcopy(self.base_spec)
-        spec.category = ScenarioCategory.FORCED_DOOR_OPEN.value
-        spec.expected_auth_result = "NONE"
-        spec.rfid_ok = False
-        spec.door_open_sec = 8.5
-        spec.vibration_intensity = 0.95
-        gt = ScenarioOracle.evaluate_ground_truth(spec)
+        """Physical door forcing resolves to FORCED_DOOR_OPEN."""
+        gt = ScenarioOracle.assign_ground_truth(LatentPhysicalAction.FORCED_CROWBAR_PRY.value)
         self.assertEqual(gt, CanonicalClass.FORCED_DOOR_OPEN.value)
-        self.assertEqual(ScenarioOracle.predict_b0(spec), CanonicalClass.FORCED_DOOR_OPEN.value)
-        self.assertEqual(ScenarioOracle.predict_b1(spec), CanonicalClass.FORCED_DOOR_OPEN.value)
+        cat = ScenarioOracle.map_to_evaluation_category(gt)
+        self.assertEqual(cat, ScenarioCategory.FORCED_DOOR_OPEN.value)
 
     def test_tamper_shock_impact(self):
-        """Impact shock >= 16G while locked resolves to PHYSICAL_TAMPER."""
-        spec = copy.deepcopy(self.base_spec)
-        spec.category = ScenarioCategory.LOAD_OR_TAMPER_ANOMALY.value
-        spec.door_open_sec = 0.0
-        spec.weight_delta_g = 0.0
-        spec.shock_mag_g = 18.5
-        gt = ScenarioOracle.evaluate_ground_truth(spec)
+        """Heavy hammer shock resolves to PHYSICAL_TAMPER."""
+        gt = ScenarioOracle.assign_ground_truth(LatentPhysicalAction.TAMPER_HAMMER_SHOCK.value)
         self.assertEqual(gt, CanonicalClass.PHYSICAL_TAMPER.value)
-        # B0 is completely blind to IMU shock
-        self.assertEqual(ScenarioOracle.predict_b0(spec), CanonicalClass.NORMAL_USAGE.value)
-        self.assertEqual(ScenarioOracle.predict_b1(spec), CanonicalClass.PHYSICAL_TAMPER.value)
+        cat = ScenarioOracle.map_to_evaluation_category(gt)
+        self.assertEqual(cat, ScenarioCategory.LOAD_OR_TAMPER_ANOMALY.value)
 
     def test_tamper_continuous_vibration(self):
-        """Drilling vibration >= 0.45G while locked resolves to PHYSICAL_TAMPER."""
-        spec = copy.deepcopy(self.base_spec)
-        spec.category = ScenarioCategory.LOAD_OR_TAMPER_ANOMALY.value
-        spec.door_open_sec = 0.0
-        spec.weight_delta_g = 0.0
-        spec.vibration_intensity = 0.75
-        gt = ScenarioOracle.evaluate_ground_truth(spec)
+        """Drilling vibration resolves to PHYSICAL_TAMPER."""
+        gt = ScenarioOracle.assign_ground_truth(LatentPhysicalAction.TAMPER_DRILL_VIBRATION.value)
         self.assertEqual(gt, CanonicalClass.PHYSICAL_TAMPER.value)
-        self.assertEqual(ScenarioOracle.predict_b0(spec), CanonicalClass.NORMAL_USAGE.value)
-        self.assertEqual(ScenarioOracle.predict_b1(spec), CanonicalClass.PHYSICAL_TAMPER.value)
+        cat = ScenarioOracle.map_to_evaluation_category(gt)
+        self.assertEqual(cat, ScenarioCategory.LOAD_OR_TAMPER_ANOMALY.value)
 
     def test_tamper_frame_tilt(self):
-        """Frame tilt >= 4.0 degrees while locked resolves to PHYSICAL_TAMPER."""
-        spec = copy.deepcopy(self.base_spec)
-        spec.category = ScenarioCategory.LOAD_OR_TAMPER_ANOMALY.value
-        spec.door_open_sec = 0.0
-        spec.weight_delta_g = 0.0
-        spec.tilt_deg = 6.5
-        gt = ScenarioOracle.evaluate_ground_truth(spec)
+        """Cabinet structural tilt resolves to PHYSICAL_TAMPER."""
+        gt = ScenarioOracle.assign_ground_truth(LatentPhysicalAction.TAMPER_STRUCTURAL_TILT.value)
         self.assertEqual(gt, CanonicalClass.PHYSICAL_TAMPER.value)
-        self.assertEqual(ScenarioOracle.predict_b0(spec), CanonicalClass.NORMAL_USAGE.value)
-        self.assertEqual(ScenarioOracle.predict_b1(spec), CanonicalClass.PHYSICAL_TAMPER.value)
+        cat = ScenarioOracle.map_to_evaluation_category(gt)
+        self.assertEqual(cat, ScenarioCategory.LOAD_OR_TAMPER_ANOMALY.value)
 
     def test_tamper_weight_spoof_closed_door(self):
-        """Weight change > 50g while door closed resolves to PHYSICAL_TAMPER."""
-        spec = copy.deepcopy(self.base_spec)
-        spec.category = ScenarioCategory.LOAD_OR_TAMPER_ANOMALY.value
-        spec.door_open_sec = 0.0
-        spec.weight_delta_g = 150.0
-        gt = ScenarioOracle.evaluate_ground_truth(spec)
+        """Weight alteration with door closed resolves to PHYSICAL_TAMPER."""
+        gt = ScenarioOracle.assign_ground_truth(LatentPhysicalAction.TAMPER_WEIGHT_CLOSED.value)
         self.assertEqual(gt, CanonicalClass.PHYSICAL_TAMPER.value)
-        # B0 has closed-door weight rule (SUSPECTED_SPOOF)
-        self.assertEqual(ScenarioOracle.predict_b0(spec), CanonicalClass.PHYSICAL_TAMPER.value)
-        self.assertEqual(ScenarioOracle.predict_b1(spec), CanonicalClass.PHYSICAL_TAMPER.value)
+        cat = ScenarioOracle.map_to_evaluation_category(gt)
+        self.assertEqual(cat, ScenarioCategory.LOAD_OR_TAMPER_ANOMALY.value)
 
     def test_sensor_fault_transducer_out_of_bounds(self):
-        """Weight outside [-200, 20000] resolves to SENSOR_MALFUNCTION."""
-        spec = copy.deepcopy(self.base_spec)
-        spec.category = ScenarioCategory.SENSOR_FAULT.value
-        spec.weight_delta_g = -350.0
-        gt = ScenarioOracle.evaluate_ground_truth(spec)
+        """Load cell ADC saturation resolves to SENSOR_MALFUNCTION."""
+        gt = ScenarioOracle.assign_ground_truth(LatentPhysicalAction.FAULT_WEIGHT_OUT_OF_RANGE.value)
         self.assertEqual(gt, CanonicalClass.SENSOR_MALFUNCTION.value)
-        self.assertEqual(ScenarioOracle.predict_b0(spec), CanonicalClass.SENSOR_MALFUNCTION.value)
-        self.assertEqual(ScenarioOracle.predict_b1(spec), CanonicalClass.SENSOR_MALFUNCTION.value)
+        cat = ScenarioOracle.map_to_evaluation_category(gt)
+        self.assertEqual(cat, ScenarioCategory.SENSOR_OR_NETWORK_FAULT.value)
 
     def test_sensor_fault_temporal_inconsistency(self):
-        """Door duration exceeding stay * 60 + 5 resolves to SENSOR_MALFUNCTION."""
-        spec = copy.deepcopy(self.base_spec)
-        spec.category = ScenarioCategory.SENSOR_FAULT.value
-        spec.stay_min = 1.0
-        spec.door_open_sec = 120.0
-        gt = ScenarioOracle.evaluate_ground_truth(spec)
+        """Door duration exceeding stay resolves to SENSOR_MALFUNCTION."""
+        gt = ScenarioOracle.assign_ground_truth(LatentPhysicalAction.FAULT_DOOR_EXCEEDS_STAY.value)
         self.assertEqual(gt, CanonicalClass.SENSOR_MALFUNCTION.value)
-        self.assertEqual(ScenarioOracle.predict_b0(spec), CanonicalClass.SENSOR_MALFUNCTION.value)
-        self.assertEqual(ScenarioOracle.predict_b1(spec), CanonicalClass.SENSOR_MALFUNCTION.value)
+        cat = ScenarioOracle.map_to_evaluation_category(gt)
+        self.assertEqual(cat, ScenarioCategory.SENSOR_OR_NETWORK_FAULT.value)
 
     def test_network_malfunction_timeout(self):
-        """Transmission delay >= 5000ms resolves to NETWORK_MALFUNCTION."""
-        spec = copy.deepcopy(self.base_spec)
-        spec.category = ScenarioCategory.SENSOR_FAULT.value
-        spec.network_latency_ms = 6500.0
-        gt = ScenarioOracle.evaluate_ground_truth(spec)
+        """Transmission timeout resolves to NETWORK_MALFUNCTION."""
+        gt = ScenarioOracle.assign_ground_truth(LatentPhysicalAction.FAULT_NETWORK_TIMEOUT.value)
         self.assertEqual(gt, CanonicalClass.NETWORK_MALFUNCTION.value)
-        # B0 is completely blind to network latency
-        self.assertEqual(ScenarioOracle.predict_b0(spec), CanonicalClass.NORMAL_USAGE.value)
-        self.assertEqual(ScenarioOracle.predict_b1(spec), CanonicalClass.NETWORK_MALFUNCTION.value)
+        cat = ScenarioOracle.map_to_evaluation_category(gt)
+        self.assertEqual(cat, ScenarioCategory.SENSOR_OR_NETWORK_FAULT.value)
 
 
 class TestScenarioGenerator(unittest.TestCase):

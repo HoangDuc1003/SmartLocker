@@ -1,0 +1,23 @@
+\begin{table}[!htbp]
+\renewcommand{\arraystretch}{1.02}
+\centering
+\small
+\caption{Ablation Study: Detection Performance of Baseline B0 vs. Proposed B1.}
+\label{tab:b0_vs_b1}
+\vspace{4pt}
+\begin{tabular}{l ccc ccc}
+\hline
+Category & \multicolumn{3}{c}{Baseline B0 (Existing)} & \multicolumn{3}{c}{Proposed B1 (Multi-Sensor)} \\
+ & Prec. & Rec. & F1 & Prec. & Rec. & F1 \\
+\hline
+Normal Authorized & 0.408 & 1.000 & 0.580 & 0.952 & 1.000 & 0.976 \\
+Unauthorized Credential & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+Forced Door Opening & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+Load / Tamper Anomaly & 1.000 & 0.150 & 0.261 & 1.000 & 0.950 & 0.974 \\
+Sensor or Network Fault & 1.000 & 0.400 & 0.571 & 1.000 & 1.000 & 1.000 \\
+\hline
+Overall / Macro & 0.882 & 0.710 & 0.682 & 0.990 & 0.990 & \textbf{0.990} \\
+\rule{0pt}{2.6ex}Balanced Accuracy & \multicolumn{3}{c}{0.710} & \multicolumn{3}{c}{\textbf{0.990}} \\
+\hline
+\end{tabular}
+\end{table}

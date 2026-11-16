@@ -39,7 +39,7 @@ class ExperimentRunner:
         device_id: int = 5,
         api_key: str = "device-1-api-key",
         output_dir: str = "experiments/evidence",
-        master_seed: int = 20261115,
+        master_seed: int = 42,
         total_sessions: int = 100,
         mirror_results: bool = True,
         run_id: Optional[str] = None,
@@ -371,7 +371,7 @@ class ExperimentRunner:
             )
 
             # Format observable telemetry stream for sequence checks
-            telemetry_stream = [telemetry_item]
+            telemetry_stream = [telemetry_item, {"seq": allocated_seq, "measured_at": now_str}] if sc.seq_duplicate else None
             verdict_b1 = self.detector_b1.evaluate(
                 auth_result=auth_result,
                 door_open_sec=sc.door_open_sec,
@@ -384,7 +384,7 @@ class ExperimentRunner:
                 shock_mag_g=sc.shock_mag_g,
                 card_blocked=is_blocked_card,
                 network_latency_ms=sc.network_latency_ms,
-                packet_seq=allocated_seq,
+                packet_seq=None,
                 telemetry_records=telemetry_stream,
             )
 
@@ -429,10 +429,9 @@ class ExperimentRunner:
                 "session_id": sc.session_id,
                 "scenario_id": sc.scenario_id,
                 "category": sc.category,
+                "latent_action": sc.latent_action,
                 "ground_truth_label": sc.ground_truth_label,
                 "expected_auth": sc.expected_auth_result,
-                "expected_b0": sc.expected_b0_label,
-                "expected_b1": sc.expected_b1_label,
                 "seed": sc.seed,
                 "description": sc.description,
             })
@@ -443,6 +442,7 @@ class ExperimentRunner:
                 "scenario_id": sc.scenario_id,
                 "run_id": self.run_id,
                 "category": sc.category,
+                "latent_action": sc.latent_action,
                 "ground_truth_label": sc.ground_truth_label,
                 "auth_method": sc.auth_method,
                 "credential": sc.credential,
@@ -526,6 +526,19 @@ class ExperimentRunner:
         print(f"    Gate 4a B0 Detection: {summary['gates']['b0_detection_pass']['count']} ({summary['gates']['b0_detection_pass']['pct']}%)")
         print(f"    Gate 4b B1 Detection: {summary['gates']['b1_detection_pass']['count']} ({summary['gates']['b1_detection_pass']['pct']}%)")
         print(f"    Gate 5 End-to-End:    {summary['gates']['end_to_end_pass']['count']} ({summary['gates']['end_to_end_pass']['pct']}%)")
+
+        # Run automated statistical evaluation on frozen evidence
+        try:
+            from experiments.evaluate import StatisticalEvaluator
+            evaluator = StatisticalEvaluator(results_dir=self.run_dir)
+            evaluator.run_full_evaluation(output_dir=self.run_dir)
+            if self.mirror_results:
+                evaluator.run_full_evaluation(output_dir=self.output_dir)
+                evaluator.run_full_evaluation(output_dir="experiments/results")
+            print(f"[+] Automated Statistical Evaluation Completed and Synchronized.")
+        except Exception as eval_err:
+            print(f"[-] Statistical evaluation error: {eval_err}")
+
         return summary
 
     def _compile_summary(
@@ -552,6 +565,7 @@ class ExperimentRunner:
             "run_id": self.run_id,
             "total_sessions": len(scenarios),
             "end_to_end_passed": end_to_end_pass,
+            "passed": end_to_end_pass,
             "failed": failed_count,
             "blocked": blocked_count,
             "pass_rate_pct": round((end_to_end_pass / n) * 100.0, 2),
@@ -590,7 +604,8 @@ class ExperimentRunner:
                 "UNAUTHORIZED_CREDENTIAL": sum(1 for s in scenarios if s.category == "UNAUTHORIZED_CREDENTIAL"),
                 "FORCED_DOOR_OPEN": sum(1 for s in scenarios if s.category == "FORCED_DOOR_OPEN"),
                 "LOAD_OR_TAMPER_ANOMALY": sum(1 for s in scenarios if s.category == "LOAD_OR_TAMPER_ANOMALY"),
-                "SENSOR_FAULT": sum(1 for s in scenarios if s.category == "SENSOR_FAULT"),
+                "SENSOR_OR_NETWORK_FAULT": sum(1 for s in scenarios if s.category in ("SENSOR_OR_NETWORK_FAULT", "SENSOR_FAULT")),
+                "SENSOR_FAULT": sum(1 for s in scenarios if s.category in ("SENSOR_OR_NETWORK_FAULT", "SENSOR_FAULT")),
             },
             "ground_truth_counts": {
                 "NORMAL_USAGE": sum(1 for s in scenarios if s.ground_truth_label == "NORMAL_USAGE"),
@@ -772,7 +787,7 @@ This directory contains the complete raw evidence files for 100 independently pr
 - `UNAUTHORIZED_CREDENTIAL`: {summary['stratified_distribution']['UNAUTHORIZED_CREDENTIAL']} sessions
 - `FORCED_DOOR_OPEN`: {summary['stratified_distribution']['FORCED_DOOR_OPEN']} sessions
 - `LOAD_OR_TAMPER_ANOMALY`: {summary['stratified_distribution']['LOAD_OR_TAMPER_ANOMALY']} sessions
-- `SENSOR_FAULT`: {summary['stratified_distribution']['SENSOR_FAULT']} sessions
+- `SENSOR_OR_NETWORK_FAULT`: {summary['stratified_distribution']['SENSOR_OR_NETWORK_FAULT']} sessions
 
 ## Canonical Ground Truth Distribution (6 Classes)
 - `NORMAL_USAGE`: {summary['ground_truth_counts']['NORMAL_USAGE']} sessions
@@ -792,7 +807,7 @@ if __name__ == "__main__":
     parser.add_argument("--base-url", default="http://localhost:8081/SmartLocker/api", help="Backend API base URL")
     parser.add_argument("--output-dir", default="experiments/evidence", help="Directory where evidence artifacts are saved")
     parser.add_argument("--total-sessions", type=int, default=100, help="Total number of sessions to evaluate")
-    parser.add_argument("--seed", type=int, default=20261115, help="Master PRNG seed")
+    parser.add_argument("--seed", type=int, default=42, help="Master PRNG seed")
     parser.add_argument("--mirror", action="store_true", default=True, help="Mirror output artifacts to experiments/results/")
     args = parser.parse_args()
 

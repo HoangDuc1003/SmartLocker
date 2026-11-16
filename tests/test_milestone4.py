@@ -10,7 +10,10 @@ Verifies:
 import json
 import math
 import os
+import sys
 import unittest
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from experiments.statistical_tests import (
     wilson_score_interval,

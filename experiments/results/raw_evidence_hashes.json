@@ -1,11 +1,15 @@
 {
-  "sessions.csv": "e52bd071488a25da901e58ddd76aafdb76641323603d8e50da19b500a616f11f",
-  "sessions.json": "5ca5cbec718bb6f6c705ae1c4f7721cc084010ac6fdd6c78816a7bc1dc58a9d8",
-  "sensor_readings.csv": "b762adf2bb8b45312c5951bfd23738234d0c979221926a91fdfeff65c400b744",
-  "backend_requests.jsonl": "f8393ef0df2a364a688a178da596949d6da0a82ef00a68268bb63bfddfdde28b",
-  "backend_responses.jsonl": "576a8c78911e5de68916afa74bc90b1ef5cf3148525cf64cde97272db7c89878",
-  "ground_truth_labels.csv": "ab5d98eab722ca5f88937c5d50cd0d71d2c4f5e7337216425764abdc007d6e81",
-  "execution_summary.json": "a38a3561eb62ead8400b9b126472655f8eea9295b70ef944e9be8c29eb8e8b06",
-  "environment.json": "a2819e90dd6e56429eaaf5c564f291492fb542996bc5a9b85090eba37c920e74",
-  "reproduction_config.yaml": "444f4697c213e2ebdbe984f11198ba701976bfca07338954bb0d23c2e793790f"
+  "README.md": "0509410aa7a6930c84a64db7015747ac8f56ddce6bd83fc87dbe74c8e8e3342b",
+  "backend_requests.jsonl": "89a08964a2c521d79d07c87486af57e74aa8d3b07436e0735956f1a16693b5ea",
+  "backend_responses.jsonl": "e8b2d4ede4084330fa345a21c75082bba9b108ef5e78a2e091cd11659ca8ca42",
+  "database_verification.json": "92468fb0ab01299cebe8225632e14d54adc6da06643afc7b298bbfb7ca5d2dd0",
+  "environment.json": "0573daa178833ad50f7d3033b968c96c3e3cc641afb91d2c5012daeb5c9b8391",
+  "execution_summary.json": "8e157157bece7e91e4717f6e1a50685fa7d7b5cacc86a1496e0450321f505e0f",
+  "failed_sessions.csv": "a1f3c5d207d7a48098e42e4ee87669282bb88b3a4c56c04249553bd084eaa1cc",
+  "fixture_manifest.json": "674082b0719920444793a75c9f5ed01324bd5a90869da6fd97f20a7d9ccad48f",
+  "ground_truth_labels.csv": "18e81ecab8a30ba28ee4fe586fa5868971f8af803d9c787a8f4d8859bab6df7a",
+  "reproduction_config.yaml": "cbe99a4a4f39074d16d0ec6e3242b4eb842c5d7d71935c290e2e56575614b8a0",
+  "sensor_readings.csv": "3be9ee7cda8be8e90027d78297722348903480582abba0ee1a5dcd652f39d529",
+  "sessions.csv": "9f7c6d7d8fc20c10c93b4b343463942ae0dd102dbe4681f9d969820fc4c9bbf1",
+  "sessions.json": "c653f03d128355004005f51832613baef0bef000480399e62080eb9ab89d8b94"
 }

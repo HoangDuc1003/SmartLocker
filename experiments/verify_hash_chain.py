@@ -161,25 +161,60 @@ def test_tamper_detection(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def fetch_audit_chain_from_db(db: str = "SL_SIM") -> List[Dict[str, Any]]:
-    """Queries SQL Server via sqlcmd to retrieve all AuditLog and HashChain rows."""
-    query = (
-        "SELECT a.audit_id, CONVERT(NVARCHAR(33), a.ts, 126) AS ts_iso, "
-        "a.actor_user_id, a.action, a.object_type, a.object_id, "
-        "ISNULL(a.diff_json, '') AS diff, a.row_hash, "
-        "h.prev_hash, h.chain_hash, h.anchor_id "
-        "FROM AuditLog a "
-        "JOIN HashChain h ON h.audit_id = a.audit_id "
-        "ORDER BY h.anchor_id ASC"
-    )
-    cmd = [
-        "sqlcmd", "-S", "localhost", "-d", db, "-U", "sa", "-P", "12345",
-        "-y", "0", "-w", "65535", "-Q", f"SET NOCOUNT ON; {query} FOR JSON PATH;"
-    ]
-    res = subprocess.run(cmd, capture_output=True, text=True, check=True)
-    lines = res.stdout.splitlines()
-    json_lines = [l for l in lines if not l.startswith("-") and not l.startswith("(") and l.strip()]
-    raw_json = "".join(json_lines).strip()
-    return json.loads(raw_json) if raw_json else []
+    """Queries SQL Server via ADODB or sqlcmd to retrieve all AuditLog and HashChain rows."""
+    try:
+        import win32com.client
+        conn = win32com.client.Dispatch("ADODB.Connection")
+        conn.Open(f"Provider=SQLOLEDB;Data Source=localhost;Initial Catalog={db};User ID=sa;Password=12345;")
+        sql = """
+        SELECT a.audit_id, CONVERT(NVARCHAR(33), a.ts, 126) AS ts_iso,
+               a.actor_user_id, a.action, a.object_type, a.object_id,
+               ISNULL(a.diff_json, '') AS diff, a.row_hash,
+               h.prev_hash, h.chain_hash, h.anchor_id
+        FROM AuditLog a
+        JOIN HashChain h ON h.audit_id = a.audit_id
+        ORDER BY h.anchor_id ASC
+        """
+        rs, _ = conn.Execute(sql)
+        rows = []
+        while not rs.EOF:
+            row = {
+                "audit_id": int(rs.Fields("audit_id").Value),
+                "ts_iso": str(rs.Fields("ts_iso").Value),
+                "actor_user_id": int(rs.Fields("actor_user_id").Value) if rs.Fields("actor_user_id").Value is not None else None,
+                "action": str(rs.Fields("action").Value),
+                "object_type": str(rs.Fields("object_type").Value),
+                "object_id": int(rs.Fields("object_id").Value) if rs.Fields("object_id").Value is not None else None,
+                "diff": str(rs.Fields("diff").Value),
+                "row_hash": str(rs.Fields("row_hash").Value).lower() if rs.Fields("row_hash").Value else "",
+                "prev_hash": str(rs.Fields("prev_hash").Value).lower() if rs.Fields("prev_hash").Value else "",
+                "chain_hash": str(rs.Fields("chain_hash").Value).lower() if rs.Fields("chain_hash").Value else "",
+                "anchor_id": int(rs.Fields("anchor_id").Value),
+            }
+            rows.append(row)
+            rs.MoveNext()
+        conn.Close()
+        return rows
+    except Exception as e:
+        # Fallback to sqlcmd if win32com is not available
+        query = (
+            "SELECT a.audit_id, CONVERT(NVARCHAR(33), a.ts, 126) AS ts_iso, "
+            "a.actor_user_id, a.action, a.object_type, a.object_id, "
+            "ISNULL(a.diff_json, '') AS diff, a.row_hash, "
+            "h.prev_hash, h.chain_hash, h.anchor_id "
+            "FROM AuditLog a "
+            "JOIN HashChain h ON h.audit_id = a.audit_id "
+            "ORDER BY h.anchor_id ASC"
+        )
+        cmd = [
+            "sqlcmd", "-S", "localhost", "-d", db, "-U", "sa", "-P", "12345",
+            "-y", "0", "-w", "65535", "-Q", f"SET NOCOUNT ON; {query} FOR JSON PATH;"
+        ]
+        res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        lines = res.stdout.splitlines()
+        json_lines = [l for l in lines if not l.startswith("-") and not l.startswith("(") and l.strip()]
+        raw_json = "".join(json_lines).strip()
+        return json.loads(raw_json) if raw_json else []
 
 
 def main():

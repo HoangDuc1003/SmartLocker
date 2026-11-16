@@ -1,17 +1,18 @@
 {
-  "run_id": "RUN_20261116_010959_SEED20261115_SL_SIM",
-  "timestamp_utc": "2026-11-16T01:10:03.820562+00:00",
+  "run_id": "RUN_20261116_044130_SEED42_SL_SIM",
+  "timestamp_utc": "2026-11-16T04:41:35.763595+00:00",
   "summary": {
-    "run_id": "RUN_20261116_010959_SEED20261115_SL_SIM",
+    "run_id": "RUN_20261116_044130_SEED42_SL_SIM",
     "total_sessions": 100,
     "end_to_end_passed": 100,
+    "passed": 100,
     "failed": 0,
     "blocked": 0,
     "pass_rate_pct": 100.0,
-    "total_duration_sec": 4.38,
-    "mean_session_ms": 43.63,
-    "min_session_ms": 15.88,
-    "max_session_ms": 78.02,
+    "total_duration_sec": 4.86,
+    "mean_session_ms": 48.55,
+    "min_session_ms": 25.85,
+    "max_session_ms": 91.94,
     "gates": {
       "transport_pass": {
         "count": 100,
@@ -26,12 +27,12 @@
         "pct": 100.0
       },
       "b0_detection_pass": {
-        "count": 73,
-        "pct": 73.0
+        "count": 65,
+        "pct": 65.0
       },
       "b1_detection_pass": {
-        "count": 100,
-        "pct": 100.0
+        "count": 91,
+        "pct": 91.0
       },
       "end_to_end_pass": {
         "count": 100,
@@ -43,6 +44,7 @@
       "UNAUTHORIZED_CREDENTIAL": 20,
       "FORCED_DOOR_OPEN": 20,
       "LOAD_OR_TAMPER_ANOMALY": 20,
+      "SENSOR_OR_NETWORK_FAULT": 20,
       "SENSOR_FAULT": 20
     },
     "ground_truth_counts": {
@@ -53,30 +55,21 @@
       "SENSOR_MALFUNCTION": 15,
       "NETWORK_MALFUNCTION": 5
     },
-    "timestamp_utc": "2026-11-16T01:10:03Z"
+    "timestamp_utc": "2026-11-16T04:41:35Z"
   },
   "hashes": {
-    "README.md": "7bb196cda84e2d4fca7906f71846f952ea5f377c34dfb57173791fb95dc9c1cd",
-    "backend_requests.jsonl": "f8393ef0df2a364a688a178da596949d6da0a82ef00a68268bb63bfddfdde28b",
-    "backend_responses.jsonl": "576a8c78911e5de68916afa74bc90b1ef5cf3148525cf64cde97272db7c89878",
-    "confusion_matrices.json": "e17deb142430ad2e9bee41fa9e533c310e2a8c23ef33cb735e664ac246bc2486",
-    "confusion_matrix_b0.csv": "69b5755a9644d6f9d7305969e030b7cbae3861e18829843139c87e34a92887e9",
-    "confusion_matrix_b1.csv": "c8a2ff74dcba24704c319d9c4cfb9e6474f29a0bde9fb03027b24b3addf6c42b",
-    "database_verification.json": "b13199a1deac0686336e3e2d181cbbd0bbd33ef4ecd839411fb6d528f11e9225",
-    "environment.json": "ddf4e63d531a9a54c4737da6bc933ae64ef28c75736bae076a92a0d630bf468e",
-    "evaluation_metrics.json": "cc4ab7a9f17a7a44dd9f97bc204e5685270b2745d9c17f63ed4230273c24cc33",
-    "evaluation_report.md": "08e97edc2f3dc026e4cbbae451801187d330c13be87c83a2d11ef52877fb5904",
-    "execution_summary.json": "4141c03c73dfb989089905dbf550b0f0519697ba6df3ba8a97aec639d497a1b7",
+    "README.md": "0509410aa7a6930c84a64db7015747ac8f56ddce6bd83fc87dbe74c8e8e3342b",
+    "backend_requests.jsonl": "89a08964a2c521d79d07c87486af57e74aa8d3b07436e0735956f1a16693b5ea",
+    "backend_responses.jsonl": "e8b2d4ede4084330fa345a21c75082bba9b108ef5e78a2e091cd11659ca8ca42",
+    "database_verification.json": "92468fb0ab01299cebe8225632e14d54adc6da06643afc7b298bbfb7ca5d2dd0",
+    "environment.json": "0573daa178833ad50f7d3033b968c96c3e3cc641afb91d2c5012daeb5c9b8391",
+    "execution_summary.json": "8e157157bece7e91e4717f6e1a50685fa7d7b5cacc86a1496e0450321f505e0f",
     "failed_sessions.csv": "a1f3c5d207d7a48098e42e4ee87669282bb88b3a4c56c04249553bd084eaa1cc",
-    "fixture_manifest.json": "32fb9e7b196e0ffad56811ecb76da9b3022dc9c5a529c7fc75fbc3b11f06cee1",
-    "ground_truth_labels.csv": "ab5d98eab722ca5f88937c5d50cd0d71d2c4f5e7337216425764abdc007d6e81",
-    "mcnemar_results.json": "4f993a98c1ea6d737ea25408f4bf1fd05d0bfbadde9f24f3962b8b0112a7d24c",
-    "reproduction_config.yaml": "444f4697c213e2ebdbe984f11198ba701976bfca07338954bb0d23c2e793790f",
-    "sensor_readings.csv": "b762adf2bb8b45312c5951bfd23738234d0c979221926a91fdfeff65c400b744",
-    "sessions.csv": "0e2bb4658529e3b4f032c69442b1a14819fea9e7b06e24703b806f3237e8c68d",
-    "sessions.json": "c3398960fe8bfcb37b3c8dbd564641fd26533b27f778a5e7b4006d5c8cf35408",
-    "statistical_tests.json": "197219d38b031f761eda11b6477cd0f729d032f2df408c1b70feae656e3cff0c",
-    "table_detection_comparison.tex": "c76a1119fd1dd215b23e701df0ce43f5d8422ccd75a336797dcae8199ec26787",
-    "table_latency_distribution.tex": "5bf3b8a0e5ce9a364127a38be0725a117f0a62687a9d1c230cf77fd3efededab"
+    "fixture_manifest.json": "674082b0719920444793a75c9f5ed01324bd5a90869da6fd97f20a7d9ccad48f",
+    "ground_truth_labels.csv": "18e81ecab8a30ba28ee4fe586fa5868971f8af803d9c787a8f4d8859bab6df7a",
+    "reproduction_config.yaml": "cbe99a4a4f39074d16d0ec6e3242b4eb842c5d7d71935c290e2e56575614b8a0",
+    "sensor_readings.csv": "3be9ee7cda8be8e90027d78297722348903480582abba0ee1a5dcd652f39d529",
+    "sessions.csv": "9f7c6d7d8fc20c10c93b4b343463942ae0dd102dbe4681f9d969820fc4c9bbf1",
+    "sessions.json": "c653f03d128355004005f51832613baef0bef000480399e62080eb9ab89d8b94"
   }
 }
