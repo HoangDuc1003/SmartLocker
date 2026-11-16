@@ -1,0 +1,71 @@
+{
+ "scopes": {
+  "A_endpoint_server_processing_ms": {
+   "health": {
+    "n": 30,
+    "median": 6.0040000000000004,
+    "min": 4.617999999999999,
+    "max": 7.2989999999999995,
+    "mean": 5.880066666666665,
+    "p95_linear": 6.75635,
+    "p95_nearest_rank": 6.791
+   },
+   "auth_pin_ask": {
+    "n": 30,
+    "median": 15.809999999999999,
+    "min": 14.128,
+    "max": 48.044999999999995,
+    "mean": 16.996233333333333,
+    "p95_linear": 18.546849999999996,
+    "p95_nearest_rank": 18.973
+   },
+   "kiosk_ask": {
+    "n": 30,
+    "median": 16.2065,
+    "min": 13.393,
+    "max": 102.70700000000001,
+    "mean": 31.080266666666663,
+    "p95_linear": 95.90124999999999,
+    "p95_nearest_rank": 96.03399999999999
+   }
+  },
+  "B_client_round_trip_ms": {
+   "/api/device/auth": {
+    "n": 40,
+    "median": 17.87,
+    "min": 1.7,
+    "max": 41.77,
+    "mean": 19.428000000000004,
+    "p95_linear": 32.79649999999998,
+    "p95_nearest_rank": 32.46
+   },
+   "/api/locker/batch": {
+    "n": 100,
+    "median": 16.064999999999998,
+    "min": 2.01,
+    "max": 39.49,
+    "mean": 16.904000000000014,
+    "p95_linear": 29.751499999999997,
+    "p95_nearest_rank": 29.74
+   }
+  },
+  "C_harness_wall_time_per_session_ms": {
+   "n": 100,
+   "median": 47.5,
+   "min": 25.85,
+   "max": 91.94,
+   "mean": 48.554,
+   "p95_linear": 71.617,
+   "p95_nearest_rank": 71.54
+  }
+ },
+ "manifest": {
+  "script": "docs/paper/scripts/latency_recompute.py",
+  "inputs": {
+   "docs/paper/evidence/latency.log": "03560e3a7b932c2e231b8c6bb7b08d729178272ef4b6db1dd0cd08d5bb738254",
+   "experiments/runs/RUN_20261116_044130_SEED42_SL_SIM/backend_responses.jsonl": "e8b2d4ede4084330fa345a21c75082bba9b108ef5e78a2e091cd11659ca8ca42",
+   "experiments/runs/RUN_20261116_044130_SEED42_SL_SIM/sessions.csv": "9f7c6d7d8fc20c10c93b4b343463942ae0dd102dbe4681f9d969820fc4c9bbf1"
+  },
+  "timestamp_utc": "2026-11-16T12:51:53.838555+00:00"
+ }
+}

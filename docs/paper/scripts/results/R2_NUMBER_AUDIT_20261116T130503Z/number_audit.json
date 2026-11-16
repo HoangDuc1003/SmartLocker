@@ -1,0 +1,1968 @@
+{
+ "tokens": 327,
+ "fail": 21,
+ "report": [
+  [
+   "Abstract",
+   "83",
+   "PASS",
+   "LOG testng-4.log"
+  ],
+  [
+   "Abstract",
+   "6",
+   "PASS",
+   "CONTEXT six classes / scenarios"
+  ],
+  [
+   "Abstract",
+   "16",
+   "PASS",
+   "CONTEXT date / g range"
+  ],
+  [
+   "Abstract",
+   "102.7",
+   "PASS",
+   "latency.log recomputed max"
+  ],
+  [
+   "Section VI",
+   "480",
+   "PASS",
+   "CONTEXT dataset rows (sql/02_data_v1.sql)"
+  ],
+  [
+   "Section VI",
+   "02",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "2026",
+   "PASS",
+   "CONTEXT year"
+  ],
+  [
+   "Section VI",
+   "80",
+   "PASS",
+   "CONTEXT rows per class"
+  ],
+  [
+   "Section VI",
+   "5",
+   "PASS",
+   "CONTEXT k=5, five seeds/classes/wrong tries"
+  ],
+  [
+   "Section VI",
+   "10",
+   "PASS",
+   "CONTEXT 10-fold CV"
+  ],
+  [
+   "Section VI",
+   "42",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "11",
+   "PASS",
+   "CONTEXT IBk errors / 11 builds"
+  ],
+  [
+   "Section VI",
+   "20",
+   "PASS",
+   "CONTEXT sessions per class / 20 sessions"
+  ],
+  [
+   "Section VI",
+   "480",
+   "PASS",
+   "CONTEXT dataset rows (sql/02_data_v1.sql)"
+  ],
+  [
+   "Section VI",
+   "11400",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "2.7",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "6",
+   "PASS",
+   "CONTEXT six classes / scenarios"
+  ],
+  [
+   "Section VI",
+   "16",
+   "PASS",
+   "CONTEXT date / g range"
+  ],
+  [
+   "Section VI",
+   "11",
+   "PASS",
+   "CONTEXT IBk errors / 11 builds"
+  ],
+  [
+   "Section VI",
+   "1.8",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "3.8",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "9.0",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "2022",
+   "PASS",
+   "CONTEXT year"
+  ],
+  [
+   "Section VI",
+   "30",
+   "PASS",
+   "CONTEXT requests per endpoint / 30 papers"
+  ],
+  [
+   "Section VI",
+   "2026",
+   "PASS",
+   "CONTEXT year"
+  ],
+  [
+   "Section VI",
+   "14",
+   "PASS",
+   "CONTEXT RuleEngineTest @Test count; test classes"
+  ],
+  [
+   "Section VI",
+   "2026",
+   "PASS",
+   "CONTEXT year"
+  ],
+  [
+   "Section VI",
+   "13",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "15",
+   "PASS",
+   "CONTEXT job period / ms"
+  ],
+  [
+   "Section VI",
+   "2026",
+   "PASS",
+   "CONTEXT year"
+  ],
+  [
+   "Section VI",
+   "16",
+   "PASS",
+   "CONTEXT date / g range"
+  ],
+  [
+   "Section VI",
+   "2026",
+   "PASS",
+   "CONTEXT year"
+  ],
+  [
+   "Section VI",
+   "0.977",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.975",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.948",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.939",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.778",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "36",
+   "PASS",
+   "CONTEXT RF train ms (README 35.8-37.7)"
+  ],
+  [
+   "Section VI",
+   "38",
+   "PASS",
+   "CONTEXT RF train ms"
+  ],
+  [
+   "Section VI",
+   "12",
+   "PASS",
+   "CONTEXT RF scoring us (ml.log)"
+  ],
+  [
+   "Section VI",
+   "15.5",
+   "PASS",
+   "CONTEXT RF scoring us (README 12.3-15.5)"
+  ],
+  [
+   "Section VI",
+   "1",
+   "PASS",
+   "study_b McNemar n10"
+  ],
+  [
+   "Section VI",
+   "15",
+   "PASS",
+   "CONTEXT job period / ms"
+  ],
+  [
+   "Section VI",
+   "17",
+   "PASS",
+   "LOG ml.log"
+  ],
+  [
+   "Section VI",
+   "0.2",
+   "PASS",
+   "CONTEXT share of server time (17 us / 17 ms)"
+  ],
+  [
+   "Section VI",
+   "17.0",
+   "PASS",
+   "latency.log recomputed mean"
+  ],
+  [
+   "Section VI",
+   "100",
+   "PASS",
+   "CONTEXT sessions"
+  ],
+  [
+   "Section VI",
+   "4",
+   "PASS",
+   "CONTEXT four classifiers / wrong PINs 1-4"
+  ],
+  [
+   "Section VI",
+   "2",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "0.948",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.949",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.948",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.948",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.938",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.939",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.856",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.857",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.856",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.856",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.831",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.848",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.779",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.778",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "0.779",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.778",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "0.833",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.852",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "5",
+   "PASS",
+   "CONTEXT k=5, five seeds/classes/wrong tries"
+  ],
+  [
+   "Section VI",
+   "0.977",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.978",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.977",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.977",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.975",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.975",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "0.650",
+   "PASS",
+   "study_b seed42 B0"
+  ],
+  [
+   "Section VI",
+   "0.805",
+   "PASS",
+   "study_b seed42 B0"
+  ],
+  [
+   "Section VI",
+   "0.650",
+   "PASS",
+   "study_b seed42 B0"
+  ],
+  [
+   "Section VI",
+   "0.621",
+   "PASS",
+   "study_b seed42 B0"
+  ],
+  [
+   "Section VI",
+   "0.650",
+   "PASS",
+   "study_b seed42 B0"
+  ],
+  [
+   "Section VI",
+   "0.724",
+   "PASS",
+   "study_b seed42 B0"
+  ],
+  [
+   "Section VI",
+   "0.910",
+   "PASS",
+   "study_b seed42 B1"
+  ],
+  [
+   "Section VI",
+   "0.923",
+   "PASS",
+   "study_b seed42 B1"
+  ],
+  [
+   "Section VI",
+   "0.910",
+   "PASS",
+   "study_b seed42 B1"
+  ],
+  [
+   "Section VI",
+   "0.913",
+   "PASS",
+   "study_b seed42 B1"
+  ],
+  [
+   "Section VI",
+   "0.910",
+   "PASS",
+   "study_b seed42 B1"
+  ],
+  [
+   "Section VI",
+   "0.942",
+   "PASS",
+   "study_b seed42 B1"
+  ],
+  [
+   "Section VI",
+   "480",
+   "PASS",
+   "CONTEXT dataset rows (sql/02_data_v1.sql)"
+  ],
+  [
+   "Section VI",
+   "10",
+   "PASS",
+   "CONTEXT 10-fold CV"
+  ],
+  [
+   "Section VI",
+   "100",
+   "PASS",
+   "CONTEXT sessions"
+  ],
+  [
+   "Section VI",
+   "42",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "20",
+   "PASS",
+   "CONTEXT sessions per class / 20 sessions"
+  ],
+  [
+   "Section VI",
+   "80",
+   "PASS",
+   "CONTEXT rows per class"
+  ],
+  [
+   "Section VI",
+   "1.000",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "80",
+   "PASS",
+   "CONTEXT rows per class"
+  ],
+  [
+   "Section VI",
+   "79",
+   "PASS",
+   "LOG ml.log"
+  ],
+  [
+   "Section VI",
+   "80",
+   "PASS",
+   "CONTEXT rows per class"
+  ],
+  [
+   "Section VI",
+   "0.994",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "480",
+   "PASS",
+   "CONTEXT dataset rows (sql/02_data_v1.sql)"
+  ],
+  [
+   "Section VI",
+   "10",
+   "PASS",
+   "CONTEXT 10-fold CV"
+  ],
+  [
+   "Section VI",
+   "11",
+   "PASS",
+   "CONTEXT IBk errors / 11 builds"
+  ],
+  [
+   "Section VI",
+   "7",
+   "PASS",
+   "LOG ml.log"
+  ],
+  [
+   "Section VI",
+   "3",
+   "PASS",
+   "LOG ml.log"
+  ],
+  [
+   "Section VI",
+   "0.936",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "0.939",
+   "PASS",
+   "ml.log"
+  ],
+  [
+   "Section VI",
+   "17",
+   "PASS",
+   "LOG ml.log"
+  ],
+  [
+   "Section VI",
+   "8",
+   "PASS",
+   "study_b McNemar n00"
+  ],
+  [
+   "Section VI",
+   "80",
+   "PASS",
+   "CONTEXT rows per class"
+  ],
+  [
+   "Section VI",
+   "2",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "400",
+   "PASS",
+   "study_a rows without WRONG_USER"
+  ],
+  [
+   "Section VI",
+   "1",
+   "PASS",
+   "study_b McNemar n10"
+  ],
+  [
+   "Section VI",
+   "400",
+   "PASS",
+   "study_a rows without WRONG_USER"
+  ],
+  [
+   "Section VI",
+   "99.75",
+   "PASS",
+   "study_a 400-row IBk accuracy %"
+  ],
+  [
+   "Section VI",
+   "80",
+   "PASS",
+   "CONTEXT rows per class"
+  ],
+  [
+   "Section VI",
+   "400",
+   "PASS",
+   "study_a rows without WRONG_USER"
+  ],
+  [
+   "Section VI",
+   "480",
+   "PASS",
+   "CONTEXT dataset rows (sql/02_data_v1.sql)"
+  ],
+  [
+   "Section VI",
+   "5",
+   "PASS",
+   "CONTEXT k=5, five seeds/classes/wrong tries"
+  ],
+  [
+   "Section VI",
+   "10",
+   "PASS",
+   "CONTEXT 10-fold CV"
+  ],
+  [
+   "Section VI",
+   "11",
+   "PASS",
+   "CONTEXT IBk errors / 11 builds"
+  ],
+  [
+   "Section VI",
+   "5",
+   "PASS",
+   "CONTEXT k=5, five seeds/classes/wrong tries"
+  ],
+  [
+   "Section VI",
+   "83",
+   "PASS",
+   "LOG testng-4.log"
+  ],
+  [
+   "Section VI",
+   "14",
+   "PASS",
+   "CONTEXT RuleEngineTest @Test count; test classes"
+  ],
+  [
+   "Section VI",
+   "14",
+   "PASS",
+   "CONTEXT RuleEngineTest @Test count; test classes"
+  ],
+  [
+   "Section VI",
+   "14",
+   "PASS",
+   "CONTEXT RuleEngineTest @Test count; test classes"
+  ],
+  [
+   "Section VI",
+   "2026",
+   "PASS",
+   "CONTEXT year"
+  ],
+  [
+   "Section VI",
+   "13",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "83",
+   "PASS",
+   "LOG testng-4.log"
+  ],
+  [
+   "Section VI",
+   "14",
+   "PASS",
+   "CONTEXT RuleEngineTest @Test count; test classes"
+  ],
+  [
+   "Section VI",
+   "47",
+   "PASS",
+   "CONTEXT in-memory test methods (recount)"
+  ],
+  [
+   "Section VI",
+   "36",
+   "PASS",
+   "CONTEXT RF train ms (README 35.8-37.7)"
+  ],
+  [
+   "Section VI",
+   "83",
+   "PASS",
+   "LOG testng-4.log"
+  ],
+  [
+   "Section VI",
+   "500",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "30",
+   "PASS",
+   "CONTEXT requests per endpoint / 30 papers"
+  ],
+  [
+   "Section VI",
+   "2026",
+   "PASS",
+   "CONTEXT year"
+  ],
+  [
+   "Section VI",
+   "2",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "24",
+   "PASS",
+   "CONTEXT Postman 2 min 24 s (newman-2.json 144.1 s)"
+  ],
+  [
+   "Section VI",
+   "2",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "27",
+   "PASS",
+   "study_b McNemar n01"
+  ],
+  [
+   "Section VI",
+   "221",
+   "PASS",
+   "LOG README.md"
+  ],
+  [
+   "Section VI",
+   "472",
+   "PASS",
+   "LOG README.md"
+  ],
+  [
+   "Section VI",
+   "01",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "60",
+   "PASS",
+   "CONTEXT chain re-verify period"
+  ],
+  [
+   "Section VI",
+   "6",
+   "PASS",
+   "CONTEXT six classes / scenarios"
+  ],
+  [
+   "Section VI",
+   "10",
+   "PASS",
+   "CONTEXT 10-fold CV"
+  ],
+  [
+   "Section VI",
+   "90",
+   "PASS",
+   "CONTEXT offline timeout (code)"
+  ],
+  [
+   "Section VI",
+   "105",
+   "PASS",
+   "CONTEXT 90 s + 15 s job"
+  ],
+  [
+   "Section VI",
+   "104.6",
+   "PASS",
+   "LOG README.md"
+  ],
+  [
+   "Section VI",
+   "5000",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "200",
+   "PASS",
+   "CONTEXT valid weight range"
+  ],
+  [
+   "Section VI",
+   "20000",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "100",
+   "PASS",
+   "CONTEXT sessions"
+  ],
+  [
+   "Section VI",
+   "20",
+   "PASS",
+   "CONTEXT sessions per class / 20 sessions"
+  ],
+  [
+   "Section VI",
+   "16",
+   "PASS",
+   "CONTEXT date / g range"
+  ],
+  [
+   "Section VI",
+   "2026",
+   "PASS",
+   "CONTEXT year"
+  ],
+  [
+   "Section VI",
+   "9",
+   "PASS",
+   "CONTEXT nine"
+  ],
+  [
+   "Section VI",
+   "0.05",
+   "PASS",
+   "CONTEXT shock step/floor"
+  ],
+  [
+   "Section VI",
+   "0",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "0.15",
+   "PASS",
+   "CONTEXT reed sigma / tilt drift (sensor_models)"
+  ],
+  [
+   "Section VI",
+   "0.01",
+   "PASS",
+   "CONTEXT reed step"
+  ],
+  [
+   "Section VI",
+   "3.5",
+   "PASS",
+   "CONTEXT hx711 sigma"
+  ],
+  [
+   "Section VI",
+   "2",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "2",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "0.02",
+   "PASS",
+   "CONTEXT outlier p"
+  ],
+  [
+   "Section VI",
+   "25",
+   "PASS",
+   "CONTEXT fixed fault latency (generator.py:447)"
+  ],
+  [
+   "Section VI",
+   "0.1",
+   "PASS",
+   "CONTEXT steps"
+  ],
+  [
+   "Section VI",
+   "2",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "450",
+   "PASS",
+   "CONTEXT srf05 range (sensor_models)"
+  ],
+  [
+   "Section VI",
+   "0",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "2",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "1.2",
+   "PASS",
+   "CONTEXT sonar sigma"
+  ],
+  [
+   "Section VI",
+   "0.3",
+   "PASS",
+   "CONTEXT sonar step"
+  ],
+  [
+   "Section VI",
+   "0",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "0.015",
+   "PASS",
+   "CONTEXT vib sigma"
+  ],
+  [
+   "Section VI",
+   "0.005",
+   "PASS",
+   "five-seed sample SD B1"
+  ],
+  [
+   "Section VI",
+   "0.001",
+   "PASS",
+   "CONTEXT vib step"
+  ],
+  [
+   "Section VI",
+   "0",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "0.25",
+   "PASS",
+   "CONTEXT tilt sigma"
+  ],
+  [
+   "Section VI",
+   "0.15",
+   "PASS",
+   "CONTEXT reed sigma / tilt drift (sensor_models)"
+  ],
+  [
+   "Section VI",
+   "0.15",
+   "PASS",
+   "CONTEXT reed sigma / tilt drift (sensor_models)"
+  ],
+  [
+   "Section VI",
+   "0.1",
+   "PASS",
+   "CONTEXT steps"
+  ],
+  [
+   "Section VI",
+   "0.05",
+   "PASS",
+   "CONTEXT shock step/floor"
+  ],
+  [
+   "Section VI",
+   "0.35",
+   "PASS",
+   "CONTEXT shock sigma"
+  ],
+  [
+   "Section VI",
+   "0.05",
+   "PASS",
+   "CONTEXT shock step/floor"
+  ],
+  [
+   "Section VI",
+   "0",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "25",
+   "PASS",
+   "CONTEXT fixed fault latency (generator.py:447)"
+  ],
+  [
+   "Section VI",
+   "6500",
+   "PASS",
+   "CONTEXT timeout latency (generator.py)"
+  ],
+  [
+   "Section VI",
+   "100",
+   "PASS",
+   "CONTEXT sessions"
+  ],
+  [
+   "Section VI",
+   "100",
+   "PASS",
+   "CONTEXT sessions"
+  ],
+  [
+   "Section VI",
+   "42",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "3",
+   "PASS",
+   "LOG ml.log"
+  ],
+  [
+   "Section VI",
+   "3",
+   "PASS",
+   "LOG ml.log"
+  ],
+  [
+   "Section VI",
+   "0.358",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.950",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.521",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.720",
+   "PASS",
+   "study_b per-class B1"
+  ],
+  [
+   "Section VI",
+   "0.900",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.800",
+   "PASS",
+   "study_b per-class B1"
+  ],
+  [
+   "Section VI",
+   "1.000",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "1.000",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "1.000",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "1.000",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "1.000",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "1.000",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "1.000",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.900",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.947",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "1.000",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.900",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.947",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.667",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.100",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.174",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.895",
+   "PASS",
+   "study_b per-class B1"
+  ],
+  [
+   "Section VI",
+   "0.850",
+   "PASS",
+   "study_b per-class B1"
+  ],
+  [
+   "Section VI",
+   "0.872",
+   "PASS",
+   "study_b per-class B1"
+  ],
+  [
+   "Section VI",
+   "1.000",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.300",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.462",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "1.000",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.900",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.947",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.805",
+   "PASS",
+   "study_b seed42 B0"
+  ],
+  [
+   "Section VI",
+   "0.650",
+   "PASS",
+   "study_b seed42 B0"
+  ],
+  [
+   "Section VI",
+   "0.621",
+   "PASS",
+   "study_b seed42 B0"
+  ],
+  [
+   "Section VI",
+   "0.923",
+   "PASS",
+   "study_b seed42 B1"
+  ],
+  [
+   "Section VI",
+   "0.910",
+   "PASS",
+   "study_b seed42 B1"
+  ],
+  [
+   "Section VI",
+   "0.913",
+   "PASS",
+   "study_b seed42 B1"
+  ],
+  [
+   "Section VI",
+   "0.913",
+   "PASS",
+   "study_b seed42 B1"
+  ],
+  [
+   "Section VI",
+   "0.621",
+   "PASS",
+   "study_b seed42 B0"
+  ],
+  [
+   "Section VI",
+   "0.91",
+   "PASS",
+   "study_b seed42 accuracy B1"
+  ],
+  [
+   "Section VI",
+   "0.65",
+   "PASS",
+   "study_b seed42 accuracy B0"
+  ],
+  [
+   "Section VI",
+   "20",
+   "PASS",
+   "CONTEXT sessions per class / 20 sessions"
+  ],
+  [
+   "Section VI",
+   "18",
+   "PASS",
+   "CONTEXT Postman scenarios"
+  ],
+  [
+   "Section VI",
+   "20",
+   "PASS",
+   "CONTEXT sessions per class / 20 sessions"
+  ],
+  [
+   "Section VI",
+   "0.100",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.300",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.358",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "01",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "27",
+   "PASS",
+   "study_b McNemar n01"
+  ],
+  [
+   "Section VI",
+   "10",
+   "PASS",
+   "CONTEXT 10-fold CV"
+  ],
+  [
+   "Section VI",
+   "1",
+   "PASS",
+   "study_b McNemar n10"
+  ],
+  [
+   "Section VI",
+   "00",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "8",
+   "PASS",
+   "study_b McNemar n00"
+  ],
+  [
+   "Section VI",
+   "11",
+   "PASS",
+   "CONTEXT IBk errors / 11 builds"
+  ],
+  [
+   "Section VI",
+   "64",
+   "PASS",
+   "study_b McNemar n11"
+  ],
+  [
+   "Section VI",
+   "2",
+   "PASS",
+   "CONTEXT counts"
+  ],
+  [
+   "Section VI",
+   "22.32",
+   "PASS",
+   "study_b McNemar chi2"
+  ],
+  [
+   "Section VI",
+   "2.2",
+   "PASS",
+   "study_b McNemar exact p (x1e-7)"
+  ],
+  [
+   "Section VI",
+   "10",
+   "PASS",
+   "CONTEXT 10-fold CV"
+  ],
+  [
+   "Section VI",
+   "7",
+   "PASS",
+   "LOG ml.log"
+  ],
+  [
+   "Section VI",
+   "100",
+   "PASS",
+   "CONTEXT sessions"
+  ],
+  [
+   "Section VI",
+   "10000",
+   "PASS",
+   "bootstrap resamples"
+  ],
+  [
+   "Section VI",
+   "20261116",
+   "PASS",
+   "bootstrap seed"
+  ],
+  [
+   "Section VI",
+   "0.293",
+   "PASS",
+   "bootstrap delta"
+  ],
+  [
+   "Section VI",
+   "95",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "0.220",
+   "PASS",
+   "bootstrap CI low"
+  ],
+  [
+   "Section VI",
+   "0.372",
+   "PASS",
+   "bootstrap CI high"
+  ],
+  [
+   "Section VI",
+   "42",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "101",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "202",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "303",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "404",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "0.678",
+   "PASS",
+   "five-seed mean B0"
+  ],
+  [
+   "Section VI",
+   "0.917",
+   "PASS",
+   "five-seed mean B1"
+  ],
+  [
+   "Section VI",
+   "42",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "100",
+   "PASS",
+   "CONTEXT sessions"
+  ],
+  [
+   "Section VI",
+   "100",
+   "PASS",
+   "CONTEXT sessions"
+  ],
+  [
+   "Section VI",
+   "42",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "25",
+   "PASS",
+   "CONTEXT fixed fault latency (generator.py:447)"
+  ],
+  [
+   "Section VI",
+   "1.000",
+   "PASS",
+   "study_b per-class B0"
+  ],
+  [
+   "Section VI",
+   "0.46",
+   "PASS",
+   "CONTEXT generator slam range"
+  ],
+  [
+   "Section VI",
+   "0.49",
+   "PASS",
+   "CONTEXT generator slam range"
+  ],
+  [
+   "Section VI",
+   "0.45",
+   "PASS",
+   "CONTEXT B1 vibration threshold (detection.py)"
+  ],
+  [
+   "Section VI",
+   "17",
+   "PASS",
+   "LOG ml.log"
+  ],
+  [
+   "Section VI",
+   "22.8",
+   "PASS",
+   "CONTEXT max simulated shock 22.75 g"
+  ],
+  [
+   "Section VI",
+   "16",
+   "PASS",
+   "CONTEXT date / g range"
+  ],
+  [
+   "Section VI",
+   "6050",
+   "FAIL",
+   "no source"
+  ],
+  [
+   "Section VI",
+   "30",
+   "PASS",
+   "CONTEXT requests per endpoint / 30 papers"
+  ],
+  [
+   "Section VI",
+   "6.0",
+   "PASS",
+   "latency.log recomputed median"
+  ],
+  [
+   "Section VI",
+   "16.2",
+   "PASS",
+   "latency.log recomputed median"
+  ],
+  [
+   "Section VI",
+   "31.1",
+   "PASS",
+   "latency.log recomputed mean"
+  ],
+  [
+   "Section VI",
+   "102.7",
+   "PASS",
+   "latency.log recomputed max"
+  ],
+  [
+   "Section VI",
+   "30",
+   "PASS",
+   "CONTEXT requests per endpoint / 30 papers"
+  ],
+  [
+   "Section VI",
+   "3",
+   "PASS",
+   "LOG ml.log"
+  ],
+  [
+   "Section VI",
+   "30",
+   "PASS",
+   "CONTEXT requests per endpoint / 30 papers"
+  ],
+  [
+   "Section VI",
+   "30",
+   "PASS",
+   "CONTEXT requests per endpoint / 30 papers"
+  ],
+  [
+   "Section VI",
+   "2026",
+   "PASS",
+   "CONTEXT year"
+  ],
+  [
+   "Section VI",
+   "6.0",
+   "PASS",
+   "latency.log recomputed median"
+  ],
+  [
+   "Section VI",
+   "4.6",
+   "PASS",
+   "latency.log recomputed min"
+  ],
+  [
+   "Section VI",
+   "7.3",
+   "PASS",
+   "latency.log recomputed max"
+  ],
+  [
+   "Section VI",
+   "5.9",
+   "PASS",
+   "latency.log recomputed mean"
+  ],
+  [
+   "Section VI",
+   "15.8",
+   "PASS",
+   "latency.log recomputed median"
+  ],
+  [
+   "Section VI",
+   "14.1",
+   "PASS",
+   "latency.log recomputed min"
+  ],
+  [
+   "Section VI",
+   "48.0",
+   "PASS",
+   "latency.log recomputed max"
+  ],
+  [
+   "Section VI",
+   "17.0",
+   "PASS",
+   "latency.log recomputed mean"
+  ],
+  [
+   "Section VI",
+   "16.2",
+   "PASS",
+   "latency.log recomputed median"
+  ],
+  [
+   "Section VI",
+   "13.4",
+   "PASS",
+   "latency.log recomputed min"
+  ],
+  [
+   "Section VI",
+   "102.7",
+   "PASS",
+   "latency.log recomputed max"
+  ],
+  [
+   "Section VI",
+   "31.1",
+   "PASS",
+   "latency.log recomputed mean"
+  ],
+  [
+   "Section VI",
+   "1",
+   "PASS",
+   "study_b McNemar n10"
+  ],
+  [
+   "Section VI",
+   "4",
+   "PASS",
+   "CONTEXT four classifiers / wrong PINs 1-4"
+  ],
+  [
+   "Section VI",
+   "4",
+   "PASS",
+   "CONTEXT four classifiers / wrong PINs 1-4"
+  ],
+  [
+   "Section VI",
+   "1",
+   "PASS",
+   "study_b McNemar n10"
+  ],
+  [
+   "Section VI",
+   "120",
+   "PASS",
+   "CONTEXT lockout seconds (code)"
+  ],
+  [
+   "Section VI",
+   "125.5",
+   "PASS",
+   "LOG latency.log"
+  ],
+  [
+   "Section VI",
+   "90",
+   "PASS",
+   "CONTEXT offline timeout (code)"
+  ],
+  [
+   "Section VI",
+   "15",
+   "PASS",
+   "CONTEXT job period / ms"
+  ],
+  [
+   "Section VI",
+   "90",
+   "PASS",
+   "CONTEXT offline timeout (code)"
+  ],
+  [
+   "Section VI",
+   "105",
+   "PASS",
+   "CONTEXT 90 s + 15 s job"
+  ],
+  [
+   "Section VI",
+   "104.6",
+   "PASS",
+   "LOG README.md"
+  ],
+  [
+   "Section VI",
+   "97",
+   "PASS",
+   "LOG README.md"
+  ],
+  [
+   "Section VI",
+   "98",
+   "PASS",
+   "LOG README.md"
+  ],
+  [
+   "Section VI",
+   "110",
+   "PASS",
+   "LOG README.md"
+  ],
+  [
+   "Section VI",
+   "480",
+   "PASS",
+   "CONTEXT dataset rows (sql/02_data_v1.sql)"
+  ],
+  [
+   "Section VI",
+   "0.990",
+   "PASS",
+   "CONTEXT historical B1 macro-F1 (git 38037ed)"
+  ],
+  [
+   "Section VI",
+   "100",
+   "PASS",
+   "CONTEXT sessions"
+  ],
+  [
+   "Section VI",
+   "42",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "101",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "202",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "303",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "404",
+   "PASS",
+   "generator seed"
+  ],
+  [
+   "Section VI",
+   "20261116",
+   "PASS",
+   "bootstrap seed"
+  ],
+  [
+   "Conclusion",
+   "6",
+   "PASS",
+   "CONTEXT six classes / scenarios"
+  ],
+  [
+   "Conclusion",
+   "16",
+   "PASS",
+   "CONTEXT date / g range"
+  ],
+  [
+   "Conclusion",
+   "102.7",
+   "PASS",
+   "latency.log recomputed max"
+  ],
+  [
+   "Conclusion",
+   "100",
+   "PASS",
+   "CONTEXT sessions"
+  ],
+  [
+   "Conclusion",
+   "0.913",
+   "PASS",
+   "study_b seed42 B1"
+  ],
+  [
+   "Conclusion",
+   "0.621",
+   "PASS",
+   "study_b seed42 B0"
+  ]
+ ]
+}

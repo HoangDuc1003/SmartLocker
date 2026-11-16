@@ -1,0 +1,17 @@
+note: "version 2" Tectonic command-line interface activated
+note: Running TeX ...
+Fontconfig error: Cannot load default config file: No such file: (null)
+warning: Trying to include PDF file with version (1.7), which is newer than current output PDF setting (1.5).
+warning: smartlocker-10p.tex:1094: Overfull \vbox (0.57901pt too high) has occurred while \output is active
+note: Rerunning TeX because "smartlocker-10p.aux" changed ...
+warning: Trying to include PDF file with version (1.7), which is newer than current output PDF setting (1.5).
+warning: smartlocker-10p.tex:1094: Overfull \vbox (0.57901pt too high) has occurred while \output is active
+note: Rerunning TeX because "smartlocker-10p.aux" changed ...
+warning: Trying to include PDF file with version (1.7), which is newer than current output PDF setting (1.5).
+warning: smartlocker-10p.tex:1094: Overfull \vbox (0.57901pt too high) has occurred while \output is active
+warning: warnings were issued by the TeX engine; use --print and/or --keep-logs for details.
+note: Running xdvipdfmx ...
+warning: Trying to include PDF file with version (1.7), which is newer than current output PDF setting (1.5).
+note: Writing `docs/paper/scripts/results/R2_BUILD_20261116T180401Z\smartlocker-10p.log` (28.5244140625 KiB)
+note: Writing `docs/paper/scripts/results/R2_BUILD_20261116T180401Z\smartlocker-10p.pdf` (1.7143793106079102 MiB)
+note: Skipped writing 1 intermediate files (use --keep-intermediates to keep them)

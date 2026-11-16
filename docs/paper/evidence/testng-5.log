@@ -1,0 +1,12 @@
+TestNG run recorded 2026-11-17 (UTC+7), commit fd05eb9f01bad4b005c5cdd11ea26b247b49a4cc (src, test, sql, web unchanged vs working tree), database SL_T10 built with scripts/proof/build-db.ps1 -TestSetup
+Command: DB_URL=jdbc:sqlserver://localhost:1433;databaseName=SL_T10;encrypt=false sh scripts/test.sh
+
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+
+===============================================
+Command line suite
+Total tests run: 83, Passes: 83, Failures: 0, Skips: 0
+===============================================
+

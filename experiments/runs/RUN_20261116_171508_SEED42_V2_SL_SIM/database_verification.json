@@ -1,0 +1,1802 @@
+[
+  {
+    "session_id": "SIM-SESS-001",
+    "scenario_id": "SCEN-NORM-01",
+    "seq": 849308002,
+    "db_persisted": true,
+    "db_session_id": 1373,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1373,
+      "device_id": 5,
+      "device_seq": 849308002,
+      "slot_id": 52,
+      "measured_at": "2026-11-16 17:15:08.0000000",
+      "door_open_sec": 7.44,
+      "weight_delta_g": -135.9,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-002",
+    "scenario_id": "SCEN-NORM-02",
+    "seq": 849308003,
+    "db_persisted": true,
+    "db_session_id": 1374,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1374,
+      "device_id": 5,
+      "device_seq": 849308003,
+      "slot_id": 53,
+      "measured_at": "2026-11-16 17:15:08.0000000",
+      "door_open_sec": 7.99,
+      "weight_delta_g": 134.5,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-003",
+    "scenario_id": "SCEN-NORM-03",
+    "seq": 849308004,
+    "db_persisted": true,
+    "db_session_id": 1375,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1375,
+      "device_id": 5,
+      "device_seq": 849308004,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 20.82,
+      "weight_delta_g": -189.5,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-004",
+    "scenario_id": "SCEN-NORM-04",
+    "seq": 849308005,
+    "db_persisted": true,
+    "db_session_id": 1376,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1376,
+      "device_id": 5,
+      "device_seq": 849308005,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 14.41,
+      "weight_delta_g": 158.2,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-005",
+    "scenario_id": "SCEN-NORM-05",
+    "seq": 849308006,
+    "db_persisted": true,
+    "db_session_id": 1377,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1377,
+      "device_id": 5,
+      "device_seq": 849308006,
+      "slot_id": 51,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 14.08,
+      "weight_delta_g": 89.9,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-006",
+    "scenario_id": "SCEN-NORM-06",
+    "seq": 849308007,
+    "db_persisted": true,
+    "db_session_id": 1378,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1378,
+      "device_id": 5,
+      "device_seq": 849308007,
+      "slot_id": 58,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 17.14,
+      "weight_delta_g": -942.7,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-007",
+    "scenario_id": "SCEN-NORM-07",
+    "seq": 849308008,
+    "db_persisted": true,
+    "db_session_id": 1379,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1379,
+      "device_id": 5,
+      "device_seq": 849308008,
+      "slot_id": 51,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 6.98,
+      "weight_delta_g": -47.1,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-008",
+    "scenario_id": "SCEN-NORM-08",
+    "seq": 849308009,
+    "db_persisted": true,
+    "db_session_id": 1380,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1380,
+      "device_id": 5,
+      "device_seq": 849308009,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 6.98,
+      "weight_delta_g": 390.9,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-009",
+    "scenario_id": "SCEN-NORM-09",
+    "seq": 849308010,
+    "db_persisted": true,
+    "db_session_id": 1381,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1381,
+      "device_id": 5,
+      "device_seq": 849308010,
+      "slot_id": 60,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 9.41,
+      "weight_delta_g": -179.6,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-010",
+    "scenario_id": "SCEN-NORM-10",
+    "seq": 849308011,
+    "db_persisted": true,
+    "db_session_id": 1382,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1382,
+      "device_id": 5,
+      "device_seq": 849308011,
+      "slot_id": 58,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 5.36,
+      "weight_delta_g": -5.6,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-011",
+    "scenario_id": "SCEN-NORM-11",
+    "seq": 849308012,
+    "db_persisted": true,
+    "db_session_id": 1383,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1383,
+      "device_id": 5,
+      "device_seq": 849308012,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 6.84,
+      "weight_delta_g": 18.1,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-012",
+    "scenario_id": "SCEN-NORM-12",
+    "seq": 849308013,
+    "db_persisted": true,
+    "db_session_id": 1384,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1384,
+      "device_id": 5,
+      "device_seq": 849308013,
+      "slot_id": 59,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 3.39,
+      "weight_delta_g": 1158.9,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-013",
+    "scenario_id": "SCEN-NORM-13",
+    "seq": 849308014,
+    "db_persisted": true,
+    "db_session_id": 1385,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1385,
+      "device_id": 5,
+      "device_seq": 849308014,
+      "slot_id": 57,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 8.25,
+      "weight_delta_g": 269.1,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-014",
+    "scenario_id": "SCEN-NORM-14",
+    "seq": 849308015,
+    "db_persisted": true,
+    "db_session_id": 1386,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1386,
+      "device_id": 5,
+      "device_seq": 849308015,
+      "slot_id": 53,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 10.94,
+      "weight_delta_g": 5.9,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-015",
+    "scenario_id": "SCEN-NORM-15",
+    "seq": 849308016,
+    "db_persisted": true,
+    "db_session_id": 1387,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1387,
+      "device_id": 5,
+      "device_seq": 849308016,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 3.92,
+      "weight_delta_g": 416.9,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-016",
+    "scenario_id": "SCEN-NORM-16",
+    "seq": 849308017,
+    "db_persisted": true,
+    "db_session_id": 1388,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1388,
+      "device_id": 5,
+      "device_seq": 849308017,
+      "slot_id": 57,
+      "measured_at": "2026-11-16 17:15:09.0000000",
+      "door_open_sec": 7.21,
+      "weight_delta_g": -233.1,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-017",
+    "scenario_id": "SCEN-NORM-17",
+    "seq": 849308018,
+    "db_persisted": true,
+    "db_session_id": 1389,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1389,
+      "device_id": 5,
+      "device_seq": 849308018,
+      "slot_id": 59,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 23.31,
+      "weight_delta_g": -15.4,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-018",
+    "scenario_id": "SCEN-NORM-18",
+    "seq": 849308019,
+    "db_persisted": true,
+    "db_session_id": 1390,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1390,
+      "device_id": 5,
+      "device_seq": 849308019,
+      "slot_id": 60,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 4.54,
+      "weight_delta_g": -47.9,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-019",
+    "scenario_id": "SCEN-NORM-19",
+    "seq": 849308020,
+    "db_persisted": true,
+    "db_session_id": 1391,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1391,
+      "device_id": 5,
+      "device_seq": 849308020,
+      "slot_id": 60,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 9.57,
+      "weight_delta_g": 233.2,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-020",
+    "scenario_id": "SCEN-NORM-20",
+    "seq": 849308021,
+    "db_persisted": true,
+    "db_session_id": 1392,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1392,
+      "device_id": 5,
+      "device_seq": 849308021,
+      "slot_id": 57,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 7.46,
+      "weight_delta_g": -434.8,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-021",
+    "scenario_id": "SCEN-UNAUTH-01",
+    "seq": 849308022,
+    "db_persisted": true,
+    "db_session_id": 1393,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1393,
+      "device_id": 5,
+      "device_seq": 849308022,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -1.1,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-022",
+    "scenario_id": "SCEN-UNAUTH-02",
+    "seq": 849308023,
+    "db_persisted": true,
+    "db_session_id": 1394,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1394,
+      "device_id": 5,
+      "device_seq": 849308023,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -1.9,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-023",
+    "scenario_id": "SCEN-UNAUTH-03",
+    "seq": 849308024,
+    "db_persisted": true,
+    "db_session_id": 1395,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1395,
+      "device_id": 5,
+      "device_seq": 849308024,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 1.6,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-024",
+    "scenario_id": "SCEN-UNAUTH-04",
+    "seq": 849308025,
+    "db_persisted": true,
+    "db_session_id": 1396,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1396,
+      "device_id": 5,
+      "device_seq": 849308025,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -1.5,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-025",
+    "scenario_id": "SCEN-UNAUTH-05",
+    "seq": 849308026,
+    "db_persisted": true,
+    "db_session_id": 1397,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1397,
+      "device_id": 5,
+      "device_seq": 849308026,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 2.5,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-026",
+    "scenario_id": "SCEN-UNAUTH-06",
+    "seq": 849308027,
+    "db_persisted": true,
+    "db_session_id": 1398,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1398,
+      "device_id": 5,
+      "device_seq": 849308027,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -4.5,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-027",
+    "scenario_id": "SCEN-UNAUTH-07",
+    "seq": 849308028,
+    "db_persisted": true,
+    "db_session_id": 1399,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1399,
+      "device_id": 5,
+      "device_seq": 849308028,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 6.2,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-028",
+    "scenario_id": "SCEN-UNAUTH-08",
+    "seq": 849308029,
+    "db_persisted": true,
+    "db_session_id": 1400,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1400,
+      "device_id": 5,
+      "device_seq": 849308029,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -0.1,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-029",
+    "scenario_id": "SCEN-UNAUTH-09",
+    "seq": 849308030,
+    "db_persisted": true,
+    "db_session_id": 1401,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1401,
+      "device_id": 5,
+      "device_seq": 849308030,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 2.5,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-030",
+    "scenario_id": "SCEN-UNAUTH-10",
+    "seq": 849308031,
+    "db_persisted": true,
+    "db_session_id": 1402,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1402,
+      "device_id": 5,
+      "device_seq": 849308031,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -0.7,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-031",
+    "scenario_id": "SCEN-UNAUTH-11",
+    "seq": 849308032,
+    "db_persisted": true,
+    "db_session_id": 1403,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1403,
+      "device_id": 5,
+      "device_seq": 849308032,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 7.6,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-032",
+    "scenario_id": "SCEN-UNAUTH-12",
+    "seq": 849308033,
+    "db_persisted": true,
+    "db_session_id": 1404,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1404,
+      "device_id": 5,
+      "device_seq": 849308033,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 1.5,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-033",
+    "scenario_id": "SCEN-UNAUTH-13",
+    "seq": 849308034,
+    "db_persisted": true,
+    "db_session_id": 1405,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1405,
+      "device_id": 5,
+      "device_seq": 849308034,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:10.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 2.1,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-034",
+    "scenario_id": "SCEN-UNAUTH-14",
+    "seq": 849308035,
+    "db_persisted": true,
+    "db_session_id": 1406,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1406,
+      "device_id": 5,
+      "device_seq": 849308035,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 0.8,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-035",
+    "scenario_id": "SCEN-UNAUTH-15",
+    "seq": 849308036,
+    "db_persisted": true,
+    "db_session_id": 1407,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1407,
+      "device_id": 5,
+      "device_seq": 849308036,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 2.0,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-036",
+    "scenario_id": "SCEN-UNAUTH-16",
+    "seq": 849308037,
+    "db_persisted": true,
+    "db_session_id": 1408,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1408,
+      "device_id": 5,
+      "device_seq": 849308037,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -3.6,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-037",
+    "scenario_id": "SCEN-UNAUTH-17",
+    "seq": 849308038,
+    "db_persisted": true,
+    "db_session_id": 1409,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1409,
+      "device_id": 5,
+      "device_seq": 849308038,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -1.9,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-038",
+    "scenario_id": "SCEN-UNAUTH-18",
+    "seq": 849308039,
+    "db_persisted": true,
+    "db_session_id": 1410,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1410,
+      "device_id": 5,
+      "device_seq": 849308039,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 0.8,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-039",
+    "scenario_id": "SCEN-UNAUTH-19",
+    "seq": 849308040,
+    "db_persisted": true,
+    "db_session_id": 1411,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1411,
+      "device_id": 5,
+      "device_seq": 849308040,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 2.2,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-040",
+    "scenario_id": "SCEN-UNAUTH-20",
+    "seq": 849308041,
+    "db_persisted": true,
+    "db_session_id": 1412,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1412,
+      "device_id": 5,
+      "device_seq": 849308041,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -9.5,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-041",
+    "scenario_id": "SCEN-FORCE-01",
+    "seq": 849308042,
+    "db_persisted": true,
+    "db_session_id": 1413,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1413,
+      "device_id": 5,
+      "device_seq": 849308042,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 63.2,
+      "weight_delta_g": 0.5,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-042",
+    "scenario_id": "SCEN-FORCE-02",
+    "seq": 849308043,
+    "db_persisted": true,
+    "db_session_id": 1414,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1414,
+      "device_id": 5,
+      "device_seq": 849308043,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 4.06,
+      "weight_delta_g": 604.7,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-043",
+    "scenario_id": "SCEN-FORCE-03",
+    "seq": 849308044,
+    "db_persisted": true,
+    "db_session_id": 1415,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1415,
+      "device_id": 5,
+      "device_seq": 849308044,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 6.75,
+      "weight_delta_g": 314.1,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-044",
+    "scenario_id": "SCEN-FORCE-04",
+    "seq": 849308045,
+    "db_persisted": true,
+    "db_session_id": 1416,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1416,
+      "device_id": 5,
+      "device_seq": 849308045,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 4.4,
+      "weight_delta_g": -133.4,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-045",
+    "scenario_id": "SCEN-FORCE-05",
+    "seq": 849308046,
+    "db_persisted": true,
+    "db_session_id": 1417,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1417,
+      "device_id": 5,
+      "device_seq": 849308046,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 3.0,
+      "weight_delta_g": 66.0,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-046",
+    "scenario_id": "SCEN-FORCE-06",
+    "seq": 849308047,
+    "db_persisted": true,
+    "db_session_id": 1418,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1418,
+      "device_id": 5,
+      "device_seq": 849308047,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 7.57,
+      "weight_delta_g": -8.8,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-047",
+    "scenario_id": "SCEN-FORCE-07",
+    "seq": 849308048,
+    "db_persisted": true,
+    "db_session_id": 1419,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1419,
+      "device_id": 5,
+      "device_seq": 849308048,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 25.15,
+      "weight_delta_g": -110.7,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-048",
+    "scenario_id": "SCEN-FORCE-08",
+    "seq": 849308049,
+    "db_persisted": true,
+    "db_session_id": 1420,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1420,
+      "device_id": 5,
+      "device_seq": 849308049,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 15.75,
+      "weight_delta_g": -187.7,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-049",
+    "scenario_id": "SCEN-FORCE-09",
+    "seq": 849308050,
+    "db_persisted": true,
+    "db_session_id": 1421,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1421,
+      "device_id": 5,
+      "device_seq": 849308050,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 6.38,
+      "weight_delta_g": 770.7,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-050",
+    "scenario_id": "SCEN-FORCE-10",
+    "seq": 849308051,
+    "db_persisted": true,
+    "db_session_id": 1422,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1422,
+      "device_id": 5,
+      "device_seq": 849308051,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 2.08,
+      "weight_delta_g": 20.0,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-051",
+    "scenario_id": "SCEN-FORCE-11",
+    "seq": 849308052,
+    "db_persisted": true,
+    "db_session_id": 1423,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1423,
+      "device_id": 5,
+      "device_seq": 849308052,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 9.56,
+      "weight_delta_g": -412.9,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-052",
+    "scenario_id": "SCEN-FORCE-12",
+    "seq": 849308053,
+    "db_persisted": true,
+    "db_session_id": 1424,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1424,
+      "device_id": 5,
+      "device_seq": 849308053,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 3.45,
+      "weight_delta_g": 1.9,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-053",
+    "scenario_id": "SCEN-FORCE-13",
+    "seq": 849308054,
+    "db_persisted": true,
+    "db_session_id": 1425,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1425,
+      "device_id": 5,
+      "device_seq": 849308054,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 2.57,
+      "weight_delta_g": 205.7,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-054",
+    "scenario_id": "SCEN-FORCE-14",
+    "seq": 849308055,
+    "db_persisted": true,
+    "db_session_id": 1426,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1426,
+      "device_id": 5,
+      "device_seq": 849308055,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 7.01,
+      "weight_delta_g": -141.9,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-055",
+    "scenario_id": "SCEN-FORCE-15",
+    "seq": 849308056,
+    "db_persisted": true,
+    "db_session_id": 1427,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1427,
+      "device_id": 5,
+      "device_seq": 849308056,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:11.0000000",
+      "door_open_sec": 13.89,
+      "weight_delta_g": -169.2,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-056",
+    "scenario_id": "SCEN-FORCE-16",
+    "seq": 849308057,
+    "db_persisted": true,
+    "db_session_id": 1428,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1428,
+      "device_id": 5,
+      "device_seq": 849308057,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 3.17,
+      "weight_delta_g": 0.1,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-057",
+    "scenario_id": "SCEN-FORCE-17",
+    "seq": 849308058,
+    "db_persisted": true,
+    "db_session_id": 1429,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1429,
+      "device_id": 5,
+      "device_seq": 849308058,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 8.56,
+      "weight_delta_g": 8.9,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-058",
+    "scenario_id": "SCEN-FORCE-18",
+    "seq": 849308059,
+    "db_persisted": true,
+    "db_session_id": 1430,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1430,
+      "device_id": 5,
+      "device_seq": 849308059,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 15.21,
+      "weight_delta_g": 100.2,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-059",
+    "scenario_id": "SCEN-FORCE-19",
+    "seq": 849308060,
+    "db_persisted": true,
+    "db_session_id": 1431,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1431,
+      "device_id": 5,
+      "device_seq": 849308060,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 10.24,
+      "weight_delta_g": -23.0,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-060",
+    "scenario_id": "SCEN-FORCE-20",
+    "seq": 849308061,
+    "db_persisted": true,
+    "db_session_id": 1432,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1432,
+      "device_id": 5,
+      "device_seq": 849308061,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 4.38,
+      "weight_delta_g": 47.0,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-061",
+    "scenario_id": "SCEN-TAMPER-01",
+    "seq": 849308062,
+    "db_persisted": true,
+    "db_session_id": 1433,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1433,
+      "device_id": 5,
+      "device_seq": 849308062,
+      "slot_id": 59,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 5.7,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-062",
+    "scenario_id": "SCEN-TAMPER-02",
+    "seq": 849308063,
+    "db_persisted": true,
+    "db_session_id": 1434,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1434,
+      "device_id": 5,
+      "device_seq": 849308063,
+      "slot_id": 51,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -71.6,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-063",
+    "scenario_id": "SCEN-TAMPER-03",
+    "seq": 849308064,
+    "db_persisted": true,
+    "db_session_id": 1435,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1435,
+      "device_id": 5,
+      "device_seq": 849308064,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -27.5,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-064",
+    "scenario_id": "SCEN-TAMPER-04",
+    "seq": 849308065,
+    "db_persisted": true,
+    "db_session_id": 1436,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1436,
+      "device_id": 5,
+      "device_seq": 849308065,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 8.0,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-065",
+    "scenario_id": "SCEN-TAMPER-05",
+    "seq": 849308066,
+    "db_persisted": true,
+    "db_session_id": 1437,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1437,
+      "device_id": 5,
+      "device_seq": 849308066,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 5.5,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-066",
+    "scenario_id": "SCEN-TAMPER-06",
+    "seq": 849308067,
+    "db_persisted": true,
+    "db_session_id": 1438,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1438,
+      "device_id": 5,
+      "device_seq": 849308067,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -1.7,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-067",
+    "scenario_id": "SCEN-TAMPER-07",
+    "seq": 849308068,
+    "db_persisted": true,
+    "db_session_id": 1439,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1439,
+      "device_id": 5,
+      "device_seq": 849308068,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 65.2,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-068",
+    "scenario_id": "SCEN-TAMPER-08",
+    "seq": 849308069,
+    "db_persisted": true,
+    "db_session_id": 1440,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1440,
+      "device_id": 5,
+      "device_seq": 849308069,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -19.4,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-069",
+    "scenario_id": "SCEN-TAMPER-09",
+    "seq": 849308070,
+    "db_persisted": true,
+    "db_session_id": 1441,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1441,
+      "device_id": 5,
+      "device_seq": 849308070,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -5.2,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-070",
+    "scenario_id": "SCEN-TAMPER-10",
+    "seq": 849308071,
+    "db_persisted": true,
+    "db_session_id": 1442,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1442,
+      "device_id": 5,
+      "device_seq": 849308071,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -6.4,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-071",
+    "scenario_id": "SCEN-TAMPER-11",
+    "seq": 849308072,
+    "db_persisted": true,
+    "db_session_id": 1443,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1443,
+      "device_id": 5,
+      "device_seq": 849308072,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 1.1,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-072",
+    "scenario_id": "SCEN-TAMPER-12",
+    "seq": 849308073,
+    "db_persisted": true,
+    "db_session_id": 1444,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1444,
+      "device_id": 5,
+      "device_seq": 849308073,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -1.1,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-073",
+    "scenario_id": "SCEN-TAMPER-13",
+    "seq": 849308074,
+    "db_persisted": true,
+    "db_session_id": 1445,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1445,
+      "device_id": 5,
+      "device_seq": 849308074,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 10.1,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-074",
+    "scenario_id": "SCEN-TAMPER-14",
+    "seq": 849308075,
+    "db_persisted": true,
+    "db_session_id": 1446,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1446,
+      "device_id": 5,
+      "device_seq": 849308075,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:12.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 4.2,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-075",
+    "scenario_id": "SCEN-TAMPER-15",
+    "seq": 849308076,
+    "db_persisted": true,
+    "db_session_id": 1447,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1447,
+      "device_id": 5,
+      "device_seq": 849308076,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -4.5,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-076",
+    "scenario_id": "SCEN-TAMPER-16",
+    "seq": 849308077,
+    "db_persisted": true,
+    "db_session_id": 1448,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1448,
+      "device_id": 5,
+      "device_seq": 849308077,
+      "slot_id": 53,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -6.2,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-077",
+    "scenario_id": "SCEN-TAMPER-17",
+    "seq": 849308078,
+    "db_persisted": true,
+    "db_session_id": 1449,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1449,
+      "device_id": 5,
+      "device_seq": 849308078,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 67.7,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-078",
+    "scenario_id": "SCEN-TAMPER-18",
+    "seq": 849308079,
+    "db_persisted": true,
+    "db_session_id": 1450,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1450,
+      "device_id": 5,
+      "device_seq": 849308079,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": -1.8,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-079",
+    "scenario_id": "SCEN-TAMPER-19",
+    "seq": 849308080,
+    "db_persisted": true,
+    "db_session_id": 1451,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1451,
+      "device_id": 5,
+      "device_seq": 849308080,
+      "slot_id": 52,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 11.6,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-080",
+    "scenario_id": "SCEN-TAMPER-20",
+    "seq": 849308081,
+    "db_persisted": true,
+    "db_session_id": 1452,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1452,
+      "device_id": 5,
+      "device_seq": 849308081,
+      "slot_id": 60,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 0.0,
+      "weight_delta_g": 6.3,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-081",
+    "scenario_id": "SCEN-FAULT-01",
+    "seq": 849308082,
+    "db_persisted": true,
+    "db_session_id": 1453,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1453,
+      "device_id": 5,
+      "device_seq": 849308082,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 7.96,
+      "weight_delta_g": -347.9,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-082",
+    "scenario_id": "SCEN-FAULT-02",
+    "seq": 849308083,
+    "db_persisted": true,
+    "db_session_id": 1454,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1454,
+      "device_id": 5,
+      "device_seq": 849308083,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 18.71,
+      "weight_delta_g": -349.1,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-083",
+    "scenario_id": "SCEN-FAULT-03",
+    "seq": 849308084,
+    "db_persisted": true,
+    "db_session_id": 1455,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1455,
+      "device_id": 5,
+      "device_seq": 849308084,
+      "slot_id": 53,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 6.03,
+      "weight_delta_g": 24002.5,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-084",
+    "scenario_id": "SCEN-FAULT-04",
+    "seq": 849308085,
+    "db_persisted": true,
+    "db_session_id": 1456,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1456,
+      "device_id": 5,
+      "device_seq": 849308085,
+      "slot_id": 51,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 6.11,
+      "weight_delta_g": 24003.2,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-085",
+    "scenario_id": "SCEN-FAULT-05",
+    "seq": 849308086,
+    "db_persisted": true,
+    "db_session_id": 1457,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1457,
+      "device_id": 5,
+      "device_seq": 849308086,
+      "slot_id": 56,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 1313.69,
+      "weight_delta_g": -92.7,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-086",
+    "scenario_id": "SCEN-FAULT-06",
+    "seq": 849308087,
+    "db_persisted": true,
+    "db_session_id": 1458,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1458,
+      "device_id": 5,
+      "device_seq": 849308087,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 701.87,
+      "weight_delta_g": -388.9,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-087",
+    "scenario_id": "SCEN-FAULT-07",
+    "seq": 849308088,
+    "db_persisted": true,
+    "db_session_id": 1459,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1459,
+      "device_id": 5,
+      "device_seq": 849308088,
+      "slot_id": 53,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 1649.92,
+      "weight_delta_g": -19.8,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-088",
+    "scenario_id": "SCEN-FAULT-08",
+    "seq": 849308089,
+    "db_persisted": true,
+    "db_session_id": 1460,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1460,
+      "device_id": 5,
+      "device_seq": 849308089,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:13.0000000",
+      "door_open_sec": 1181.97,
+      "weight_delta_g": -1608.8,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-089",
+    "scenario_id": "SCEN-FAULT-09",
+    "seq": 849308090,
+    "db_persisted": true,
+    "db_session_id": 1461,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1461,
+      "device_id": 5,
+      "device_seq": 849308090,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:14.0000000",
+      "door_open_sec": 23.38,
+      "weight_delta_g": -58.9,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-090",
+    "scenario_id": "SCEN-FAULT-10",
+    "seq": 849308091,
+    "db_persisted": true,
+    "db_session_id": 1462,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1462,
+      "device_id": 5,
+      "device_seq": 849308091,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:14.0000000",
+      "door_open_sec": 3.41,
+      "weight_delta_g": -13.2,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-091",
+    "scenario_id": "SCEN-FAULT-11",
+    "seq": 849308092,
+    "db_persisted": true,
+    "db_session_id": 1463,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1463,
+      "device_id": 5,
+      "device_seq": 849308092,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:14.0000000",
+      "door_open_sec": 16.94,
+      "weight_delta_g": -12.0,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-092",
+    "scenario_id": "SCEN-FAULT-12",
+    "seq": 849308093,
+    "db_persisted": true,
+    "db_session_id": 1464,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1464,
+      "device_id": 5,
+      "device_seq": 849308093,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:14.0000000",
+      "door_open_sec": 9.8,
+      "weight_delta_g": -307.6,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-093",
+    "scenario_id": "SCEN-FAULT-13",
+    "seq": 849308094,
+    "db_persisted": true,
+    "db_session_id": 1465,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1465,
+      "device_id": 5,
+      "device_seq": 849308094,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:14.0000000",
+      "door_open_sec": 13.85,
+      "weight_delta_g": 147.2,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-094",
+    "scenario_id": "SCEN-FAULT-14",
+    "seq": 849308095,
+    "db_persisted": true,
+    "db_session_id": 1466,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1466,
+      "device_id": 5,
+      "device_seq": 849308095,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:14.0000000",
+      "door_open_sec": 13.34,
+      "weight_delta_g": -539.1,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-095",
+    "scenario_id": "SCEN-FAULT-15",
+    "seq": 849308096,
+    "db_persisted": true,
+    "db_session_id": 1467,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1467,
+      "device_id": 5,
+      "device_seq": 849308096,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:14.0000000",
+      "door_open_sec": 8.03,
+      "weight_delta_g": -87.2,
+      "rfid_ok": false
+    }
+  },
+  {
+    "session_id": "SIM-SESS-096",
+    "scenario_id": "SCEN-FAULT-16",
+    "seq": 849308097,
+    "db_persisted": true,
+    "db_session_id": 1468,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1468,
+      "device_id": 5,
+      "device_seq": 849308097,
+      "slot_id": 56,
+      "measured_at": "2026-11-16 17:15:14.0000000",
+      "door_open_sec": 7.47,
+      "weight_delta_g": 46.1,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-097",
+    "scenario_id": "SCEN-FAULT-17",
+    "seq": 849308098,
+    "db_persisted": true,
+    "db_session_id": 1469,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1469,
+      "device_id": 5,
+      "device_seq": 849308098,
+      "slot_id": 52,
+      "measured_at": "2026-11-16 17:15:15.0000000",
+      "door_open_sec": 4.18,
+      "weight_delta_g": -97.5,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-098",
+    "scenario_id": "SCEN-FAULT-18",
+    "seq": 849308099,
+    "db_persisted": true,
+    "db_session_id": 1470,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1470,
+      "device_id": 5,
+      "device_seq": 849308099,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:15.0000000",
+      "door_open_sec": 5.79,
+      "weight_delta_g": -1.1,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-099",
+    "scenario_id": "SCEN-FAULT-19",
+    "seq": 849308099,
+    "db_persisted": true,
+    "db_session_id": 1470,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1470,
+      "device_id": 5,
+      "device_seq": 849308099,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:15.0000000",
+      "door_open_sec": 5.79,
+      "weight_delta_g": -1.1,
+      "rfid_ok": true
+    }
+  },
+  {
+    "session_id": "SIM-SESS-100",
+    "scenario_id": "SCEN-FAULT-20",
+    "seq": 849308099,
+    "db_persisted": true,
+    "db_session_id": 1470,
+    "raw_verification": {
+      "persisted": true,
+      "session_id": 1470,
+      "device_id": 5,
+      "device_seq": 849308099,
+      "slot_id": 54,
+      "measured_at": "2026-11-16 17:15:15.0000000",
+      "door_open_sec": 5.79,
+      "weight_delta_g": -1.1,
+      "rfid_ok": true
+    }
+  }
+]

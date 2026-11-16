@@ -1,0 +1,54 @@
+{
+ "purpose": "Supplementary manifest for the live Simulator v2 run (the runner's own run_manifest.json has no commit, fingerprint or paths). New file; no frozen file touched.",
+ "run_id": "RUN_20261116_171508_SEED42_V2_SL_SIM",
+ "master_seed": 42,
+ "database": "SL_SIM",
+ "created": "2026-11-16T17:26:25.790269+00:00",
+ "code_commit": "fd05eb9f01bad4b005c5cdd11ea26b247b49a4cc",
+ "working_tree": "dirty: tracked change docs/paper/smartlocker-10p.tex (pre-existing); v2 files are untracked, so the commit alone does not reproduce the run; use the fingerprint below",
+ "code_fingerprint_sha256": {
+  "experiments/v2/generator_v2.py": "b4dfe408ede962258881b8669fe87d997a8adbaf93b8950a36d6c884f6877efa",
+  "experiments/v2/runner_v2.py": "d61dac17ac6863ad4a0921817d972cfe299afc1a25e0c7c75b8e6f33edb6f713",
+  "experiments/v2/test_v2.py": "6aad0ee4476780b46c1d7bfe532f8415523d30845f8458128dea197bd0ff7ff0",
+  "docs/paper/scripts/study_b_analysis.py": "d8f7d3307d5c466d299626ef1925a4550bf367ee6658732af48f9de2395f1e03",
+  "experiments/generator.py": "c0cf42e46f5e7fd49c77443dbed7ed11644cd8efcfab9d693e93fff93983bc56",
+  "experiments/sensor_models.py": "d25e6f0b6e9c47c57d4ffffcdbfa4aba1e335aeb5c75d991dbdd133ec21c8817",
+  "experiments/oracle.py": "a3a90820afe345064d64c583aea0beec109db516de98383660eb0ea5f836d5a8",
+  "experiments/detection.py": "171c1a2ef797a24b03667b21967b7a4966e1a9b44e54e0a91f6fb4335ad28918",
+  "experiments/runner.py": "49a8fb47bed79e5200a9962e4a8ecf69655bcb8d287a8af356598e59ee6358e5",
+  "experiments/evaluate.py": "3a5c63563e477869f8d7965b53843ea2c9f15faaedf97776425f313687b3b74f"
+ },
+ "parameter_table": "docs/paper/REVISION2_LOG.md, 'Simulator v2 rationale' table 1.3 (approved 2026-11-17 00:01 +0700) plus implementation choices 1-7 (approved by the author post-run, 2026-11-17 00:26 +0700)",
+ "latency_pool_source": {
+  "path": "experiments/runs/RUN_20261116_044130_SEED42_SL_SIM/backend_responses.jsonl",
+  "sha256": "e8b2d4ede4084330fa345a21c75082bba9b108ef5e78a2e091cd11659ca8ca42"
+ },
+ "dataset_hashes": {
+  "v2_seed101_sessions.json": "f60ad8528bfb064fec50b52f240e51062b6fded4afad8f09e1df1558fd762036",
+  "v2_seed202_sessions.json": "0ee7172c1e5272e36b3e3b70c40079d38bef876e9287dcf9e7cecdc8f7deadba",
+  "v2_seed303_sessions.json": "bf0087da03e4a472444b0455ca4f7e8130deb92eda9492d0c3a4f92f3c7f250e",
+  "v2_seed404_sessions.json": "b13c365570d6296a79e012eea8d8786639dee99b15916e1ae96c34990205254f",
+  "v2_seed42_sessions.json": "ae9a42109fa82e61c74fedd03a5974ea4e28e96916d52e4ae90b5d95125b330e"
+ },
+ "scenarios": 100,
+ "unique_sessions": 100,
+ "db_rows_persisted": 98,
+ "db_rows_note": "2 duplicate-replay sessions are not stored again by design",
+ "run_started_utc": "2026-11-16T17:15:08Z",
+ "run_finished_utc": "2026-11-16T17:15:16Z",
+ "outputs": {
+  "run_dir": "experiments/runs/RUN_20261116_171508_SEED42_V2_SL_SIM/",
+  "duplicate_evidence_copy": "experiments/v2/evidence_RUN_20261116_171508_SEED42_V2_SL_SIM/ (written by the runner's output_dir; same files as run_dir, with its own raw_evidence_hashes/run_manifest)",
+  "analysis": "docs/paper/scripts/results/R2_STUDYB_V2_20261116T171537Z/study_b_results.json",
+  "audit": "docs/paper/scripts/results/R2_AUDIT_A_20261116T172341Z.json"
+ },
+ "stale_files": {
+  "reproduction_config.yaml": "v1 template written by the unchanged runner (v1 thresholds, category label SENSOR_FAULT); NOT applicable to v2. v2 parameters are in the log table 1.3 and the generator."
+ },
+ "sensitive_do_not_package": [
+  "experiments/runs/RUN_20261116_171508_SEED42_V2_SL_SIM/reproduction_config.yaml",
+  "experiments/runs/RUN_20261116_171508_SEED42_V2_SL_SIM/backend_requests.jsonl",
+  "experiments/v2/evidence_RUN_20261116_171508_SEED42_V2_SL_SIM/reproduction_config.yaml",
+  "experiments/v2/evidence_RUN_20261116_171508_SEED42_V2_SL_SIM/backend_requests.jsonl"
+ ]
+}

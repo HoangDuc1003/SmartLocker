@@ -1,0 +1,53 @@
+{
+ "ledger": "docs/paper/scripts/results/exports/auditchain_SL_SIM.json",
+ "ledger_sha256": "e8d47087032d130ef4920bc0989478e5114508c2890e02feb37a50363f1b1b3e",
+ "records": 1343,
+ "n_per_category": 20,
+ "seed": 20261116,
+ "baseline_verification": {
+  "status": "PASS",
+  "total_nodes_verified": 1343,
+  "chain_intact": true,
+  "broken_links": 0,
+  "genesis_prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "tail_chain_hash": "99d6e5b224e8a6bf400cff0cb8bd35751eda91c4e88a92dba8fa65ab1ae6510c"
+ },
+ "categories": {
+  "field_modification": {
+   "attempted": 20,
+   "detected": 20,
+   "limitation": ""
+  },
+  "mid_chain_deletion": {
+   "attempted": 20,
+   "detected": 20,
+   "limitation": ""
+  },
+  "reordering_adjacent_swap": {
+   "attempted": 20,
+   "detected": 20,
+   "limitation": ""
+  },
+  "mid_chain_insertion": {
+   "attempted": 20,
+   "detected": 20,
+   "limitation": ""
+  },
+  "tail_append": {
+   "attempted": 20,
+   "detected": 0,
+   "limitation": "not detectable without an external head/checkpoint"
+  },
+  "tail_truncation": {
+   "attempted": 20,
+   "detected": 0,
+   "limitation": "not detectable without an external head/checkpoint"
+  },
+  "privileged_rewrite_and_rehash": {
+   "attempted": 20,
+   "detected": 0,
+   "limitation": "a DB administrator can rewrite history and recompute the chain absent external anchoring"
+  }
+ },
+ "timestamp_utc": "2026-11-16T17:02:11.978111+00:00"
+}

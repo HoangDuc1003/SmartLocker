@@ -1,0 +1,22 @@
+{
+  "source": "FILE: C:\\Users\\ADMIN\\OneDrive\\Desktop\\SmartLocker\\docs\\paper\\scripts\\results\\exports\\auditchain_SL_SIM.json",
+  "algorithm": "SHA-256 (UTF-16LE canonical serialization)",
+  "canonical_format": "audit_id|ts|actor_user_id|action|object_type|object_id|diff_json|prev_hash",
+  "verification_result": {
+    "status": "PASS",
+    "total_nodes_verified": 1343,
+    "chain_intact": true,
+    "broken_links": 0,
+    "genesis_prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "tail_chain_hash": "99d6e5b224e8a6bf400cff0cb8bd35751eda91c4e88a92dba8fa65ab1ae6510c"
+  },
+  "tamper_detection_test": {
+    "tamper_simulation_target_index": 671,
+    "tamper_simulation_audit_id": 702,
+    "original_action": "CREATE",
+    "tampered_action": "TAMPERED_ACTION",
+    "tamper_detected": true,
+    "detection_status": "HASH_MISMATCH",
+    "verification_result": "PASS"
+  }
+}

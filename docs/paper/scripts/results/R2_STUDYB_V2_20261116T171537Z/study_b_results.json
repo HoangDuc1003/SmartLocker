@@ -1,0 +1,1829 @@
+{
+ "run_id": "R2_STUDYB_V2_20261116T171537Z",
+ "variant": "v2",
+ "path_check": {
+  "auth_equals_expected": 100,
+  "replay_flag_equals_backend_duplicate": 100,
+  "n": 100,
+  "b0_rerun_equals_recorded": 100,
+  "b1_rerun_equals_recorded": 100,
+  "mapping_equals_category": 100
+ },
+ "supports": {
+  "NORMAL_AUTHORIZED": 20,
+  "UNAUTHORIZED_CREDENTIAL": 20,
+  "FORCED_DOOR_OPEN": 20,
+  "LOAD_OR_TAMPER_ANOMALY": 20,
+  "SENSOR_OR_NETWORK_FAULT": 20
+ },
+ "seed42": {
+  "B0": {
+   "confusion": {
+    "NORMAL_AUTHORIZED": {
+     "NORMAL_AUTHORIZED": 17,
+     "UNAUTHORIZED_CREDENTIAL": 0,
+     "FORCED_DOOR_OPEN": 0,
+     "LOAD_OR_TAMPER_ANOMALY": 0,
+     "SENSOR_OR_NETWORK_FAULT": 3
+    },
+    "UNAUTHORIZED_CREDENTIAL": {
+     "NORMAL_AUTHORIZED": 0,
+     "UNAUTHORIZED_CREDENTIAL": 20,
+     "FORCED_DOOR_OPEN": 0,
+     "LOAD_OR_TAMPER_ANOMALY": 0,
+     "SENSOR_OR_NETWORK_FAULT": 0
+    },
+    "FORCED_DOOR_OPEN": {
+     "NORMAL_AUTHORIZED": 0,
+     "UNAUTHORIZED_CREDENTIAL": 0,
+     "FORCED_DOOR_OPEN": 19,
+     "LOAD_OR_TAMPER_ANOMALY": 0,
+     "SENSOR_OR_NETWORK_FAULT": 1
+    },
+    "LOAD_OR_TAMPER_ANOMALY": {
+     "NORMAL_AUTHORIZED": 17,
+     "UNAUTHORIZED_CREDENTIAL": 0,
+     "FORCED_DOOR_OPEN": 0,
+     "LOAD_OR_TAMPER_ANOMALY": 3,
+     "SENSOR_OR_NETWORK_FAULT": 0
+    },
+    "SENSOR_OR_NETWORK_FAULT": {
+     "NORMAL_AUTHORIZED": 5,
+     "UNAUTHORIZED_CREDENTIAL": 5,
+     "FORCED_DOOR_OPEN": 0,
+     "LOAD_OR_TAMPER_ANOMALY": 0,
+     "SENSOR_OR_NETWORK_FAULT": 10
+    }
+   },
+   "per_class": {
+    "NORMAL_AUTHORIZED": {
+     "precision": 0.4358974358974359,
+     "recall": 0.85,
+     "f1": 0.5762711864406781,
+     "support": 20,
+     "predicted": 39
+    },
+    "UNAUTHORIZED_CREDENTIAL": {
+     "precision": 0.8,
+     "recall": 1.0,
+     "f1": 0.888888888888889,
+     "support": 20,
+     "predicted": 25
+    },
+    "FORCED_DOOR_OPEN": {
+     "precision": 1.0,
+     "recall": 0.95,
+     "f1": 0.9743589743589743,
+     "support": 20,
+     "predicted": 19
+    },
+    "LOAD_OR_TAMPER_ANOMALY": {
+     "precision": 1.0,
+     "recall": 0.15,
+     "f1": 0.2608695652173913,
+     "support": 20,
+     "predicted": 3
+    },
+    "SENSOR_OR_NETWORK_FAULT": {
+     "precision": 0.7142857142857143,
+     "recall": 0.5,
+     "f1": 0.588235294117647,
+     "support": 20,
+     "predicted": 14
+    }
+   },
+   "accuracy": 0.69,
+   "balanced_accuracy": 0.69,
+   "macro": {
+    "precision": 0.79003663003663,
+    "recall": 0.69,
+    "f1": 0.6577247818047158
+   },
+   "weighted": {
+    "precision": 0.79003663003663,
+    "recall": 0.69,
+    "f1": 0.6577247818047159
+   },
+   "binary_anomaly_positive": {
+    "accuracy": 0.75,
+    "precision": 0.9508196721311475,
+    "recall": 0.725,
+    "f1": 0.822695035460993,
+    "tp": 58,
+    "fp": 3,
+    "fn": 22,
+    "tn": 17
+   }
+  },
+  "B1": {
+   "confusion": {
+    "NORMAL_AUTHORIZED": {
+     "NORMAL_AUTHORIZED": 17,
+     "UNAUTHORIZED_CREDENTIAL": 0,
+     "FORCED_DOOR_OPEN": 0,
+     "LOAD_OR_TAMPER_ANOMALY": 0,
+     "SENSOR_OR_NETWORK_FAULT": 3
+    },
+    "UNAUTHORIZED_CREDENTIAL": {
+     "NORMAL_AUTHORIZED": 0,
+     "UNAUTHORIZED_CREDENTIAL": 20,
+     "FORCED_DOOR_OPEN": 0,
+     "LOAD_OR_TAMPER_ANOMALY": 0,
+     "SENSOR_OR_NETWORK_FAULT": 0
+    },
+    "FORCED_DOOR_OPEN": {
+     "NORMAL_AUTHORIZED": 0,
+     "UNAUTHORIZED_CREDENTIAL": 0,
+     "FORCED_DOOR_OPEN": 19,
+     "LOAD_OR_TAMPER_ANOMALY": 0,
+     "SENSOR_OR_NETWORK_FAULT": 1
+    },
+    "LOAD_OR_TAMPER_ANOMALY": {
+     "NORMAL_AUTHORIZED": 15,
+     "UNAUTHORIZED_CREDENTIAL": 0,
+     "FORCED_DOOR_OPEN": 0,
+     "LOAD_OR_TAMPER_ANOMALY": 5,
+     "SENSOR_OR_NETWORK_FAULT": 0
+    },
+    "SENSOR_OR_NETWORK_FAULT": {
+     "NORMAL_AUTHORIZED": 1,
+     "UNAUTHORIZED_CREDENTIAL": 0,
+     "FORCED_DOOR_OPEN": 0,
+     "LOAD_OR_TAMPER_ANOMALY": 0,
+     "SENSOR_OR_NETWORK_FAULT": 19
+    }
+   },
+   "per_class": {
+    "NORMAL_AUTHORIZED": {
+     "precision": 0.5151515151515151,
+     "recall": 0.85,
+     "f1": 0.6415094339622641,
+     "support": 20,
+     "predicted": 33
+    },
+    "UNAUTHORIZED_CREDENTIAL": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 20,
+     "predicted": 20
+    },
+    "FORCED_DOOR_OPEN": {
+     "precision": 1.0,
+     "recall": 0.95,
+     "f1": 0.9743589743589743,
+     "support": 20,
+     "predicted": 19
+    },
+    "LOAD_OR_TAMPER_ANOMALY": {
+     "precision": 1.0,
+     "recall": 0.25,
+     "f1": 0.4,
+     "support": 20,
+     "predicted": 5
+    },
+    "SENSOR_OR_NETWORK_FAULT": {
+     "precision": 0.8260869565217391,
+     "recall": 0.95,
+     "f1": 0.8837209302325583,
+     "support": 20,
+     "predicted": 23
+    }
+   },
+   "accuracy": 0.8,
+   "balanced_accuracy": 0.8,
+   "macro": {
+    "precision": 0.8682476943346508,
+    "recall": 0.8,
+    "f1": 0.7799178677107593
+   },
+   "weighted": {
+    "precision": 0.8682476943346509,
+    "recall": 0.8,
+    "f1": 0.7799178677107593
+   },
+   "binary_anomaly_positive": {
+    "accuracy": 0.81,
+    "precision": 0.9552238805970149,
+    "recall": 0.8,
+    "f1": 0.870748299319728,
+    "tp": 64,
+    "fp": 3,
+    "fn": 16,
+    "tn": 17
+   }
+  },
+  "mcnemar_binary": {
+   "n00": 19,
+   "n01": 6,
+   "n10": 0,
+   "n11": 75,
+   "chi2_cc": 4.166666666666667,
+   "exact_binomial_p_two_sided": 0.03125
+  },
+  "mcnemar_5class": {
+   "n00": 20,
+   "n01": 11,
+   "n10": 0,
+   "n11": 69,
+   "chi2_cc": 9.090909090909092,
+   "exact_binomial_p_two_sided": 0.0009765625
+  }
+ },
+ "five_seed": {
+  "per_seed": [
+   {
+    "seed": 42,
+    "B0": 0.6577247818047158,
+    "B1": 0.7799178677107593
+   },
+   {
+    "seed": 101,
+    "B0": 0.6086266390614217,
+    "B1": 0.7778940679810246
+   },
+   {
+    "seed": 202,
+    "B0": 0.5684473789515807,
+    "B1": 0.7188888888888888
+   },
+   {
+    "seed": 303,
+    "B0": 0.6358578987150416,
+    "B1": 0.779183609141056
+   },
+   {
+    "seed": 404,
+    "B0": 0.5771720527534481,
+    "B1": 0.7069579831932773
+   }
+  ],
+  "B0": {
+   "mean": 0.6095657502572415,
+   "sd_sample_ddof1": 0.03791939944392977,
+   "sd_population_ddof0": 0.03391614192903787
+  },
+  "B1": {
+   "mean": 0.7525684833830011,
+   "sd_sample_ddof1": 0.03644300958448953,
+   "sd_population_ddof0": 0.03259561869423798
+  }
+ },
+ "bootstrap": {
+  "design": "stratified paired bootstrap; unit = session; same indices for B0 and B1; resampled within each of the 5 classes (20 per class)",
+  "run": "RUN_20261116_171508_SEED42_V2_SL_SIM",
+  "resamples": 10000,
+  "seed": 20261116,
+  "percentile_method": "linear interpolation",
+  "delta_macro_f1_point": 0.1221930859060435,
+  "delta_ci95": [
+   0.06211508529513431,
+   0.18991289918592022
+  ],
+  "B0_ci95": [
+   0.577137097795846,
+   0.7335273480968562
+  ],
+  "B1_ci95": [
+   0.7079365079365079,
+   0.8449795010770622
+  ],
+  "share_delta_le_0": 0.0
+ },
+ "learned_baselines": {
+  "J48": {
+   "per_seed": [
+    {
+     "seed": 42,
+     "macro_f1": 0.9799498746867169,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.9,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 1.0
+     }
+    },
+    {
+     "seed": 101,
+     "macro_f1": 0.9899937460913071,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.95,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 1.0
+     }
+    },
+    {
+     "seed": 202,
+     "macro_f1": 0.9899937460913071,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.95
+     }
+    },
+    {
+     "seed": 303,
+     "macro_f1": 0.9699812382739212,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.95,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.9
+     }
+    },
+    {
+     "seed": 404,
+     "macro_f1": 0.9698302954116909,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.85,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 1.0
+     }
+    }
+   ],
+   "seed42": {
+    "confusion": {
+     "NORMAL_AUTHORIZED": {
+      "NORMAL_AUTHORIZED": 18,
+      "UNAUTHORIZED_CREDENTIAL": 0,
+      "FORCED_DOOR_OPEN": 0,
+      "LOAD_OR_TAMPER_ANOMALY": 0,
+      "SENSOR_OR_NETWORK_FAULT": 2
+     },
+     "UNAUTHORIZED_CREDENTIAL": {
+      "NORMAL_AUTHORIZED": 0,
+      "UNAUTHORIZED_CREDENTIAL": 20,
+      "FORCED_DOOR_OPEN": 0,
+      "LOAD_OR_TAMPER_ANOMALY": 0,
+      "SENSOR_OR_NETWORK_FAULT": 0
+     },
+     "FORCED_DOOR_OPEN": {
+      "NORMAL_AUTHORIZED": 0,
+      "UNAUTHORIZED_CREDENTIAL": 0,
+      "FORCED_DOOR_OPEN": 20,
+      "LOAD_OR_TAMPER_ANOMALY": 0,
+      "SENSOR_OR_NETWORK_FAULT": 0
+     },
+     "LOAD_OR_TAMPER_ANOMALY": {
+      "NORMAL_AUTHORIZED": 0,
+      "UNAUTHORIZED_CREDENTIAL": 0,
+      "FORCED_DOOR_OPEN": 0,
+      "LOAD_OR_TAMPER_ANOMALY": 20,
+      "SENSOR_OR_NETWORK_FAULT": 0
+     },
+     "SENSOR_OR_NETWORK_FAULT": {
+      "NORMAL_AUTHORIZED": 0,
+      "UNAUTHORIZED_CREDENTIAL": 0,
+      "FORCED_DOOR_OPEN": 0,
+      "LOAD_OR_TAMPER_ANOMALY": 0,
+      "SENSOR_OR_NETWORK_FAULT": 20
+     }
+    },
+    "per_class": {
+     "NORMAL_AUTHORIZED": {
+      "precision": 1.0,
+      "recall": 0.9,
+      "f1": 0.9473684210526316,
+      "support": 20,
+      "predicted": 18
+     },
+     "UNAUTHORIZED_CREDENTIAL": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20,
+      "predicted": 20
+     },
+     "FORCED_DOOR_OPEN": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20,
+      "predicted": 20
+     },
+     "LOAD_OR_TAMPER_ANOMALY": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20,
+      "predicted": 20
+     },
+     "SENSOR_OR_NETWORK_FAULT": {
+      "precision": 0.9090909090909091,
+      "recall": 1.0,
+      "f1": 0.9523809523809523,
+      "support": 20,
+      "predicted": 22
+     }
+    },
+    "accuracy": 0.98,
+    "balanced_accuracy": 0.9800000000000001,
+    "macro": {
+     "precision": 0.9818181818181818,
+     "recall": 0.9800000000000001,
+     "f1": 0.9799498746867169
+    },
+    "weighted": {
+     "precision": 0.9818181818181819,
+     "recall": 0.98,
+     "f1": 0.9799498746867168
+    },
+    "binary_anomaly_positive": {
+     "accuracy": 0.98,
+     "precision": 0.975609756097561,
+     "recall": 1.0,
+     "f1": 0.9876543209876543,
+     "tp": 80,
+     "fp": 2,
+     "fn": 0,
+     "tn": 18
+    }
+   },
+   "seed42_preds": [
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "SENSOR_OR_NETWORK_FAULT",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "SENSOR_OR_NETWORK_FAULT",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT"
+   ],
+   "mcnemar_binary_vs_B1": {
+    "n00": 0,
+    "n01": 2,
+    "n10": 19,
+    "n11": 79,
+    "chi2_cc": 12.19047619047619,
+    "exact_binomial_p_two_sided": 0.00022125244140625
+   },
+   "mean": 0.9799497801109887,
+   "sd_sample_ddof1": 0.01004413139815009
+  },
+  "Logistic": {
+   "per_seed": [
+    {
+     "seed": 42,
+     "macro_f1": 1.0,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 1.0
+     }
+    },
+    {
+     "seed": 101,
+     "macro_f1": 1.0,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 1.0
+     }
+    },
+    {
+     "seed": 202,
+     "macro_f1": 0.9691496374423203,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.85
+     }
+    },
+    {
+     "seed": 303,
+     "macro_f1": 0.9799498746867169,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.9
+     }
+    },
+    {
+     "seed": 404,
+     "macro_f1": 1.0,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 1.0
+     }
+    }
+   ],
+   "seed42": {
+    "confusion": {
+     "NORMAL_AUTHORIZED": {
+      "NORMAL_AUTHORIZED": 20,
+      "UNAUTHORIZED_CREDENTIAL": 0,
+      "FORCED_DOOR_OPEN": 0,
+      "LOAD_OR_TAMPER_ANOMALY": 0,
+      "SENSOR_OR_NETWORK_FAULT": 0
+     },
+     "UNAUTHORIZED_CREDENTIAL": {
+      "NORMAL_AUTHORIZED": 0,
+      "UNAUTHORIZED_CREDENTIAL": 20,
+      "FORCED_DOOR_OPEN": 0,
+      "LOAD_OR_TAMPER_ANOMALY": 0,
+      "SENSOR_OR_NETWORK_FAULT": 0
+     },
+     "FORCED_DOOR_OPEN": {
+      "NORMAL_AUTHORIZED": 0,
+      "UNAUTHORIZED_CREDENTIAL": 0,
+      "FORCED_DOOR_OPEN": 20,
+      "LOAD_OR_TAMPER_ANOMALY": 0,
+      "SENSOR_OR_NETWORK_FAULT": 0
+     },
+     "LOAD_OR_TAMPER_ANOMALY": {
+      "NORMAL_AUTHORIZED": 0,
+      "UNAUTHORIZED_CREDENTIAL": 0,
+      "FORCED_DOOR_OPEN": 0,
+      "LOAD_OR_TAMPER_ANOMALY": 20,
+      "SENSOR_OR_NETWORK_FAULT": 0
+     },
+     "SENSOR_OR_NETWORK_FAULT": {
+      "NORMAL_AUTHORIZED": 0,
+      "UNAUTHORIZED_CREDENTIAL": 0,
+      "FORCED_DOOR_OPEN": 0,
+      "LOAD_OR_TAMPER_ANOMALY": 0,
+      "SENSOR_OR_NETWORK_FAULT": 20
+     }
+    },
+    "per_class": {
+     "NORMAL_AUTHORIZED": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20,
+      "predicted": 20
+     },
+     "UNAUTHORIZED_CREDENTIAL": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20,
+      "predicted": 20
+     },
+     "FORCED_DOOR_OPEN": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20,
+      "predicted": 20
+     },
+     "LOAD_OR_TAMPER_ANOMALY": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20,
+      "predicted": 20
+     },
+     "SENSOR_OR_NETWORK_FAULT": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20,
+      "predicted": 20
+     }
+    },
+    "accuracy": 1.0,
+    "balanced_accuracy": 1.0,
+    "macro": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0
+    },
+    "weighted": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0
+    },
+    "binary_anomaly_positive": {
+     "accuracy": 1.0,
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "tp": 80,
+     "fp": 0,
+     "fn": 0,
+     "tn": 20
+    }
+   },
+   "seed42_preds": [
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "NORMAL_AUTHORIZED",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "UNAUTHORIZED_CREDENTIAL",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "FORCED_DOOR_OPEN",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "LOAD_OR_TAMPER_ANOMALY",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT",
+    "SENSOR_OR_NETWORK_FAULT"
+   ],
+   "mcnemar_binary_vs_B1": {
+    "n00": 0,
+    "n01": 0,
+    "n10": 19,
+    "n11": 81,
+    "chi2_cc": 17.05263157894737,
+    "exact_binomial_p_two_sided": 3.814697265625e-06
+   },
+   "mean": 0.9898199024258073,
+   "sd_sample_ddof1": 0.014453204332588631
+  }
+ },
+ "ablation_J48": {
+  "none": {
+   "removed": [],
+   "per_seed": [
+    {
+     "seed": 42,
+     "macro_f1": 0.9799498746867169,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.9,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 1.0
+     }
+    },
+    {
+     "seed": 101,
+     "macro_f1": 0.9899937460913071,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.95,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 1.0
+     }
+    },
+    {
+     "seed": 202,
+     "macro_f1": 0.9899937460913071,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.95
+     }
+    },
+    {
+     "seed": 303,
+     "macro_f1": 0.9699812382739212,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.95,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.9
+     }
+    },
+    {
+     "seed": 404,
+     "macro_f1": 0.9698302954116909,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.85,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 1.0
+     }
+    }
+   ],
+   "mean": 0.9799497801109887,
+   "sd_sample_ddof1": 0.01004413139815009,
+   "mean_recall": {
+    "NORMAL_AUTHORIZED": 0.9299999999999999,
+    "UNAUTHORIZED_CREDENTIAL": 1.0,
+    "FORCED_DOOR_OPEN": 1.0,
+    "LOAD_OR_TAMPER_ANOMALY": 1.0,
+    "SENSOR_OR_NETWORK_FAULT": 0.97
+   }
+  },
+  "door_load": {
+   "removed": [
+    "door_open_sec",
+    "weight_delta_g"
+   ],
+   "per_seed": [
+    {
+     "seed": 42,
+     "macro_f1": 0.7490466522724588,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.9,
+      "UNAUTHORIZED_CREDENTIAL": 0.95,
+      "FORCED_DOOR_OPEN": 0.95,
+      "LOAD_OR_TAMPER_ANOMALY": 0.4,
+      "SENSOR_OR_NETWORK_FAULT": 0.6
+     }
+    },
+    {
+     "seed": 101,
+     "macro_f1": 0.7645022883295194,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.9,
+      "UNAUTHORIZED_CREDENTIAL": 0.95,
+      "FORCED_DOOR_OPEN": 0.85,
+      "LOAD_OR_TAMPER_ANOMALY": 0.6,
+      "SENSOR_OR_NETWORK_FAULT": 0.55
+     }
+    },
+    {
+     "seed": 202,
+     "macro_f1": 0.7570666744234525,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.75,
+      "UNAUTHORIZED_CREDENTIAL": 0.8,
+      "FORCED_DOOR_OPEN": 0.95,
+      "LOAD_OR_TAMPER_ANOMALY": 0.75,
+      "SENSOR_OR_NETWORK_FAULT": 0.55
+     }
+    },
+    {
+     "seed": 303,
+     "macro_f1": 0.8355285500573137,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.85,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 0.75,
+      "SENSOR_OR_NETWORK_FAULT": 0.6
+     }
+    },
+    {
+     "seed": 404,
+     "macro_f1": 0.776704107999789,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.95,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 0.7,
+      "LOAD_OR_TAMPER_ANOMALY": 0.65,
+      "SENSOR_OR_NETWORK_FAULT": 0.6
+     }
+    }
+   ],
+   "mean": 0.7765696546165067,
+   "sd_sample_ddof1": 0.03449519043597868,
+   "mean_recall": {
+    "NORMAL_AUTHORIZED": 0.8699999999999999,
+    "UNAUTHORIZED_CREDENTIAL": 0.9400000000000001,
+    "FORCED_DOOR_OPEN": 0.89,
+    "LOAD_OR_TAMPER_ANOMALY": 0.63,
+    "SENSOR_OR_NETWORK_FAULT": 0.58
+   }
+  },
+  "imu": {
+   "removed": [
+    "vibration_intensity",
+    "tilt_deg",
+    "shock_mag_g"
+   ],
+   "per_seed": [
+    {
+     "seed": 42,
+     "macro_f1": 0.9698302954116909,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.85,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 1.0
+     }
+    },
+    {
+     "seed": 101,
+     "macro_f1": 0.9699812382739212,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.95,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.9
+     }
+    },
+    {
+     "seed": 202,
+     "macro_f1": 0.9698302954116909,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.85
+     }
+    },
+    {
+     "seed": 303,
+     "macro_f1": 0.9799498746867169,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.9
+     }
+    },
+    {
+     "seed": 404,
+     "macro_f1": 0.96,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.9,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.9
+     }
+    }
+   ],
+   "mean": 0.9699183407568039,
+   "sd_sample_ddof1": 0.0070538042292497315,
+   "mean_recall": {
+    "NORMAL_AUTHORIZED": 0.9400000000000001,
+    "UNAUTHORIZED_CREDENTIAL": 1.0,
+    "FORCED_DOOR_OPEN": 1.0,
+    "LOAD_OR_TAMPER_ANOMALY": 1.0,
+    "SENSOR_OR_NETWORK_FAULT": 0.9099999999999999
+   }
+  },
+  "ultrasonic": {
+   "removed": [
+    "ultrasonic_dist_cm"
+   ],
+   "per_seed": [
+    {
+     "seed": 42,
+     "macro_f1": 0.9598997493734336,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.85,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.95
+     }
+    },
+    {
+     "seed": 101,
+     "macro_f1": 0.9899937460913071,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.95
+     }
+    },
+    {
+     "seed": 202,
+     "macro_f1": 0.9799498746867169,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.9
+     }
+    },
+    {
+     "seed": 303,
+     "macro_f1": 0.9497171590194846,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.95,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.8
+     }
+    },
+    {
+     "seed": 404,
+     "macro_f1": 0.9899937460913071,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.95
+     }
+    }
+   ],
+   "mean": 0.9739108550524499,
+   "sd_sample_ddof1": 0.01827179887533416,
+   "mean_recall": {
+    "NORMAL_AUTHORIZED": 0.96,
+    "UNAUTHORIZED_CREDENTIAL": 1.0,
+    "FORCED_DOOR_OPEN": 1.0,
+    "LOAD_OR_TAMPER_ANOMALY": 1.0,
+    "SENSOR_OR_NETWORK_FAULT": 0.9099999999999999
+   }
+  },
+  "auth_context": {
+   "removed": [
+    "rfid_ok",
+    "auth_result",
+    "card_blocked"
+   ],
+   "per_seed": [
+    {
+     "seed": 42,
+     "macro_f1": 0.8576358937334547,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.85,
+      "UNAUTHORIZED_CREDENTIAL": 0.85,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 0.6,
+      "SENSOR_OR_NETWORK_FAULT": 1.0
+     }
+    },
+    {
+     "seed": 101,
+     "macro_f1": 0.8799437148217637,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.95,
+      "UNAUTHORIZED_CREDENTIAL": 0.8,
+      "FORCED_DOOR_OPEN": 0.95,
+      "LOAD_OR_TAMPER_ANOMALY": 0.75,
+      "SENSOR_OR_NETWORK_FAULT": 0.95
+     }
+    },
+    {
+     "seed": 202,
+     "macro_f1": 0.8480583171483695,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.85,
+      "UNAUTHORIZED_CREDENTIAL": 0.65,
+      "FORCED_DOOR_OPEN": 0.95,
+      "LOAD_OR_TAMPER_ANOMALY": 0.95,
+      "SENSOR_OR_NETWORK_FAULT": 0.85
+     }
+    },
+    {
+     "seed": 303,
+     "macro_f1": 0.939993746091307,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.95,
+      "UNAUTHORIZED_CREDENTIAL": 0.9,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 0.9,
+      "SENSOR_OR_NETWORK_FAULT": 0.95
+     }
+    },
+    {
+     "seed": 404,
+     "macro_f1": 0.8792230576441102,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.85,
+      "UNAUTHORIZED_CREDENTIAL": 0.75,
+      "FORCED_DOOR_OPEN": 0.95,
+      "LOAD_OR_TAMPER_ANOMALY": 0.85,
+      "SENSOR_OR_NETWORK_FAULT": 1.0
+     }
+    }
+   ],
+   "mean": 0.8809709458878011,
+   "sd_sample_ddof1": 0.03576159619768169,
+   "mean_recall": {
+    "NORMAL_AUTHORIZED": 0.8899999999999999,
+    "UNAUTHORIZED_CREDENTIAL": 0.7899999999999999,
+    "FORCED_DOOR_OPEN": 0.97,
+    "LOAD_OR_TAMPER_ANOMALY": 0.8099999999999999,
+    "SENSOR_OR_NETWORK_FAULT": 0.95
+   }
+  },
+  "network": {
+   "removed": [
+    "network_latency_ms",
+    "seq_replay"
+   ],
+   "per_seed": [
+    {
+     "seed": 42,
+     "macro_f1": 0.9398496240601505,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.9,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.8
+     }
+    },
+    {
+     "seed": 101,
+     "macro_f1": 0.9393939393939392,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.95,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.75
+     }
+    },
+    {
+     "seed": 202,
+     "macro_f1": 0.9899937460913071,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.95
+     }
+    },
+    {
+     "seed": 303,
+     "macro_f1": 0.9598997493734336,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.95,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.85
+     }
+    },
+    {
+     "seed": 404,
+     "macro_f1": 0.9497171590194846,
+     "recall": {
+      "NORMAL_AUTHORIZED": 0.95,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 1.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.8
+     }
+    }
+   ],
+   "mean": 0.9557708435876631,
+   "sd_sample_ddof1": 0.020896113501237212,
+   "mean_recall": {
+    "NORMAL_AUTHORIZED": 0.95,
+    "UNAUTHORIZED_CREDENTIAL": 1.0,
+    "FORCED_DOOR_OPEN": 1.0,
+    "LOAD_OR_TAMPER_ANOMALY": 1.0,
+    "SENSOR_OR_NETWORK_FAULT": 0.8300000000000001
+   }
+  }
+ },
+ "v2_extra": {
+  "context_only_J48": {
+   "features": [
+    "rfid_ok",
+    "auth_result",
+    "card_blocked",
+    "network_latency_ms",
+    "seq_replay"
+   ],
+   "per_seed": [
+    {
+     "seed": 42,
+     "macro_f1": 0.5455825966750336,
+     "accuracy": 0.65,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 0.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.25
+     }
+    },
+    {
+     "seed": 101,
+     "macro_f1": 0.5463865546218487,
+     "accuracy": 0.65,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 0.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.25
+     }
+    },
+    {
+     "seed": 202,
+     "macro_f1": 0.4967724807524557,
+     "accuracy": 0.62,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 0.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.1
+     }
+    },
+    {
+     "seed": 303,
+     "macro_f1": 0.545967365967366,
+     "accuracy": 0.65,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 0.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.25
+     }
+    },
+    {
+     "seed": 404,
+     "macro_f1": 0.5487068230590587,
+     "accuracy": 0.65,
+     "recall": {
+      "NORMAL_AUTHORIZED": 1.0,
+      "UNAUTHORIZED_CREDENTIAL": 1.0,
+      "FORCED_DOOR_OPEN": 1.0,
+      "LOAD_OR_TAMPER_ANOMALY": 0.0,
+      "SENSOR_OR_NETWORK_FAULT": 0.25
+     }
+    }
+   ],
+   "mean": 0.5366831642151525,
+   "sd_sample_ddof1": 0.02234380849431658
+  },
+  "overlap_diagnostics": {
+   "pooled_n": 500,
+   "quantiles": {
+    "NORMAL_AUTHORIZED": {
+     "door_open_sec": {
+      "min": 3.39,
+      "p05": 3.92,
+      "median": 7.99,
+      "p95": 15.13,
+      "max": 23.31,
+      "n": 100
+     },
+     "abs_weight": {
+      "min": 0.1,
+      "p05": 4.1,
+      "median": 130.5,
+      "p95": 545.8,
+      "max": 1158.9,
+      "n": 100
+     },
+     "ultrasonic_dist_cm": {
+      "min": 19.8,
+      "p05": 22.5,
+      "median": 35.4,
+      "p95": 47.7,
+      "max": 51.0,
+      "n": 100
+     },
+     "vibration_intensity": {
+      "min": 0.008,
+      "p05": 0.019,
+      "median": 0.079,
+      "p95": 0.197,
+      "max": 0.434,
+      "n": 100
+     },
+     "tilt_deg": {
+      "min": 0.0,
+      "p05": 0.1,
+      "median": 1.8,
+      "p95": 2.9,
+      "max": 3.3,
+      "n": 100
+     },
+     "shock_mag_g": {
+      "min": 0.55,
+      "p05": 0.75,
+      "median": 1.45,
+      "p95": 2.35,
+      "max": 3.25,
+      "n": 100
+     },
+     "network_latency_ms": {
+      "min": 4.0,
+      "p05": 4.77,
+      "median": 16.14,
+      "p95": 29.74,
+      "max": 31.34,
+      "n": 100
+     },
+     "stay_min": {
+      "min": 1.2,
+      "p05": 2.3,
+      "median": 14.7,
+      "p95": 28.0,
+      "max": 29.3,
+      "n": 100
+     }
+    },
+    "UNAUTHORIZED_CREDENTIAL": {
+     "door_open_sec": {
+      "min": 0.0,
+      "p05": 0.0,
+      "median": 0.0,
+      "p95": 0.0,
+      "max": 0.0,
+      "n": 100
+     },
+     "abs_weight": {
+      "min": 0.1,
+      "p05": 0.4,
+      "median": 2.1,
+      "p95": 9.5,
+      "max": 39.0,
+      "n": 100
+     },
+     "ultrasonic_dist_cm": {
+      "min": 19.8,
+      "p05": 20.7,
+      "median": 34.5,
+      "p95": 48.6,
+      "max": 50.7,
+      "n": 100
+     },
+     "vibration_intensity": {
+      "min": 0.01,
+      "p05": 0.025,
+      "median": 0.063,
+      "p95": 0.144,
+      "max": 0.367,
+      "n": 100
+     },
+     "tilt_deg": {
+      "min": 0.0,
+      "p05": 0.1,
+      "median": 1.3,
+      "p95": 2.9,
+      "max": 3.3,
+      "n": 100
+     },
+     "shock_mag_g": {
+      "min": 0.4,
+      "p05": 0.75,
+      "median": 1.35,
+      "p95": 2.4,
+      "max": 4.5,
+      "n": 100
+     },
+     "network_latency_ms": {
+      "min": 2.01,
+      "p05": 4.49,
+      "median": 16.04,
+      "p95": 29.97,
+      "max": 39.49,
+      "n": 100
+     },
+     "stay_min": {
+      "min": 1.0,
+      "p05": 2.7,
+      "median": 14.2,
+      "p95": 29.1,
+      "max": 30.0,
+      "n": 100
+     }
+    },
+    "FORCED_DOOR_OPEN": {
+     "door_open_sec": {
+      "min": 1.33,
+      "p05": 2.52,
+      "median": 6.46,
+      "p95": 16.67,
+      "max": 63.2,
+      "n": 100
+     },
+     "abs_weight": {
+      "min": 0.1,
+      "p05": 0.8,
+      "median": 150.7,
+      "p95": 629.6,
+      "max": 1555.9,
+      "n": 100
+     },
+     "ultrasonic_dist_cm": {
+      "min": 21.0,
+      "p05": 22.8,
+      "median": 35.4,
+      "p95": 46.8,
+      "max": 50.7,
+      "n": 100
+     },
+     "vibration_intensity": {
+      "min": 0.114,
+      "p05": 0.194,
+      "median": 0.546,
+      "p95": 1.541,
+      "max": 2.231,
+      "n": 100
+     },
+     "tilt_deg": {
+      "min": 0.0,
+      "p05": 0.0,
+      "median": 1.5,
+      "p95": 2.8,
+      "max": 3.1,
+      "n": 100
+     },
+     "shock_mag_g": {
+      "min": 1.4,
+      "p05": 1.6,
+      "median": 4.55,
+      "p95": 14.7,
+      "max": 15.9,
+      "n": 100
+     },
+     "network_latency_ms": {
+      "min": 2.01,
+      "p05": 4.39,
+      "median": 16.09,
+      "p95": 29.74,
+      "max": 39.49,
+      "n": 100
+     },
+     "stay_min": {
+      "min": 1.2,
+      "p05": 3.7,
+      "median": 18.4,
+      "p95": 29.6,
+      "max": 30.0,
+      "n": 100
+     }
+    },
+    "LOAD_OR_TAMPER_ANOMALY": {
+     "door_open_sec": {
+      "min": 0.0,
+      "p05": 0.0,
+      "median": 0.0,
+      "p95": 0.0,
+      "max": 0.0,
+      "n": 100
+     },
+     "abs_weight": {
+      "min": 0.0,
+      "p05": 0.5,
+      "median": 6.2,
+      "p95": 194.4,
+      "max": 453.7,
+      "n": 100
+     },
+     "ultrasonic_dist_cm": {
+      "min": 19.2,
+      "p05": 21.3,
+      "median": 36.3,
+      "p95": 48.0,
+      "max": 51.0,
+      "n": 100
+     },
+     "vibration_intensity": {
+      "min": 0.011,
+      "p05": 0.023,
+      "median": 0.11,
+      "p95": 0.635,
+      "max": 1.897,
+      "n": 100
+     },
+     "tilt_deg": {
+      "min": 0.0,
+      "p05": 0.2,
+      "median": 1.5,
+      "p95": 3.1,
+      "max": 8.8,
+      "n": 100
+     },
+     "shock_mag_g": {
+      "min": 0.35,
+      "p05": 0.75,
+      "median": 1.6,
+      "p95": 10.0,
+      "max": 15.65,
+      "n": 100
+     },
+     "network_latency_ms": {
+      "min": 2.01,
+      "p05": 5.42,
+      "median": 16.09,
+      "p95": 30.67,
+      "max": 39.49,
+      "n": 100
+     },
+     "stay_min": {
+      "min": 1.1,
+      "p05": 2.7,
+      "median": 19.0,
+      "p95": 28.8,
+      "max": 30.0,
+      "n": 100
+     }
+    },
+    "SENSOR_OR_NETWORK_FAULT": {
+     "door_open_sec": {
+      "min": 3.41,
+      "p05": 4.18,
+      "median": 10.59,
+      "p95": 1362.18,
+      "max": 1830.16,
+      "n": 100
+     },
+     "abs_weight": {
+      "min": 1.1,
+      "p05": 4.7,
+      "median": 151.1,
+      "p95": 23997.0,
+      "max": 24003.2,
+      "n": 100
+     },
+     "ultrasonic_dist_cm": {
+      "min": 0.0,
+      "p05": 0.0,
+      "median": 29.4,
+      "p95": 47.1,
+      "max": 51.3,
+      "n": 100
+     },
+     "vibration_intensity": {
+      "min": -1.0,
+      "p05": -1.0,
+      "median": 0.047,
+      "p95": 0.172,
+      "max": 0.285,
+      "n": 100
+     },
+     "tilt_deg": {
+      "min": -1.0,
+      "p05": -1.0,
+      "median": 1.2,
+      "p95": 2.7,
+      "max": 3.2,
+      "n": 100
+     },
+     "shock_mag_g": {
+      "min": 0.01,
+      "p05": 0.01,
+      "median": 1.35,
+      "p95": 3.0,
+      "max": 3.9,
+      "n": 100
+     },
+     "network_latency_ms": {
+      "min": 2.01,
+      "p05": 5.72,
+      "median": 18.28,
+      "p95": 7843.61,
+      "max": 12641.5,
+      "n": 100
+     },
+     "stay_min": {
+      "min": 1.2,
+      "p05": 3.3,
+      "median": 14.2,
+      "p95": 26.8,
+      "max": 28.9,
+      "n": 100
+     }
+    }
+   },
+   "best_single_feature_stump_one_vs_rest": {
+    "NORMAL_AUTHORIZED": {
+     "feature": "rfid_ok_n",
+     "balanced_accuracy": 0.88,
+     "threshold": 0.5,
+     "direction": "above",
+     "perfectly_separable_by_one_feature": false,
+     "all_features": {
+      "door_open_sec": 0.77125,
+      "weight_delta_g": 0.60375,
+      "abs_weight": 0.67625,
+      "stay_min": 0.55,
+      "ultrasonic_dist_cm": 0.5487500000000001,
+      "vibration_intensity": 0.645,
+      "tilt_deg": 0.5874999999999999,
+      "shock_mag_g": 0.635,
+      "network_latency_ms": 0.53125,
+      "rfid_ok_n": 0.88,
+      "card_blocked_n": 0.54125,
+      "seq_replay_n": 0.5125,
+      "auth_unlock": 0.88,
+      "auth_deny": 0.69375,
+      "auth_none": 0.68625
+     }
+    },
+    "UNAUTHORIZED_CREDENTIAL": {
+     "feature": "auth_deny",
+     "balanced_accuracy": 0.93125,
+     "threshold": 0.5,
+     "direction": "above",
+     "perfectly_separable_by_one_feature": false,
+     "all_features": {
+      "door_open_sec": 0.875,
+      "weight_delta_g": 0.685,
+      "abs_weight": 0.8375,
+      "stay_min": 0.55,
+      "ultrasonic_dist_cm": 0.53875,
+      "vibration_intensity": 0.67375,
+      "tilt_deg": 0.53375,
+      "shock_mag_g": 0.6375,
+      "network_latency_ms": 0.5325,
+      "rfid_ok_n": 0.745,
+      "card_blocked_n": 0.59,
+      "seq_replay_n": 0.5125,
+      "auth_unlock": 0.745,
+      "auth_deny": 0.93125,
+      "auth_none": 0.68625
+     }
+    },
+    "FORCED_DOOR_OPEN": {
+     "feature": "auth_none",
+     "balanced_accuracy": 0.93875,
+     "threshold": 0.5,
+     "direction": "above",
+     "perfectly_separable_by_one_feature": false,
+     "all_features": {
+      "door_open_sec": 0.75,
+      "weight_delta_g": 0.6174999999999999,
+      "abs_weight": 0.67875,
+      "stay_min": 0.57125,
+      "ultrasonic_dist_cm": 0.56625,
+      "vibration_intensity": 0.9237500000000001,
+      "tilt_deg": 0.525,
+      "shock_mag_g": 0.89,
+      "network_latency_ms": 0.5449999999999999,
+      "rfid_ok_n": 0.745,
+      "card_blocked_n": 0.54125,
+      "seq_replay_n": 0.5125,
+      "auth_unlock": 0.745,
+      "auth_deny": 0.69375,
+      "auth_none": 0.93875
+     }
+    },
+    "LOAD_OR_TAMPER_ANOMALY": {
+     "feature": "door_open_sec",
+     "balanced_accuracy": 0.875,
+     "threshold": 0.665,
+     "direction": "below",
+     "perfectly_separable_by_one_feature": false,
+     "all_features": {
+      "door_open_sec": 0.875,
+      "weight_delta_g": 0.625,
+      "abs_weight": 0.72125,
+      "stay_min": 0.56125,
+      "ultrasonic_dist_cm": 0.5487500000000001,
+      "vibration_intensity": 0.5725,
+      "tilt_deg": 0.53125,
+      "shock_mag_g": 0.53375,
+      "network_latency_ms": 0.54625,
+      "rfid_ok_n": 0.57375,
+      "card_blocked_n": 0.54125,
+      "seq_replay_n": 0.5125,
+      "auth_unlock": 0.57375,
+      "auth_deny": 0.69375,
+      "auth_none": 0.62
+     }
+    },
+    "SENSOR_OR_NETWORK_FAULT": {
+     "feature": "door_open_sec",
+     "balanced_accuracy": 0.795,
+     "threshold": 5.395,
+     "direction": "above",
+     "perfectly_separable_by_one_feature": false,
+     "all_features": {
+      "door_open_sec": 0.795,
+      "weight_delta_g": 0.6174999999999999,
+      "abs_weight": 0.705,
+      "stay_min": 0.55,
+      "ultrasonic_dist_cm": 0.61625,
+      "vibration_intensity": 0.6950000000000001,
+      "tilt_deg": 0.575,
+      "shock_mag_g": 0.60625,
+      "network_latency_ms": 0.57875,
+      "rfid_ok_n": 0.53625,
+      "card_blocked_n": 0.53375,
+      "seq_replay_n": 0.55,
+      "auth_unlock": 0.53625,
+      "auth_deny": 0.65,
+      "auth_none": 0.68625
+     }
+    }
+   }
+  }
+ },
+ "manifest": {
+  "script": "docs/paper/scripts/study_b_analysis.py",
+  "variant": "v2",
+  "live_run": "RUN_20261116_171508_SEED42_V2_SL_SIM",
+  "script_sha256": "d8f7d3307d5c466d299626ef1925a4550bf367ee6658732af48f9de2395f1e03",
+  "inputs": {
+   "experiments/runs/RUN_20261116_171508_SEED42_V2_SL_SIM/sessions.csv": "f3977a5154c74e507d368e80adacf595c21d736e65ba4f5d38a4786650e62623",
+   "experiments/runs/RUN_20261116_171508_SEED42_V2_SL_SIM/backend_responses.jsonl": "ce4a6c9efc041f5ad0828bf2c4764aa3bce5a9863f3d23a222afeb54e55a7275",
+   "experiments/generator.py": "c0cf42e46f5e7fd49c77443dbed7ed11644cd8efcfab9d693e93fff93983bc56",
+   "experiments/detection.py": "171c1a2ef797a24b03667b21967b7a4966e1a9b44e54e0a91f6fb4335ad28918",
+   "experiments/oracle.py": "a3a90820afe345064d64c583aea0beec109db516de98383660eb0ea5f836d5a8",
+   "experiments/sensor_models.py": "d25e6f0b6e9c47c57d4ffffcdbfa4aba1e335aeb5c75d991dbdd133ec21c8817",
+   "web/WEB-INF/lib/weka.jar": "b89ae14ee7bf97627b07e8a932b3bebcd3a1288d2d25ebb348a04326f7cd0fd9",
+   "experiments/v2/generator_v2.py": "b4dfe408ede962258881b8669fe87d997a8adbaf93b8950a36d6c884f6877efa",
+   "experiments/v2/runner_v2.py": "d61dac17ac6863ad4a0921817d972cfe299afc1a25e0c7c75b8e6f33edb6f713",
+   "experiments/v2/test_v2.py": "6aad0ee4476780b46c1d7bfe532f8415523d30845f8458128dea197bd0ff7ff0"
+  },
+  "git_head": "fd05eb9f01bad4b005c5cdd11ea26b247b49a4cc",
+  "git_status_porcelain": " M docs/paper/smartlocker-10p.tex\n?? docs/paper/REVISION2_LOG.md\n?? docs/paper/scripts/\n?? docs/paper/smartlocker-10p.fallback.tex\n?? experiments/runs/RUN_20261116_171508_SEED42_V2_SL_SIM/\n?? experiments/v2/\n?? tools/\n",
+  "seeds": [
+   42,
+   101,
+   202,
+   303,
+   404
+  ],
+  "bootstrap_seed": 20261116,
+  "bootstrap_resamples": 10000,
+  "java": "C:/Program Files/Java/jdk1.8.0_202/bin/java",
+  "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "timestamp_utc": "2026-11-16T17:15:59.565558+00:00"
+ }
+}

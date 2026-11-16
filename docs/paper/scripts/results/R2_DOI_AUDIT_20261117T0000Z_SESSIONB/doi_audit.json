@@ -1,0 +1,171 @@
+{
+ "checked_utc": "2026-11-16T17:38:38.498204+00:00",
+ "results": [
+  {
+   "doi": "10.1016/j.trpro.2016.02.018",
+   "status": 200,
+   "title": "Analysis of Parcel Lockers\u2019 Efficiency as the Last Mile Delivery Solution \u2013 The Results of",
+   "year": 2016,
+   "container": "Transportation Research Procedia",
+   "volume": "12",
+   "page": "644-655"
+  },
+  {
+   "doi": "10.1109/COMST.2015.2444095",
+   "status": 200,
+   "title": "Internet of Things: A Survey on Enabling Technologies, Protocols, and Applications",
+   "year": 2015,
+   "container": "IEEE Communications Surveys &amp; Tutorials",
+   "volume": "17",
+   "page": "2347-2376"
+  },
+  {
+   "doi": "10.1016/j.comnet.2014.11.008",
+   "status": 200,
+   "title": "Security, privacy and trust in Internet of Things: The road ahead",
+   "year": 2015,
+   "container": "Computer Networks",
+   "volume": "76",
+   "page": "146-164"
+  },
+  {
+   "doi": "10.1016/j.comnet.2012.12.018",
+   "status": 200,
+   "title": "On the features and challenges of security and privacy in distributed internet of things",
+   "year": 2013,
+   "container": "Computer Networks",
+   "volume": "57",
+   "page": "2266-2279"
+  },
+  {
+   "doi": "10.3389/ffutr.2025.1654621",
+   "status": 200,
+   "title": "Parcel locker solutions for last mile delivery: a systematic literature review and future ",
+   "year": 2025,
+   "container": "Frontiers in Future Transportation",
+   "volume": "6",
+   "page": null
+  },
+  {
+   "doi": "10.3390/smartcities6050120",
+   "status": 200,
+   "title": "Perceived Importance and Quality Attributes of Automated Parcel Locker Services in Urban A",
+   "year": 2023,
+   "container": "Smart Cities",
+   "volume": "6",
+   "page": "2661-2679"
+  },
+  {
+   "doi": "10.1063/5.0101139",
+   "status": 200,
+   "title": "An IoT based centralized smart locker using RFID technology",
+   "year": 2023,
+   "container": "AIP Conference Proceedings",
+   "volume": "2605",
+   "page": "020098"
+  },
+  {
+   "doi": "10.1007/s10796-009-9210-z",
+   "status": 200,
+   "title": "Classifying RFID attacks and defenses",
+   "year": 2009,
+   "container": "Information Systems Frontiers",
+   "volume": "12",
+   "page": "491-505"
+  },
+  {
+   "doi": "10.3390/iot6030048",
+   "status": 200,
+   "title": "A Two-Stage Hybrid Federated Learning Framework for Privacy-Preserving IoT Anomaly Detecti",
+   "year": 2025,
+   "container": "IoT",
+   "volume": "6",
+   "page": "48"
+  },
+  {
+   "doi": "10.1145/1541880.1541882",
+   "status": 200,
+   "title": "Anomaly detection",
+   "year": 2009,
+   "container": "ACM Computing Surveys",
+   "volume": "41",
+   "page": "1-58"
+  },
+  {
+   "doi": "10.3390/s23031352",
+   "status": 200,
+   "title": "A Survey of AI-Based Anomaly Detection in IoT and Sensor Networks",
+   "year": 2023,
+   "container": "Sensors",
+   "volume": "23",
+   "page": "1352"
+  },
+  {
+   "doi": "10.1109/SP.2010.25",
+   "status": 200,
+   "title": "Outside the Closed World: On Using Machine Learning for Network Intrusion Detection",
+   "year": 2010,
+   "container": "2010 IEEE Symposium on Security and Privacy",
+   "volume": null,
+   "page": "305-316"
+  },
+  {
+   "doi": "10.1145/1656274.1656278",
+   "status": 200,
+   "title": "The WEKA data mining software",
+   "year": 2009,
+   "container": "ACM SIGKDD Explorations Newsletter",
+   "volume": "11",
+   "page": "10-18"
+  },
+  {
+   "doi": "10.1007/BF00196791",
+   "status": 200,
+   "title": "How to time-stamp a digital document",
+   "year": 1991,
+   "container": "Journal of Cryptology",
+   "volume": "3",
+   "page": "99-111"
+  },
+  {
+   "doi": "10.1016/j.scs.2021.102994",
+   "status": 200,
+   "title": "A new distributed architecture for evaluating AI-based security systems at the edge: Netwo",
+   "year": 2021,
+   "container": "Sustainable Cities and Society",
+   "volume": "72",
+   "page": "102994"
+  },
+  {
+   "doi": "10.1023/A:1010933404324",
+   "status": 200,
+   "title": "Random Forests",
+   "year": 2001,
+   "container": "Machine Learning",
+   "volume": "45",
+   "page": "5-32"
+  },
+  {
+   "doi": "10.1016/C2009-0-27846-9",
+   "status": 200,
+   "title": "C4.5",
+   "year": 1993,
+   "container": "",
+   "volume": null,
+   "page": null
+  },
+  {
+   "doi": "10.48550/arXiv.1302.4964",
+   "status": "HTTP Error 404: Not Found"
+  },
+  {
+   "doi": "10.1007/BF00153759",
+   "status": 200,
+   "title": "Instance-based learning algorithms",
+   "year": 1991,
+   "container": "Machine Learning",
+   "volume": "6",
+   "page": "37-66"
+  }
+ ]
+}

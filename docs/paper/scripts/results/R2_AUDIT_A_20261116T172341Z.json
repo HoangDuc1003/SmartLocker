@@ -1,0 +1,511 @@
+{
+ "seed42": {
+  "B0_cm": {
+   "N": {
+    "N": 17,
+    "U": 0,
+    "F": 0,
+    "T": 0,
+    "S": 3
+   },
+   "U": {
+    "N": 0,
+    "U": 20,
+    "F": 0,
+    "T": 0,
+    "S": 0
+   },
+   "F": {
+    "N": 0,
+    "U": 0,
+    "F": 19,
+    "T": 0,
+    "S": 1
+   },
+   "T": {
+    "N": 17,
+    "U": 0,
+    "F": 0,
+    "T": 3,
+    "S": 0
+   },
+   "S": {
+    "N": 5,
+    "U": 5,
+    "F": 0,
+    "T": 0,
+    "S": 10
+   }
+  },
+  "B1_cm": {
+   "N": {
+    "N": 17,
+    "U": 0,
+    "F": 0,
+    "T": 0,
+    "S": 3
+   },
+   "U": {
+    "N": 0,
+    "U": 20,
+    "F": 0,
+    "T": 0,
+    "S": 0
+   },
+   "F": {
+    "N": 0,
+    "U": 0,
+    "F": 19,
+    "T": 0,
+    "S": 1
+   },
+   "T": {
+    "N": 15,
+    "U": 0,
+    "F": 0,
+    "T": 5,
+    "S": 0
+   },
+   "S": {
+    "N": 1,
+    "U": 0,
+    "F": 0,
+    "T": 0,
+    "S": 19
+   }
+  },
+  "B0_macroF1": [
+   0.6577247818047158,
+   {
+    "N": 0.5762711864406781,
+    "U": 0.888888888888889,
+    "F": 0.9743589743589743,
+    "T": 0.2608695652173913,
+    "S": 0.588235294117647
+   }
+  ],
+  "B1_macroF1": [
+   0.7799178677107593,
+   {
+    "N": 0.6415094339622641,
+    "U": 1.0,
+    "F": 0.9743589743589743,
+    "T": 0.4,
+    "S": 0.8837209302325583
+   }
+  ],
+  "mcnemar_binary": {
+   "n01": 6,
+   "n10": 0,
+   "chi2_cc": 4.166666666666667,
+   "p_exact": 0.03125
+  },
+  "mcnemar_5": {
+   "n01": 11,
+   "n10": 0,
+   "chi2_cc": 9.090909090909092,
+   "p_exact": 0.0009765625
+  },
+  "supports": {
+   "N": 20,
+   "U": 20,
+   "F": 20,
+   "T": 20,
+   "S": 20
+  },
+  "auth_eq_expected": 100,
+  "rerun_eq_recorded": [
+   100,
+   100
+  ]
+ },
+ "live_eq_offline42": 100,
+ "offline_json_eq_regen": {
+  "42": true,
+  "101": true,
+  "202": true,
+  "303": true,
+  "404": true
+ },
+ "five_seed": {
+  "per_seed": {
+   "42": [
+    0.6577247818047158,
+    0.7799178677107593
+   ],
+   "101": [
+    0.6086266390614217,
+    0.7778940679810246
+   ],
+   "202": [
+    0.5684473789515807,
+    0.7188888888888888
+   ],
+   "303": [
+    0.6358578987150416,
+    0.779183609141056
+   ],
+   "404": [
+    0.5771720527534481,
+    0.7069579831932773
+   ]
+  },
+  "B0_mean": 0.6095657502572416,
+  "B0_sd_sample": 0.03791939944392977,
+  "B1_mean": 0.7525684833830012,
+  "B1_sd_sample": 0.03644300958448953
+ },
+ "bootstrap": {
+  "point": 0.1221930859060435,
+  "seed_20261116": [
+   0.06211508529513431,
+   0.18991289918592022
+  ],
+  "seed_777": [
+   0.06262358220396777,
+   0.19054489315453643
+  ]
+ },
+ "per_session_seed_overlap_across_master_seeds": 0,
+ "latency": {
+  "pool_n": 100,
+  "pool_is_v1_run": true,
+  "all_non_timeout_in_pool": false,
+  "median_by_class": {
+   "N": 16.14,
+   "U": 16.035,
+   "F": 16.09,
+   "T": 16.064999999999998,
+   "S": 16.62
+  },
+  "mean_by_class": {
+   "N": 17.0579,
+   "U": 17.2032,
+   "F": 16.6508,
+   "T": 16.7284,
+   "S": 17.029764705882354
+  },
+  "note": "all_non_timeout_in_pool above was computed against the wrong file (v2 run) by an auditor bug; rechecked against the v1 pool RUN_20261116_044130 /api/locker/batch: 485/485 non-timeout values are members",
+  "all_non_timeout_in_pool_v1_pool": true
+ },
+ "shock_max_obs_latent": [
+  15.9,
+  16.0
+ ],
+ "mixtures": {
+  "N": {
+   "rfid_true": 100,
+   "auth": {
+    "UNLOCK": 100,
+    "DENY": 0,
+    "NONE": 0
+   }
+  },
+  "U": {
+   "rfid_true": 0,
+   "auth": {
+    "UNLOCK": 0,
+    "DENY": 100,
+    "NONE": 0
+   }
+  },
+  "F": {
+   "rfid_true": 0,
+   "auth": {
+    "UNLOCK": 0,
+    "DENY": 0,
+    "NONE": 100
+   }
+  },
+  "T": {
+   "rfid_true": 51,
+   "auth": {
+    "UNLOCK": 51,
+    "DENY": 0,
+    "NONE": 49
+   }
+  },
+  "S": {
+   "rfid_true": 45,
+   "auth": {
+    "UNLOCK": 45,
+    "DENY": 55,
+    "NONE": 0
+   }
+  }
+ },
+ "supports_offline": {
+  "42": {
+   "N": 20,
+   "U": 20,
+   "F": 20,
+   "T": 20,
+   "S": 20
+  },
+  "101": {
+   "N": 20,
+   "U": 20,
+   "F": 20,
+   "T": 20,
+   "S": 20
+  },
+  "202": {
+   "N": 20,
+   "U": 20,
+   "F": 20,
+   "T": 20,
+   "S": 20
+  },
+  "303": {
+   "N": 20,
+   "U": 20,
+   "F": 20,
+   "T": 20,
+   "S": 20
+  },
+  "404": {
+   "N": 20,
+   "U": 20,
+   "F": 20,
+   "T": 20,
+   "S": 20
+  }
+ },
+ "latent_check": {
+  "vib_NORMAL(0.05,0.8)": {
+   "n": 100,
+   "median": 0.064,
+   "sd_log": 0.7524916371619097
+  },
+  "vib_TAMPER_drill_pry(0.30,0.7)": {
+   "n": 43,
+   "median": 0.256,
+   "sd_log": 0.7345237475308554
+  },
+  "vib_FORCED(0.50,0.7)": {
+   "n": 100,
+   "median": 0.5355000000000001,
+   "sd_log": 0.6402812298126551
+  },
+  "shock_NORMAL_minus1(0.3,0.9)": {
+   "n": 100,
+   "median": 0.375,
+   "sd_log": 0.9879104968305144
+  },
+  "shock_FORCED_minus1(3,1.0)_clip16": {
+   "n": 100,
+   "median": 3.77,
+   "sd_log": 0.8961602493483456
+  },
+  "shock_HAMMER_minus1(3,1.0)": {
+   "n": 22,
+   "median": 3.5999999999999996,
+   "sd_log": 0.9694061120760565
+  },
+  "tilt_TAMPER_tilt(3,0.8)": {
+   "n": 13,
+   "median": 2.12,
+   "sd_log": 0.6924675320247552
+  },
+  "tilt_NORMAL_max(<=2.9)": 2.86,
+  "door_NORMAL(8,0.5)": {
+   "n": 100,
+   "median": 8.0,
+   "sd_log": 0.43436918865552165
+  },
+  "door_FORCED(6,0.7)": {
+   "n": 100,
+   "median": 6.27,
+   "sd_log": 0.6546591160528542
+  },
+  "absweight_NORMAL_large(150,1.0)": {
+   "n": 81,
+   "median": 158.37,
+   "sd_log": 0.8940810387866863
+  },
+  "share_NORMAL_small_weight(15%)": 0.19,
+  "absweight_SPOOF(80,0.8)": {
+   "n": 22,
+   "median": 75.13499999999999,
+   "sd_log": 0.9574510733011344
+  },
+  "timeout_extra_ms_range": [
+   3269.98,
+   12641.5
+  ],
+  "tamper_modes": {
+   "DRILL": 24,
+   "PRY": 19,
+   "HAMMER": 22,
+   "TILT": 13,
+   "WEIGHT_SPOOF": 22
+  }
+ },
+ "live_timeouts": [
+  [
+   "SIM-SESS-096",
+   11267.55,
+   "True"
+  ],
+  [
+   "SIM-SESS-097",
+   6064.49,
+   "True"
+  ],
+  [
+   "SIM-SESS-098",
+   3269.98,
+   "False"
+  ]
+ ],
+ "J48": {
+  "per_seed": {
+   "42": 0.9799498746867169,
+   "101": 0.9899937460913071,
+   "202": 0.9899937460913071,
+   "303": 0.9699812382739212,
+   "404": 0.9698302954116909
+  },
+  "mean": 0.9799497801109887,
+  "sd": 0.01004413139815009
+ },
+ "Logistic": {
+  "per_seed": {
+   "42": 1.0,
+   "101": 1.0,
+   "202": 0.9691496374423203,
+   "303": 0.9799498746867169,
+   "404": 1.0
+  },
+  "mean": 0.9898199024258074,
+  "sd": 0.01445320433258863
+ },
+ "J48_vs_B1_binary_seed42": {
+  "n01": 2,
+  "n10": 19,
+  "chi2_cc": 12.19047619047619,
+  "p_exact": 0.00022125244140625
+ },
+ "ctx_only_J48": {
+  "per_seed": {
+   "42": 0.5455825966750336,
+   "101": 0.5463865546218487,
+   "202": 0.4967724807524557,
+   "303": 0.545967365967366,
+   "404": 0.5487068230590587
+  },
+  "mean": 0.5366831642151525,
+  "sd": 0.02234380849431658
+ },
+ "ablation": {
+  "door_load": {
+   "per_seed": {
+    "42": 0.7490466522724588,
+    "101": 0.7645022883295194,
+    "202": 0.7570666744234525,
+    "303": 0.8355285500573137,
+    "404": 0.776704107999789
+   },
+   "mean": 0.7765696546165067,
+   "sd": 0.03449519043597868
+  },
+  "imu": {
+   "per_seed": {
+    "42": 0.9698302954116909,
+    "101": 0.9699812382739212,
+    "202": 0.9698302954116909,
+    "303": 0.9799498746867169,
+    "404": 0.96
+   },
+   "mean": 0.9699183407568039,
+   "sd": 0.0070538042292497315
+  },
+  "ultrasonic": {
+   "per_seed": {
+    "42": 0.9598997493734336,
+    "101": 0.9899937460913071,
+    "202": 0.9799498746867169,
+    "303": 0.9497171590194846,
+    "404": 0.9899937460913071
+   },
+   "mean": 0.9739108550524499,
+   "sd": 0.01827179887533416
+  },
+  "auth_context": {
+   "per_seed": {
+    "42": 0.8576358937334547,
+    "101": 0.8799437148217637,
+    "202": 0.8480583171483695,
+    "303": 0.939993746091307,
+    "404": 0.8792230576441102
+   },
+   "mean": 0.880970945887801,
+   "sd": 0.03576159619768169
+  },
+  "network": {
+   "per_seed": {
+    "42": 0.9398496240601505,
+    "101": 0.9393939393939392,
+    "202": 0.9899937460913071,
+    "303": 0.9598997493734336,
+    "404": 0.9497171590194846
+   },
+   "mean": 0.955770843587663,
+   "sd": 0.020896113501237212
+  }
+ },
+ "stump_best": {
+  "N": [
+   "rfid",
+   0.88
+  ],
+  "U": [
+   "deny",
+   0.93125
+  ],
+  "F": [
+   "none",
+   0.93875
+  ],
+  "T": [
+   "door",
+   0.875
+  ],
+  "S": [
+   "door",
+   0.795
+  ]
+ },
+ "db_check": {
+  "LockerSession_rows_for_run_seqs": 98,
+  "distinct_seq": 98,
+  "duplicate_seq_rows": 0,
+  "replay_sessions": 2,
+  "AuditLog_total": 1465,
+  "HashChain_total": 1465,
+  "AuditLog_rows_after_first_1343": 122,
+  "their_ts_range_utc": [
+   "2026-11-16 17:15:08.570",
+   "2026-11-16 17:15:16.001"
+  ]
+ },
+ "manifest": {
+  "auditor": "Claude Code (Opus 5.5), independent rewrite; imports only experiments.detection (frozen v1) and generator_v2 for artifact-equality only",
+  "script_sha256": "ee830803875d4d0b74a7c2733d8049c93652f000fb5321d65df61e2cc4e6e842",
+  "script_location": "scratchpad (not in repo)",
+  "inputs": {
+   "experiments/runs/RUN_20261116_171508_SEED42_V2_SL_SIM/sessions.csv": "f3977a5154c74e507d368e80adacf595c21d736e65ba4f5d38a4786650e62623",
+   "experiments/runs/RUN_20261116_171508_SEED42_V2_SL_SIM/backend_responses.jsonl": "ce4a6c9efc041f5ad0828bf2c4764aa3bce5a9863f3d23a222afeb54e55a7275",
+   "experiments/runs/RUN_20261116_044130_SEED42_SL_SIM/backend_responses.jsonl": "e8b2d4ede4084330fa345a21c75082bba9b108ef5e78a2e091cd11659ca8ca42",
+   "experiments/v2/offline/v2_seed42_sessions.json": "ae9a42109fa82e61c74fedd03a5974ea4e28e96916d52e4ae90b5d95125b330e",
+   "experiments/v2/offline/v2_seed101_sessions.json": "f60ad8528bfb064fec50b52f240e51062b6fded4afad8f09e1df1558fd762036",
+   "experiments/v2/offline/v2_seed202_sessions.json": "0ee7172c1e5272e36b3e3b70c40079d38bef876e9287dcf9e7cecdc8f7deadba",
+   "experiments/v2/offline/v2_seed303_sessions.json": "bf0087da03e4a472444b0455ca4f7e8130deb92eda9492d0c3a4f92f3c7f250e",
+   "experiments/v2/offline/v2_seed404_sessions.json": "b13c365570d6296a79e012eea8d8786639dee99b15916e1ae96c34990205254f",
+   "docs/paper/scripts/results/R2_STUDYB_V2_20261116T171537Z/study_b_results.json": "44423ea7fb565fd07d93426f487a0bf6b34b816a3068339ca9c9198b988981d2",
+   "web/WEB-INF/lib/weka.jar": "b89ae14ee7bf97627b07e8a932b3bebcd3a1288d2d25ebb348a04326f7cd0fd9"
+  },
+  "bootstrap": "stratified paired, 10000 resamples, seeds 20261116 and 777",
+  "timestamp_utc": "2026-11-16T17:23:53.100347+00:00"
+ }
+}
