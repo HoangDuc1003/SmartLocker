@@ -280,8 +280,7 @@ class StatisticalEvaluator:
         lines.extend([
             r"\hline",
             f"Overall / Macro & {m0['macro_precision']:.3f} & {m0['macro_recall']:.3f} & {m0['macro_f1']:.3f} & "
-            f"{m1['macro_precision']:.3f} & {m1['macro_recall']:.3f} & \\textbf{{{m1['macro_f1']:.3f}}} \\\\",
-            f"Balanced Accuracy & \\multicolumn{{3}}{{c}}{{{m0['balanced_accuracy']:.3f}}} & \\multicolumn{{3}}{{c}}{{\\textbf{{{m1['balanced_accuracy']:.3f}}}}} \\\\",
+            f"{m1['macro_precision']:.3f} & {m1['macro_recall']:.3f} & {m1['macro_f1']:.3f} \\\\",
             r"\hline",
             r"\end{tabular}",
             r"\end{table}",
