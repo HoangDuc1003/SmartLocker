@@ -1,4 +1,5 @@
 {
+  "run_id": "RUN_20261116_010959_SEED20261115_SL_SIM",
   "os_platform": "Windows-10-10.0.26200-SP0",
   "python_version": "3.11.9",
   "java_runtime": "JDK 1.8.0_202 (Oracle Corporation)",
@@ -9,8 +10,5 @@
   "device_code": "LOCKER-01",
   "device_id": 5,
   "master_seed": 20261115,
-  "execution_date_utc": "2026-11-15",
-  "code_commit_sha": "b369468",
-  "commit_timestamp": "2026-11-16 01:59:56 +0700",
-  "post_commit_execution_timestamp": "2026-11-15T19:01:33Z"
+  "execution_timestamp_utc": "2026-11-16T01:10:03.723228+00:00"
 }

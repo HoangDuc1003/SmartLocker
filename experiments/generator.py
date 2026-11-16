@@ -39,11 +39,23 @@ class ScenarioGenerator:
     INVALID_PINS = ["000000", "111111", "999999", "123123", "888888", "456789"]
 
     VALID_CARDS = ["04A1B2C3", "0499AABB", "04C3D4E5", "04F5A6B7", "04556677"]
+    CARD_SLOT_MAP = {
+        "04A1B2C3": "A01",
+        "0499AABB": "A02",
+        "04C3D4E5": "A03",
+        "04F5A6B7": "A06",
+        "04556677": "A07",
+    }
     BLOCKED_CARDS = ["04DE0012", "C15C039D", "C206670A", "04E1F205"]
     UNKNOWN_CARDS = ["04BAD001", "04BAD002", "04BAD003", "DEADBEEF"]
 
     VALID_FINGERPRINTS = [1, 2, 5]
-    INVALID_FINGERPRINTS = [161, 200, 999]
+    FP_SLOT_MAP = {
+        "1": "A08",
+        "2": "A09",
+        "5": "A10",
+    }
+    INVALID_FINGERPRINTS = [3, 4, 7, 8, 9, 11]
 
     PHONE_TAP_TOKENS = ["inAAgAWaNq99", "B3P4eF7888DP", "NfcTokenDemo12"]
 
@@ -73,10 +85,12 @@ class ScenarioGenerator:
                 cred, slot, bank = pin_info[0], pin_info[1], pin_info[2]
             elif mode == "CARD":
                 cred = rng.choice(self.VALID_CARDS)
-                slot, bank = "A04", "CANT-A"
+                slot = self.CARD_SLOT_MAP.get(cred, "A04")
+                bank = "CANT-A"
             else:
                 cred = str(rng.choice(self.VALID_FINGERPRINTS))
-                slot, bank = "A03", "CANT-A"
+                slot = self.FP_SLOT_MAP.get(cred, "A03")
+                bank = "CANT-A"
 
             door_sec = round(rng.uniform(4.5, 12.0), 2)
             weight_delta = round(rng.uniform(-150.0, 450.0), 2)

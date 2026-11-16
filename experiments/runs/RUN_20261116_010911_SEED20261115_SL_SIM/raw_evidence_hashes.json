@@ -1,0 +1,15 @@
+{
+  "README.md": "7fa91cc19fa8ebbf0bac38ed32d9b3f776167b4dcab61c3f99dd471f218ebd54",
+  "backend_requests.jsonl": "90d3ea92825227ebc07b9e905f727b7e97c5e839eb955b257eb14d8a21d0d19f",
+  "backend_responses.jsonl": "e800e31c451a915182fe98ebd6f699dc92570a171fb264c47ce06f31c3bc8b02",
+  "database_verification.json": "1998a3cd87e61c23b1be9307e30c536af485a409d4702313396bf7bf9a9ff2c0",
+  "environment.json": "1ec58ff0d29fda7e723d591c2350f548f2b6b460e994bc28ccf62c69e756bfdb",
+  "execution_summary.json": "0575b3118df59f4c2063b18559ee68bb80b9ab7c44594cd3efe029bc268935aa",
+  "failed_sessions.csv": "a1f3c5d207d7a48098e42e4ee87669282bb88b3a4c56c04249553bd084eaa1cc",
+  "fixture_manifest.json": "091977f75798fb7cc3b6e071b986a37fc7d48691e5bdd872385a5a6161cf731d",
+  "ground_truth_labels.csv": "ab5d98eab722ca5f88937c5d50cd0d71d2c4f5e7337216425764abdc007d6e81",
+  "reproduction_config.yaml": "a781c3969b4adad0346517ea5fcee7834372e395360ed3c27659aaff4543c210",
+  "sensor_readings.csv": "7459755aa23f3d008c209aa4a572953445145ef365cfeccabf17aa378a49c8b5",
+  "sessions.csv": "92e83f4ac38f9b8d612f050f5183229a1fbd403f73854560bcf3654889b2c22a",
+  "sessions.json": "3dc791637b0534a426a4e815720315d8259138c5daa5c33c107f75a571062429"
+}

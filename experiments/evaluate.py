@@ -14,6 +14,7 @@ Computes:
 
 import argparse
 import csv
+from datetime import datetime, timezone
 import json
 import math
 import os
@@ -80,12 +81,15 @@ class StatisticalEvaluator:
         cm_b1 = {actual: {pred: 0 for pred in self.CATEGORIES + ["MISSED"]} for actual in self.CATEGORIES}
 
         # Paired counts for McNemar's test (Binary Anomaly Detection: Anomaly vs Normal)
-        # Ground truth: Anomaly if category != NORMAL_AUTHORIZED
-        # Correct if predicted != NORMAL_AUTHORIZED for Anomaly, and predicted == NORMAL_AUTHORIZED for Normal
-        n00 = 0  # Both incorrect
-        n01 = 0  # B0 correct, B1 incorrect
-        n10 = 0  # B0 incorrect, B1 correct
-        n11 = 0  # Both correct
+        # Table indexing: Row = B0, Col = B1 (0 = incorrect, 1 = correct)
+        # n00: both incorrect
+        # n01: B0 incorrect, B1 correct
+        # n10: B0 correct, B1 incorrect
+        # n11: both correct
+        n00 = 0
+        n01 = 0
+        n10 = 0
+        n11 = 0
 
         for s in self.sessions:
             actual = s["category"]
@@ -100,14 +104,14 @@ class StatisticalEvaluator:
             b0_correct = (pred_b0 != "NORMAL_AUTHORIZED") if is_anomaly_gt else (pred_b0 == "NORMAL_AUTHORIZED")
             b1_correct = (pred_b1 != "NORMAL_AUTHORIZED") if is_anomaly_gt else (pred_b1 == "NORMAL_AUTHORIZED")
 
-            if b0_correct and b1_correct:
-                n11 += 1
-            elif b0_correct and not b1_correct:
-                n01 += 1
+            if not b0_correct and not b1_correct:
+                n00 += 1
             elif not b0_correct and b1_correct:
+                n01 += 1
+            elif b0_correct and not b1_correct:
                 n10 += 1
             else:
-                n00 += 1
+                n11 += 1
 
         # McNemar's test using statistical_tests engine
         mcnemar_result = mcnemar_test(n00, n01, n10, n11)
@@ -120,22 +124,7 @@ class StatisticalEvaluator:
             "confusion_matrix_b1": cm_b1,
             "metrics_b0": metrics_b0,
             "metrics_b1": metrics_b1,
-            "mcnemar_test": {
-                "n00_both_incorrect": n00,
-                "n01_b0_only_correct": n01,
-                "n10_b1_only_correct": n10,
-                "n11_both_correct": n11,
-                "chi2_statistic": mcnemar_result["chi2_statistic"],
-                "p_value": mcnemar_result["p_value"],
-                "p_value_formatted": mcnemar_result["p_value_formatted"],
-                "p_value_exact_binomial": mcnemar_result["p_value_exact_binomial"],
-                "p_value_exact_formatted": mcnemar_result["p_value_exact_formatted"],
-                "cohens_g": mcnemar_result["cohens_g"],
-                "effect_size_interpretation": mcnemar_result["effect_size_interpretation"],
-                "statistically_significant_p05": mcnemar_result["significant_p05"],
-                "statistically_significant_p01": mcnemar_result["significant_p01"],
-                "statistically_significant_p001": mcnemar_result["significant_p001"],
-            },
+            "mcnemar_test": mcnemar_result,
         }
         return result
 
@@ -355,6 +344,22 @@ class StatisticalEvaluator:
         with open(os.path.join(target_dir, "evaluation_metrics.json"), "w", encoding="utf-8") as f:
             json.dump(full_report, f, indent=2)
 
+        # 1b. Write confusion_matrices.json
+        cm_json = {
+            "confusion_matrix_b0": det_metrics["confusion_matrix_b0"],
+            "confusion_matrix_b1": det_metrics["confusion_matrix_b1"],
+            "categories": self.CATEGORIES,
+        }
+        with open(os.path.join(target_dir, "confusion_matrices.json"), "w", encoding="utf-8") as f:
+            json.dump(cm_json, f, indent=2)
+
+        # 1c. Write mcnemar_results.json
+        with open(os.path.join(target_dir, "mcnemar_results.json"), "w", encoding="utf-8") as f:
+            json.dump(det_metrics["mcnemar_test"], f, indent=2)
+
+        # 1d. Write evaluation_report.md
+        self.generate_evaluation_report(det_metrics, lat_metrics, output_dir=target_dir)
+
         # 2. Write dedicated statistical_tests.json
         statistical_tests_report = {
             "experimental_metadata": {
@@ -409,6 +414,99 @@ class StatisticalEvaluator:
         print(f"  - McNemar Chi2: {det_metrics['mcnemar_test']['chi2_statistic']}, p-value: {det_metrics['mcnemar_test']['p_value_formatted']}")
         print(f"  - Latency: Mean={lat_metrics['mean_ms']}ms, p95={lat_metrics['p95_ms']}ms")
         return full_report
+
+    def generate_evaluation_report(
+        self,
+        det_metrics: Dict[str, Any],
+        lat_metrics: Dict[str, Any],
+        output_dir: Optional[str] = None,
+    ) -> None:
+        """Generate human-readable Markdown evaluation report."""
+        out = output_dir or self.results_dir
+        b0 = det_metrics["metrics_b0"]
+        b1 = det_metrics["metrics_b1"]
+        mcnemar = det_metrics["mcnemar_test"]
+
+        lines = [
+            "# SmartLocker Multi-Sensor Detection Evaluation Report",
+            "",
+            f"**Evaluation Date**: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}  ",
+            f"**Total Evaluated Sessions**: {len(self.sessions)}  ",
+            "**Architecture**: Baseline B0 (Single-Telemetry) vs. Proposed B1 (Multi-Sensor Fusion)  ",
+            "",
+            "## 1. Executive Performance Summary",
+            "",
+            "| Metric | Baseline B0 | Proposed B1 | Delta (B1 - B0) | Relative Improvement |",
+            "|---|:---:|:---:|:---:|:---:|",
+            f"| **Macro-F1 Score** | {b0['macro_f1']:.4f} | **{b1['macro_f1']:.4f}** | +{b1['macro_f1'] - b0['macro_f1']:.4f} | +{((b1['macro_f1'] - b0['macro_f1']) / b0['macro_f1']) * 100.0:.1f}% |",
+            f"| **Balanced Accuracy** | {b0['balanced_accuracy']:.4f} | **{b1['balanced_accuracy']:.4f}** | +{b1['balanced_accuracy'] - b0['balanced_accuracy']:.4f} | +{((b1['balanced_accuracy'] - b0['balanced_accuracy']) / b0['balanced_accuracy']) * 100.0:.1f}% |",
+            f"| **Overall Accuracy** | {b0['overall_accuracy']:.4f} | **{b1['overall_accuracy']:.4f}** | +{b1['overall_accuracy'] - b0['overall_accuracy']:.4f} | +{((b1['overall_accuracy'] - b0['overall_accuracy']) / b0['overall_accuracy']) * 100.0:.1f}% |",
+            f"| **Macro Precision** | {b0['macro_precision']:.4f} | **{b1['macro_precision']:.4f}** | +{b1['macro_precision'] - b0['macro_precision']:.4f} | +{((b1['macro_precision'] - b0['macro_precision']) / b0['macro_precision']) * 100.0:.1f}% |",
+            f"| **Macro Recall** | {b0['macro_recall']:.4f} | **{b1['macro_recall']:.4f}** | +{b1['macro_recall'] - b0['macro_recall']:.4f} | +{((b1['macro_recall'] - b0['macro_recall']) / b0['macro_recall']) * 100.0:.1f}% |",
+            "",
+            "## 2. Per-Category Performance Breakdown",
+            "",
+            "| Category | Nominal N | B0 Prec | B0 Rec | B0 F1 | B1 Prec | B1 Rec | B1 F1 |",
+            "|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|",
+        ]
+
+        for cat in self.CATEGORIES:
+            p0 = b0["per_class"][cat]
+            p1 = b1["per_class"][cat]
+            lines.append(
+                f"| {cat} | {p0['support']} | {p0['precision']:.3f} | {p0['recall']:.3f} | {p0['f1']:.3f} | "
+                f"**{p1['precision']:.3f}** | **{p1['recall']:.3f}** | **{p1['f1']:.3f}** |"
+            )
+
+        lines.extend([
+            f"| **Macro Average** | **{len(self.sessions)}** | **{b0['macro_precision']:.3f}** | **{b0['macro_recall']:.3f}** | **{b0['macro_f1']:.3f}** | "
+            f"**{b1['macro_precision']:.3f}** | **{b1['macro_recall']:.3f}** | **{b1['macro_f1']:.3f}** |",
+            "",
+            "## 3. Paired McNemar Statistical Significance Test",
+            "",
+            "Binary Anomaly Detection Classification (Normal vs. Anomaly):",
+            "",
+            "| | B1 Incorrect | B1 Correct | Total |",
+            "|---|:---:|:---:|:---:|",
+            f"| **B0 Incorrect** | {mcnemar['n00']} (n00) | {mcnemar['n01']} (n01) | {mcnemar['n00'] + mcnemar['n01']} |",
+            f"| **B0 Correct** | {mcnemar['n10']} (n10) | {mcnemar['n11']} (n11) | {mcnemar['n10'] + mcnemar['n11']} |",
+            f"| **Total** | {mcnemar['n00'] + mcnemar['n10']} | {mcnemar['n01'] + mcnemar['n11']} | **{len(self.sessions)}** |",
+            "",
+            f"- **Discordant Pairs**: {mcnemar['discordant_pairs']} (B0 only correct: {mcnemar['n10']}, B1 only correct: {mcnemar['n01']})",
+            f"- **Chi-Squared Statistic ($\\\\chi^2$)**: {mcnemar['chi2_statistic']:.4f} (df=1, Edwards continuity correction)",
+            f"- **Exact Two-Sided p-value**: `{mcnemar['scientific_notation_p_value']}`",
+            f"- **Statistical Method**: {mcnemar['statistical_method']}",
+            f"- **Null Hypothesis**: {mcnemar['null_hypothesis']}",
+            f"- **Alternative Hypothesis**: {mcnemar['alternative_hypothesis']}",
+            f"- **Effect Size (Cohen's g)**: {mcnemar['cohens_g']:.4f} ({mcnemar['effect_size_interpretation']})",
+            f"- **Statistically Significant ($p < 0.05$)**: {mcnemar['significant_p05']}",
+            f"- **Statistically Significant ($p < 0.01$)**: {mcnemar['significant_p01']}",
+            f"- **Statistically Significant ($p < 0.001$)**: {mcnemar['significant_p001']}",
+            "",
+            "## 4. End-to-End Latency Profile",
+            "",
+            f"- **Mean Processing Time**: {lat_metrics['mean_ms']} ms",
+            f"- **Median (p50)**: {lat_metrics['median_p50_ms']} ms",
+            f"- **95th Percentile (p95)**: {lat_metrics['p95_ms']} ms",
+            f"- **99th Percentile (p99)**: {lat_metrics['p99_ms']} ms",
+            f"- **Minimum Latency**: {lat_metrics['min_ms']} ms",
+            f"- **Maximum Latency**: {lat_metrics['max_ms']} ms",
+            "",
+            "## 5. Confusion Matrices",
+            "",
+            "### Baseline B0 Confusion Matrix:",
+            "```",
+            json.dumps(det_metrics["confusion_matrix_b0"], indent=2),
+            "```",
+            "",
+            "### Proposed B1 Confusion Matrix:",
+            "```",
+            json.dumps(det_metrics["confusion_matrix_b1"], indent=2),
+            "```",
+        ])
+
+        with open(os.path.join(out, "evaluation_report.md"), "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
 
     def _save_cm_csv(self, filepath: str, cm: Dict[str, Dict[str, int]]) -> None:
         cols = ["Actual"] + self.CATEGORIES + ["MISSED"]
