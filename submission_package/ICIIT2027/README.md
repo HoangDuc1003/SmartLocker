@@ -4,7 +4,7 @@ Built 2026-11-17 by an unattended session B run. Nothing was uploaded, e-mailed 
 
 | File | Content |
 |---|---|
-| `smartlocker-10p.pdf` | Manuscript, 10 pages. SHA-256 `746d2ba6e8d3941d4cc9535ab549cdb92614b7ce54aa4663f95c3fe1ae999ff2` |
+| `smartlocker-10p.pdf` | Manuscript, 10 pages. SHA-256 `8658775e3284aef962d58fabe7b7fa7dd1374f7f37bb9970e661c079d23cac59` |
 | `smartlocker-10p.tex` | LaTeX source (IEEEtran journal, onecolumn; bibliography inline, so there is no `.bib` file) |
 | `images/` | `workflow.pdf` (Fig. 2), `ui-user.png` (Fig. 7), `ui-staff.png` (Fig. 8); Figs. 1, 3–6 and 9 are TikZ inside the `.tex` |
 | `abstract.txt`, `keywords.txt` | Plain-text abstract and index terms copied from the `.tex` |

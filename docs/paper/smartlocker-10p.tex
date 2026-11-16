@@ -838,12 +838,13 @@ sensor    & weight change of $-5000$~g (range $-200$ to 20\,000~g) & SENSOR\_FAU
 Channels the box lacks were exercised by a pre-deployment multi-sensor simulation in Python. A generator first
 fixes a latent action and its label and only then draws noisy observations (Table~\ref{tab:sensors}),
 so no label depends on a detector. It produced 100 sessions, 20 in each of five categories: normal, unauthorized
-credential, forced door, load or tamper, and sensor or network fault. Half of the tamper sessions come from a card
-holder and half of the fault sessions from a user with an invalid credential. The generator (version~2) and its parameters were frozen
-before any detector was run on its data. On 16 November 2026 (UTC; run \texttt{RUN\_20261116\_171508\_SEED42\_V2}) a
+credential, forced door, load or tamper, and sensor or network fault. Half of the tamper sessions come from card
+holders and half of the faults from invalid users. The generator (version~2), its parameters and implementation choices were frozen by hash
+before any detector ran on its data and were not changed afterwards. On 16 November 2026 (UTC; run \texttt{RUN\_20261116\_171508\_SEED42\_V2}) a
 harness sent each credential to \texttt{/api/device/auth} and each session to \texttt{/api/locker/batch} of the local
 Tomcat~9 and SQL Server stack with the key of a simulated box; every expected \texttt{UNLOCK} or \texttt{DENY} was
-returned, all 100 sessions were stored and the replayed sequence numbers were rejected as duplicates. Detection was then computed on the host by two Python detectors,
+returned, all 100 sessions were stored and the replayed sequence numbers were rejected as duplicates; 99 passed the transport
+gate (one simulated timeout drew only 3.27~s). Detection was then computed on the host by two Python detectors,
 neither of which runs in Tomcat.
 \emph{B0} is a reference comparator with partial parity: it re-implements the range, lost-card, forced-open and
 closed-door weight rules of Table~\ref{tab:rules} and the credential result on door time, weight change, credential
@@ -866,10 +867,8 @@ Channel & Latent value by class; $\mathrm{LN}(m,s)$: log-normal with median $m$ 
 Weight (g) & door opened: 85\% $\pm\mathrm{LN}(150,1.0)$, 15\% $N(0,5^2)$; spoof $\pm\mathrm{LN}(80,0.8)$; other tamper
 $N(0,5^2)$; never opened 0; range fault $-350$ or $+24\,000$ & assumed \\
 Vibration (g) & $\mathrm{LN}(0.05,0.8)$; drill or pry $\mathrm{LN}(0.30,0.7)$; forced $\mathrm{LN}(0.50,0.7)$ & assumed \\
-Shock (g) & $1+\mathrm{LN}(0.3,0.9)$; hammer and forced $1+\mathrm{LN}(3,1.0)$; clipped at 16.0 & assumed; clip: datasheet
-range \cite{mpu6050} \\
-Tilt ($^\circ$) & mounting offset $|U(-2.9,2.9)|$; tilt tamper $\mathrm{LN}(3,0.8)$ & bound: datasheet zero-g offset
-\cite{mpu6050}; rest assumed \\
+Shock (g) & $1+\mathrm{LN}(0.3,0.9)$; hammer and forced $1+\mathrm{LN}(3,1.0)$; clipped at 16.0 & assumed; clip: per-axis range \cite{mpu6050} \\
+Tilt ($^\circ$) & mounting offset $|U(-2.9,2.9)|$; tilt tamper $\mathrm{LN}(3,0.8)$ & assumed; bound from zero-g offset \textpm50~mg \cite{mpu6050} \\
 Ultrasonic (cm) & $U(20,50)$; 0 for a stuck sensor & assumed \\
 Stay (min) & $U(1,30)$ in every class & assumed \\
 Network (ms) & resampled from 100 measured round trips of \texttt{/api/locker/batch} (2.0 to 39.5); timeout: $+U(2000,
@@ -878,12 +877,10 @@ Network (ms) & resampled from 100 measured round trips of \texttt{/api/locker/ba
 \end{tabular}
 \\[2pt]
 \parbox{0.92\linewidth}{\footnotesize A class or tamper mode not named in a row uses the first (normal) distribution of
-that row. The observation operators of the first generator (Gaussian noise with $\sigma$ 0.15~s, 3.5~g, 0.015~g,
-0.35~g, 0.25$^\circ$ and 1.2~cm, drift, load outliers and quantization) are applied to every latent value; negative
-sentinels model inertial dropouts.}
+that row. The noise, drift, outlier and quantization operators of the first generator ($\sigma$ 0.15~s, 3.5~g, 0.015~g, 0.35~g,
+0.25$^\circ$, 1.2~cm) are applied to every latent value; negative
+sentinels model inertial dropouts; the 16~g clip is applied to the scalar peak although the sensor range is per axis.}
 \end{table}
-
-Table~\ref{tab:b0_vs_b1} compares B0 and B1-P on the 100 sessions.
 
 \begin{table}[!htbp]
 \renewcommand{\arraystretch}{1.02}
@@ -908,7 +905,7 @@ Sensor or Network Fault & 0.714 & 0.500 & 0.588 & 0.826 & 0.950 & 0.884 \\
 \end{tabular}
 \end{table}
 
-B1-P reached a macro-F1 of 0.780 against 0.658 for B0 (accuracy, equal to balanced accuracy here, 0.80 against 0.69). Most of the gain comes from faults (recall 0.950 against 0.500), whose ultrasonic,
+In Table~\ref{tab:b0_vs_b1}, B1-P reached a macro-F1 of 0.780 against 0.658 for B0 (accuracy, equal to balanced accuracy here, 0.80 against 0.69). Most of the gain comes from faults (recall 0.950 against 0.500), whose ultrasonic,
 inertial and network symptoms lie outside the inputs of B0. Both detectors miss most tamper sessions (recall 0.150 and 0.250): B1-P labels 15 of the 20
 as normal, whether or not the person holds a card. On the anomaly-versus-normal decision, McNemar's test counts
 $n_{01}=6$ sessions that only B1-P gets right and $n_{10}=0$ that only B0 gets right ($n_{00}=19$, $n_{11}=75$;
@@ -939,8 +936,8 @@ next to the thresholds of B1-P, so J48 labelled all its sessions correctly from 
 Table~\ref{tab:latency} covers only server processing of the device API, without the real box: 30 requests per
 endpoint were sent with curl from the same laptop after one warm-up request, excluding Wi-Fi, credential reading and
 servo movement. The PIN requests (valid PIN, intent \texttt{ASK}) modify no data. The phone-page endpoint had a long tail (mean
-31.1~ms, maximum 102.7~ms). These are descriptive values for one laptop, not
-precise estimates; a phone-page open also waits for the next 3~s heartbeat, which dominates the user's waiting time.
+31.1~ms, maximum 102.7~ms). These are descriptive values for one laptop; a phone-page open also waits for the next 3~s heartbeat, which dominates
+the user's waiting time.
 
 \begin{table}[!htbp]
 \renewcommand{\arraystretch}{1.02}
@@ -960,8 +957,8 @@ PIN on the phone page (\texttt{/api/kiosk/unlock})   & 16.2 & 13.4 & 102.7 & 31.
 \end{tabular}
 \end{table}
 
-Wrong PINs 1 to 4 were answered with 4 down to 1 attempts left; the fifth started a 120~s lock that also refused the
-valid PIN (\texttt{LOCKED\_OUT}), which was accepted again 125.5~s after the lock started.
+The fifth wrong PIN started a 120~s lock (\texttt{LOCKED\_OUT}) that also refused the valid PIN, accepted again
+125.5~s after the lock started.
 
 \subsection{Threats to Validity and Limitations}
 \label{sec:limits}
@@ -972,20 +969,20 @@ assumptions, not real lockers (sampling bias, P1 \cite{arp2022dos}). The second 
 knew the B1-P thresholds, and three parameters lie within $\pm$20\% of one: the forced-door vibration median (0.50~g
 against 0.45~g), the shock clip (16.0~g, equal to the 16~g threshold as both equal the sensor range) and the timeout
 delay range (2\,000 to 15\,000~ms, containing 5\,000~ms); the influence of knowing the thresholds has not been ruled
-out (data snooping, P3). Cells the parameter table left open (stay time, ultrasonic distance, fault magnitudes, normal
-distributions for unnamed classes, giving hammer, tilt and spoof tampering normal vibration) were filled during
-implementation and approved after the run; they may lower tamper recall, which is not a property of the detectors
-alone. B0 has partial parity, and a learned tree outperforms B1-P (inappropriate baseline, P6). Earlier labels
-derived with B1's own thresholds gave B1 0.990. Mitigation: latent-action labels,
-a frozen generator, a learned baseline, a context-only check, a retrained ablation, five seeds and the scripts.
+out (data snooping, P3). Cells the table left open (stay time, ultrasonic distance, fault magnitudes, normal
+distributions for unnamed classes, giving hammer, tilt and spoof tampering normal vibration) were chosen by the
+implementing AI agent before the freeze and ratified by the authors after the run, so they are not preregistered;
+they may lower tamper recall, which is then not a detector property. B0 has partial parity, and a learned tree outperforms B1-P (inappropriate baseline, P6). Earlier labels
+derived with B1's own thresholds gave B1 0.990. Mitigation: latent-action labels, a frozen
+generator, a learned baseline, a context-only check, an ablation, five seeds and the scripts.
 
 \textit{External validity.} All results come from one laptop and one box with a single servo-locked slot (other
 banks are demo devices); door switch, load cell and accelerometer are simulated, latency is that of a local testbed,
 lockout progression was not simulated and no campus trace exists (lab-only evaluation, P9), so the simulation does
 not establish field performance.
 
-\textit{Construct and conclusion validity.} Weighted and macro averages coincide with equal class sizes; neither the
-bootstrap interval nor the five seeds measure variation across real deployments.
+\textit{Construct and conclusion validity.} Neither the bootstrap interval nor the five seeds measure variation across
+deployments.
 
 \textit{Security.} Browser forms rely on \texttt{SameSite=Lax} cookies without CSRF tokens; Tomcat serves plain HTTP
 behind a Cloudflare HTTPS tunnel and the firmware calls \texttt{setInsecure()}, so no end-to-end TLS is claimed. Boxes
@@ -1001,12 +998,11 @@ tamper-evident audit log; every replayed scenario gave the expected label, and m
 16~ms per device endpoint (maximum 102.7~ms). Telemetry alone could not separate wrong-user from normal access, so
 identity is checked by rule. In a simulation through the live device API, a multi-sensor rule prototype beat a
 partial-parity comparator (macro-F1 0.780 against 0.658) but found only 5 of 20 tamper sessions and stayed below a
-learned tree (0.980). Future work: door switch, load cell and accelerometer, labelled campus sessions, an external
-chain anchor, CSRF tokens and certificate validation.
+learned tree (0.980). Future work: door switch, load cell, accelerometer, campus sessions, an external chain anchor, CSRF tokens and TLS validation.
 
 \section*{Acknowledgment}
 
-The authors thank FPT University, the instructors and the reviewers. The authors used the AI assistant
+The authors thank FPT University and the instructors. They used the AI assistant
 Claude (Anthropic) to edit the English text, check the \LaTeX{} source and draw Fig.~\ref{fig:arch} to
 Fig.~\ref{fig:eval}, and AI coding agents including Claude Code (Anthropic) to write parts of the simulation,
 evaluation and audit scripts, execute the scripted runs under the authors' supervision and draft the parameter

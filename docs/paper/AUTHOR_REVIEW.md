@@ -17,10 +17,10 @@ conservative option and says so below. Evidence for every item is in `docs/paper
    - the Acknowledgment rewording.
    If you want something back, the 11-page version is `docs/paper/scripts/results/R2_BUILD_20261116T174010Z/`, built
    from the `.tex` with SHA-256 `cd79d971...6a03`.
-2. **Artifacts sentence.** The paper's Artifacts line points to github.com/HoangDuc1003/SmartLocker for code, logs, runs and scripts.
-   `docs/paper/scripts/`, `experiments/v2/`, `experiments/runs/RUN_20261116_171508_SEED42_V2_SL_SIM/`, `tools/`
-   and the log are **uncommitted**. Before submission, either commit and push them or reword the sentence.
-   Do not publish `reproduction_config.yaml` or `backend_requests.jsonl`: both contain the test device key.
+2. **Artifacts sentence: resolved.** Generator, runner, tests, analysis scripts, result JSON and the tamper campaign were
+   pushed to https://github.com/HoangDuc1003/SmartLocker (commit `7ceda96` and later). Four files holding the test
+   device key (`backend_requests.jsonl`, `reproduction_config.yaml` of the two v2 run directories) are deliberately not
+   published; older tracked run folders already contained that test key.
 3. **AI-use disclosure (Acknowledgment).** Session B replaced "The design, implementation, experiments and all
    reported measurements are the authors' own." The 30-Oct log headers name AI agents as operators of runs, so that
    sentence conflicts with the evidence. The new text discloses Claude for writing, LaTeX and figures, and AI coding
@@ -51,3 +51,14 @@ conservative option and says so below. Evidence for every item is in `docs/paper
 11. Section IV-B/IV-C wording ("r = 0.20", "τ = 0.80 requires four of five neighbours") was not re-verified in this
     revision. This is unchanged from the fallback.
 12. Venue deadline: iciit.org shows 30 Nov 2026 for full papers; date.html shows an older schedule.
+
+## Added 2026-11-17 after an external review of commit 7ceda96
+13. Done in the paper: the Simulator v2 chronology now says the generator, parameters and implementation choices were
+    frozen by hash before any detector ran, that the open cells were chosen by the implementing AI agent before the
+    freeze and ratified by the authors only after the run, and that they are therefore not preregistered. The paper
+    also says 99 of 100 sessions passed the transport gate (one simulated timeout drew 3.27 s, below the 5 s the gate
+    requires; the session was stored, authenticated and evaluated).
+14. Done in Table VI: the ±2.9° tilt bound is labelled "assumed; bound from zero-g offset ±50 mg" instead of a
+    datasheet value, and the 16 g clip is described as a per-axis sensor range applied to the scalar peak.
+15. The statement "r = 0.20 and τ = 0.80 not re-verified" in item 11 is outdated: `ML_THRESHOLD = 0.80` is in
+    `AlertService.java`, and 0.20 is 1 of 5 neighbours.

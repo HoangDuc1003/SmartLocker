@@ -1076,3 +1076,8 @@ e-mail or submission was performed.
 - Paper VI.A and VI.D now say the 83 tests ran on 17 November 2026 on commit `fd05eb9` (source unchanged by the final commit); `\revisioncommit` = `fd05eb9`.
   Rebuilt: 10 pages, PDF SHA-256 `746d2ba6e8d3941d4cc9535ab549cdb92614b7ce54aa4663f95c3fe1ae999ff2`, number audit 340 tokens, 0 FAIL (`R2_NUMBER_AUDIT_20261116T180401Z`).
 - Commit and push authorized by the author. Files with the test device key (`backend_requests.jsonl`, `reproduction_config.yaml` of the two v2 run directories) are not added.
+
+### Session B follow-up 4: review of commit 7ceda96 (2026-11-17)
+- Paper edits: v2 chronology (frozen by hash; open cells chosen by the implementing AI agent before the freeze, ratified after the run, not preregistered); 99/100 transport gate sentence (SIM-SESS-098, 3 269.98 ms < 5 000 ms gate; stored, authenticated, evaluated); Table VI tilt bound relabelled "assumed; bound from zero-g offset ±50 mg", 16 g clip noted as per-axis range applied to the scalar peak. A few lines of wording were cut to stay at 10 pages.
+- Build `R2_BUILD_20261116T181554Z`: 10 pages, no undefined references, 0 overfull boxes, PDF SHA-256 `8658775e3284aef962d58fabe7b7fa7dd1374f7f37bb9970e661c079d23cac59`, `.tex` SHA-256 `3817f49e9d5be0fac5f0c0248f766e205bf87d2b97293334f89427942d627181`; number audit 338 tokens, 0 FAIL; pages 9 and 10 inspected.
+- Review claim about missing artifacts was wrong: `generator_v2.py` (not `generator.py`), `study_b_results.json`, `runner_v2.py`, `test_v2.py` and the analysis scripts were committed in `7ceda96`.
