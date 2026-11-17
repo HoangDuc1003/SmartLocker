@@ -6,7 +6,7 @@
 | Page count 8–10 including references | PASS: 10 pages after the author-approved cuts of 2026-11-17 (list in REVISION2_LOG.md) |
 | Every page rendered and inspected | DONE: 10/10 pages at 100 dpi; no clipping or overlap; scenario-table spacing correct; Fig. 9a axis starts at 0 |
 | Fonts embedded | PARTIAL: all text fonts embedded; Helvetica / Helvetica-Bold inside `images/workflow.pdf` (Fig. 2) are not embedded |
-| Number audit (Abstract, Section VI, Conclusion) | PASS: 338 tokens, 0 FAIL |
+| Number audit (Abstract, Section VI, Conclusion) | PASS: 335 tokens, 0 FAIL |
 | DOI audit (Crossref) | 18/18 remaining DOIs resolve; 1 DataCite DOI removed |
 | All references cited, all citations defined | PASS (23/23) |
 | No "100 %" detection or superiority claims | PASS: hash-chain tests reported per category; B1-P reported below a learned baseline |

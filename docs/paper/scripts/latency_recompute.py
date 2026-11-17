@@ -1,6 +1,6 @@
 """
 Revision-2 latency recomputation from raw logs, one scope per block (never merged):
-  A. endpoint server processing  docs/paper/evidence/latency.log (curl time_total, localhost, 30 per endpoint, 30 Oct 2026)
+  A. endpoint server processing  docs/paper/evidence/latency-2.log (curl time_total, localhost, 30 per endpoint, 17 Nov 2026 rerun; 30 Oct run in latency.log)
   B. client round trip per call   experiments/runs/<LIVE_RUN>/backend_responses.jsonl (Python client, localhost, 16 Nov 2026)
   C. harness wall time / session  experiments/runs/<LIVE_RUN>/sessions.csv duration_ms (includes harness DB queries)
 Median = mean of the two middle values; P95 = linear interpolation between order statistics (n is small: descriptive only).
@@ -15,7 +15,7 @@ import os
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 LIVE_RUN = "RUN_20261116_044130_SEED42_SL_SIM"
 SRC = {
-    "A": "docs/paper/evidence/latency.log",
+    "A": "docs/paper/evidence/latency-2.log",
     "B": "experiments/runs/%s/backend_responses.jsonl" % LIVE_RUN,
     "C": "experiments/runs/%s/sessions.csv" % LIVE_RUN,
 }

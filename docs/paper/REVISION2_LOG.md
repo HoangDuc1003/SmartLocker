@@ -1081,3 +1081,18 @@ e-mail or submission was performed.
 - Paper edits: v2 chronology (frozen by hash; open cells chosen by the implementing AI agent before the freeze, ratified after the run, not preregistered); 99/100 transport gate sentence (SIM-SESS-098, 3 269.98 ms < 5 000 ms gate; stored, authenticated, evaluated); Table VI tilt bound relabelled "assumed; bound from zero-g offset ±50 mg", 16 g clip noted as per-axis range applied to the scalar peak. A few lines of wording were cut to stay at 10 pages.
 - Build `R2_BUILD_20261116T181554Z`: 10 pages, no undefined references, 0 overfull boxes, PDF SHA-256 `8658775e3284aef962d58fabe7b7fa7dd1374f7f37bb9970e661c079d23cac59`, `.tex` SHA-256 `3817f49e9d5be0fac5f0c0248f766e205bf87d2b97293334f89427942d627181`; number audit 338 tokens, 0 FAIL; pages 9 and 10 inspected.
 - Review claim about missing artifacts was wrong: `generator_v2.py` (not `generator.py`), `study_b_results.json`, `runner_v2.py`, `test_v2.py` and the analysis scripts were committed in `7ceda96`.
+
+### Session B scheduled re-run 2026-11-17 06:31 +0700
+- Step 0: `SESSION A: DONE` lines at 00:17 and 00:26 (+0700) already present; v2 FROZEN. Branch: v2.
+- Phases 5-7 were already completed and committed (follow-ups 1-4, HEAD `fc87950`); `docs/paper` and `submission_package` have no uncommitted changes. No edits, build or commit made in this run, to avoid overwriting the verified final manuscript.
+
+### Session B follow-up 5: rerun of the 30-Oct measurements (2026-11-17, requested by the author)
+Test stack only: database `SL_R30` (`scripts/proof/build-db.ps1 -TestSetup`), Tomcat test instance on 8081 (`test-stack.ps1 start -Database SL_R30 -Build`, stopped afterwards); `PRJ301_LOCKER` and the Tomcat on 8080 were not touched (create_date check ok). Code = commit `fd05eb9` (src/test/sql/web unchanged in later commits).
+| Measurement | 30 Oct 2026 | 17 Nov 2026 rerun | Evidence (SHA-256) |
+|---|---|---|---|
+| Weka 4 classifiers, 10-fold CV, 480 rows | ml.log | identical metrics and IBk/RF confusion matrices | `evidence/ml-2.log` `45949ba7…` |
+| Postman/newman | 221 req / 472 assertions, 0 fail (18 scenarios) | 241 req / 514 assertions, 0 fail, 148.6 s (19 scenarios) | `evidence/newman-6.log` `40099b11…` (JSON report gitignored) |
+| Server time per endpoint (median/min/max/mean ms) | health 6.0/4.6/7.3/5.9; auth 15.8/14.1/48.0/17.0; kiosk 16.2/13.4/102.7/31.1 | health 7.6/5.3/26.6/8.2; auth 16.0/14.0/21.1/16.7; kiosk 15.9/14.2/38.6/16.9 | `evidence/latency-2.log` `0fdc4706…`, `R2_LATENCY_20261117T003019Z` |
+| Lockout: valid PIN accepted again after | 125.5 s | 120.9 s (polled ~1 s) | `evidence/latency-2.log` |
+| 6 replayed scenarios | all expected; heartbeat OFFLINE + alert 104.6 s | all expected; heartbeat 99.5 s | `evidence/scenarios-2.log` `7d5e459d…` |
+Web prerequisites of the 30-Oct scenarios were done with the procedures the controllers call (`UserCard_ReportLost`, `RemoteCommand_Create`, `Deposit_Reserve`); ScenarioSender only had BASE_URL changed to 8081 (temp copy). Paper updated (abstract, VI.A, VI.D, Table V, VI.F, Table VIII, conclusion); `latency_recompute.py` now reads `latency-2.log`; number audit 335 tokens, 0 FAIL; build `R2_BUILD_20261117T003124Z`, 10 pages, PDF SHA-256 `e0923e0b85852fe6c5ef650f45b57e07263ee642739fbff1bb1a074955aba9a5`.

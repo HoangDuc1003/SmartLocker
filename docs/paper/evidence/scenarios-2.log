@@ -1,0 +1,371 @@
+# scenarios-2.log - 2026-11-17T00:26:52Z UTC
+# Rerun of scenarios.log on the test stack (Tomcat 8081, database SL_R30, code of commit fc87950, src unchanged since fd05eb9).
+# tool: test/tool/ScenarioSender.java with BASE_URL changed to port 8081 only, key = public seed key of 03_v2_v3.sql; driver: run.sh below.
+# --- driver ---
+#| #!/bin/sh
+#| # Rerun of the six detection scenarios on the test stack (Tomcat 8081, database SL_R30).
+#| # Same ScenarioSender cases as scenarios.log; only BASE_URL (8081) and the key (public seed key) differ.
+#| # Web prerequisites of 30 Oct are done with the procedures the web controllers call.
+#| set -u
+#| S=$(dirname "$0")
+#| JDK="C:/Program Files/Java/jdk1.8.0_202/bin"
+#| CP="$S/classes;build/classes;web/WEB-INF/lib/*;lib/*"
+#| DB="sqlcmd -S localhost -E -d SL_R30 -I -W"
+#| B=http://localhost:8081/SmartLocker
+#| K="X-API-Key: device-1-api-key"
+#| now() { $DB -h -1 -Q "SET NOCOUNT ON; SELECT CONVERT(VARCHAR(23), DATEADD(MILLISECOND, -500, SYSUTCDATETIME()), 126)" | tr -d '\r' | head -1; }
+#| snap() { sed "s/\$(since)/$1/; s/LIB-A/CANT-A/" docs/paper/evidence/harness/snapshot.sql > "$S/snap.sql"; $DB -i "$(cygpath -w "$S/snap.sql")" 2>&1; }
+#| send() { "$JDK/java" -Dfile.encoding=UTF-8 -Dsmartlocker.apiKey=device-1-api-key -cp "$CP" tool.ScenarioSender "$1" 2>&1; }
+#| 
+#| for sc in spoof sensor lostcard remote checkin; do
+#|   T=$(now); echo "################ scenario $sc - start (DB UTC) $T"
+#|   case $sc in
+#|     lostcard) echo "# prerequisite: EXEC UserCard_ReportLost 6, 72 (card 04A1B2C3 of student1, as the owner does in the web)"
+#|               $DB -Q "EXEC UserCard_ReportLost 6, 72" 2>&1 ;;
+#|     remote)   echo "# prerequisite: EXEC RemoteCommand_Create 51, 'paper evidence', 2 (admin remote open of CANT-A A01, as RemoteCommandController does)"
+#|               $DB -Q "DECLARE @id BIGINT; EXEC RemoteCommand_Create 51, N'paper evidence', 2, @id OUTPUT; SELECT @id AS command_id" 2>&1 ;;
+#|     checkin)  echo "# prerequisite: EXEC Deposit_Reserve for v2card on CANT-A A02 (as BookingController does), then the box sends the PIN"
+#|               PIN=$($DB -h -1 -Q "SET NOCOUNT ON; DECLARE @u INT=(SELECT user_id FROM Users WHERE username=N'v2card'); DECLARE @p INT=(SELECT TOP 1 plan_id FROM StoragePlan WHERE duration_min=120 AND is_active=1 ORDER BY plan_id); DECLARE @id BIGINT; EXEC Deposit_Reserve @u, 52, @p, @id OUTPUT, N'PIN'; SELECT pin_code FROM Deposit WHERE deposit_id=@id" | tr -d '\r ' | grep -E '^[0-9]{6}$' | tail -1)
+#|               echo "# command: curl -H '<key>' -d '{\"method\":\"PIN\",\"pin\":\"<pin>\"}' $B/api/device/auth"
+#|               curl -s -H "$K" -H 'Content-Type: application/json' -d "{\"method\":\"PIN\",\"pin\":\"$PIN\"}" $B/api/device/auth | sed "s/$PIN/<pin>/g"; echo
+#|               sleep 3; snap "$T"
+#|               echo "# deposit and slot after the PIN:"
+#|               $DB -Q "SET NOCOUNT ON; SELECT d.deposit_id, d.status, s.slot_code, s.status AS slot_status FROM Deposit d JOIN LockerSlot s ON s.locker_slot_id=d.slot_id WHERE s.locker_slot_id=52 AND d.status IN ('ACTIVE','RESERVED')"
+#|               continue ;;
+#|   esac
+#|   send $sc; sleep 3; snap "$T"
+#| done
+#| 
+#| # heartbeat: 6 beats 10 s apart, then silence; poll until LOCKER-01 is OFFLINE (job every 15 s, timeout 90 s)
+#| T=$(now); echo "################ scenario heartbeat - start (DB UTC) $T"
+#| send heartbeat
+#| echo "# last beat sent; polling Device.status every 1 s"
+#| while :; do
+#|   r=$($DB -h -1 -Q "SET NOCOUNT ON; SELECT status + ' ' + CONVERT(VARCHAR(23), last_seen, 126) + ' ' + CONVERT(VARCHAR(23), SYSUTCDATETIME(), 126) + ' ' + CAST(DATEDIFF(MILLISECOND, last_seen, SYSUTCDATETIME()) AS VARCHAR(12)) FROM Device WHERE device_code=N'LOCKER-01'" | tr -d '\r' | head -1)
+#|   case "$r" in OFFLINE*) echo "OFFLINE observed: $r (status, last_seen, now, ms since last beat)"; break;; esac
+#|   sleep 1
+#| done
+#| snap "$T"
+# --- output ---
+################ scenario spoof - start (DB UTC) 2026-11-17T00:26:52.006
+POST /locker/batch -> HTTP 200
+{"saved":1,"duplicates":0,"rejected":0,"errors":[]}
+-- LockerSession (+ label) ingested since 2026-11-17 00:26:52.0060000
+session_id device_code device_seq ingested_at slot_code card_uid open_source command_id door_open_sec weight_delta_g rfid_ok session_label
+---------- ----------- ---------- ----------- --------- -------- ----------- ---------- ------------- -------------- ------- -------------
+155 LOCKER-01 1794875213 2026-11-17 00:26:52.6983282 A01 NULL REMOTE 999999 8.0 0.0 0 NULL
+-- Alert since
+alert_id device_code session_id source label risk_score status created_at
+-------- ----------- ---------- ------ ----- ---------- ------ ----------
+18 LOCKER-01 155 RULE SUSPECTED_SPOOF 0.99958437240232756 OPEN 2026-11-17 00:26:52.7123358
+-- AlertEvidence of those alerts
+alert_id item value_text
+-------- ---- ----------
+18 reason remote open without a valid command
+18 command_id 999999
+-- MaintenanceTicket opened since
+ticket_id alert_id device_code status opened_at note
+--------- -------- ----------- ------ --------- ----
+-- RemoteCommand created since
+command_id device_code slot_id action status source created_at sent_at done_at session_id
+---------- ----------- ------- ------ ------ ------ ---------- ------- ------- ----------
+-- Deposit changes (CANT-A)
+deposit_id username slot_code status reserved_at hold_until
+---------- -------- --------- ------ ----------- ----------
+75 student3 A01 ACTIVE 2026-11-16 23:19:24.5696112 NULL
+85 student19 A05 COMPLETED 2026-11-16 21:39:24.5696112 NULL
+90 student18 A04 RESERVED 2026-11-17 00:15:24.5696112 2026-11-17 00:30:24.5696112
+91 v2noshow A15 COMPLETED 2026-11-17 00:19:25.4389775 2026-11-17 00:18:25.4419753
+92 v3overdue A08 COMPLETED 2026-11-16 20:04:25.5157558 2026-11-17 00:34:25.5009944
+93 v3late A12 CANCELLED 2026-11-17 00:13:25.5177622 2026-11-17 00:49:25.5177622
+95 v2noshow A15 ACTIVE 2026-11-17 00:22:56.4441821 2026-11-17 00:21:56.4471752
+96 v3overdue A08 COMPLETED 2026-11-16 20:07:56.5383459 2026-11-17 00:37:56.5233405
+97 v3late A12 CANCELLED 2026-11-17 00:16:56.5403464 2026-11-17 00:52:56.5403464
+99 v2pin A02 COMPLETED 2026-11-17 00:23:05.5347803 2026-11-17 00:38:05.5347803
+100 v2pin A02 COMPLETED 2026-11-17 00:23:07.1720494 2026-11-17 00:38:07.1720494
+101 v2pin A02 COMPLETED 2026-11-17 00:23:09.2794549 2026-11-17 00:38:09.2794549
+102 v2card A02 COMPLETED 2026-11-17 00:23:11.2667531 2026-11-17 00:38:11.2667531
+103 v2card A02 COMPLETED 2026-11-17 00:23:12.4856324 2026-11-17 00:38:12.4856324
+104 v2card A02 COMPLETED 2026-11-17 00:23:13.9597742 2026-11-17 00:38:13.9597742
+105 v2fp A02 COMPLETED 2026-11-17 00:23:15.6264021 2026-11-17 00:38:15.6264021
+106 v2fp A02 COMPLETED 2026-11-17 00:23:16.2719655 2026-11-17 00:38:16.2719655
+107 v2pin A02 COMPLETED 2026-11-17 00:25:21.8792101 2026-11-17 00:40:21.8792101
+108 v2pin A02 COMPLETED 2026-11-17 00:25:24.1315327 2026-11-17 00:40:24.1315327
+109 v2pin A02 CANCELLED 2026-11-17 00:25:27.5487952 2026-11-17 00:40:27.5487952
+-- Device LOCKER-01 now
+device_code status last_seen firmware now_utc
+----------- ------ --------- -------- -------
+LOCKER-01 ACTIVE 2026-11-17 00:26:52.7163315 2.0 2026-11-17 00:26:55.9178142
+################ scenario sensor - start (DB UTC) 2026-11-17T00:26:55.488
+POST /locker/batch -> HTTP 200
+{"saved":1,"duplicates":0,"rejected":0,"errors":[]}
+-- LockerSession (+ label) ingested since 2026-11-17 00:26:55.4880000
+session_id device_code device_seq ingested_at slot_code card_uid open_source command_id door_open_sec weight_delta_g rfid_ok session_label
+---------- ----------- ---------- ----------- --------- -------- ----------- ---------- ------------- -------------- ------- -------------
+156 LOCKER-01 1794875217 2026-11-17 00:26:56.1702419 A01 0499AABB RFID NULL 6.0 -5000.0 1 NULL
+-- Alert since
+alert_id device_code session_id source label risk_score status created_at
+-------- ----------- ---------- ------ ----- ---------- ------ ----------
+19 LOCKER-01 156 RULE SENSOR_FAULT NULL OPEN 2026-11-17 00:26:56.1752437
+-- AlertEvidence of those alerts
+alert_id item value_text
+-------- ---- ----------
+19 reason weight_delta_g=-5000.0 is outside the valid range
+-- MaintenanceTicket opened since
+ticket_id alert_id device_code status opened_at note
+--------- -------- ----------- ------ --------- ----
+-- RemoteCommand created since
+command_id device_code slot_id action status source created_at sent_at done_at session_id
+---------- ----------- ------- ------ ------ ------ ---------- ------- ------- ----------
+-- Deposit changes (CANT-A)
+deposit_id username slot_code status reserved_at hold_until
+---------- -------- --------- ------ ----------- ----------
+75 student3 A01 ACTIVE 2026-11-16 23:19:24.5696112 NULL
+85 student19 A05 COMPLETED 2026-11-16 21:39:24.5696112 NULL
+90 student18 A04 RESERVED 2026-11-17 00:15:24.5696112 2026-11-17 00:30:24.5696112
+91 v2noshow A15 COMPLETED 2026-11-17 00:19:25.4389775 2026-11-17 00:18:25.4419753
+92 v3overdue A08 COMPLETED 2026-11-16 20:04:25.5157558 2026-11-17 00:34:25.5009944
+93 v3late A12 CANCELLED 2026-11-17 00:13:25.5177622 2026-11-17 00:49:25.5177622
+95 v2noshow A15 ACTIVE 2026-11-17 00:22:56.4441821 2026-11-17 00:21:56.4471752
+96 v3overdue A08 COMPLETED 2026-11-16 20:07:56.5383459 2026-11-17 00:37:56.5233405
+97 v3late A12 CANCELLED 2026-11-17 00:16:56.5403464 2026-11-17 00:52:56.5403464
+99 v2pin A02 COMPLETED 2026-11-17 00:23:05.5347803 2026-11-17 00:38:05.5347803
+100 v2pin A02 COMPLETED 2026-11-17 00:23:07.1720494 2026-11-17 00:38:07.1720494
+101 v2pin A02 COMPLETED 2026-11-17 00:23:09.2794549 2026-11-17 00:38:09.2794549
+102 v2card A02 COMPLETED 2026-11-17 00:23:11.2667531 2026-11-17 00:38:11.2667531
+103 v2card A02 COMPLETED 2026-11-17 00:23:12.4856324 2026-11-17 00:38:12.4856324
+104 v2card A02 COMPLETED 2026-11-17 00:23:13.9597742 2026-11-17 00:38:13.9597742
+105 v2fp A02 COMPLETED 2026-11-17 00:23:15.6264021 2026-11-17 00:38:15.6264021
+106 v2fp A02 COMPLETED 2026-11-17 00:23:16.2719655 2026-11-17 00:38:16.2719655
+107 v2pin A02 COMPLETED 2026-11-17 00:25:21.8792101 2026-11-17 00:40:21.8792101
+108 v2pin A02 COMPLETED 2026-11-17 00:25:24.1315327 2026-11-17 00:40:24.1315327
+109 v2pin A02 CANCELLED 2026-11-17 00:25:27.5487952 2026-11-17 00:40:27.5487952
+-- Device LOCKER-01 now
+device_code status last_seen firmware now_utc
+----------- ------ --------- -------- -------
+LOCKER-01 ACTIVE 2026-11-17 00:26:56.1920625 2.0 2026-11-17 00:26:59.3340968
+################ scenario lostcard - start (DB UTC) 2026-11-17T00:26:58.905
+# prerequisite: EXEC UserCard_ReportLost 6, 72 (card 04A1B2C3 of student1, as the owner does in the web)
+POST /health -> HTTP 200
+{"interval_sec":3,"commands":[],"server_time":"2026-11-17 00:26:59","blocked_cards":["04A1B2C3","04DE0012","04E1F205","CFEC8AFC"],"reserved":[{"slot_code":"A04","card_uid":"04E1F210"}]}
+POST /locker/batch -> HTTP 200
+{"saved":1,"duplicates":0,"rejected":0,"errors":[]}
+-- LockerSession (+ label) ingested since 2026-11-17 00:26:58.9050000
+session_id device_code device_seq ingested_at slot_code card_uid open_source command_id door_open_sec weight_delta_g rfid_ok session_label
+---------- ----------- ---------- ----------- --------- -------- ----------- ---------- ------------- -------------- ------- -------------
+157 LOCKER-01 1794875220 2026-11-17 00:26:59.6517357 A01 04A1B2C3 RFID NULL 6.0 2.0 1 NULL
+-- Alert since
+alert_id device_code session_id source label risk_score status created_at
+-------- ----------- ---------- ------ ----- ---------- ------ ----------
+20 LOCKER-01 157 RULE LOST_CARD_USED 2.0781379883625384E-3 OPEN 2026-11-17 00:26:59.6527326
+-- AlertEvidence of those alerts
+alert_id item value_text
+-------- ---- ----------
+20 card_uid 04A1B2C3
+20 card_status LOST
+20 card_owner_id 72
+-- MaintenanceTicket opened since
+ticket_id alert_id device_code status opened_at note
+--------- -------- ----------- ------ --------- ----
+-- RemoteCommand created since
+command_id device_code slot_id action status source created_at sent_at done_at session_id
+---------- ----------- ------- ------ ------ ------ ---------- ------- ------- ----------
+-- Deposit changes (CANT-A)
+deposit_id username slot_code status reserved_at hold_until
+---------- -------- --------- ------ ----------- ----------
+75 student3 A01 ACTIVE 2026-11-16 23:19:24.5696112 NULL
+85 student19 A05 COMPLETED 2026-11-16 21:39:24.5696112 NULL
+90 student18 A04 RESERVED 2026-11-17 00:15:24.5696112 2026-11-17 00:30:24.5696112
+91 v2noshow A15 COMPLETED 2026-11-17 00:19:25.4389775 2026-11-17 00:18:25.4419753
+92 v3overdue A08 COMPLETED 2026-11-16 20:04:25.5157558 2026-11-17 00:34:25.5009944
+93 v3late A12 CANCELLED 2026-11-17 00:13:25.5177622 2026-11-17 00:49:25.5177622
+95 v2noshow A15 ACTIVE 2026-11-17 00:22:56.4441821 2026-11-17 00:21:56.4471752
+96 v3overdue A08 COMPLETED 2026-11-16 20:07:56.5383459 2026-11-17 00:37:56.5233405
+97 v3late A12 CANCELLED 2026-11-17 00:16:56.5403464 2026-11-17 00:52:56.5403464
+99 v2pin A02 COMPLETED 2026-11-17 00:23:05.5347803 2026-11-17 00:38:05.5347803
+100 v2pin A02 COMPLETED 2026-11-17 00:23:07.1720494 2026-11-17 00:38:07.1720494
+101 v2pin A02 COMPLETED 2026-11-17 00:23:09.2794549 2026-11-17 00:38:09.2794549
+102 v2card A02 COMPLETED 2026-11-17 00:23:11.2667531 2026-11-17 00:38:11.2667531
+103 v2card A02 COMPLETED 2026-11-17 00:23:12.4856324 2026-11-17 00:38:12.4856324
+104 v2card A02 COMPLETED 2026-11-17 00:23:13.9597742 2026-11-17 00:38:13.9597742
+105 v2fp A02 COMPLETED 2026-11-17 00:23:15.6264021 2026-11-17 00:38:15.6264021
+106 v2fp A02 COMPLETED 2026-11-17 00:23:16.2719655 2026-11-17 00:38:16.2719655
+107 v2pin A02 COMPLETED 2026-11-17 00:25:21.8792101 2026-11-17 00:40:21.8792101
+108 v2pin A02 COMPLETED 2026-11-17 00:25:24.1315327 2026-11-17 00:40:24.1315327
+109 v2pin A02 CANCELLED 2026-11-17 00:25:27.5487952 2026-11-17 00:40:27.5487952
+-- Device LOCKER-01 now
+device_code status last_seen firmware now_utc
+----------- ------ --------- -------- -------
+LOCKER-01 ACTIVE 2026-11-17 00:26:59.6547351 sim-1.0 2026-11-17 00:27:02.7997448
+################ scenario remote - start (DB UTC) 2026-11-17T00:27:02.371
+# prerequisite: EXEC RemoteCommand_Create 51, 'paper evidence', 2 (admin remote open of CANT-A A01, as RemoteCommandController does)
+command_id
+----------
+13
+
+(1 rows affected)
+POST /health -> HTTP 200
+POST /locker/batch -> HTTP 200
+{"saved":1,"duplicates":0,"rejected":0,"errors":[]}
+POST /locker/batch -> HTTP 200
+{"saved":1,"duplicates":0,"rejected":0,"errors":[]}
+-- LockerSession (+ label) ingested since 2026-11-17 00:27:02.3710000
+session_id device_code device_seq ingested_at slot_code card_uid open_source command_id door_open_sec weight_delta_g rfid_ok session_label
+---------- ----------- ---------- ----------- --------- -------- ----------- ---------- ------------- -------------- ------- -------------
+158 LOCKER-01 1794875224 2026-11-17 00:27:03.1313175 A01 NULL REMOTE 13 8.0 0.0 0 NULL
+159 LOCKER-01 1794875225 2026-11-17 00:27:03.1383197 A01 NULL REMOTE 13 8.0 0.0 0 NULL
+-- Alert since
+alert_id device_code session_id source label risk_score status created_at
+-------- ----------- ---------- ------ ----- ---------- ------ ----------
+21 LOCKER-01 159 RULE SUSPECTED_SPOOF 0.99958437240232756 OPEN 2026-11-17 00:27:03.1403167
+-- AlertEvidence of those alerts
+alert_id item value_text
+-------- ---- ----------
+21 reason remote open without a valid command
+21 command_id 13
+-- MaintenanceTicket opened since
+ticket_id alert_id device_code status opened_at note
+--------- -------- ----------- ------ --------- ----
+-- RemoteCommand created since
+command_id device_code slot_id action status source created_at sent_at done_at session_id
+---------- ----------- ------- ------ ------ ------ ---------- ------- ------- ----------
+13 LOCKER-01 51 UNLOCK DONE NULL 2026-11-17 00:27:02.9371427 2026-11-17 00:27:03.1050297 2026-11-17 00:27:03.1343199 158
+-- Deposit changes (CANT-A)
+deposit_id username slot_code status reserved_at hold_until
+---------- -------- --------- ------ ----------- ----------
+75 student3 A01 ACTIVE 2026-11-16 23:19:24.5696112 NULL
+85 student19 A05 COMPLETED 2026-11-16 21:39:24.5696112 NULL
+90 student18 A04 RESERVED 2026-11-17 00:15:24.5696112 2026-11-17 00:30:24.5696112
+91 v2noshow A15 COMPLETED 2026-11-17 00:19:25.4389775 2026-11-17 00:18:25.4419753
+92 v3overdue A08 COMPLETED 2026-11-16 20:04:25.5157558 2026-11-17 00:34:25.5009944
+93 v3late A12 CANCELLED 2026-11-17 00:13:25.5177622 2026-11-17 00:49:25.5177622
+95 v2noshow A15 ACTIVE 2026-11-17 00:22:56.4441821 2026-11-17 00:21:56.4471752
+96 v3overdue A08 COMPLETED 2026-11-16 20:07:56.5383459 2026-11-17 00:37:56.5233405
+97 v3late A12 CANCELLED 2026-11-17 00:16:56.5403464 2026-11-17 00:52:56.5403464
+99 v2pin A02 COMPLETED 2026-11-17 00:23:05.5347803 2026-11-17 00:38:05.5347803
+100 v2pin A02 COMPLETED 2026-11-17 00:23:07.1720494 2026-11-17 00:38:07.1720494
+101 v2pin A02 COMPLETED 2026-11-17 00:23:09.2794549 2026-11-17 00:38:09.2794549
+102 v2card A02 COMPLETED 2026-11-17 00:23:11.2667531 2026-11-17 00:38:11.2667531
+103 v2card A02 COMPLETED 2026-11-17 00:23:12.4856324 2026-11-17 00:38:12.4856324
+104 v2card A02 COMPLETED 2026-11-17 00:23:13.9597742 2026-11-17 00:38:13.9597742
+105 v2fp A02 COMPLETED 2026-11-17 00:23:15.6264021 2026-11-17 00:38:15.6264021
+106 v2fp A02 COMPLETED 2026-11-17 00:23:16.2719655 2026-11-17 00:38:16.2719655
+107 v2pin A02 COMPLETED 2026-11-17 00:25:21.8792101 2026-11-17 00:40:21.8792101
+108 v2pin A02 COMPLETED 2026-11-17 00:25:24.1315327 2026-11-17 00:40:24.1315327
+109 v2pin A02 CANCELLED 2026-11-17 00:25:27.5487952 2026-11-17 00:40:27.5487952
+-- Device LOCKER-01 now
+device_code status last_seen firmware now_utc
+----------- ------ --------- -------- -------
+LOCKER-01 ACTIVE 2026-11-17 00:27:03.1423159 sim-1.0 2026-11-17 00:27:06.2839267
+################ scenario checkin - start (DB UTC) 2026-11-17T00:27:05.854
+# prerequisite: EXEC Deposit_Reserve for v2card on CANT-A A02 (as BookingController does), then the box sends the PIN
+# command: curl -H '<key>' -d '{"method":"PIN","pin":"<pin>"}' http://localhost:8081/SmartLocker/api/device/auth
+{"result":"UNLOCK","phase":"CHECK_IN","deposit_id":110,"slot_code":"A02","open_sec":8,"message":"Store your items\nSlot A02","physical":true}
+-- LockerSession (+ label) ingested since 2026-11-17 00:27:05.8540000
+session_id device_code device_seq ingested_at slot_code card_uid open_source command_id door_open_sec weight_delta_g rfid_ok session_label
+---------- ----------- ---------- ----------- --------- -------- ----------- ---------- ------------- -------------- ------- -------------
+-- Alert since
+alert_id device_code session_id source label risk_score status created_at
+-------- ----------- ---------- ------ ----- ---------- ------ ----------
+-- AlertEvidence of those alerts
+alert_id item value_text
+-------- ---- ----------
+-- MaintenanceTicket opened since
+ticket_id alert_id device_code status opened_at note
+--------- -------- ----------- ------ --------- ----
+-- RemoteCommand created since
+command_id device_code slot_id action status source created_at sent_at done_at session_id
+---------- ----------- ------- ------ ------ ------ ---------- ------- ------- ----------
+-- Deposit changes (CANT-A)
+deposit_id username slot_code status reserved_at hold_until
+---------- -------- --------- ------ ----------- ----------
+75 student3 A01 ACTIVE 2026-11-16 23:19:24.5696112 NULL
+85 student19 A05 COMPLETED 2026-11-16 21:39:24.5696112 NULL
+90 student18 A04 RESERVED 2026-11-17 00:15:24.5696112 2026-11-17 00:30:24.5696112
+91 v2noshow A15 COMPLETED 2026-11-17 00:19:25.4389775 2026-11-17 00:18:25.4419753
+92 v3overdue A08 COMPLETED 2026-11-16 20:04:25.5157558 2026-11-17 00:34:25.5009944
+93 v3late A12 CANCELLED 2026-11-17 00:13:25.5177622 2026-11-17 00:49:25.5177622
+95 v2noshow A15 ACTIVE 2026-11-17 00:22:56.4441821 2026-11-17 00:21:56.4471752
+96 v3overdue A08 COMPLETED 2026-11-16 20:07:56.5383459 2026-11-17 00:37:56.5233405
+97 v3late A12 CANCELLED 2026-11-17 00:16:56.5403464 2026-11-17 00:52:56.5403464
+99 v2pin A02 COMPLETED 2026-11-17 00:23:05.5347803 2026-11-17 00:38:05.5347803
+100 v2pin A02 COMPLETED 2026-11-17 00:23:07.1720494 2026-11-17 00:38:07.1720494
+101 v2pin A02 COMPLETED 2026-11-17 00:23:09.2794549 2026-11-17 00:38:09.2794549
+102 v2card A02 COMPLETED 2026-11-17 00:23:11.2667531 2026-11-17 00:38:11.2667531
+103 v2card A02 COMPLETED 2026-11-17 00:23:12.4856324 2026-11-17 00:38:12.4856324
+104 v2card A02 COMPLETED 2026-11-17 00:23:13.9597742 2026-11-17 00:38:13.9597742
+105 v2fp A02 COMPLETED 2026-11-17 00:23:15.6264021 2026-11-17 00:38:15.6264021
+106 v2fp A02 COMPLETED 2026-11-17 00:23:16.2719655 2026-11-17 00:38:16.2719655
+107 v2pin A02 COMPLETED 2026-11-17 00:25:21.8792101 2026-11-17 00:40:21.8792101
+108 v2pin A02 COMPLETED 2026-11-17 00:25:24.1315327 2026-11-17 00:40:24.1315327
+109 v2pin A02 CANCELLED 2026-11-17 00:25:27.5487952 2026-11-17 00:40:27.5487952
+110 v2card A02 ACTIVE 2026-11-17 00:27:06.4379769 2026-11-17 00:42:06.4379769
+-- Device LOCKER-01 now
+device_code status last_seen firmware now_utc
+----------- ------ --------- -------- -------
+LOCKER-01 ACTIVE 2026-11-17 00:27:03.1423159 sim-1.0 2026-11-17 00:27:09.6930240
+# deposit and slot after the PIN:
+deposit_id status slot_code slot_status
+---------- ------ --------- -----------
+110 ACTIVE A02 OCCUPIED
+################ scenario heartbeat - start (DB UTC) 2026-11-17T00:27:09.325
+POST /health -> HTTP 200
+{"interval_sec":3,"commands":[],"server_time":"2026-11-17 00:27:09","blocked_cards":["04A1B2C3","04DE0012","04E1F205","CFEC8AFC"],"reserved":[{"slot_code":"A04","card_uid":"04E1F210"}]}
+POST /health -> HTTP 200
+{"interval_sec":3,"commands":[],"server_time":"2026-11-17 00:27:20","blocked_cards":["04A1B2C3","04DE0012","04E1F205","CFEC8AFC"],"reserved":[{"slot_code":"A04","card_uid":"04E1F210"}]}
+POST /health -> HTTP 200
+{"interval_sec":3,"commands":[],"server_time":"2026-11-17 00:27:30","blocked_cards":["04A1B2C3","04DE0012","04E1F205","CFEC8AFC"],"reserved":[{"slot_code":"A04","card_uid":"04E1F210"}]}
+POST /health -> HTTP 200
+{"interval_sec":3,"commands":[],"server_time":"2026-11-17 00:27:40","blocked_cards":["04A1B2C3","04DE0012","04E1F205","CFEC8AFC"],"reserved":[{"slot_code":"A04","card_uid":"04E1F210"}]}
+POST /health -> HTTP 200
+{"interval_sec":3,"commands":[],"server_time":"2026-11-17 00:27:50","blocked_cards":["04A1B2C3","04DE0012","04E1F205","CFEC8AFC"],"reserved":[{"slot_code":"A04","card_uid":"04E1F210"}]}
+POST /health -> HTTP 200
+{"interval_sec":3,"commands":[],"server_time":"2026-11-17 00:28:00","blocked_cards":["04A1B2C3","04DE0012","04E1F205","CFEC8AFC"],"reserved":[{"slot_code":"A04","card_uid":"04E1F210"}]}
+# last beat sent; polling Device.status every 1 s
+OFFLINE observed: OFFLINE 2026-11-17T00:28:00.113 2026-11-17T00:29:40.349 100236 (status, last_seen, now, ms since last beat)
+-- LockerSession (+ label) ingested since 2026-11-17 00:27:09.3250000
+session_id device_code device_seq ingested_at slot_code card_uid open_source command_id door_open_sec weight_delta_g rfid_ok session_label
+---------- ----------- ---------- ----------- --------- -------- ----------- ---------- ------------- -------------- ------- -------------
+-- Alert since
+alert_id device_code session_id source label risk_score status created_at
+-------- ----------- ---------- ------ ----- ---------- ------ ----------
+22 LOCKER-01 NULL RULE DEVICE_OFFLINE NULL OPEN 2026-11-17 00:29:39.6142326
+-- AlertEvidence of those alerts
+alert_id item value_text
+-------- ---- ----------
+22 last_seen_utc 2026-11-17 00:28:00
+-- MaintenanceTicket opened since
+ticket_id alert_id device_code status opened_at note
+--------- -------- ----------- ------ --------- ----
+-- RemoteCommand created since
+command_id device_code slot_id action status source created_at sent_at done_at session_id
+---------- ----------- ------- ------ ------ ------ ---------- ------- ------- ----------
+-- Deposit changes (CANT-A)
+deposit_id username slot_code status reserved_at hold_until
+---------- -------- --------- ------ ----------- ----------
+75 student3 A01 ACTIVE 2026-11-16 23:19:24.5696112 NULL
+85 student19 A05 COMPLETED 2026-11-16 21:39:24.5696112 NULL
+90 student18 A04 RESERVED 2026-11-17 00:15:24.5696112 2026-11-17 00:30:24.5696112
+91 v2noshow A15 COMPLETED 2026-11-17 00:19:25.4389775 2026-11-17 00:18:25.4419753
+92 v3overdue A08 COMPLETED 2026-11-16 20:04:25.5157558 2026-11-17 00:34:25.5009944
+93 v3late A12 CANCELLED 2026-11-17 00:13:25.5177622 2026-11-17 00:49:25.5177622
+95 v2noshow A15 ACTIVE 2026-11-17 00:22:56.4441821 2026-11-17 00:21:56.4471752
+96 v3overdue A08 COMPLETED 2026-11-16 20:07:56.5383459 2026-11-17 00:37:56.5233405
+97 v3late A12 CANCELLED 2026-11-17 00:16:56.5403464 2026-11-17 00:52:56.5403464
+99 v2pin A02 COMPLETED 2026-11-17 00:23:05.5347803 2026-11-17 00:38:05.5347803
+100 v2pin A02 COMPLETED 2026-11-17 00:23:07.1720494 2026-11-17 00:38:07.1720494
+101 v2pin A02 COMPLETED 2026-11-17 00:23:09.2794549 2026-11-17 00:38:09.2794549
+102 v2card A02 COMPLETED 2026-11-17 00:23:11.2667531 2026-11-17 00:38:11.2667531
+103 v2card A02 COMPLETED 2026-11-17 00:23:12.4856324 2026-11-17 00:38:12.4856324
+104 v2card A02 COMPLETED 2026-11-17 00:23:13.9597742 2026-11-17 00:38:13.9597742
+105 v2fp A02 COMPLETED 2026-11-17 00:23:15.6264021 2026-11-17 00:38:15.6264021
+106 v2fp A02 COMPLETED 2026-11-17 00:23:16.2719655 2026-11-17 00:38:16.2719655
+107 v2pin A02 COMPLETED 2026-11-17 00:25:21.8792101 2026-11-17 00:40:21.8792101
+108 v2pin A02 COMPLETED 2026-11-17 00:25:24.1315327 2026-11-17 00:40:24.1315327
+109 v2pin A02 CANCELLED 2026-11-17 00:25:27.5487952 2026-11-17 00:40:27.5487952
+110 v2card A02 ACTIVE 2026-11-17 00:27:06.4379769 2026-11-17 00:42:06.4379769
+-- Device LOCKER-01 now
+device_code status last_seen firmware now_utc
+----------- ------ --------- -------- -------
+LOCKER-01 OFFLINE 2026-11-17 00:28:00.1136186 sim-1.0 2026-11-17 00:29:40.4772681
+# heartbeat: DEVICE_OFFLINE alert 22 created 99.5 s after last_seen of the last beat (2026-11-17T00:28:00.113 -> 00:29:39.614)

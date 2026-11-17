@@ -1,0 +1,15 @@
+# newman-6.log - Postman/newman rerun on the test stack (Tomcat 8081, database SL_R30, commit fd05eb9 code)
+# command: powershell -ExecutionPolicy Bypass -File scripts/proof/newman.ps1 -Database SL_R30 -Out <tmp>  (runs sql/test_setup.sql, then newman with docs/postman/SmartLocker-v2.postman_collection.json, api_key = public seed key)
+# the full JSON report is kept outside git (docs/paper/evidence/newman*.json is gitignored)
+started 2026-11-17T00:23:02.356000Z completed 2026-11-17T00:25:30.963000Z duration_s 148.6
+iterations         total    1 failed 0
+items              total  241 failed 0
+scripts            total  260 failed 0
+prerequests        total  241 failed 0
+requests           total  241 failed 0
+tests              total  241 failed 0
+assertions         total  514 failed 0
+testScripts        total  241 failed 0
+prerequestScripts  total   19 failed 0
+failures 0
+numbered scenarios (Scenarios + v3 folders): 19

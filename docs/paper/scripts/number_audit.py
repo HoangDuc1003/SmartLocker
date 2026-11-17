@@ -147,6 +147,15 @@ def main():
     log_items.update({"500": ("newman.log", "HTTP 500"), "11400": ("machine.log", "i5-11400H"),
                       "2.7": ("machine.log", "2.70GHz"), "9.0": ("README.md", "Tomcat 9.0.113"),
                       "3.8": ("README.md", "Weka")})
+    # 17 Nov 2026 rerun on the test stack (SL_R30, port 8081)
+    for f in ("newman-6.log", "scenarios-2.log", "latency-2.log", "ml-2.log", "testng-5.log"):
+        logs[f] = open(P("docs", "paper", "evidence", f), encoding="utf-8", errors="replace").read()
+    log_items.update({"241": ("newman-6.log", "requests           total  241"),
+                      "514": ("newman-6.log", "assertions         total  514"),
+                      "29": ("newman-6.log", "duration_s 148.6"),  # 2 min 29 s
+                      "99.5": ("scenarios-2.log", "created 99.5 s after"),
+                      "120.9": ("latency-2.log", "VALID t+120.9 s ACCEPTED"),
+                      "83": ("testng-5.log", "Total tests run: 83, Passes: 83")})
     for k, (f, lit) in log_items.items():
         if lit in logs[f]:
             reg.setdefault(k, "LOG " + f)

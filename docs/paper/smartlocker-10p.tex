@@ -122,7 +122,7 @@ a secondary signal and raises an alert for sessions that no rule explains. On sy
 four Weka classifiers made almost all of its errors between wrong-user and normal sessions, which share the same
 telemetry by construction; identity is therefore checked by rule, and the score should be trusted only once real
 sessions are available. All 83 automated tests and the replayed detection scenarios passed, and the median server
-processing time of a device request was 6 to 16~ms per endpoint on a local laptop (maximum 102.7~ms). In a
+processing time of a device request was 8 to 16~ms per endpoint on a local laptop (maximum 38.6~ms). In a
 pre-deployment simulation of 100 sessions sent through the live device API, a multi-sensor rule prototype reached a
 macro-F1 of 0.780 against 0.658 for a partial-parity rule comparator, but missed most tamper sessions and stayed below a
 learned decision tree (0.980); its distributions are assumed, so it does not predict field performance.
@@ -648,12 +648,11 @@ J48 (C4.5) \cite{quinlan1993c45}, Naive Bayes \cite{john1995nb} and IBk with $k 
 evaluated by stratified 10-fold cross-validation \cite{kohavi1995cv} (seed 42) on the six-class problem and on a binary
 NORMAL-versus-ABNORMAL task that measures the risk-score decision. Experiments ran on an Intel
 Core i5-11400H laptop (2.7~GHz, 6 cores, 16~GB RAM, Windows~11) with JDK 1.8.0\_202, Weka 3.8.6, Tomcat 9.0.113 and SQL
-Server 2022. The measurements come from different code states, which are not interchangeable because the device API,
-data-access layer and rule engine changed between them: the Weka study, response times, replayed scenarios and Postman
-runs were measured on 30 October 2026 on commit \texttt{\baselinecommit} with uncommitted changes in the working tree;
-the 83 tests were run on 17 November 2026 and the code counts refer to commit \texttt{\revisioncommit}, whose source,
-tests and SQL scripts the final commit leaves unchanged; and the simulation of Section~\ref{sec:sim_eval} was
-executed on 16 November 2026 (UTC) on the same code with the second generator.
+Server 2022. The Weka study, the 83 tests, the Postman runs, the replayed scenarios and the response times were all
+run on 17 November 2026 on commit \texttt{\revisioncommit}, whose source, tests and SQL scripts the final commit leaves
+unchanged, against a freshly built test database; the Weka metrics equal those of an earlier run on 30 October 2026.
+The code counts refer to the same commit, and the simulation of Section~\ref{sec:sim_eval} was executed on
+16 November 2026 (UTC) on the same code with the second generator.
 
 \subsection{Classification Results}
 
@@ -791,11 +790,11 @@ rule engine (14 tests), the risk scorer, pricing, the audit hash chain, the devi
 \texttt{\revisioncommit}), all 83 passed and none was skipped. Of these, 47 run in memory and 36
 test database procedures and HTTP endpoints.
 
-\textit{API scenarios} (Postman/newman). Eighteen scenarios cover the four opening methods, lost cards, invalid
-inputs, lockout, no-show, overdue, top-up, cancellation, escalation, extension and repeated opens. The first run failed one assertion (HTTP 500 for a slot code shared by two banks); the server now resolves the bank
-or rejects the session as \texttt{AMBIGUOUS\_SLOT}. Both later runs on 30 October
-2026 (2~min 24~s and 2~min 27~s, with this fix deployed from the working tree) executed 221 requests and 472
-assertions without a failure.
+\textit{API scenarios} (Postman/newman). Nineteen scenarios cover the four opening methods, phone NFC taps, lost
+cards, invalid inputs, lockout, no-show, overdue, top-up, cancellation, escalation, extension and repeated opens. An
+earlier run failed one assertion (HTTP 500 for a slot code shared by two banks); the server now resolves the bank or
+rejects the session as \texttt{AMBIGUOUS\_SLOT}. The final run (2~min 29~s) executed 241 requests and 514 assertions
+without a failure.
 
 \textit{Audit-chain integrity tests.} A read-only export of the audit chain of the simulation database (1\,343
 entries, 9 of them written when Tomcat started) passed the chain verification and was then altered in seven ways, 20
@@ -822,7 +821,7 @@ command, and the \emph{checkin} case sends the PIN to \texttt{/api/device/auth},
 Scenario & Input & Expected & Observed \\
 \midrule
 \addlinespace[2pt]
-heartbeat & 6 heartbeats 10~s apart, then silence & DEVICE\_OFFLINE in 90 to 105~s & \texttt{OFFLINE} and alert after 104.6~s \\[2pt]
+heartbeat & 6 heartbeats 10~s apart, then silence & DEVICE\_OFFLINE in 90 to 105~s & \texttt{OFFLINE} and alert after 99.5~s \\[2pt]
 remote    & staff remote open reported with command id, then replayed & STAFF\_OPEN; replay SUSPECTED\_SPOOF & command \texttt{DONE}; replay \texttt{SUSPECTED\_SPOOF} \\[2pt]
 spoof     & remote session with an unissued command id & SUSPECTED\_SPOOF & \texttt{SUSPECTED\_SPOOF} \\[2pt]
 lostcard  & card reported lost, then used at the box & LOST\_CARD\_USED & \texttt{LOST\_CARD\_USED}; card blocked \\[2pt]
@@ -935,30 +934,30 @@ next to the thresholds of B1-P, so J48 labelled all its sessions correctly from 
 
 Table~\ref{tab:latency} covers only server processing of the device API, without the real box: 30 requests per
 endpoint were sent with curl from the same laptop after one warm-up request, excluding Wi-Fi, credential reading and
-servo movement. The PIN requests (valid PIN, intent \texttt{ASK}) modify no data. The phone-page endpoint had a long tail (mean
-31.1~ms, maximum 102.7~ms). These are descriptive values for one laptop; a phone-page open also waits for the next 3~s heartbeat, which dominates
+servo movement. The PIN requests (valid PIN, intent \texttt{ASK}) modify no data. The median was 7.6 to 16.0~ms per endpoint and no
+request took longer than 38.6~ms. These are descriptive values for one laptop; a phone-page open also waits for the next 3~s heartbeat, which dominates
 the user's waiting time.
 
 \begin{table}[!htbp]
 \renewcommand{\arraystretch}{1.02}
 \centering
 \small
-\caption{Server Processing Time of the Device API (localhost, curl, 30 Requests Each, 30 October 2026, ms).}
+\caption{Server Processing Time of the Device API (localhost, curl, 30 Requests Each, 17 November 2026, ms).}
 \label{tab:latency}
 \vspace{5pt}
 \begin{tabular}{l c c c c}
 \hline
 Request & Median & Min & Max & Mean \\
 \hline
-\rule{0pt}{2.6ex}Heartbeat (\texttt{/api/health})                     & 6.0  & 4.6  & 7.3   & 5.9 \\
-PIN at the box (\texttt{/api/device/auth})           & 15.8 & 14.1 & 48.0  & 17.0 \\
-PIN on the phone page (\texttt{/api/kiosk/unlock})   & 16.2 & 13.4 & 102.7 & 31.1 \\
+\rule{0pt}{2.6ex}Heartbeat (\texttt{/api/health})                     & 7.6  & 5.3  & 26.6  & 8.2 \\
+PIN at the box (\texttt{/api/device/auth})           & 16.0 & 14.0 & 21.1  & 16.7 \\
+PIN on the phone page (\texttt{/api/kiosk/unlock})   & 15.9 & 14.2 & 38.6  & 16.9 \\
 \hline
 \end{tabular}
 \end{table}
 
 The fifth wrong PIN started a 120~s lock (\texttt{LOCKED\_OUT}) that also refused the valid PIN, accepted again
-125.5~s after the lock started.
+120.9~s after the lock started (polled about once per second).
 
 \subsection{Threats to Validity and Limitations}
 \label{sec:limits}
@@ -994,8 +993,8 @@ use an \texttt{X-API-Key} and browsers a session cookie, without mutual TLS; the
 \section{Conclusion}
 
 SmartLocker leaves every access decision of its ESP32 box to a server-side, priority-ordered rule tier with a
-tamper-evident audit log; every replayed scenario gave the expected label, and median server processing was 6 to
-16~ms per device endpoint (maximum 102.7~ms). Telemetry alone could not separate wrong-user from normal access, so
+tamper-evident audit log; every replayed scenario gave the expected label, and median server processing was 8 to
+16~ms per device endpoint (maximum 38.6~ms). Telemetry alone could not separate wrong-user from normal access, so
 identity is checked by rule. In a simulation through the live device API, a multi-sensor rule prototype beat a
 partial-parity comparator (macro-F1 0.780 against 0.658) but found only 5 of 20 tamper sessions and stayed below a
 learned tree (0.980). Future work: door switch, load cell, accelerometer, campus sessions, an external chain anchor, CSRF tokens and TLS validation.

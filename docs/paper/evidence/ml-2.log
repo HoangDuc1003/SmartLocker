@@ -1,0 +1,79 @@
+# ml-2.log - 2026-11-17T00:22:43Z UTC
+# Rerun of ml.log on commit fc87950 (src unchanged since fd05eb9); same harness docs/paper/evidence/harness/MlEvidence.java, compiled to a temp dir
+# run: java -cp "<tmp>;build/classes;web/WEB-INF/lib/*;lib/*" MlEvidence
+query: SELECT door_open_sec, weight_delta_g, unlock_count, rfid_ok, stay_min, label FROM PublicSession WHERE label IS NOT NULL
+rows=480 class counts={FORCED_OPEN=80, ITEM_LEFT=80, NORMAL=80, OVERDUE=80, SUSPECTED_SPOOF=80, WRONG_USER=80}
+java=1.8.0_202 weka=3.8.6
+
+== six classes (480 rows, 10-fold CV, new Random(42)) ==
+model           accuracy  precision   recall       f1     train_ms   infer_us/row
+RandomForest      0.9479     0.9494   0.9479   0.9478  31.4(1st  38.4)      11.69
+-- confusion matrix RandomForest --
+  a  b  c  d  e  f   <-- classified as
+ 80  0  0  0  0  0 |  a = FORCED_OPEN
+  0 63  0  0  0 17 |  b = WRONG_USER
+  0  0 80  0  0  0 |  c = OVERDUE
+  0  0  0 80  0  0 |  d = ITEM_LEFT
+  0  0  0  0 80  0 |  e = SUSPECTED_SPOOF
+  0  8  0  0  0 72 |  f = NORMAL
+
+   F1[FORCED_OPEN] = 1.0000
+   F1[WRONG_USER] = 0.8344
+   F1[OVERDUE] = 1.0000
+   F1[ITEM_LEFT] = 1.0000
+   F1[SUSPECTED_SPOOF] = 1.0000
+   F1[NORMAL] = 0.8521
+J48               0.8563     0.8565   0.8563   0.8558   5.9(1st   7.8)       0.35
+NaiveBayes        0.7792     0.7775   0.7792   0.7775   0.6(1st   0.6)      10.70
+IBk               0.9771     0.9775   0.9771   0.9771   0.1(1st   0.1)      13.72
+-- confusion matrix IBk --
+  a  b  c  d  e  f   <-- classified as
+ 80  0  0  0  0  0 |  a = FORCED_OPEN
+  0 73  0  0  0  7 |  b = WRONG_USER
+  0  0 80  0  0  0 |  c = OVERDUE
+  0  0  0 79  1  0 |  d = ITEM_LEFT
+  0  0  0  0 80  0 |  e = SUSPECTED_SPOOF
+  0  3  0  0  0 77 |  f = NORMAL
+
+   F1[FORCED_OPEN] = 1.0000
+   F1[WRONG_USER] = 0.9359
+   F1[OVERDUE] = 1.0000
+   F1[ITEM_LEFT] = 0.9937
+   F1[SUSPECTED_SPOOF] = 0.9938
+   F1[NORMAL] = 0.9390
+
+== binary NORMAL vs ABNORMAL, labels in order of appearance (480 rows, 10-fold CV, new Random(42)) ==
+model           accuracy  precision   recall       f1     train_ms   infer_us/row
+RandomForest      0.9396     0.9422   0.9396   0.9406  31.8(1st  27.2)       9.30
+J48               0.8313     0.8915   0.8313   0.8476   0.8(1st   1.1)       0.12
+NaiveBayes        0.8333     0.9167   0.8333   0.8519   0.2(1st   0.2)       2.15
+-- binary confusion matrix NaiveBayes --
+   a   b   <-- classified as
+ 320  80 |   a = ABNORMAL
+   0  80 |   b = NORMAL
+
+IBk               0.9750     0.9762   0.9750   0.9754   0.1(1st   0.1)       9.63
+
+== binary NORMAL vs ABNORMAL, label order {NORMAL, ABNORMAL} (480 rows, 10-fold CV, new Random(42)) ==
+model           accuracy  precision   recall       f1     train_ms   infer_us/row
+RandomForest      0.9375     0.9406   0.9375   0.9387  27.6(1st  29.8)       8.29
+J48               0.8313     0.8915   0.8313   0.8476   0.3(1st   0.3)       0.05
+NaiveBayes        0.8333     0.9167   0.8333   0.8519   0.2(1st   0.2)       1.69
+-- binary confusion matrix NaiveBayes --
+   a   b   <-- classified as
+  80   0 |   a = NORMAL
+  80 320 |   b = ABNORMAL
+
+IBk               0.9750     0.9762   0.9750   0.9754   0.1(1st   0.2)      11.16
+
+== binary NORMAL vs ABNORMAL, label order {ABNORMAL, NORMAL} (480 rows, 10-fold CV, new Random(42)) ==
+model           accuracy  precision   recall       f1     train_ms   infer_us/row
+RandomForest      0.9396     0.9422   0.9396   0.9406  27.7(1st  27.3)       8.70
+J48               0.8313     0.8915   0.8313   0.8476   0.3(1st   0.4)       0.05
+NaiveBayes        0.8333     0.9167   0.8333   0.8519   0.1(1st   0.1)       1.63
+-- binary confusion matrix NaiveBayes --
+   a   b   <-- classified as
+ 320  80 |   a = ABNORMAL
+   0  80 |   b = NORMAL
+
+IBk               0.9750     0.9762   0.9750   0.9754   0.1(1st   0.1)       9.65
