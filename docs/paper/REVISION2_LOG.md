@@ -1100,3 +1100,6 @@ Web prerequisites of the 30-Oct scenarios were done with the procedures the cont
 ### Session B follow-up 6: line-by-line review fixes (2026-11-17)
 - VI.A: the Weka study read the 480 training rows from PRJ301_LOCKER (read-only, via DbContext default), not from a test database; sentence corrected. Acknowledgment: "They used" -> "The authors used". VI.F: table no longer the sentence subject; lockout sentence merged into the latency paragraph. References: Shahin moved after DeMedeiros so numbers follow first citation. Threats: "parameter table".
 - Build `R2_BUILD_20261117T014629Z`: 10 pages, 0 overfull, no undefined references, number audit 336 tokens 0 FAIL, pages 7, 9, 10 inspected; PDF SHA-256 `375c3f5a8930cf41662b98cb5c0b0f14dd3ef43185a7809c82a3996710b7ae7f`.
+
+### Session B follow-up 7: abstract with fewer numbers (2026-11-17)
+- Abstract now keeps only: all tests and scenarios passed, every device request within 40 ms (max measured 38.6 ms), and macro-F1 0.780 vs 0.658; dropped 83, 8 to 16 ms, 100 sessions and 0.980. Build `R2_BUILD_20261117T014839Z`: 10 pages, 0 overfull, number audit 331 tokens 0 FAIL, page 1 inspected; PDF SHA-256 `4d4cbfb1afec2dda5b64df564a8514eac009d646545f0748cda2b08a5c685dd4`.

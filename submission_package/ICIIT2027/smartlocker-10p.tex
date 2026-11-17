@@ -121,11 +121,10 @@ forced opening, wrong-user access, items left behind and overdue storage. A mach
 a secondary signal and raises an alert for sessions that no rule explains. On synthetic labelled sessions, the best of
 four Weka classifiers made almost all of its errors between wrong-user and normal sessions, which share the same
 telemetry by construction; identity is therefore checked by rule, and the score should be trusted only once real
-sessions are available. All 83 automated tests and the replayed detection scenarios passed, and the median server
-processing time of a device request was 8 to 16~ms per endpoint on a local laptop (maximum 38.6~ms). In a
-pre-deployment simulation of 100 sessions sent through the live device API, a multi-sensor rule prototype reached a
-macro-F1 of 0.780 against 0.658 for a partial-parity rule comparator, but missed most tamper sessions and stayed below a
-learned decision tree (0.980); its distributions are assumed, so it does not predict field performance.
+sessions are available. All automated tests and the replayed detection scenarios passed, and every device request was answered within 40~ms on a
+local laptop. In a pre-deployment simulation sent through the live device API, a multi-sensor rule prototype outperformed a
+partial-parity rule comparator (macro-F1 0.780 against 0.658) but missed most tamper sessions and stayed below a learned
+decision tree; because the simulated distributions are assumed, these results do not predict field performance.
 \end{abstract}
 
 \begin{IEEEkeywords}

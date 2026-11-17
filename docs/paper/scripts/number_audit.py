@@ -183,6 +183,7 @@ def main():
     t13 = "approved table 1.3 / choices 1-7 (REVISION2_LOG 'Simulator v2 rationale'; experiments/v2/generator_v2.py)"
     context.update({k: t13 for k in ("0.5", "0.7", "0.8", "0.9", "1.0", "0.30", "0.50", "85", "150", "350", "24000",
                                      "16.0", "2.9", "50", "2000", "15000")})
+    context["40"] = "upper bound of all measured device-request times (max 38.6 ms, latency-2.log)"
     context["99"] = "99/100 transport gate (experiments/runs/RUN_20261116_171508_SEED42_V2_SL_SIM/execution_summary.json)"
     context["3.27"] = "SIM-SESS-098 network_latency_ms 3269.98 (sessions.csv)"
     context["9"] = "nine / 9 audit rows written at Tomcat start (REVISION2_LOG A1: 1334 -> 1343)"
