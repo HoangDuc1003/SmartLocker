@@ -1096,3 +1096,7 @@ Test stack only: database `SL_R30` (`scripts/proof/build-db.ps1 -TestSetup`), To
 | Lockout: valid PIN accepted again after | 125.5 s | 120.9 s (polled ~1 s) | `evidence/latency-2.log` |
 | 6 replayed scenarios | all expected; heartbeat OFFLINE + alert 104.6 s | all expected; heartbeat 99.5 s | `evidence/scenarios-2.log` `7d5e459d…` |
 Web prerequisites of the 30-Oct scenarios were done with the procedures the controllers call (`UserCard_ReportLost`, `RemoteCommand_Create`, `Deposit_Reserve`); ScenarioSender only had BASE_URL changed to 8081 (temp copy). Paper updated (abstract, VI.A, VI.D, Table V, VI.F, Table VIII, conclusion); `latency_recompute.py` now reads `latency-2.log`; number audit 335 tokens, 0 FAIL; build `R2_BUILD_20261117T003124Z`, 10 pages, PDF SHA-256 `e0923e0b85852fe6c5ef650f45b57e07263ee642739fbff1bb1a074955aba9a5`.
+
+### Session B follow-up 6: line-by-line review fixes (2026-11-17)
+- VI.A: the Weka study read the 480 training rows from PRJ301_LOCKER (read-only, via DbContext default), not from a test database; sentence corrected. Acknowledgment: "They used" -> "The authors used". VI.F: table no longer the sentence subject; lockout sentence merged into the latency paragraph. References: Shahin moved after DeMedeiros so numbers follow first citation. Threats: "parameter table".
+- Build `R2_BUILD_20261117T014629Z`: 10 pages, 0 overfull, no undefined references, number audit 336 tokens 0 FAIL, pages 7, 9, 10 inspected; PDF SHA-256 `375c3f5a8930cf41662b98cb5c0b0f14dd3ef43185a7809c82a3996710b7ae7f`.

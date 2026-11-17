@@ -650,7 +650,8 @@ NORMAL-versus-ABNORMAL task that measures the risk-score decision. Experiments r
 Core i5-11400H laptop (2.7~GHz, 6 cores, 16~GB RAM, Windows~11) with JDK 1.8.0\_202, Weka 3.8.6, Tomcat 9.0.113 and SQL
 Server 2022. The Weka study, the 83 tests, the Postman runs, the replayed scenarios and the response times were all
 run on 17 November 2026 on commit \texttt{\revisioncommit}, whose source, tests and SQL scripts the final commit leaves
-unchanged, against a freshly built test database; the Weka metrics equal those of an earlier run on 30 October 2026.
+unchanged; the tests, Postman runs, scenarios and response times used freshly built test databases, and the Weka study
+read the 480 training rows, with metrics equal to those of an earlier run on 30 October 2026.
 The code counts refer to the same commit, and the simulation of Section~\ref{sec:sim_eval} was executed on
 16 November 2026 (UTC) on the same code with the second generator.
 
@@ -932,11 +933,11 @@ next to the thresholds of B1-P, so J48 labelled all its sessions correctly from 
 \subsection{Server-Side Response Time}
 \label{sec:latency}
 
-Table~\ref{tab:latency} covers only server processing of the device API, without the real box: 30 requests per
+Only the server processing of the device API was timed, without the real box (Table~\ref{tab:latency}): 30 requests per
 endpoint were sent with curl from the same laptop after one warm-up request, excluding Wi-Fi, credential reading and
 servo movement. The PIN requests (valid PIN, intent \texttt{ASK}) modify no data. The median was 7.6 to 16.0~ms per endpoint and no
 request took longer than 38.6~ms. These are descriptive values for one laptop; a phone-page open also waits for the next 3~s heartbeat, which dominates
-the user's waiting time.
+the user's waiting time. The fifth wrong PIN started a 120~s lock (\texttt{LOCKED\_OUT}) that also refused the valid PIN, accepted again 120.9~s after the lock started (polled about once per second).
 
 \begin{table}[!htbp]
 \renewcommand{\arraystretch}{1.02}
@@ -956,9 +957,6 @@ PIN on the phone page (\texttt{/api/kiosk/unlock})   & 15.9 & 14.2 & 38.6  & 16.
 \end{tabular}
 \end{table}
 
-The fifth wrong PIN started a 120~s lock (\texttt{LOCKED\_OUT}) that also refused the valid PIN, accepted again
-120.9~s after the lock started (polled about once per second).
-
 \subsection{Threats to Validity and Limitations}
 \label{sec:limits}
 
@@ -968,7 +966,7 @@ assumptions, not real lockers (sampling bias, P1 \cite{arp2022dos}). The second 
 knew the B1-P thresholds, and three parameters lie within $\pm$20\% of one: the forced-door vibration median (0.50~g
 against 0.45~g), the shock clip (16.0~g, equal to the 16~g threshold as both equal the sensor range) and the timeout
 delay range (2\,000 to 15\,000~ms, containing 5\,000~ms); the influence of knowing the thresholds has not been ruled
-out (data snooping, P3). Cells the table left open (stay time, ultrasonic distance, fault magnitudes, normal
+out (data snooping, P3). Cells the parameter table left open (stay time, ultrasonic distance, fault magnitudes, normal
 distributions for unnamed classes, giving hammer, tilt and spoof tampering normal vibration) were chosen by the
 implementing AI agent before the freeze and ratified by the authors after the run, so they are not preregistered;
 they may lower tamper recall, which is then not a detector property. B0 has partial parity, and a learned tree outperforms B1-P (inappropriate baseline, P6). Earlier labels
@@ -1001,7 +999,7 @@ learned tree (0.980). Future work: door switch, load cell, accelerometer, campus
 
 \section*{Acknowledgment}
 
-The authors thank FPT University and the instructors. They used the AI assistant
+The authors thank FPT University and the instructors. The authors used the AI assistant
 Claude (Anthropic) to edit the English text, check the \LaTeX{} source and draw Fig.~\ref{fig:arch} to
 Fig.~\ref{fig:eval}, and AI coding agents including Claude Code (Anthropic) to write parts of the simulation,
 evaluation and audit scripts, execute the scripted runs under the authors' supervision and draft the parameter
@@ -1040,14 +1038,14 @@ C.~Bharatiraja, P.~K.~Chittoor, and Y.~V.~Bhargava, ``An IoT based centralized s
 \bibitem{mitrokotsa2010rfid}
 A.~Mitrokotsa, M.~R.~Rieback, and A.~S.~Tanenbaum, ``Classifying RFID attacks and defenses,'' \emph{Information Systems Frontiers}, vol.~12, no.~5, pp.~491 to 505, 2010, doi: 10.1007/s10796-009-9210-z.
 
-\bibitem{shahin2025twostage}
-M.~Shahin, A.~Hosseinzadeh, and F.~F.~Chen, ``A two-stage hybrid federated learning framework for privacy-preserving IoT anomaly detection and classification,'' \emph{IoT}, vol.~6, no.~3, p.~48, 2025, doi: 10.3390/iot6030048.
-
 \bibitem{chandola2009anomaly}
 V.~Chandola, A.~Banerjee, and V.~Kumar, ``Anomaly detection: A survey,'' \emph{ACM Computing Surveys}, vol.~41, no.~3, pp.~15:1 to 15:58, 2009, doi: 10.1145/1541880.1541882.
 
 \bibitem{demedeiros2023anomaly}
 K.~DeMedeiros, A.~Hendawi, and M.~Alvarez, ``A survey of AI-based anomaly detection in IoT and sensor networks,'' \emph{Sensors}, vol.~23, no.~3, p.~1352, Jan. 2023, doi: 10.3390/s23031352.
+
+\bibitem{shahin2025twostage}
+M.~Shahin, A.~Hosseinzadeh, and F.~F.~Chen, ``A two-stage hybrid federated learning framework for privacy-preserving IoT anomaly detection and classification,'' \emph{IoT}, vol.~6, no.~3, p.~48, 2025, doi: 10.3390/iot6030048.
 
 \bibitem{sommer2010outside}
 R.~Sommer and V.~Paxson, ``Outside the closed world: On using machine learning for network intrusion detection,'' in \emph{Proc. IEEE Symposium on Security and Privacy}, 2010, pp.~305 to 316, doi: 10.1109/SP.2010.25.
