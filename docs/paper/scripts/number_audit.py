@@ -115,6 +115,48 @@ def main():
     for c in tc["categories"].values():
         reg.setdefault(str(c["attempted"]), "tamper campaign attempted")
         reg.setdefault(str(c["detected"]), "tamper campaign detected")
+    # Production Java verdicts on the live v2 run (java_verdicts.py)
+    jv = latest("R2_JAVA_", "java_verdicts.json")
+    for tier in ("tier1", "tier1_2"):
+        comp(jv[tier]["macro"]["f1"], 3, "production Java %s macro-F1" % tier)
+        comp(jv[tier]["binary_anomaly_positive"]["f1"], 3, "production Java %s binary F1" % tier)
+        for c in jv[tier]["per_class"].values():
+            comp(c["recall"], 3, "production Java %s recall" % tier)
+    reg.setdefault(str(jv["tier1_2"]["verdict_sources"]["ML_ANOMALY"]), "ML_ANOMALY alerts (java_verdicts)")
+    reg.setdefault(str(jv["tier1"]["verdict_sources"]["ITEM_LEFT"]), "ITEM_LEFT alerts (java_verdicts)")
+    reg.setdefault(str(jv["tier1"]["confusion"]["FORCED_DOOR_OPEN"]["FORCED_DOOR_OPEN"]), "Java forced openings correct")
+    mj = jv["mcnemar_binary_java_tier1_2_vs_b1p"]
+    reg.setdefault(str(mj["n01_first_wrong_second_right"]), "McNemar Java tier1+2 wrong, B1-P right")
+    reg.setdefault(str(mj["n10_first_right_second_wrong"]), "McNemar Java tier1+2 right, B1-P wrong")
+    comp(mj["exact_two_sided_p"], 2, "McNemar Java tier1+2 vs B1-P exact p")
+    # Learned baselines and context-only check on seed 42 (Table VII)
+    for name in ("J48", "Logistic"):
+        s42 = b["learned_baselines"][name]["per_seed"][0]
+        comp(s42["macro_f1"], 3, name + " seed42 macro-F1")
+        for v in s42["recall"].values():
+            comp(v, 3, name + " seed42 recall")
+    c42 = b["v2_extra"]["context_only_J48"]["per_seed"][0]
+    comp(c42["macro_f1"], 3, "context-only J48 seed42 macro-F1")
+    for v in c42["recall"].values():
+        comp(v, 3, "context-only J48 seed42 recall")
+    # Sensitivity analysis (sensitivity_v2.py)
+    sv = latest("R2_SENS_", "sensitivity.json")["variants"]
+    d10 = [v["B1P"]["mean"] - v["B0"]["mean"] for v in sv.values()]
+    dj = [v["J48"]["mean"] - v["B1P"]["mean"] for v in sv.values()]
+    b1m = [v["B1P"]["mean"] for v in sv.values()]
+    for x in (min(d10), max(d10), min(dj), max(dj)):
+        comp(x, 2, "sensitivity range of differences")
+    for x in (min(b1m), max(b1m)):
+        comp(x, 3, "sensitivity range of B1-P mean")
+    reg.setdefault(str(len(sv)), "sensitivity variants")
+    reg.setdefault("0.7", "sensitivity scale factor")
+    reg.setdefault("1.3", "sensitivity scale factor")
+    # Concurrency test (tools/load_test, evidence/loadtest.log)
+    lt = open(P("docs", "paper", "evidence", "loadtest.log"), encoding="utf-8").read()
+    for k, lit in (("50", "race A: 50 users"), ("49", "49 REFUSED error=50033"), ("20", "-> 20 slots"),
+                   ("19", "19 REFUSED error=2601")):
+        if lit in lt:
+            reg.setdefault(k, "LOG loadtest.log")
     # Network base latency range of the v2 generator (measured batch round trips)
     rt = latest("R2_LATENCY_", "latency.json")["scopes"]["B_client_round_trip_ms"]["/api/locker/batch"]
     comp(rt["min"], 1, "batch round-trip min (v2 latency pool)")

@@ -164,7 +164,8 @@ No. & Contribution & Where it is shown \\
     lost cards, forced opening, wrong-user access, items left behind and overdue storage, with a hash-chained audit log and a secondary ML risk score. & Section IV \\
 3 & An evaluation with automated tests, replayed scenarios and response times, a classifier comparison on synthetic
     data showing that telemetry alone cannot separate wrong-user from normal access, and a simulated multi-sensor
-    study evaluated with paired statistics, a learned baseline and a retrained ablation. & Section VI \\
+    study that compares the production rules with paired statistics, a learned baseline, an ablation and a
+    sensitivity analysis. & Section VI \\
 \hline
 \end{tabular}
 \end{table}
@@ -474,7 +475,8 @@ The rules of Table~\ref{tab:rules} are evaluated in a fixed order and the first 
 The order is essential: readings from a faulty sensor must not be reported as a break-in, and a legitimate remote open
 by staff or by the phone page must not be reported as a forced opening. The valid sensor ranges (door 0 to 3600~s,
 weight $-200$ to 20\,000~g, stay 0 to 10\,080~min) are stored in the database, so they can be adjusted without
-redeploying the application. Rule 2' is the negative branch of rule 2 and shares its rank.
+redeploying the application. Rule 2' is the negative branch of rule 2 and shares its rank. Column Tests counts the 14 rule-engine
+unit tests ending in each label; S marks rules also reached by a replayed scenario (Section~\ref{sec:functional}).
 
 \begin{table}[!htbp]
 \renewcommand{\arraystretch}{1.18}
@@ -483,20 +485,20 @@ redeploying the application. Rule 2' is the negative branch of rule 2 and shares
 \caption{Detection Rules in Priority Order.}
 \label{tab:rules}
 \vspace{5pt}
-\begin{tabular}{c l p{8.6cm} l}
+\begin{tabular}{c l p{8.1cm} l c}
 \hline
-\# & Label & Condition & Action \\
+\# & Label & Condition & Action & Tests \\
 \hline
-\rule{0pt}{2.6ex}1 & SENSOR\_FAULT & door time, weight change or stay time outside valid range; door open longer than stay; box clock over 300~s ahead; weight calibration expired & Alert, ticket, no ML \\[2pt]
-2 & STAFF\_OPEN & remote or phone open with a valid, unused command for this slot, issued at most 30~min before the session (box clock up to 60~s behind tolerated) & Command done, no alert \\[2pt]
-2' & SUSPECTED\_SPOOF & remote or phone open without a valid, unused command & Alert \\[2pt]
-3 & LOST\_CARD\_USED & the presented card is not active (reported lost or blocked) & Alert \\[2pt]
-4 & FORCED\_OPEN & the door opened locally without an accepted PIN, active card or fingerprint & Alert \\[2pt]
-5 & WRONG\_USER & an active card whose owner is not the owner of the slot booking & Alert \\[2pt]
-6 & SUSPECTED\_SPOOF & the weight changed by more than 50~g while the door time stayed at 0~s (unreported open) & Alert \\[2pt]
-7 & ITEM\_LEFT & the weight in the slot grew by more than 50~g after pick-up & Alert \\[2pt]
-8 & OVERDUE & stay time longer than the plan allows & Alert \\[2pt]
-9 & NORMAL & no rule matched & Tier 2 \\
+\rule{0pt}{2.6ex}1 & SENSOR\_FAULT & door time, weight change or stay time outside valid range; door open longer than stay; box clock over 300~s ahead; weight calibration expired & Alert, ticket, no ML & 3, S \\[2pt]
+2 & STAFF\_OPEN & remote or phone open with a valid, unused command for this slot, issued at most 30~min before the session (box clock up to 60~s behind tolerated) & Command done, no alert & 2, S \\[2pt]
+2' & SUSPECTED\_SPOOF & remote or phone open without a valid, unused command & Alert & 1, S \\[2pt]
+3 & LOST\_CARD\_USED & the presented card is not active (reported lost or blocked) & Alert & 1, S \\[2pt]
+4 & FORCED\_OPEN & the door opened locally without an accepted PIN, active card or fingerprint & Alert & 1 \\[2pt]
+5 & WRONG\_USER & an active card whose owner is not the owner of the slot booking & Alert & 1 \\[2pt]
+6 & SUSPECTED\_SPOOF & the weight changed by more than 50~g while the door time stayed at 0~s (unreported open) & Alert & 1 \\[2pt]
+7 & ITEM\_LEFT & the weight in the slot grew by more than 50~g after pick-up & Alert & 1 \\[2pt]
+8 & OVERDUE & stay time longer than the plan allows & Alert & 1 \\[2pt]
+9 & NORMAL & no rule matched & Tier 2 & 1 \\
 \hline
 \end{tabular}
 \end{table}
@@ -596,7 +598,7 @@ chain consistency in the web UI, and a background job re-verifies the full chain
 integrity alert on the dashboard and pinpoints the broken sequence number. The chain lives in the same database and has
 no external anchor or trusted timestamp, so it cannot reveal removal or addition of the newest entries, nor a database
 administrator who rewrites history and recomputes every hash; it is a tamper-evident log, not a full time-stamping
-protocol (tests in Section~\ref{sec:functional}).
+protocol (tests and a prototype external anchor in Section~\ref{sec:functional}).
 
 \section{Implementation}
 
@@ -665,7 +667,7 @@ model in the six-class setting (0.778).
 \renewcommand{\arraystretch}{1.04}
 \centering
 \small
-\caption{Offline Weka Study (Weighted Averages) and 100-Session Simulation (Macro Averages).}
+\caption{Offline Weka Study on the 480-Row Dataset (Weighted Averages, Stratified 10-Fold Cross-Validation).}
 \label{tab:ml}
 \vspace{4pt}
 \begin{tabular}{l c c c c c c}
@@ -678,16 +680,7 @@ J48 (C4.5)    & 0.856 & 0.857 & 0.856 & 0.856 & 0.831 & 0.848 \\
 Naive Bayes   & 0.779 & 0.778 & 0.779 & 0.778 & 0.833 & 0.852 \\
 IBk ($k=5$)   & 0.977 & 0.978 & 0.977 & 0.977 & 0.975 & 0.975 \\
 \hline
-\rule{0pt}{2.6ex}Simulation, B0 comparator & 0.690 & 0.790 & 0.690 & 0.658 & 0.750 & 0.823 \\
-Simulation, B1-P & 0.800 & 0.868 & 0.800 & 0.780 & 0.810 & 0.871 \\
-\hline
 \end{tabular}
-\\[2pt]
-\parbox{0.92\linewidth}{\footnotesize Weka rows: weighted averages, 480-row dataset, six classes, stratified 10-fold
-cross-validation. Simulation rows: five-class macro averages on the 100 sessions of the seed-42 run of generator
-version~2 (equal to weighted
-averages because each class has 20 sessions; Section~\ref{sec:sim_eval}). Binary F1 is weighted over NORMAL and
-ABNORMAL for the Weka rows and is the F1 of the anomaly class for the simulation rows.}
 \end{table}
 
 \subsection{Discussion}
@@ -802,7 +795,14 @@ times each with a fixed seed (20261116). Modifying a field, deleting an entry, i
 and swapping two adjacent entries inside the chain were detected in 20 of 20 cases each. Appending entries at the
 tail, truncating the tail and a privileged rewrite that recomputes every hash were detected in 0 of 20 cases each, as
 expected for a chain without an external anchor (Section~IV-D). These are deterministic integrity tests of single
-operations, not an estimate of a general detection rate.
+operations, not an estimate of a general detection rate. With a prototype tool that copies the chain head to a
+file outside the database after every ten entries, the campaign detected 20 of 20 privileged rewrites and 18 of 20
+truncations (the two misses removed only entries after the newest anchor); appending stayed undetected (0 of 20).
+
+\textit{Concurrent bookings.} On a test database, 50 users reserved one free slot at the same instant, each on its own
+connection, and one user reserved 20 slots at once. Exactly one call won each race; 49 were refused as slot taken and
+19 by the one-open-booking unique index, which reaches the caller as a raw SQL error, and only the two winners were
+charged.
 
 \textit{Detection scenarios.} A device simulator sends heartbeats, credentials and session uploads signed with the key
 of the real box LOCKER-01, and the database is inspected after each scenario (Table~\ref{tab:scen}). All six scenarios
@@ -843,13 +843,14 @@ before any detector ran on its data and were not changed afterwards. On 16 Novem
 harness sent each credential to \texttt{/api/device/auth} and each session to \texttt{/api/locker/batch} of the local
 Tomcat~9 and SQL Server stack with the key of a simulated box; every expected \texttt{UNLOCK} or \texttt{DENY} was
 returned, all 100 sessions were stored and the replayed sequence numbers were rejected as duplicates; 99 passed the transport
-gate (one simulated timeout drew only 3.27~s). Detection was then computed on the host by two Python detectors,
-neither of which runs in Tomcat.
+gate (one simulated timeout drew only 3.27~s). Detection was computed on the host by two Python detectors that do
+not run in Tomcat, and the verdicts that the production Java path stored for the same sessions were read back.
 \emph{B0} is a reference comparator with partial parity: it re-implements the range, lost-card, forced-open and
 closed-door weight rules of Table~\ref{tab:rules} and the credential result on door time, weight change, credential
 flag and stay time, but omits the command, wrong-user, item-left, overdue, calibration and clock rules and the risk
 score. \emph{B1-P} is a prototype that adds hand-set thresholds on ultrasonic distance, vibration, tilt, shock and
-network latency. Production Java verdicts were not exported or evaluated.
+network latency. Java verdicts use the evaluation's existing label mapping (ITEM\_LEFT and ML\_ANOMALY count as
+errors); a denied credential without alert counts as unauthorized and the two rejected replays as normal.
 
 \begin{table}[!htbp]
 \renewcommand{\arraystretch}{1.02}
@@ -875,59 +876,57 @@ Network (ms) & resampled from 100 measured round trips of \texttt{/api/locker/ba
 \hline
 \end{tabular}
 \\[2pt]
-\parbox{0.92\linewidth}{\footnotesize A class or tamper mode not named in a row uses the first (normal) distribution of
-that row. The noise, drift, outlier and quantization operators of the first generator ($\sigma$ 0.15~s, 3.5~g, 0.015~g, 0.35~g,
-0.25$^\circ$, 1.2~cm) are applied to every latent value; negative
-sentinels model inertial dropouts; the 16~g clip is applied to the scalar peak although the sensor range is per axis.}
+\parbox{0.92\linewidth}{\footnotesize Unnamed classes and modes use the first (normal) distribution of a row; the noise, drift, outlier and quantization operators of the first generator ($\sigma$ 0.15~s, 3.5~g, 0.015~g, 0.35~g, 0.25$^\circ$, 1.2~cm) apply to every latent value; the 16~g clip applies to the scalar peak although the sensor range is per axis.}
 \end{table}
 
 \begin{table}[!htbp]
 \renewcommand{\arraystretch}{1.02}
 \centering
 \small
-\caption{Comparative Evaluation of B0 and B1-P on the 100-Session Simulation (Generator Version~2, Seed 42, Live Run).}
+\caption{Detectors on the 100-Session Simulation (Generator Version~2): Live Seed-42 Run and Five Seeds.}
 \label{tab:b0_vs_b1}
 \vspace{2pt}
-\begin{tabular}{l ccc ccc}
+\begin{tabular}{l c c c c}
 \hline
-Category & \multicolumn{3}{c}{B0 comparator} & \multicolumn{3}{c}{B1-P prototype} \\
- & Prec. & Rec. & F1 & Prec. & Rec. & F1 \\
+Detector & Macro-F1 & Tamper recall & Fault recall & Macro-F1, five seeds \\
 \hline
-\rule{0pt}{2.6ex}Normal Authorized & 0.436 & 0.850 & 0.576 & 0.515 & 0.850 & 0.642 \\
-Unauthorized Credential & 0.800 & 1.000 & 0.889 & 1.000 & 1.000 & 1.000 \\
-Forced Door Opening & 1.000 & 0.950 & 0.974 & 1.000 & 0.950 & 0.974 \\
-Load / Tamper Anomaly & 1.000 & 0.150 & 0.261 & 1.000 & 0.250 & 0.400 \\
-Sensor or Network Fault & 0.714 & 0.500 & 0.588 & 0.826 & 0.950 & 0.884 \\
-\hline
-\rule{0pt}{2.6ex}Overall / Macro & 0.790 & 0.690 & 0.658 & 0.868 & 0.800 & 0.780 \\
+\rule{0pt}{2.6ex}B0 comparator (Python) & 0.658 & 0.150 & 0.500 & $0.610\pm0.038$ \\
+B1-P prototype (Python) & 0.780 & 0.250 & 0.950 & $0.753\pm0.036$ \\
+Production Java, rules only & 0.616 & 0.150 & 0.500 & live run only \\
+Production Java, rules and risk score & 0.475 & 0.150 & 0.500 & live run only \\
+J48, trained on the other seeds & 0.980 & 1.000 & 1.000 & $0.980\pm0.010$ \\
+Logistic regression, same split & 1.000 & 1.000 & 1.000 & $0.990\pm0.014$ \\
+J48 on credential and network fields & 0.546 & 0.000 & 0.250 & $0.537\pm0.022$ \\
 \hline
 \end{tabular}
+\\[2pt]
+\parbox{0.92\linewidth}{\footnotesize Macro-F1 and recall on seed 42; five seeds (42, 101, 202, 303, 404; latent values, credentials, noise and latency vary): mean $\pm$ sample SD, seeds other than 42 offline with the credential outcome the backend returned for all 100 live sessions.}
 \end{table}
 
-In Table~\ref{tab:b0_vs_b1}, B1-P reached a macro-F1 of 0.780 against 0.658 for B0 (accuracy, equal to balanced accuracy here, 0.80 against 0.69). Most of the gain comes from faults (recall 0.950 against 0.500), whose ultrasonic,
-inertial and network symptoms lie outside the inputs of B0. Both detectors miss most tamper sessions (recall 0.150 and 0.250): B1-P labels 15 of the 20
-as normal, whether or not the person holds a card. On the anomaly-versus-normal decision, McNemar's test counts
-$n_{01}=6$ sessions that only B1-P gets right and $n_{10}=0$ that only B0 gets right ($n_{00}=19$, $n_{11}=75$;
-continuity-corrected $\chi^2=4.17$, exact two-sided $p=0.031$); on the five-class decision the counts are 11 and 0
-($p=9.8\times10^{-4}$). A stratified paired bootstrap over the 100 sessions of this run (10\,000 resamples within
-class, seed 20261116) gives $\Delta$macro-F1 $=0.122$ with a 95\% interval of $[0.062, 0.190]$; it describes sampling
-uncertainty within one run. Across five generator seeds (42, 101, 202, 303, 404), which change credentials, latent
-values, noise and latency draws, macro-F1 was $0.610\pm0.038$ for B0 and $0.753\pm0.036$ for B1-P (mean $\pm$ sample
-standard deviation); seeds other than 42 ran offline with the expected credential outcome (the live backend
-returned it for all 100 sessions).
+B1-P reached a macro-F1 of 0.780 against 0.658 for B0 (Table~\ref{tab:b0_vs_b1}). Most of the gain comes from
+faults, whose ultrasonic, inertial and network symptoms lie outside the inputs of B0, while both miss most tamper
+sessions: B1-P labels 15 of the 20 as normal, whether or not the person holds a card. For anomaly versus normal, McNemar's test counts $n_{01}=6$ sessions that only B1-P gets right and $n_{10}=0$ that only B0 gets right
+($n_{00}=19$, $n_{11}=75$; $\chi^2=4.17$ with continuity correction, exact $p=0.031$; five-class: 11 and 0,
+$p=9.8\times10^{-4}$), and a stratified paired bootstrap over the 100 sessions (10\,000 resamples, seed 20261116)
+gives $\Delta$macro-F1 $=0.122$ with a 95\% interval of $[0.062, 0.190]$ (sampling uncertainty within one run).
 
-B1-P is not the best detector for these data. A J48 decision tree trained on the 12 observable inputs of the other four
-seeds reaches a macro-F1 of $0.980\pm0.010$ on the held-out seed (logistic regression $0.990\pm0.014$); on seed 42 it
-is right on 19 sessions where B1-P is wrong and wrong on 2 where B1-P is right ($p=2.2\times10^{-4}$). Retraining J48
-without one feature group at a time gives 0.777 without door and load, 0.881 without the credential context, 0.956
-without network, 0.970 without the inertial and 0.974 without the ultrasonic channel, so door, load and credential
-data carry most of the information, while no single inertial, ultrasonic or network group is needed. Trained on the
-credential and network fields alone, J48 reaches only $0.537\pm0.022$ and finds no tamper session, and no single
-feature separates any class (best one-feature balanced accuracy 0.939).
+The production rules alone reach 0.616: they label all unauthorized sessions and 19 of the 20 forced openings
+correctly, but flag the 8 normal deposits as ITEM\_LEFT, because the simulator keeps no booking state that matches
+the session, and three normal retrievals of more than 200~g as SENSOR\_FAULT, because they fall below the $-200$~g
+bound of the valid weight range. With the risk score, 31 sessions receive an ML\_ANOMALY alert, which carries no
+class, so macro-F1 falls to 0.475, whereas the anomaly-versus-normal F1 rises from 0.770 to 0.870, level with B1-P
+(0.871; McNemar 13 against 11, $p=0.84$).
 
-The first generator (run \texttt{RUN\_20261116\_044130\_SEED42}), kept only as a historical pipeline check, gave 0.621
-for B0 and 0.913 for B1-P, but it fixed context fields per category (every fault had 25~ms latency) and placed cases
-next to the thresholds of B1-P, so J48 labelled all its sessions correctly from context fields alone.
+B1-P is not the best detector for these data either: J48 trained on the 12 observable inputs of the other four seeds
+is right on 19 seed-42 sessions where B1-P is wrong and wrong on 2 where B1-P is right ($p=2.2\times10^{-4}$).
+Retraining J48 without one feature group at a time gives 0.777 without door and load, 0.881 without the credential
+context, 0.956 without network, 0.970 without the inertial and 0.974 without the ultrasonic channel, so door, load and
+credential data carry most of the information, while no single inertial, ultrasonic or network group is needed. Scaling the six class-separating medians
+of Table~\ref{tab:sensors} by 0.7 or 1.3, one at a time and together (15 variants), kept B1-P above B0 by 0.12 to
+0.16 and below J48 by 0.21 to 0.26; B1-P ranged from 0.720 to 0.769 and J48 stayed at 0.980, since the varied
+parameters only affect tamper and forced sessions, which it always separates. The first generator (run
+\texttt{RUN\_20261116\_044130\_SEED42}), kept as a historical pipeline check, gave 0.621 for B0 and 0.913 for B1-P but
+leaked the class through context fields.
 
 \subsection{Server-Side Response Time}
 \label{sec:latency}
@@ -961,50 +960,64 @@ PIN on the phone page (\texttt{/api/kiosk/unlock})   & 15.9 & 14.2 & 38.6  & 16.
 
 \textit{Internal validity.} Both datasets are synthetic: the Weka rows form a deterministic grid, and almost every
 simulation distribution is assumed (Table~\ref{tab:sensors}), so the separability J48 exploits reflects these
-assumptions, not real lockers (sampling bias, P1 \cite{arp2022dos}). The second generator was designed by authors who
+assumptions (sampling bias, P1 \cite{arp2022dos}). The second generator was designed by authors who
 knew the B1-P thresholds, and three parameters lie within $\pm$20\% of one: the forced-door vibration median (0.50~g
-against 0.45~g), the shock clip (16.0~g, equal to the 16~g threshold as both equal the sensor range) and the timeout
+against 0.45~g), the shock clip (16.0~g, both the sensor range and the shock threshold) and the timeout
 delay range (2\,000 to 15\,000~ms, containing 5\,000~ms); the influence of knowing the thresholds has not been ruled
 out (data snooping, P3). Cells the parameter table left open (stay time, ultrasonic distance, fault magnitudes, normal
 distributions for unnamed classes, giving hammer, tilt and spoof tampering normal vibration) were chosen by the
-implementing AI agent before the freeze and ratified by the authors after the run, so they are not preregistered;
-they may lower tamper recall, which is then not a detector property. B0 has partial parity, and a learned tree outperforms B1-P (inappropriate baseline, P6). Earlier labels
+implementing AI agent before the freeze and ratified by the authors after the run, so they are not preregistered and may lower tamper recall. B0 has partial parity, the production rules see no matching booking state, and a learned tree outperforms B1-P (inappropriate baseline, P6). Earlier labels
 derived with B1's own thresholds gave B1 0.990. Mitigation: latent-action labels, a frozen
-generator, a learned baseline, a context-only check, an ablation, five seeds and the scripts.
+generator, learned baselines, an ablation, a sensitivity analysis, five seeds and the scripts.
 
 \textit{External validity.} All results come from one laptop and one box with a single servo-locked slot (other
 banks are demo devices); door switch, load cell and accelerometer are simulated, latency is that of a local testbed,
 lockout progression was not simulated and no campus trace exists (lab-only evaluation, P9), so the simulation does
-not establish field performance.
+not establish field performance; nor do the bootstrap interval and the five seeds measure variation across deployments
+(construct and conclusion validity). \textit{Security:} Table~\ref{tab:threats} maps threats to controls, evidence and
+remaining risk; no end-to-end TLS is claimed.
 
-\textit{Construct and conclusion validity.} Neither the bootstrap interval nor the five seeds measure variation across
-deployments.
+\begin{table}[!htbp]
+\renewcommand{\arraystretch}{1.02}
+\centering
+\footnotesize
+\caption{Threats, Controls, Evidence and Remaining Risk.}
+\label{tab:threats}
+\vspace{2pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.3cm} >{\raggedright\arraybackslash}p{4.6cm} >{\raggedright\arraybackslash}p{3.5cm} >{\raggedright\arraybackslash}p{4.8cm}}
+\hline
+Threat & Control & Evidence & Remaining risk \\
+\hline
+\rule{0pt}{2.4ex}Forged or replayed message & device key hash; sequence numbers; rules 2, 2' & remote and spoof scenarios & no mutual TLS or certificate check \\
+Credential guessing & lock after five failures & lockout check & a box can be kept locked \\
+Lost or misused card & blocked list; rules 3, 5; e-mail check & lostcard scenario; unit tests & a cloned card works until reported \\
+Double booking or charge & row locks; unique indexes & concurrency test & index refusal is a raw SQL error \\
+Audit tampering & hash chain checked every 60~s & tamper campaign & tail append; unanchored rewrite \\
+Web attacks & escaping; role check; SameSite=Lax & source review & no CSRF token; plain HTTP to Tomcat \\
+Physical tampering & B1-P on simulated sensors & Study B & no sensor fitted; tamper recall 0.25 \\
+\hline
+\end{tabular}
+\end{table}
 
-\textit{Security.} Browser forms rely on \texttt{SameSite=Lax} cookies without CSRF tokens; Tomcat serves plain HTTP
-behind a Cloudflare HTTPS tunnel and the firmware calls \texttt{setInsecure()}, so no end-to-end TLS is claimed. Boxes
-use an \texttt{X-API-Key} and browsers a session cookie, without mutual TLS; the audit chain has no external anchor.
-
-\textit{Artifacts.} Code, logs, runs and scripts: \texttt{github.com/HoangDuc1003/SmartLocker}; seeds 42, 101,
-202, 303, 404; bootstrap seed 20261116.
+\textit{Artifacts.} Code, logs and scripts: \texttt{github.com/HoangDuc1003/SmartLocker}; seeds 42, 101, 202, 303, 404; bootstrap 20261116.
 
 \section{Conclusion}
 
 SmartLocker leaves every access decision of its ESP32 box to a server-side, priority-ordered rule tier with a
-tamper-evident audit log; every replayed scenario gave the expected label, and median server processing was 8 to
-16~ms per device endpoint (maximum 38.6~ms). Telemetry alone could not separate wrong-user from normal access, so
-identity is checked by rule. In a simulation through the live device API, a multi-sensor rule prototype beat a
-partial-parity comparator (macro-F1 0.780 against 0.658) but found only 5 of 20 tamper sessions and stayed below a
-learned tree (0.980). Future work: door switch, load cell, accelerometer, campus sessions, an external chain anchor, CSRF tokens and TLS validation.
+tamper-evident audit log; every replayed scenario gave the expected label and median server processing was 8 to
+16~ms per endpoint. Telemetry alone could not separate wrong-user from normal access, so identity is checked by rule.
+In a simulation through the live device API, a multi-sensor rule prototype beat a partial-parity comparator (macro-F1
+0.780 against 0.658) but found 5 of 20 tamper sessions and stayed below a learned tree (0.980). Future work: sensors,
+campus sessions, an integrated anchor, CSRF tokens and TLS validation.
 
 \section*{Acknowledgment}
 
-The authors thank FPT University and the instructors. The authors used the AI assistant
-Claude (Anthropic) to edit the English text, check the \LaTeX{} source and draw Fig.~\ref{fig:arch} to
-Fig.~\ref{fig:eval}, and AI coding agents including Claude Code (Anthropic) to write parts of the simulation,
-evaluation and audit scripts, execute the scripted runs under the authors' supervision and draft the parameter
-proposal of the second simulator, each value of which the authors approved. The authors designed the system, reviewed
-every script and result, and take full
-responsibility for the content of this paper. The AI tools are not authors.
+The authors thank FPT University and the instructors. The authors used the AI assistant Claude (Anthropic) to edit
+the English text, check the \LaTeX{} source and draw Fig.~\ref{fig:arch} to Fig.~\ref{fig:eval}, and AI coding
+agents including Claude Code (Anthropic) to write and run parts of the simulation, evaluation and audit scripts under
+the authors' supervision and to draft the parameters of the second simulator, each approved by the authors. The
+authors designed the system, reviewed every script and result, and take full responsibility for this paper; the AI
+tools are not authors.
 
 \begingroup
 \def\IEEEbibitemsep{0pt}

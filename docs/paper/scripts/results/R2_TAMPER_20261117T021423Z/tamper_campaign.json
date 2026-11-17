@@ -1,0 +1,54 @@
+{
+ "ledger": "docs/paper/scripts/results/exports/auditchain_SL_SIM.json",
+ "ledger_sha256": "e8d47087032d130ef4920bc0989478e5114508c2890e02feb37a50363f1b1b3e",
+ "records": 1343,
+ "n_per_category": 20,
+ "seed": 20261116,
+ "anchor_every": 10,
+ "baseline_verification": {
+  "status": "PASS",
+  "total_nodes_verified": 1343,
+  "chain_intact": true,
+  "broken_links": 0,
+  "genesis_prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "tail_chain_hash": "99d6e5b224e8a6bf400cff0cb8bd35751eda91c4e88a92dba8fa65ab1ae6510c"
+ },
+ "categories": {
+  "field_modification": {
+   "attempted": 20,
+   "detected": 20,
+   "limitation": ""
+  },
+  "mid_chain_deletion": {
+   "attempted": 20,
+   "detected": 20,
+   "limitation": ""
+  },
+  "reordering_adjacent_swap": {
+   "attempted": 20,
+   "detected": 20,
+   "limitation": ""
+  },
+  "mid_chain_insertion": {
+   "attempted": 20,
+   "detected": 20,
+   "limitation": ""
+  },
+  "tail_append": {
+   "attempted": 20,
+   "detected": 0,
+   "limitation": "an anchor cannot tell a forged new entry from a genuine one"
+  },
+  "tail_truncation": {
+   "attempted": 20,
+   "detected": 18,
+   "limitation": "only entries written after the newest anchor are unprotected"
+  },
+  "privileged_rewrite_and_rehash": {
+   "attempted": 20,
+   "detected": 20,
+   "limitation": "only entries written after the newest anchor are unprotected"
+  }
+ },
+ "timestamp_utc": "2026-11-17T02:14:23.369841+00:00"
+}

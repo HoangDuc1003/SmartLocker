@@ -9,7 +9,8 @@ The verifier is experiments/verify_hash_chain.verify_audit_chain (imported, not 
 Each category is a set of integrity test cases, not an estimate of a general detection rate.
 
 Usage:
-  python tools/tamper_campaign/tamper_campaign.py --ledger <export.json> [--n 20] [--seed 20261116]
+  python tools/tamper_campaign/tamper_campaign.py --ledger <export.json> [--n 20] [--seed 20261116] [--anchor-every K]
+  --anchor-every K: also check external anchors (tools/chain_anchor) taken from the original chain at every K-th entry
   python tools/tamper_campaign/tamper_campaign.py --selftest      # synthetic chain, checks this tool only
 Export (author, read-only query on a copy):  see docs/paper/REVISION2_LOG.md, "Owner actions".
 """
@@ -25,6 +26,8 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
 from experiments.verify_hash_chain import ZERO_HASH, compute_canonical_hash, verify_audit_chain  # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, "tools", "chain_anchor"))
+from anchor import anchors_violated  # noqa: E402
 
 FIELDS = ["action", "object_type", "diff", "actor_user_id"]
 
@@ -40,23 +43,24 @@ def rehash(rows, start=0):
     return rows
 
 
-def detected(rows):
-    return not verify_audit_chain(rows)["chain_intact"]
+def detected(rows, anchors=()):
+    return (not verify_audit_chain(rows)["chain_intact"]) or anchors_violated(rows, anchors)
 
 
-def campaign(rows, n, seed):
+def campaign(rows, n, seed, anchor_every=0):
     assert verify_audit_chain(rows)["status"] == "PASS", "export does not verify; fix the export first"
     rng = random.Random(seed)
     L = len(rows)
     assert L >= 4
     cases = {}
+    anchors = [(r["audit_id"], r["chain_hash"]) for r in rows[anchor_every - 1::anchor_every]] if anchor_every else []
 
     def run(name, mutate, limitation=""):
         hits = 0
         for _ in range(n):
             t = copy.deepcopy(rows)
             t = mutate(t)
-            hits += detected(t)
+            hits += detected(t, anchors)
         cases[name] = {"attempted": n, "detected": hits, "limitation": limitation}
 
     def modify(t):
@@ -96,9 +100,11 @@ def campaign(rows, n, seed):
     run("mid_chain_deletion", delete_mid)
     run("reordering_adjacent_swap", reorder)
     run("mid_chain_insertion", insert)
-    run("tail_append", append_tail, "not detectable without an external head/checkpoint")
-    run("tail_truncation", truncate, "not detectable without an external head/checkpoint")
-    run("privileged_rewrite_and_rehash", privileged_rewrite,
+    run("tail_append", append_tail, "an anchor cannot tell a forged new entry from a genuine one" if anchors
+        else "not detectable without an external head/checkpoint")
+    after = "only entries written after the newest anchor are unprotected"
+    run("tail_truncation", truncate, after if anchors else "not detectable without an external head/checkpoint")
+    run("privileged_rewrite_and_rehash", privileged_rewrite, after if anchors else
         "a DB administrator can rewrite history and recompute the chain absent external anchoring")
     return cases
 
@@ -117,6 +123,7 @@ def main():
     ap.add_argument("--n", type=int, default=20)
     ap.add_argument("--seed", type=int, default=20261116)
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--anchor-every", type=int, default=0)
     a = ap.parse_args()
     if a.selftest:
         c = campaign(synthetic(), a.n, a.seed)
@@ -124,13 +131,16 @@ def main():
                   "mid_chain_insertion": a.n, "tail_append": 0, "tail_truncation": 0,
                   "privileged_rewrite_and_rehash": 0}
         assert {k: v["detected"] for k, v in c.items()} == expect, c
+        c1 = campaign(synthetic(), a.n, a.seed, anchor_every=1)  # an anchor on every entry
+        assert {k: v["detected"] for k, v in c1.items()} == dict(expect, tail_truncation=a.n,
+                                                                privileged_rewrite_and_rehash=a.n), c1
         print("SELFTEST PASS (synthetic chain; not a reportable result)")
         print(json.dumps(c, indent=1))
         return
     rows = json.load(open(a.ledger, encoding="utf-8"))
     res = {"ledger": a.ledger, "ledger_sha256": hashlib.sha256(open(a.ledger, "rb").read()).hexdigest(),
-           "records": len(rows), "n_per_category": a.n, "seed": a.seed,
-           "baseline_verification": verify_audit_chain(rows), "categories": campaign(rows, a.n, a.seed),
+           "records": len(rows), "n_per_category": a.n, "seed": a.seed, "anchor_every": a.anchor_every,
+           "baseline_verification": verify_audit_chain(rows), "categories": campaign(rows, a.n, a.seed, a.anchor_every),
            "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat()}
     run_id = "R2_TAMPER_" + datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     d = os.path.join(ROOT, "docs", "paper", "scripts", "results", run_id)

@@ -1,0 +1,1587 @@
+{
+ "run": "RUN_20261116_171508_SEED42_V2_SL_SIM",
+ "inputs": {
+  "sessions.csv": "f3977a5154c74e507d368e80adacf595c21d736e65ba4f5d38a4786650e62623"
+ },
+ "per_session": [
+  {
+   "session_id": "SIM-SESS-001",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1373,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-002",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1374,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "ITEM_LEFT",
+     "alert_id": 918
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "MISSED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-003",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1375,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-004",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1376,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "ITEM_LEFT",
+     "alert_id": 919
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "MISSED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-005",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1377,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "ITEM_LEFT",
+     "alert_id": 920
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "MISSED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-006",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1378,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 921
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-007",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1379,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-008",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1380,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "ITEM_LEFT",
+     "alert_id": 922
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "MISSED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-009",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1381,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-010",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1382,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-011",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1383,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-012",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1384,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "ITEM_LEFT",
+     "alert_id": 923
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "MISSED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-013",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1385,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "ITEM_LEFT",
+     "alert_id": 924
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "MISSED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-014",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1386,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-015",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1387,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "ITEM_LEFT",
+     "alert_id": 925
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "MISSED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-016",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1388,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 926
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-017",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1389,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-018",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1390,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-019",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1391,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "ITEM_LEFT",
+     "alert_id": 927
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "MISSED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-020",
+   "category": "NORMAL_AUTHORIZED",
+   "db_session_id": 1392,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 928
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-021",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1393,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "LOST_CARD_USED",
+     "alert_id": 929
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "UNAUTHORIZED_CREDENTIAL"
+  },
+  {
+   "session_id": "SIM-SESS-022",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1394,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 930
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-023",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1395,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 931
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-024",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1396,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 932
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-025",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1397,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 933
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-026",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1398,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 934
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-027",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1399,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 935
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-028",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1400,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 936
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-029",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1401,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 937
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-030",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1402,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 938
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-031",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1403,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 939
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-032",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1404,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "LOST_CARD_USED",
+     "alert_id": 940
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "UNAUTHORIZED_CREDENTIAL"
+  },
+  {
+   "session_id": "SIM-SESS-033",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1405,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 941
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-034",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1406,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 942
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-035",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1407,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 943
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-036",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1408,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 944
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-037",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1409,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 945
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-038",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1410,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 946
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-039",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1411,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 947
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-040",
+   "category": "UNAUTHORIZED_CREDENTIAL",
+   "db_session_id": 1412,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 948
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "UNAUTHORIZED_CREDENTIAL",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-041",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1413,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 949
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-042",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1414,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 950
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-043",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1415,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 951
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-044",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1416,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 952
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-045",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1417,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 953
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-046",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1418,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 954
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-047",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1419,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 955
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-048",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1420,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 956
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-049",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1421,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 957
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-050",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1422,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 958
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-051",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1423,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 959
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-052",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1424,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 960
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-053",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1425,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 961
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-054",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1426,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 962
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-055",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1427,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 963
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-056",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1428,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 964
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-057",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1429,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 965
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-058",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1430,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 966
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-059",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1431,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 967
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-060",
+   "category": "FORCED_DOOR_OPEN",
+   "db_session_id": 1432,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 968
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-061",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1433,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 969
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-062",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1434,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SUSPECTED_SPOOF",
+     "alert_id": 970
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "LOAD_OR_TAMPER_ANOMALY",
+   "tier1_2": "LOAD_OR_TAMPER_ANOMALY"
+  },
+  {
+   "session_id": "SIM-SESS-063",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1435,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-064",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1436,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 971
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-065",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1437,
+   "alerts": [],
+   "auth": "NONE",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-066",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1438,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 972
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-067",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1439,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SUSPECTED_SPOOF",
+     "alert_id": 973
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "LOAD_OR_TAMPER_ANOMALY",
+   "tier1_2": "LOAD_OR_TAMPER_ANOMALY"
+  },
+  {
+   "session_id": "SIM-SESS-068",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1440,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-069",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1441,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 974
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-070",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1442,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 975
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-071",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1443,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 976
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-072",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1444,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 977
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-073",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1445,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 978
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-074",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1446,
+   "alerts": [],
+   "auth": "NONE",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-075",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1447,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 979
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-076",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1448,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 980
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-077",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1449,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SUSPECTED_SPOOF",
+     "alert_id": 981
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "LOAD_OR_TAMPER_ANOMALY",
+   "tier1_2": "LOAD_OR_TAMPER_ANOMALY"
+  },
+  {
+   "session_id": "SIM-SESS-078",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1450,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 982
+    }
+   ],
+   "auth": "NONE",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-079",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1451,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 983
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-080",
+   "category": "LOAD_OR_TAMPER_ANOMALY",
+   "db_session_id": 1452,
+   "alerts": [
+    {
+     "source": "ML",
+     "label": "ML_ANOMALY",
+     "alert_id": 984
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "MISSED"
+  },
+  {
+   "session_id": "SIM-SESS-081",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1453,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 985
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-082",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1454,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 986
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-083",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1455,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 987
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-084",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1456,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 988
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-085",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1457,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 989
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-086",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1458,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 990
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-087",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1459,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 991
+    }
+   ],
+   "auth": "UNLOCK",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-088",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1460,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 992
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-089",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1461,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 993
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-090",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1462,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 994
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-091",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1463,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-092",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1464,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 995
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-093",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1465,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 996
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-094",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1466,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "SENSOR_FAULT",
+     "alert_id": 997
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "SENSOR_OR_NETWORK_FAULT",
+   "tier1_2": "SENSOR_OR_NETWORK_FAULT"
+  },
+  {
+   "session_id": "SIM-SESS-095",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1467,
+   "alerts": [
+    {
+     "source": "RULE",
+     "label": "FORCED_OPEN",
+     "alert_id": 998
+    }
+   ],
+   "auth": "DENY",
+   "tier1": "FORCED_DOOR_OPEN",
+   "tier1_2": "FORCED_DOOR_OPEN"
+  },
+  {
+   "session_id": "SIM-SESS-096",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1468,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-097",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1469,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-098",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1470,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-099",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1470,
+   "alerts": [],
+   "auth": "DENY",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  },
+  {
+   "session_id": "SIM-SESS-100",
+   "category": "SENSOR_OR_NETWORK_FAULT",
+   "db_session_id": 1470,
+   "alerts": [],
+   "auth": "UNLOCK",
+   "tier1": "NORMAL_AUTHORIZED",
+   "tier1_2": "NORMAL_AUTHORIZED"
+  }
+ ],
+ "tier1": {
+  "accuracy": 0.61,
+  "macro": {
+   "precision": 0.7643245341614907,
+   "recall": 0.61,
+   "f1": 0.6157959271442885
+  },
+  "per_class": {
+   "NORMAL_AUTHORIZED": {
+    "precision": 0.28125,
+    "recall": 0.45,
+    "f1": 0.34615384615384615
+   },
+   "UNAUTHORIZED_CREDENTIAL": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+   },
+   "FORCED_DOOR_OPEN": {
+    "precision": 0.8260869565217391,
+    "recall": 0.95,
+    "f1": 0.8837209302325583
+   },
+   "LOAD_OR_TAMPER_ANOMALY": {
+    "precision": 1.0,
+    "recall": 0.15,
+    "f1": 0.2608695652173913
+   },
+   "SENSOR_OR_NETWORK_FAULT": {
+    "precision": 0.7142857142857143,
+    "recall": 0.5,
+    "f1": 0.588235294117647
+   }
+  },
+  "binary_anomaly_positive": {
+   "accuracy": 0.66,
+   "precision": 0.8382352941176471,
+   "recall": 0.7125,
+   "f1": 0.7702702702702703,
+   "tp": 57,
+   "fp": 11,
+   "fn": 23
+  },
+  "confusion": {
+   "NORMAL_AUTHORIZED": {
+    "NORMAL_AUTHORIZED": 9,
+    "UNAUTHORIZED_CREDENTIAL": 0,
+    "FORCED_DOOR_OPEN": 0,
+    "LOAD_OR_TAMPER_ANOMALY": 0,
+    "SENSOR_OR_NETWORK_FAULT": 3
+   },
+   "UNAUTHORIZED_CREDENTIAL": {
+    "NORMAL_AUTHORIZED": 0,
+    "UNAUTHORIZED_CREDENTIAL": 20,
+    "FORCED_DOOR_OPEN": 0,
+    "LOAD_OR_TAMPER_ANOMALY": 0,
+    "SENSOR_OR_NETWORK_FAULT": 0
+   },
+   "FORCED_DOOR_OPEN": {
+    "NORMAL_AUTHORIZED": 0,
+    "UNAUTHORIZED_CREDENTIAL": 0,
+    "FORCED_DOOR_OPEN": 19,
+    "LOAD_OR_TAMPER_ANOMALY": 0,
+    "SENSOR_OR_NETWORK_FAULT": 1
+   },
+   "LOAD_OR_TAMPER_ANOMALY": {
+    "NORMAL_AUTHORIZED": 17,
+    "UNAUTHORIZED_CREDENTIAL": 0,
+    "FORCED_DOOR_OPEN": 0,
+    "LOAD_OR_TAMPER_ANOMALY": 3,
+    "SENSOR_OR_NETWORK_FAULT": 0
+   },
+   "SENSOR_OR_NETWORK_FAULT": {
+    "NORMAL_AUTHORIZED": 6,
+    "UNAUTHORIZED_CREDENTIAL": 0,
+    "FORCED_DOOR_OPEN": 4,
+    "LOAD_OR_TAMPER_ANOMALY": 0,
+    "SENSOR_OR_NETWORK_FAULT": 10
+   }
+  },
+  "verdict_sources": {
+   "AUTH_DENY": 18,
+   "DUPLICATE_REJECTED": 2,
+   "FORCED_OPEN": 23,
+   "ITEM_LEFT": 8,
+   "LOST_CARD_USED": 2,
+   "NO_ALERT": 30,
+   "SENSOR_FAULT": 14,
+   "SUSPECTED_SPOOF": 3
+  }
+ },
+ "tier1_2": {
+  "accuracy": 0.43,
+  "macro": {
+   "precision": 0.8028113762667537,
+   "recall": 0.43,
+   "f1": 0.475236486584848
+  },
+  "per_class": {
+   "NORMAL_AUTHORIZED": {
+    "precision": 0.47368421052631576,
+    "recall": 0.45,
+    "f1": 0.46153846153846156
+   },
+   "UNAUTHORIZED_CREDENTIAL": {
+    "precision": 1.0,
+    "recall": 0.1,
+    "f1": 0.18181818181818182
+   },
+   "FORCED_DOOR_OPEN": {
+    "precision": 0.8260869565217391,
+    "recall": 0.95,
+    "f1": 0.8837209302325583
+   },
+   "LOAD_OR_TAMPER_ANOMALY": {
+    "precision": 1.0,
+    "recall": 0.15,
+    "f1": 0.2608695652173913
+   },
+   "SENSOR_OR_NETWORK_FAULT": {
+    "precision": 0.7142857142857143,
+    "recall": 0.5,
+    "f1": 0.588235294117647
+   }
+  },
+  "binary_anomaly_positive": {
+   "accuracy": 0.79,
+   "precision": 0.8641975308641975,
+   "recall": 0.875,
+   "f1": 0.8695652173913043,
+   "tp": 70,
+   "fp": 11,
+   "fn": 10
+  },
+  "confusion": {
+   "NORMAL_AUTHORIZED": {
+    "NORMAL_AUTHORIZED": 9,
+    "UNAUTHORIZED_CREDENTIAL": 0,
+    "FORCED_DOOR_OPEN": 0,
+    "LOAD_OR_TAMPER_ANOMALY": 0,
+    "SENSOR_OR_NETWORK_FAULT": 3
+   },
+   "UNAUTHORIZED_CREDENTIAL": {
+    "NORMAL_AUTHORIZED": 0,
+    "UNAUTHORIZED_CREDENTIAL": 2,
+    "FORCED_DOOR_OPEN": 0,
+    "LOAD_OR_TAMPER_ANOMALY": 0,
+    "SENSOR_OR_NETWORK_FAULT": 0
+   },
+   "FORCED_DOOR_OPEN": {
+    "NORMAL_AUTHORIZED": 0,
+    "UNAUTHORIZED_CREDENTIAL": 0,
+    "FORCED_DOOR_OPEN": 19,
+    "LOAD_OR_TAMPER_ANOMALY": 0,
+    "SENSOR_OR_NETWORK_FAULT": 1
+   },
+   "LOAD_OR_TAMPER_ANOMALY": {
+    "NORMAL_AUTHORIZED": 4,
+    "UNAUTHORIZED_CREDENTIAL": 0,
+    "FORCED_DOOR_OPEN": 0,
+    "LOAD_OR_TAMPER_ANOMALY": 3,
+    "SENSOR_OR_NETWORK_FAULT": 0
+   },
+   "SENSOR_OR_NETWORK_FAULT": {
+    "NORMAL_AUTHORIZED": 6,
+    "UNAUTHORIZED_CREDENTIAL": 0,
+    "FORCED_DOOR_OPEN": 4,
+    "LOAD_OR_TAMPER_ANOMALY": 0,
+    "SENSOR_OR_NETWORK_FAULT": 10
+   }
+  },
+  "verdict_sources": {
+   "DUPLICATE_REJECTED": 2,
+   "FORCED_OPEN": 23,
+   "ITEM_LEFT": 8,
+   "LOST_CARD_USED": 2,
+   "ML_ANOMALY": 31,
+   "NO_ALERT": 17,
+   "SENSOR_FAULT": 14,
+   "SUSPECTED_SPOOF": 3
+  }
+ },
+ "mcnemar_binary_java_tier1_2_vs_b1p": {
+  "n01_first_wrong_second_right": 13,
+  "n10_first_right_second_wrong": 11,
+  "exact_two_sided_p": 0.8388197422027588
+ },
+ "mcnemar_binary_java_tier1_vs_b1p": {
+  "n01_first_wrong_second_right": 15,
+  "n10_first_right_second_wrong": 0,
+  "exact_two_sided_p": 6.103515625e-05
+ },
+ "timestamp_utc": "2026-11-17T02:08:52.180663+00:00"
+}

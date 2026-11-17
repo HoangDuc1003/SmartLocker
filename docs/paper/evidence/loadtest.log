@@ -1,0 +1,18 @@
+# loadtest.log - 2026-11-17T02:12:57Z UTC, code of commit fd05eb9 (src/sql unchanged in later commits), test database SL_LOAD (build-db.ps1 -TestSetup)
+# command: DB=SL_LOAD N=50 M=20 sh tools/load_test/concurrent_reserve.sh
+# db=SL_LOAD plan=1 race A: 50 users -> slot 5 ; race B: user 103 -> 20 slots
+## race A started together at server time 09:13:04.768
+1 OK deposit=<id>
+49 REFUSED error=50033 This slot is no longer available
+OK user=39 slot=5 deposit=116
+OK=1 REFUSED=49 CALLS=50
+## race B started together at server time 09:13:11.440
+1 OK deposit=<id>
+19 REFUSED error=2601 Cannot insert duplicate key row in object 'dbo.Deposit' with unique index 'UX_De
+OK user=103 slot=11 deposit=117
+OK=1 REFUSED=19 CALLS=20
+## database afterwards
+open bookings on slot 5: 1
+open bookings of user 103: 1
+slot 5 status: RESERVED
+wallets before=51000000 after=50988500 charged=11500 paid_amount of open bookings=11500
