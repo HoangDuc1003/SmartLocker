@@ -78,7 +78,7 @@
   \setlength{\belowdisplayskip}{3pt plus 1pt minus 1pt}%
 }
 \newif\ifscopus
-\scopustrue
+\scopusfalse
 \newcommand{\baselinecommit}{da95f43}
 \newcommand{\revisioncommit}{fd05eb9}
 
@@ -99,9 +99,10 @@ Thanh Cao Nguyen & Thu Le & Kieu Trong Khanh \\
 \else
 \author{%
 \begin{tabular}{ccc}
-Duc Hoang Nguyen & Viet Tien Nguyen & Huy Hoang Nguyen \\
-{\small hoangndse200032@fpt.edu.vn} & {\small tiennguyen100306@fpt.edu.vn} & {\small huyhoang.ct06@fpt.edu.vn} \\[3pt]
-Thanh Cao Nguyen & Thu Le* & Kieu Trong Khanh \\
+Duc Hoang Nguyen* & Viet Tien Nguyen & Huy Hoang Nguyen \\
+{\small hoangndse200032@fpt.edu.vn} & {\small tiennguyen100306@fpt.edu.vn} & {\small huyhoang.ct06@fpt.edu.vn} \\
+{\scriptsize (ORCID: 0009-0006-9780-8146)} & & \\[3pt]
+Thanh Cao Nguyen & Thu Le & Kieu Trong Khanh \\
 {\small thanhcao19112006@fpt.edu.vn} & {\small thulvm@fpt.edu.vn} & {\small khanhkt@fpt.edu.vn} \\[3pt]
 \multicolumn{3}{c}{FPT University, Ho Chi Minh Campus, Vietnam (*Corresponding author)}
 \end{tabular}}
@@ -142,8 +143,8 @@ impersonated, an unlock message forged or replayed, and sensor readings manipula
 roman2013features}.
 
 SmartLocker addresses both the rental service and these threats for a shared campus locker. We treat the box as a thin,
-authenticated client and let the server take every decision, since only the server holds the full booking context, and
-the resulting contributions are listed in Table~\ref{tab:contrib}. The priority-ordered rule tier is the main
+authenticated client and let the server take every decision, since only the server holds the full booking context.
+The contributions are listed in Table~\ref{tab:contrib}. The priority-ordered rule tier is the main
 contribution, whereas the machine-learning risk score serves as a secondary signal because it is trained on synthetic
 data only.
 
@@ -201,8 +202,8 @@ al. \cite{arp2022dos} examined 30 machine-learning papers published over ten yea
 Security and NDSS and found that every paper suffered from at least three of ten common pitfalls, with sampling bias
 and data snooping at least partly present in 90\% and 73\% of the papers, respectively. SmartLocker therefore puts
 explicit rules over telemetry and booking context in Tier~1 and uses a Weka model \cite{hall2009weka} only as a
-supporting score, alongside a hash-chained audit log in the spirit of Haber and Stornetta \cite{haber1991timestamp}
-and BCrypt password hashing \cite{provos1999bcrypt}.
+supporting score. Its audit log is hash-chained as proposed by Haber and Stornetta \cite{haber1991timestamp}, and
+passwords are hashed with BCrypt \cite{provos1999bcrypt}.
 
 \section{System Design}
 
@@ -475,8 +476,9 @@ The rules of Table~\ref{tab:rules} are evaluated in a fixed order and the first 
 The order is essential: readings from a faulty sensor must not be reported as a break-in, and a legitimate remote open
 by staff or by the phone page must not be reported as a forced opening. The valid sensor ranges (door 0 to 3600~s,
 weight $-200$ to 20\,000~g, stay 0 to 10\,080~min) are stored in the database, so they can be adjusted without
-redeploying the application. Rule 2' is the negative branch of rule 2 and shares its rank. Column Tests counts the 14 rule-engine
-unit tests ending in each label; S marks rules also reached by a replayed scenario (Section~\ref{sec:functional}).
+redeploying the application. Rule 2' is the negative branch of rule 2 and shares its rank. Column Tests counts the 13
+of the 14 rule-engine unit tests that end in a label (the other checks the command window); S marks rules also reached by
+a replayed scenario (Section~\ref{sec:functional}).
 
 \begin{table}[!htbp]
 \renewcommand{\arraystretch}{1.18}
@@ -589,13 +591,12 @@ booking, shown on the map and e-mailed to the user at most once per 10~minutes w
 Finally, overdue storage is locked after the grace period, charged per late hour and escalated to staff after 48~hours
 together with its booking evidence.
 
-To ensure accountability across all security-relevant events, every business action and alert is appended to an audit log
-whose entries store the SHA-256 hash of their fields (identifier, time, actor, action, object, change) and the hash of the
-previous entry \cite{haber1991timestamp}. The chain starts from a genesis entry created during database setup, forming an
-unbroken cryptographic record. The last entry is read under an update lock, so concurrent writers cannot fork the chain, and
+Every business action and alert is appended to an audit log whose entries store the SHA-256 hash of their fields
+(identifier, time, actor, action, object, change) and the hash of the previous entry \cite{haber1991timestamp}. The
+chain starts from a genesis entry created during database setup. The last entry is read under an update lock, so concurrent writers cannot fork the chain, and
 altering, deleting, inserting or reordering an entry inside the chain breaks the link to the next entry. Auditors inspect
-chain consistency in the web UI, and a background job re-verifies the full chain every 60~s. Any mismatch raises an
-integrity alert on the dashboard and pinpoints the broken sequence number. The chain lives in the same database and has
+chain consistency in the web UI, and a background job re-verifies the full chain every 60~s. A mismatch raises an
+integrity alert on the dashboard that names the broken sequence number. The chain lives in the same database and has
 no external anchor or trusted timestamp, so it cannot reveal removal or addition of the newest entries, nor a database
 administrator who rewrites history and recomputes every hash; it is a tamper-evident log, not a full time-stamping
 protocol (tests and a prototype external anchor in Section~\ref{sec:functional}).
@@ -649,10 +650,10 @@ J48 (C4.5) \cite{quinlan1993c45}, Naive Bayes \cite{john1995nb} and IBk with $k 
 evaluated by stratified 10-fold cross-validation \cite{kohavi1995cv} (seed 42) on the six-class problem and on a binary
 NORMAL-versus-ABNORMAL task that measures the risk-score decision. Experiments ran on an Intel
 Core i5-11400H laptop (2.7~GHz, 6 cores, 16~GB RAM, Windows~11) with JDK 1.8.0\_202, Weka 3.8.6, Tomcat 9.0.113 and SQL
-Server 2022. The Weka study, the 83 tests, the Postman runs, the replayed scenarios and the response times were all
-run on 17 November 2026 on commit \texttt{\revisioncommit}, whose source, tests and SQL scripts the final commit leaves
-unchanged; the tests, Postman runs, scenarios and response times used freshly built test databases, and the Weka study
-read the 480 training rows, with metrics equal to those of an earlier run on 30 October 2026.
+Server 2022. The Weka study, the 83 tests, the Postman runs, the replayed scenarios, the response times and the
+concurrency test were all run on 17 November 2026 on commit \texttt{\revisioncommit}, whose source, tests and SQL scripts
+the final commit leaves unchanged. The Weka study read the 480 training rows and gave the same metrics as an earlier run
+on 30 October 2026; the other runs used freshly built test databases.
 The code counts refer to the same commit, and the simulation of Section~\ref{sec:sim_eval} was executed on
 16 November 2026 (UTC) on the same code with the second generator.
 
@@ -795,8 +796,8 @@ times each with a fixed seed (20261116). Modifying a field, deleting an entry, i
 and swapping two adjacent entries inside the chain were detected in 20 of 20 cases each. Appending entries at the
 tail, truncating the tail and a privileged rewrite that recomputes every hash were detected in 0 of 20 cases each, as
 expected for a chain without an external anchor (Section~IV-D). These are deterministic integrity tests of single
-operations, not an estimate of a general detection rate. With a prototype tool that copies the chain head to a
-file outside the database after every ten entries, the campaign detected 20 of 20 privileged rewrites and 18 of 20
+operations, not an estimate of a general detection rate. Rerun on 17 November 2026 with a prototype tool that copies the
+chain head to a file outside the database after every ten entries, the campaign detected 20 of 20 privileged rewrites and 18 of 20
 truncations (the two misses removed only entries after the newest anchor); appending stayed undetected (0 of 20).
 
 \textit{Concurrent bookings.} On a test database, 50 users reserved one free slot at the same instant, each on its own
