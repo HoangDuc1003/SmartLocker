@@ -1,6 +1,7 @@
 %% SmartLocker, ACM two-column proceedings (sigconf) version for ICIIT 2027 (ACM ICPS), condensed to 5 pages.
 %% Condensed from ../smartlocker-acm-10p.tex (single-column, 10 pages): every number is taken from it; the text is
-%% shortened and its Table 1 (contributions), Table 4 (simulated channels) and Fig. 3 (Weka chart) are left out.
+%% shortened and its Table 1 (contributions), Table 4 (simulated channels), Fig. 2 (decision flow) and Fig. 3 (Weka
+%% chart) are left out.
 %% Build here: tectonic -X compile smartlocker-sigconf.tex
 \documentclass[sigconf,screen]{acmart}
 
@@ -115,18 +116,19 @@
 \renewcommand{\shortauthors}{D. H. Nguyen et al.}
 
 \begin{abstract}
-Campus lockers are still opened with keys or paper codes, cannot be reserved, and once networked their unlock signal
-can be forged or replayed. We present SmartLocker, a locker rental system in which users reserve a slot on a web map,
+Campus lockers are still opened with keys or paper codes and cannot be reserved; once networked, their unlock signal
+can be forged or replayed. This paper presents SmartLocker, a locker rental system in which users reserve a slot on a web map,
 pay from a prepaid wallet and open it with a personal identification number (PIN), a radio-frequency identification
 (RFID) card, a fingerprint or a phone page. The ESP32 box takes no access decision: it forwards every credential to the
-server, which replies \texttt{UNLOCK} or \texttt{DENY}. Abnormal access is detected mainly by a priority-ordered rule
-engine over device telemetry and server context (sensor faults, spoofed remote opens, lost cards, forced opening,
-wrong-user access, items left behind and overdue storage); a machine-learning risk score only flags sessions that no
-rule explains. On synthetic sessions, the best of four Weka classifiers confused mainly wrong-user and normal sessions,
-which share the same telemetry, so identity is checked by rule. All automated tests and replayed scenarios passed, and
-server-side processing of every timed device request took under 40~ms on one laptop. In a simulation through the live device API, a multi-sensor rule
-prototype outperformed a partial-parity comparator (macro-F1 0.780 against 0.658) but missed most tamper sessions; the
-simulated distributions are assumed, so these results do not predict field performance.
+server, which replies \texttt{UNLOCK} or \texttt{DENY}. Abnormal access (sensor faults, spoofed remote opens, lost
+cards, forced opening, wrong-user access, items left behind and overdue storage) is detected mainly by a
+priority-ordered rule engine over device telemetry and server context; a machine-learning risk score raises an alert
+only for sessions that no rule explains. On synthetic sessions, the best of four Weka classifiers confused mainly wrong-user and
+normal sessions, which share the same telemetry by construction, so identity is checked by rule. All automated tests
+and replayed scenarios passed, two scenarios after a fix, and server-side processing of every timed device request took
+under 40~ms on one laptop. In a simulation through the live device API, a multi-sensor rule prototype outperformed a
+partial-parity rule comparator (macro-F1 0.780 against 0.658) but missed most tamper sessions and stayed below learned
+classifiers; the simulated distributions are assumed, so these results do not predict field performance.
 \end{abstract}
 
 \begin{CCSXML}
@@ -160,16 +162,17 @@ simulated distributions are assumed, so these results do not predict field perfo
 \section{Introduction}
 
 Self-service lockers are now common for parcels and short-term storage \cite{iwan2016parcel}, but campus lockers
-remain mechanical: a slot cannot be booked in advance, and a forced door, a lost card used by someone else or items
+remain mechanical: a slot cannot be booked in advance, and a forced door, a lost key used by someone else or items
 left for days are noticed only when reported. Connecting lockers through the Internet of Things (IoT)
 \cite{alfuqaha2015iot} makes slot states visible, but a box can then be impersonated, an unlock message forged or
 replayed, and sensor readings manipulated \cite{sicari2015security,roman2013features}.
 
 SmartLocker treats the box as a thin, authenticated client and lets the server, which alone holds the booking context,
-take every decision. Its contributions are (1) a rental system with map reservation, prepaid wallet and four opening
-methods whose money and time rules run in SQL transactions (Sections~\ref{sec:design} and~\ref{sec:impl}); (2) a
-priority-ordered rule engine over telemetry and server context with a hash-chained audit log and a secondary ML risk
-score (Section~\ref{sec:detector}), the main contribution; and (3) an evaluation with automated tests, replayed
+take every decision. Its contributions are (1) a rental system with map reservation, a prepaid wallet and four
+opening methods, in which all money and time rules run in SQL transactions (Sections~\ref{sec:design}
+and~\ref{sec:impl}); (2) the main contribution, a priority-ordered rule engine over telemetry and server context with a
+hash-chained audit log and a secondary machine-learning (ML) risk score (Section~\ref{sec:detector}); and (3) an
+evaluation with automated tests, replayed
 scenarios, response times, a classifier comparison on synthetic data and a simulated multi-sensor study
 (Section~\ref{sec:ml}).
 
@@ -177,19 +180,20 @@ scenarios, response times, a classifier comparison on synthetic data and a simul
 
 \textit{Smart and parcel lockers.} Parcel-locker research focuses on last-mile logistics \cite{iwan2016parcel}; a
 recent review finds only one sustainability study on safety and security \cite{zhang2025parcel}. An RFID-based IoT locker
-\cite{rfidiot2023locker} identifies users by identity card and logs accesses over Wi-Fi; SmartLocker instead decides
-on the server and combines context rules with telemetry scoring.
+\cite{rfidiot2023locker} identifies users by identity card and logs accesses over Wi-Fi; SmartLocker instead checks
+every credential in server-side transactions and adds context rules, telemetry scoring and a hash-chained audit log.
 
 \textit{IoT security and anomaly detection.} IoT entities face node capture, eavesdropping and loss of control
 \cite{roman2013features} and need authentication and access control beyond traditional countermeasures
 \cite{sicari2015security}; RFID credentials can be cloned, replayed and relayed \cite{mitrokotsa2010rfid}. Anomaly
-detectors are classification- (including rule-), neighbor-, clustering- or statistics-based
+detection techniques include classification-based (also rule-based), nearest-neighbor, clustering and statistical ones
 \cite{chandola2009anomaly}; in IoT, learned detectors dominate and scarce labels favor unsupervised ones
-\cite{demedeiros2023anomaly}, and Shahin et al. \cite{shahin2025twostage} also detect in two tiers (99.14\% accuracy on
-N-BaIoT). Learned intrusion detectors are hard to interpret \cite{sommer2010outside}, and 30 security papers using
-machine learning each showed at least three of ten pitfalls (P1 to P10) \cite{arp2022dos}. SmartLocker therefore puts explicit rules in Tier~1, uses a Weka model \cite{hall2009weka}
-only as a supporting score, hash-chains its audit log \cite{haber1991timestamp} and hashes passwords with BCrypt
-\cite{provos1999bcrypt}.
+\cite{demedeiros2023anomaly}. Like SmartLocker, Shahin et al. \cite{shahin2025twostage} detect in two tiers: a generative model flags
+anomalous traffic and a gradient-boosting classifier labels it, with 99.14\% average end-to-end accuracy on N-BaIoT.
+Learned intrusion detectors are hard to interpret \cite{sommer2010outside}, and each of 30 machine-learning papers from
+top security venues showed at least three of ten pitfalls (P1 to P10) \cite{arp2022dos}. SmartLocker therefore puts
+explicit rules first and uses a Weka model \cite{hall2009weka} only as a supporting score; its audit log is
+hash-chained \cite{haber1991timestamp} and passwords are hashed with BCrypt \cite{provos1999bcrypt}.
 
 \section{System Design}\label{sec:design}
 
@@ -243,17 +247,17 @@ Tomcat application through separate entry points and every outcome is stored in 
 \Description{Block diagram with three clients on top (ESP32 locker box, phone page, web browser), each reaching its own entry point inside Tomcat (device APIs, KioskApi, SecurityFilter with MVC2 controllers), service boxes AlertService and LockerMonitor below, a DAO layer, and SQL Server at the bottom.}
 \end{figure*}
 
-Role-based access control defines five roles (\texttt{END\_USER}, \texttt{OPERATOR}, \texttt{TECHNICIAN},
-\texttt{AUDITOR} and \texttt{ADMIN}), and all staff actions are audited. An \emph{area} is a map pin, a \emph{bank} is
+Role-based access control defines five roles (end user, operator, technician, auditor and administrator), and all
+staff actions are audited. An \emph{area} is a map pin, a \emph{bank} is
 a column of lockers controlled by one device, and a \emph{slot} is a 20, 40 or 60~cm cube. Filtered unique indexes
 reject a second open booking for the same slot or user, a trigger keeps access sessions append-only, and wallet
 deductions run in transactions with exclusive row locks.
 
 \subsection{Hardware}
 
-The box uses an ESP32 board (firmware 4.3) with a 4$\times$4 keypad, a PN532 NFC reader, an AS608 fingerprint
-sensor, a 16$\times$2 I$^2$C LCD, two servos for bolt and door, and an SRF05 ultrasonic sensor that locks the door
-20~s after the person has left, or at the latest 120~s after opening. No door switch, load cell or accelerometer is
+The box uses an ESP32 board (firmware 4.3) with a 4$\times$4 keypad, a PN532 NFC card reader, an AS608 fingerprint
+sensor, a 16$\times$2 I$^2$C LCD, two servos for bolt and door, and an SRF05 ultrasonic sensor; the door locks 20~s
+after the person has left, or at the latest 120~s after opening. No door switch, load cell or accelerometer is
 fitted and the firmware does not upload access sessions, so door time, weight and inertial readings exist only in the
 simulator of Section~\ref{sec:sim_eval}, and no physical validation of door, load or tamper sensing is claimed.
 
@@ -262,7 +266,8 @@ simulator of Section~\ref{sec:sim_eval}, and no physical validation of door, loa
 Each box holds a secret API key whose SHA-256 hash alone is stored, and the server derives the device identity from
 the key, never from the request body. \texttt{POST /api/health} is a 3~s heartbeat that returns pending commands and
 blocked card UIDs; \texttt{POST /api/device/auth} submits a PIN, card UID or finger slot and receives
-\texttt{UNLOCK}, \texttt{CHOOSE}, \texttt{CONFIRM\_EMAIL} or \texttt{DENY}; and \texttt{POST /api/locker/batch}
+\texttt{UNLOCK}, \texttt{DENY}, \texttt{CHOOSE} (open the slot or check out) or \texttt{CONFIRM\_EMAIL} (the owner
+must confirm a card pick-up); and \texttt{POST /api/locker/batch}
 uploads access sessions with a sequence number, so a resent session is stored once. A remote or phone open arrives
 with the next heartbeat and returns as a session carrying the command id.
 
@@ -284,7 +289,7 @@ unused, allowed stay, valid sensor ranges, calibration validity and the box cloc
 
 The rules of Table~\ref{tab:rules} run in a fixed order and the first match sets the label, so faulty readings are
 not reported as a break-in and a legitimate remote open not as a forced opening. The valid ranges (door 0 to 3600~s,
-weight $-200$ to 20\,000~g, stay 0 to 10\,080~min) are stored in the database. Rule 2' is the negative branch of
+weight change $-200$ to 20\,000~g, stay 0 to 10\,080~min) are stored in the database. Rule 2' is the negative branch of
 rule 2; column Tests counts the 13 of the 14 rule-engine unit tests that end in a label, and S marks rules also
 reached by a replayed scenario (Section~\ref{sec:functional}).
 
@@ -305,7 +310,7 @@ reached by a replayed scenario (Section~\ref{sec:functional}).
 4 & FORCED\_OPEN & the door opened locally without an accepted PIN, active card or fingerprint & Alert & 1 \\[2pt]
 5 & WRONG\_USER & an active card whose owner is not the owner of the slot booking & Alert & 1 \\[2pt]
 6 & SUSPECTED\_SPOOF & the weight changed by more than 50~g while the door time stayed at 0~s (unreported open) & Alert & 1 \\[2pt]
-7 & ITEM\_LEFT & the weight in the slot grew by more than 50~g after pick-up & Alert & 1 \\[2pt]
+7 & ITEM\_LEFT & the weight change is above $+50$~g (read as items left after pick-up) & Alert & 1 \\[2pt]
 8 & OVERDUE & stay time longer than the plan allows & Alert & 1 \\[2pt]
 9 & NORMAL & no rule matched & Tier 2 & 1 \\
 \bottomrule
@@ -322,11 +327,12 @@ r(s) = 1 - P\left(y = \text{NORMAL} \mid \mathbf{x}_s\right).
 \label{eq:risk}
 \end{equation}
 The deployed model is the six-class classifier with the highest weighted F1, currently IBk ($k=5$). With $\ell(s)$ the
-label of the first rule of Table~\ref{tab:rules} that matches $s$, the alert raised for $s$ is
+label of the first rule of Table~\ref{tab:rules} that matches $s$ and $\mathcal{L}_0 = \{\text{NORMAL},
+\text{STAFF\_OPEN}\}$ the labels that raise no alert, the alert raised for $s$ is
 \begin{equation}
 A(s) =
 \begin{cases}
-\ell(s), & \ell(s) \neq \text{NORMAL},\\
+\ell(s), & \ell(s) \notin \mathcal{L}_0,\\
 \text{ML\_ANOMALY}, & \ell(s) = \text{NORMAL} \text{ and } r(s) \geq \tau,\\
 \text{none}, & \text{otherwise},
 \end{cases}
@@ -335,69 +341,23 @@ A(s) =
 with $\tau = 0.80$, so at least four of the five nearest neighbors must be abnormal. When a rule matches, $r(s)$ is
 stored with its alert as evidence; it is never computed for SENSOR\_FAULT or STAFF\_OPEN. A STAFF\_OPEN marks its
 command done through a conditional update, so of two sessions carrying one command only one is a staff open and the
-other is SUSPECTED\_SPOOF; a SENSOR\_FAULT takes the slot out of service and opens a ticket (Fig.~\ref{fig:flow}).
-
-\begin{figure*}[tbp]
-\centering
-\begin{adjustbox}{max width=0.58\textwidth}
-\begin{tikzpicture}[
-  proc/.style={slblue},
-  dec/.style={sldec, aspect=1.7},
-  yes/.style={sllbl, font=\small\itshape},
-  no/.style={sllbl, font=\small\itshape}]
-  \node[proc]  (in)  at (1.2,2.05)  {Session $s$};
-  \node[proc]  (ctx) at (1.2,0)     {Load context $C$};
-  \node[dec]   (sf)  at (4.3,0)     {Sensor\\fault?};
-  \node[dec]   (rem) at (7.9,0)     {Remote or\\phone open?};
-  \node[dec]   (cmd) at (11.7,0)    {Valid, unused\\command?};
-  \node[proc]  (spf) at (15.95,0)   {$\ell \leftarrow$\\SUSPECTED\_SPOOF};
-  \node[slterm] (flt) at (4.3,2.05)  {SENSOR\_FAULT alert\slsub{ticket, no risk score}};
-  \node[slok]   (stf) at (11.7,2.05) {STAFF\_OPEN, no alert};
-  \node[proc]  (rul) at (7.9,-1.9)  {$\ell \leftarrow$ first matching\\rule 3 to 9};
-  \node[proc]  (rsk) at (11.7,-1.9) {Risk $r(s)$ by (\ref{eq:risk})};
-  \node[dec]   (lab) at (11.7,-3.75) {$\ell \neq$\\NORMAL?};
-  \node[slterm] (ar) at (15.85,-3.75) {Alert $\ell$, evidence $r$};
-  \node[dec]   (thr) at (7.9,-3.75)  {$r \geq 0.80$?};
-  \node[slterm] (am) at (4.0,-3.75)  {ML\_ANOMALY alert};
-  \node[slok]  (non) at (7.9,-5.45)  {No alert};
-  \draw[slarr] (in) -- (ctx);
-  \draw[slarr] (ctx) -- (sf);
-  \draw[slarr] (sf) -- node[yes, right] {yes} (flt);
-  \draw[slarr] (sf) -- node[no, above] {no} (rem);
-  \draw[slarr] (rem) -- node[yes, above] {yes} (cmd);
-  \draw[slarr] (rem) -- node[no, right] {no} (rul);
-  \draw[slarr] (cmd) -- node[yes, right] {yes} (stf);
-  \draw[slarr] (cmd) -- node[no, above] {no} (spf);
-  \draw[slarr] (rul) -- (rsk);
-  \draw[slarr] (spf) |- (rsk);
-  \draw[slarr] (rsk) -- (lab);
-  \draw[slarr] (lab) -- node[yes, above] {yes} (ar);
-  \draw[slarr] (lab) -- node[no, above] {no} (thr);
-  \draw[slarr] (thr) -- node[yes, above] {yes} (am);
-  \draw[slarr] (thr) -- node[no, right] {no} (non);
-\end{tikzpicture}
-\end{adjustbox}
-\caption{Decision flow of the two-tier detector for one access session: the rules of Table~\ref{tab:rules} run first,
-and the risk score of (\ref{eq:risk}) raises an ML\_ANOMALY alert only when no rule matched, as in (\ref{eq:alert});
-outcomes have a thick border, coral when an alert is raised and mint otherwise.}
-\label{fig:flow}
-\Description{Flowchart of the two-tier detector: a sensor fault check, the remote-open and command checks, rules 3 to 9, the risk score, and the final choice between a rule alert, an ML_ANOMALY alert and no alert.}
-\end{figure*}
+other is SUSPECTED\_SPOOF; a SENSOR\_FAULT takes the slot out of service and opens a ticket.
 
 \subsection{Server-Side Safeguards and Audit Log}\label{sec:safeguards}
 
 Five wrong PINs, cards or fingers within 5~minutes lock the box for 120~s; a job running every 15~s marks a box
 silent for 90~s as \texttt{OFFLINE} with a \texttt{DEVICE\_OFFLINE} alert; a card reported lost is pushed to the box
-with the next heartbeat; and a valid card at the wrong box is logged as \texttt{WRONG\_PLACE}. Every action and alert
-is appended to an audit log whose entries store the SHA-256 hash of their fields and of the previous entry
+with the next heartbeat; and a valid card at the wrong box is logged as \texttt{WRONG\_PLACE}. Every business action
+and alert is appended to an audit log whose entries store the SHA-256 hash of their fields and of the previous entry
 \cite{haber1991timestamp}. The last entry is read under an update lock, so concurrent writers cannot fork the chain;
-altering, deleting, inserting or reordering an entry breaks the next link, and a job re-verifies the chain every
-60~s. Without an external anchor the chain cannot reveal changes at its tail or an administrator who recomputes every
+altering, deleting, inserting or reordering an entry inside the chain breaks the next link, and a job re-verifies the
+chain every 60~s. Without an external anchor the chain cannot reveal changes at its tail or an administrator who recomputes every
 hash, so it is tamper-evident rather than a full time-stamping protocol.
 
 \section{Implementation}\label{sec:impl}
 
-The server has about 11\,800 lines of Java~8 in 89 files and 22 JSP views, and uses Gson, jBCrypt
+The server has about 11\,800 lines of Java~8 (with comments and blank lines) in 89 files and 22 JSP views, and uses
+Gson, jBCrypt
 \cite{provos1999bcrypt} and Weka \cite{hall2009weka}. Every money or time rule is a stored procedure
 that locks its rows with \texttt{UPDLOCK, HOLDLOCK}, so a slot cannot be booked or an extension charged twice. All user
 input goes through JDBC prepared statements and is escaped in JSP and JavaScript, and every state-changing request
@@ -413,21 +373,22 @@ SUSPECTED\_SPOOF), since no public dataset records the door time, weight change 
 rows follow simple class patterns on a deterministic grid, and wrong-user rows use the formulas of normal rows.
 
 \textit{Protocol.} Random Forest \cite{breiman2001rf}, J48 \cite{quinlan1993c45}, Naive Bayes \cite{john1995nb} and
-IBk ($k=5$) \cite{aha1991ibl} were compared with default Weka parameters by stratified 10-fold cross-validation
-\cite{kohavi1995cv} (seed 42) on six classes and on NORMAL versus ABNORMAL. All runs used one laptop (Core i5-11400H,
-16~GB RAM, Windows~11; JDK 1.8.0\_202, Weka 3.8.6, Tomcat 9.0.113, SQL Server 2022). Tests, measurements and code
-counts ran on 17 November 2026 on commit \texttt{\revisioncommit}, whose code the final commit leaves unchanged; the
-Weka metrics equal those of a 30 October 2026 run, and the simulation ran on 16 November 2026 (UTC) on the same code.
+IBk \cite{aha1991ibl} were compared with Weka defaults, except $k=5$ for IBk, by stratified 10-fold cross-validation
+\cite{kohavi1995cv} (seed 42) on six classes and on NORMAL versus ABNORMAL. All runs used one laptop (Intel Core
+i5-11400H, 16~GB RAM, Windows~11; JDK 1.8.0\_202, Weka 3.8.6, Tomcat 9.0.113, SQL Server 2022). Tests and measurements
+ran on 17 November 2026 on commit \texttt{\revisioncommit}, to which the code counts also refer; its server, TestNG and
+SQL code is unchanged in the final commit. The Weka metrics equal those of a 30 October 2026 run, and the simulation
+ran on 16 November 2026 (UTC) on the same code.
 
 \subsection{Classification Results}
 
 IBk achieves the highest weighted F1 on both tasks (Table~\ref{tab:ml}), followed by Random Forest, while Naive Bayes
 is weakest on six classes. IBk classifies all FORCED\_OPEN, OVERDUE and SUSPECTED\_SPOOF and 79 of 80 ITEM\_LEFT
-sessions correctly; 10 of its 11 errors fall between WRONG\_USER and NORMAL (7 and 3 sessions), and Random Forest errs
-the same way (17 and 8). A valid card of another person produces the telemetry of a normal visit, and without the
-WRONG\_USER rows IBk misclassifies only 1 of 400 sessions. Wrong-user access is therefore answered by rule~5, ML alerts
-are marked for caution \cite{sommer2010outside}, and the score should be trusted only after retraining on real
-sessions.
+sessions correctly; 10 of its 11 errors are wrong-user sessions labeled normal (7) or the reverse (3), and Random
+Forest errs the same way (17 and 8). A valid card of another person produces the telemetry of a normal visit, and
+without the WRONG\_USER rows IBk misclassifies only 1 of 400 sessions. Wrong-user access is therefore answered by
+rule~5, ML alerts are shown to staff as model detections rather than rule matches, and the score should be trusted
+only after retraining on real sessions.
 
 \begin{table}[tbp]
 \centering
@@ -457,18 +418,19 @@ the four opening methods to lockout, no-show, overdue and escalation, ran 241 re
 failure.
 
 \textit{Audit chain.} A read-only export of the simulation audit chain (1\,343 entries) was altered in seven ways,
-20 times each (seed 20261116). Modifying, deleting, inserting or swapping inner entries was detected in 20 of 20
-cases; appending, truncating the tail and a privileged rewrite of every hash in 0 of 20, as expected without an
-anchor; copying the chain head outside the database every ten entries caught 20 of 20 rewrites and 18 of 20
-truncations (deterministic tests, not detection rates).
+20 times each (seed 20261116). Modifying, deleting, inserting and swapping inner entries were each detected in 20 of
+20 cases, and appending, truncating the tail and a privileged rewrite of every hash each in 0 of 20, as expected
+without an anchor; copying the chain head outside the database every ten entries caught 20 of 20 rewrites and 18 of 20
+truncations, but no appends (deterministic tests, not detection rates).
 
 \textit{Concurrency and scenarios.} When 50 users reserved one free slot at once and one user reserved 20 slots at
 once, exactly one call won each race and only the two winners were charged. A device simulator replayed six scenarios
 with the key of the real box LOCKER-01: a silent box became \texttt{OFFLINE} after 99.5~s (expected 90 to 105~s); a
 staff remote open became STAFF\_OPEN and its replay SUSPECTED\_SPOOF; an unissued command id gave SUSPECTED\_SPOOF; a
 lost card raised LOST\_CARD\_USED; a reservation and its PIN gave \texttt{UNLOCK} and \texttt{CHECK\_IN}; and a
-$-5000$~g weight change raised SENSOR\_FAULT. All six gave the expected label after two adjustments: a session may be stamped up to 60~s before its command,
-and the check-in case sends the PIN to \texttt{/api/device/auth}, as the real box does.
+$-5000$~g weight change raised SENSOR\_FAULT. All six gave the expected label, two only after a fix: the remote-open
+rule had no clock tolerance and now accepts a session stamped up to 60~s before its command, and the check-in scenario
+now sends the PIN to \texttt{/api/device/auth}, as the real box does.
 
 \subsection{Multi-Sensor Simulation}\label{sec:sim_eval}
 
@@ -480,11 +442,12 @@ ultrasonic distance and stay are drawn from assumed log-normal, normal or unifor
 is resampled from 100 measured round trips of \texttt{/api/locker/batch} (2.0 to 39.5~ms). On 16 November 2026 (run
 \texttt{RUN\_20261116\_171508\_SEED42\_V2}) a harness sent every credential and session to the device API of the local
 stack: every expected \texttt{UNLOCK} or \texttt{DENY} was returned, all 100 sessions were stored, replayed sequence
-numbers were rejected, and 99 passed the transport gate; the verdicts of the production Java path were read back.
-\emph{B0} is a partial-parity comparator that re-implements the
-range, lost-card, forced-open and closed-door weight rules and the credential result; \emph{B1-P} is a prototype that
-adds hand-set thresholds on ultrasonic distance, vibration, tilt, shock and network latency. Java verdicts count
-ITEM\_LEFT and ML\_ANOMALY as errors.
+numbers were rejected, and 99 sessions matched their expected transport outcome (one injected timeout lasted only
+3.27~s, below the 5~s limit); the verdicts of the production Java path were then read back. \emph{B0} is a comparator
+in partial parity with the production rules: it re-implements the range, lost-card, forced-open and closed-door weight
+rules and the credential result; \emph{B1-P} is a prototype that adds hand-set thresholds on ultrasonic distance,
+vibration, tilt, shock and network latency. When the Java verdicts are mapped to the five categories, ITEM\_LEFT and
+ML\_ANOMALY count as errors.
 
 \begin{table}[tbp]
 \centering
@@ -501,7 +464,7 @@ B0 comparator & 0.658 & 0.150 & 0.500 & $0.610\pm0.038$ \\
 B1-P prototype & 0.780 & 0.250 & 0.950 & $0.753\pm0.036$ \\
 Java, rules only & 0.616 & 0.150 & 0.500 & live run only \\
 Java, rules + risk score & 0.475 & 0.150 & 0.500 & live run only \\
-J48, other seeds & 0.980 & 1.000 & 1.000 & $0.980\pm0.010$ \\
+J48, all inputs & 0.980 & 1.000 & 1.000 & $0.980\pm0.010$ \\
 Logistic regression & 1.000 & 1.000 & 1.000 & $0.990\pm0.014$ \\
 J48, credential + network & 0.546 & 0.000 & 0.250 & $0.537\pm0.022$ \\
 \bottomrule
@@ -509,7 +472,8 @@ J48, credential + network & 0.546 & 0.000 & 0.250 & $0.537\pm0.022$ \\
 \end{adjustbox}
 \\[2pt]
 \parbox{0.97\linewidth}{\footnotesize Recall (R.) and macro-F1 on the live seed-42 run; 5 seeds (42, 101, 202, 303,
-404): mean $\pm$ sample SD, seeds other than 42 offline with the credential outcome the backend returned live.}
+404): mean $\pm$ sample SD; seeds other than 42 were run offline with the expected credential outcome, which the
+backend returned for all 100 live sessions.}
 \end{table}
 
 B1-P reached a macro-F1 of 0.780 against 0.658 for B0 (Table~\ref{tab:b0_vs_b1}), mostly on faults, whose ultrasonic,
@@ -517,48 +481,54 @@ inertial and network symptoms B0 does not see, while both miss most tamper sessi
 normal). For anomaly versus normal, McNemar's test counts 6 sessions that only B1-P gets right and none that only B0
 gets right (exact $p=0.031$), and a stratified paired bootstrap (10\,000 resamples) gives $\Delta$macro-F1 $=0.122$
 with a 95\% interval of $[0.062, 0.190]$. The production rules alone reach 0.616 but flag 11 of the 20 normal sessions:
-8 deposits as ITEM\_LEFT, since the simulator keeps no matching booking state, and 3 pick-ups of 233 to 943~g as
-SENSOR\_FAULT, since the valid weight range is checked against the weight change; with the risk score, 31 sessions receive a
-class-less ML\_ANOMALY alert, so macro-F1 falls to 0.475 while anomaly-versus-normal F1 rises from 0.770 to 0.870,
-level with B1-P (0.871). J48 trained on the 12 observable inputs of the other four seeds reaches 0.980 and is right on
-19 sessions where B1-P is wrong, against 2 the other way ($p=2.2\times10^{-4}$); logistic regression reaches 1.000
-(19 against 0), whereas J48 given only the credential and network fields reaches 0.546, so the labels do not leak
-through the context. Retrained without one feature group, J48 gives 0.777 without door and load, 0.881 without the
-credential context and at least 0.956 without the network, inertial or ultrasonic group. Scaling the six
-class-separating medians by 0.7 or 1.3, one at a time (12 variants) or all together (2), kept B1-P above B0 by 0.12
-to 0.16 and below J48 by 0.21 to 0.26 in all 15 runs including the baseline.
+8 deposits as ITEM\_LEFT, because rule~7 reads every weight gain above 50~g as items left after pick-up, and 3 pick-ups
+of 233 to 943~g as SENSOR\_FAULT, because rule~1 checks the weight range against the weight change; with the risk
+score, 31 sessions receive a class-less ML\_ANOMALY alert, so macro-F1 falls to 0.475 while anomaly-versus-normal F1
+rises from 0.770 to 0.870, level with B1-P (0.871). J48 trained on the other four seeds with all 12 observable inputs
+(sensor, credential, latency and replay fields) reaches 0.980 and is right on 19 sessions where B1-P is wrong,
+against 2 the other way ($p=2.2\times10^{-4}$); logistic regression reaches 1.000 (19 against 0), whereas J48 given
+only the credential and network fields reaches 0.546, so the labels do not leak through the context. Retrained without
+one feature group, J48 gives five-seed means of 0.777 without door and load, 0.881 without the credential context and
+at least 0.956 without the network, inertial or ultrasonic group. Scaling the six medians that separate the anomaly
+classes (two vibration medians, shock, tilt, forced door time and spoof weight) by 0.7 or 1.3, one at a time
+(12 variants) or all together (2), kept B1-P above B0 by 0.12 to 0.16 and below J48 by 0.21 to 0.26 in all 15 runs
+including the baseline.
 
 \subsection{Server-Side Response Time}\label{sec:latency}
 
 Only server processing of the device API was timed: 30 curl requests per endpoint from the same laptop after one
 warm-up, excluding Wi-Fi, credential reading and servo movement. The median was 7.6~ms for the heartbeat, 16.0~ms for a
 PIN at the box and 15.9~ms on the phone page, and no request took longer than 38.6~ms; a phone-page open also waits for
-the next heartbeat. The fifth wrong PIN started a 120~s lock that refused even the valid PIN until 120.9~s later.
+the next heartbeat. The fifth wrong PIN started a 120~s lock that also refused the valid PIN, which was accepted again
+120.9~s after the lock started.
 
 \subsection{Threats to Validity and Limitations}\label{sec:limits}
 
 \textit{Internal validity.} Both datasets are synthetic: the Weka rows form a deterministic grid and almost every
 simulation distribution is assumed, so the separability J48 exploits reflects these assumptions (sampling bias, P1
 \cite{arp2022dos}). The second generator was designed by authors who knew the B1-P thresholds, and three of its
-parameters lie within $\pm$20\% of a B1-P threshold, so data snooping (P3) cannot be ruled out. B0 has partial parity and a learned
+parameters (the forced-door vibration median, the shock clip and the timeout delay) lie within $\pm$20\% of a B1-P
+threshold, so data snooping (P3) cannot be ruled out. B0 has partial parity and a learned
 tree outperforms B1-P (inappropriate baseline, P6); latent-action labels, a frozen generator, learned baselines, an
 ablation, a sensitivity analysis and five seeds mitigate these risks.
 
 \textit{External validity.} All results come from one laptop and one box with a single servo-locked slot; door
-switch, load cell and accelerometer are simulated and no campus trace exists (lab-only evaluation, P9). Rule~1 checks
-the weight range against the weight change, so a pick-up of more than 200~g raises SENSOR\_FAULT; the range should
-apply to the absolute load once a load cell is fitted. Remaining risks include the lack of mutual TLS and CSRF tokens, plain HTTP to Tomcat, unanchored audit rewrites and cloned cards
+switch, load cell and accelerometer are simulated and no campus trace exists (lab-only evaluation, P9). Rules 1 and 7
+treat every session as the pick-up of a light item: a deposit of more than 50~g raises ITEM\_LEFT and a pick-up of
+more than 200~g raises SENSOR\_FAULT, so both should use the absolute load and the booking phase once a load cell is
+fitted. Remaining security risks include the lack of mutual TLS and CSRF tokens, plain HTTP to Tomcat, unanchored audit rewrites and cloned cards
 that work until reported. Seeds, code, logs and scripts are available at
 \url{https://github.com/HoangDuc1003/SmartLocker}.
 
 \section{Conclusion}
 
-SmartLocker leaves every access decision of its ESP32 box to a server-side, priority-ordered rule tier with a
-tamper-evident audit log; every replayed scenario gave the expected label. Telemetry alone could not separate
-wrong-user from normal access, so identity is checked by rule. In simulation, a multi-sensor rule prototype beat a
-partial-parity comparator (0.780 against 0.658) but found 5 of 20 tamper sessions and stayed below a learned tree
-(0.980) and logistic regression (1.000). Future work will add door, load and inertial sensors, a weight range on the
-absolute load, labeled campus sessions, an integrated anchor, CSRF tokens and TLS certificate validation.
+SmartLocker leaves every access decision of its ESP32 box to the server and labels each access session with a
+priority-ordered rule tier backed by a tamper-evident audit log; every replayed scenario gave the expected label, two
+after a fix. Telemetry alone could not separate wrong-user from normal access, so identity is checked by rule. In
+simulation, a multi-sensor rule prototype beat a partial-parity comparator (macro-F1 0.780 against 0.658) but found
+only 5 of 20 tamper sessions and stayed below a learned tree (0.980) and logistic regression (1.000). Future work will
+fit door, load and inertial sensors, base the weight rules on the absolute load, collect labeled campus sessions,
+integrate the audit anchor, and add mutual TLS and CSRF tokens.
 
 \begin{acks}
 The authors thank FPT University and the instructors. AI tools (Claude, Anthropic) assisted with English editing,
