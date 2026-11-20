@@ -78,7 +78,7 @@
   \setlength{\belowdisplayskip}{3pt plus 1pt minus 1pt}%
 }
 \newif\ifscopus
-\scopusfalse
+\scopustrue
 \newcommand{\baselinecommit}{da95f43}
 \newcommand{\revisioncommit}{fd05eb9}
 
@@ -117,13 +117,13 @@ forged or replayed. This paper presents SmartLocker, a locker rental system in w
 pay from a prepaid wallet and open it with a personal identification number (PIN), a radio-frequency identification
 (RFID) card, a fingerprint or a phone page. The ESP32 box takes no access decision: it forwards every credential to the
 server, which replies \texttt{UNLOCK} or \texttt{DENY}. Abnormal access is detected mainly by a priority-ordered rule
-engine over device telemetry and server context, which recognises sensor faults, spoofed remote opens, lost cards,
+engine over device telemetry and server context, which recognizes sensor faults, spoofed remote opens, lost cards,
 forced opening, wrong-user access, items left behind and overdue storage. A machine-learning risk score is kept only as
-a secondary signal and raises an alert for sessions that no rule explains. On synthetic labelled sessions, the best of
+a secondary signal and raises an alert for sessions that no rule explains. On synthetic labeled sessions, the best of
 four Weka classifiers made almost all of its errors between wrong-user and normal sessions, which share the same
 telemetry by construction; identity is therefore checked by rule, and the score should be trusted only once real
-sessions are available. All automated tests and the replayed detection scenarios passed, and every device request was answered within 40~ms on a
-local laptop. In a pre-deployment simulation sent through the live device API, a multi-sensor rule prototype outperformed a
+sessions are available. All automated tests and the replayed detection scenarios passed, and in local tests on one laptop every timed device
+request was answered within 40~ms. In a pre-deployment simulation sent through the live device API, a multi-sensor rule prototype outperformed a
 partial-parity rule comparator (macro-F1 0.780 against 0.658) but missed most tamper sessions and stayed below a learned
 decision tree; because the simulated distributions are assumed, these results do not predict field performance.
 \end{abstract}
@@ -160,7 +160,7 @@ data only.
 No. & Contribution & Where it is shown \\
 \hline
 \rule{0pt}{2.6ex}1 & A locker rental system with map reservation, prepaid wallet, four opening methods (PIN, RFID card, fingerprint and
-    phone) and an ESP32 box that forwards credentials signed with a device key; all money and time rules run in SQL transactions. & Sections III and V \\
+    phone) and an ESP32 box that forwards every credential with its own device API key; all money and time rules run in SQL transactions. & Sections III and V \\
 2 & A priority-ordered rule engine over telemetry and server context that labels sensor faults, spoofed remote opens,
     lost cards, forced opening, wrong-user access, items left behind and overdue storage, with a hash-chained audit log and a secondary ML risk score. & Section IV \\
 3 & An evaluation with automated tests, replayed scenarios and response times, a classifier comparison on synthetic
@@ -179,27 +179,25 @@ review finds only one sustainability study on safety and security \cite{zhang202
 application, a matching box size and the station location among the most important service attributes
 \cite{ciesla2023parcel}. An IoT
 locker based on RFID \cite{rfidiot2023locker} identifies the user with an identity card and uses Wi-Fi to monitor the
-locker, log accesses and watch for unauthorised use. Unlike earlier RFID locker prototypes that check card identifiers
-locally and keep plain access logs \cite{rfidiot2023locker}, SmartLocker delegates every credential check to
+locker, log accesses and watch for unauthorized use. SmartLocker instead delegates every credential check to
 transactional server procedures, supports PIN, card, fingerprint and phone unlocking, and combines context rules with
 telemetry scoring over a hash-chained audit log.
 
-\textit{Security of IoT devices and credentials.} Surveys of IoT security list impersonation, message spoofing and
-physical tampering among the main threats to constrained devices \cite{roman2013features} and recommend that trust be
-established on the server side \cite{sicari2015security}. RFID credentials are exposed to cloning, replay and relay
+\textit{Security of IoT devices and credentials.} IoT entities face denial of service, physical damage, eavesdropping,
+node capture and loss of control \cite{roman2013features}, and need authentication, access control and trust that
+traditional countermeasures cannot provide directly \cite{sicari2015security}. RFID credentials are exposed to cloning, replay and relay
 attacks \cite{mitrokotsa2010rfid}, and near field communication (NFC) readers inherit these physical-layer risks in
-public spaces. SmartLocker follows these recommendations by keeping every
+public spaces. SmartLocker addresses these threats by keeping every
 access decision on the server and identifying each box with a secret key stored only as a hash.
 
-\textit{Anomaly detection.} Rule-based, statistical and learned detectors are the three families usually distinguished
-in anomaly detection surveys \cite{chandola2009anomaly}. For IoT and sensor networks, most detectors are learned
-models, and scarce labelled data make supervised detectors less effective than unsupervised ones
-\cite{demedeiros2023anomaly}. Like SmartLocker, Shahin et al. \cite{shahin2025twostage} detect in two
+\textit{Anomaly detection.} Anomaly detection techniques are classification-based (including rule-based), nearest-neighbor,
+clustering, statistical, information-theoretic or spectral \cite{chandola2009anomaly}; in IoT, learned detectors
+dominate and scarce labeled data favor unsupervised over fully supervised ones \cite{demedeiros2023anomaly}. Like SmartLocker, Shahin et al. \cite{shahin2025twostage} detect in two
 tiers: a generative model trained on benign device traffic flags anomalous IoT traffic, and a gradient-boosting
 classifier labels it with 99.14\% accuracy on N-BaIoT. For intrusion detection, Sommer and Paxson
 \cite{sommer2010outside} show that learned detectors are hard to interpret and work best on narrow problems. Arp et
 al. \cite{arp2022dos} examined 30 machine-learning papers published over ten years at ACM CCS, IEEE S\&P, USENIX
-Security and NDSS and found that every paper suffered from at least three of ten common pitfalls, with sampling bias
+Security and NDSS and found that every paper suffered from at least three of ten common pitfalls (P1 to P10), with sampling bias
 and data snooping at least partly present in 90\% and 73\% of the papers, respectively. SmartLocker therefore puts
 explicit rules over telemetry and booking context in Tier~1 and uses a Weka model \cite{hall2009weka} only as a
 supporting score. Its audit log is hash-chained as proposed by Haber and Stornetta \cite{haber1991timestamp}, and
@@ -274,7 +272,7 @@ recorded in the hash-chained audit log so that any privilege abuse can be traced
 
 \subsection{Data Model}
 
-Lockers are organised in three levels: an \emph{area} is a pin on the map (Leaflet, or Mapbox GL when a token is
+Lockers are organized in three levels: an \emph{area} is a pin on the map (Leaflet, or Mapbox GL when a token is
 configured), a \emph{bank} is a column of lockers controlled by one device, and a \emph{slot} has size S
 ($20\times20\times20$~cm), M ($40\times40\times40$~cm) or L ($60\times60\times60$~cm). A booking is a row of
 \texttt{Deposit} linking a user, a slot, a plan and optionally a card, and filtered unique indexes reject a second open
@@ -284,7 +282,7 @@ prevent race conditions.
 
 \subsection{Hardware}
 
-The locker box is built around an ESP32 development board (Table~\ref{tab:hw} and Fig.~\ref{fig:block}). A 4$\times$4
+The locker box is built around an ESP32 development board (Table~\ref{tab:hw}). A 4$\times$4
 keypad reads PINs and menu keys, a PN532 NFC reader reads RFID cards, an AS608 optical sensor reads fingerprints, a
 16$\times$2 I$^2$C LCD displays messages, and two servos drive the bolt and the door. An SRF05 ultrasonic sensor
 detects a person in front of the box, switches on the LCD backlight and locks the door 20~s after the person has left,
@@ -307,7 +305,7 @@ Component & Function & ESP32 pins \\
 \hline
 \rule{0pt}{2.6ex}ESP32 Dev Module & Controller, Wi-Fi, HTTP(S) client & Built-in \\
 PN532 & RFID card reader (I$^2$C, 0x24) & SDA 21, SCL 22 (shared with LCD) \\
-AS608 & Fingerprint sensor (UART) & TX$\rightarrow$35, RX 15 \\
+AS608 & Fingerprint sensor (UART) & AS608 TX$\rightarrow$35, RX$\leftarrow$15 \\
 LCD 1602 I$^2$C & User messages & SDA 21, SCL 22 \\
 Keypad 4$\times$4 & PIN and menu input & Rows 13, 14, 25, 26; columns 33, 19, 23, 27 \\
 Servo (bolt / door) & Locks the slot / opens the door & 32 / 2 \\
@@ -315,55 +313,6 @@ SRF05 & Presence detection (backlight, automatic lock) & TRIG 5, ECHO 18 \\
 \hline
 \end{tabular}
 \end{table}
-
-\begin{figure}[!htbp]
-\centering
-\begin{tikzpicture}
-  % inputs (left)
-  \node[slblue, minimum width=4.3cm] (kp) at (2.15,1.65)  {Keypad 4$\times$4};
-  \node[slblue, minimum width=4.3cm] (rf) at (2.15,0.6)   {PN532 RFID / NFC};
-  \node[slblue, minimum width=4.3cm] (fp) at (2.15,-0.45) {AS608 fingerprint};
-  \node[slblue, minimum width=4.3cm] (us) at (2.15,-1.65) {SRF05 ultrasonic\slsub{presence, backlight, auto-lock}};
-  % controller
-  \node[slyellow, line width=1.1pt, minimum width=3.4cm, minimum height=4.3cm, font=\normalsize] (esp) at (7.7,0)
-        {ESP32\\Dev Module\slsub{firmware 4.3}};
-  \node[slpeach, minimum width=2.6cm] (pw) at (7.7,3.1) {5~V supply};
-  % outputs (right)
-  \node[slpeach, minimum width=3.5cm] (lcd) at (13.05,1.3)  {LCD 1602};
-  \node[slpeach, minimum width=3.5cm] (sb)  at (13.05,0)    {Bolt servo};
-  \node[slpeach, minimum width=3.5cm] (sd)  at (13.05,-1.4) {Door servo\slsub{closes 20~s after leaving}};
-  % wires
-  \draw[slarr] (kp.east) -- node[slbus] {GPIO} (kp.east -| esp.west);
-  \draw[slarr] (rf.east) -- node[slbus] {I$^2$C} (rf.east -| esp.west);
-  \draw[slarr] (fp.east) -- node[slbus] {UART} (fp.east -| esp.west);
-  \draw[slarr] (us.east) -- node[slbus] {GPIO} (us.east -| esp.west);
-  \draw[slarr] (pw) -- (esp);
-  \draw[slarr] (lcd.west -| esp.east) -- node[slbus] {I$^2$C} (lcd.west);
-  \draw[slarr] (sb.west -| esp.east)  -- node[slbus] {PWM 32} (sb.west);
-  \draw[slarr] (sd.west -| esp.east)  -- node[slbus] {PWM 2} (sd.west);
-  % network, clients and server (bottom)
-  \node[draw=slBlueD, fill=slBlue, ellipse, line width=0.7pt, font=\small, align=center, inner sep=1pt,
-        minimum width=2.9cm, minimum height=1.0cm] (net) at (7.7,-4.05) {Wi-Fi / Internet};
-  \node[slblue, minimum width=3.2cm] (cl) at (2.15,-4.05) {Browser, phone};
-  \node[slmint, minimum width=3.4cm] (tc) at (12.3,-4.05) {Tomcat 9 web app\slsub{device APIs, RBAC}};
-  \node[slmint, minimum width=3.4cm] (ml) at (12.3,-5.75) {Rules + Weka model};
-  \node[slmint, minimum width=2.4cm] (db) at (16.15,-5.75) {SQL Server};
-  \draw[sldbl] (esp) -- node[sllbl, right] {HTTP(S) + \texttt{X-API-Key}} (net);
-  \draw[sldbl] (cl) -- (net);
-  \draw[sldbl] (net) -- (tc);
-  \draw[sldbl] (tc) -- (ml);
-  \draw[sldbl] (ml) -- (db);
-  \begin{scope}[on background layer]
-    \node[slgroup, draw=slPeachD, fill=slPeach!25, fit=(kp)(us)(pw)(esp)(lcd)(sd), inner sep=6pt,
-          label={[slgrouplbl, text=slPeachD, anchor=south east]north east:Locker box}] {};
-    \node[slgroup, fill=slMint!35, fit=(tc)(ml)(db), inner sep=6pt,
-          label={[slgrouplbl, anchor=north east, inner sep=5pt]north east:Server}] {};
-  \end{scope}
-\end{tikzpicture}
-\caption{Block diagram of the prototype box, in which the ESP32 reads the keypad, the card and fingerprint readers and
-the SRF05 sensor, drives the LCD and the two servos, and reaches the server over Wi-Fi.}
-\label{fig:block}
-\end{figure}
 
 \subsection{Device Protocol}
 
@@ -419,7 +368,7 @@ remote or phone open arrives with the next heartbeat and returns as a session ca
 
 \subsection{Booking Lifecycle}
 
-A reservation charges the wallet and holds the slot for 15~minutes (Fig.~\ref{fig:state}); cancelling within
+A reservation charges the wallet and holds the slot for 15~minutes (Fig.~\ref{fig:state}); canceling within
 5~minutes refunds 100\% and later during the hold 50\%. Opening the slot during the hold is a \texttt{CHECK\_IN}, which
 starts the paid time; if nobody comes, the booking starts by itself when the hold ends (\texttt{AUTO\_CHECK\_IN}) and
 the slot stays locked for its owner, with nothing refunded. A booking that was never opened ends at its due time plus
@@ -508,7 +457,7 @@ a replayed scenario (Section~\ref{sec:functional}).
 \subsection{Tier 2: Machine-Learning Risk Score}
 
 Let $\mathbf{x}_s = (d, w, u, v, t)$ denote the five features of a session $s$ (door time, weight change, unlocks,
-valid credential and stay time). A classifier trained offline on labelled sessions estimates the probability that $s$
+valid credential and stay time). A classifier trained offline on labeled sessions estimates the probability that $s$
 is normal, and the \emph{risk score} is defined as
 \begin{equation}
 r(s) = 1 - P\left(y = \text{NORMAL} \mid \mathbf{x}_s\right).
@@ -516,7 +465,7 @@ r(s) = 1 - P\left(y = \text{NORMAL} \mid \mathbf{x}_s\right).
 \end{equation}
 The training tool compares four classifiers (Section~VI) and deploys the six-class model with the highest weighted F1,
 which is currently IBk ($k=5$); because wrong-user and normal seed rows share the same feature formulas, one of the five
-nearest neighbours of a normal-looking test session belongs to the wrong-user class and yields $r = 0.20$. Let
+nearest neighbors of a normal-looking test session belongs to the wrong-user class and yields $r = 0.20$. Let
 $\ell(s)$ be the label of the first rule of Table~\ref{tab:rules} that matches $s$. The alert raised for $s$ is then
 \begin{equation}
 A(s) =
@@ -527,7 +476,7 @@ A(s) =
 \end{cases}
 \label{eq:alert}
 \end{equation}
-with the threshold $\tau = 0.80$, which requires at least four of the five nearest neighbours in IBk to belong to
+with the threshold $\tau = 0.80$, which requires at least four of the five nearest neighbors in IBk to belong to
 abnormal classes before an alert is raised; when a rule matches, $r(s)$ is stored with its alert as evidence. Without a
 deployed model the risk is zero, and it is never computed for SENSOR\_FAULT or STAFF\_OPEN. A STAFF\_OPEN marks its
 command as done through a conditional update, so of two sessions carrying the same command only one is a staff open and
@@ -583,7 +532,7 @@ run first and the risk score of (\ref{eq:risk}) raises an ML\_ANOMALY alert only
 
 Credential guessing, silent devices, lost cards, cards at the wrong box and overdue storage need no telemetry, because
 the server state alone reveals them. For credential guessing, five wrong PINs, cards or fingers within 5~minutes lock
-the box for 120~s, while five wrong tries on the phone page lock it for 2~minutes. For silent devices, a background job
+the box for 120~s; the phone page counts its tries separately with the same limits, so it cannot block the keypad. For silent devices, a background job
 running every 15~s marks any box silent for 90~s as \texttt{OFFLINE}, raises a \texttt{DEVICE\_OFFLINE} alert and halts
 new bookings for that bank. When a card is reported lost, its UID is pushed to the box in the blocked list of the next
 heartbeat (\texttt{CARD\_BLOCKED}). When a valid card is tapped at the wrong box, \texttt{WRONG\_PLACE} is logged on the
@@ -605,7 +554,7 @@ protocol (tests and a prototype external anchor in Section~\ref{sec:functional})
 
 The server is written in Java~8 (about 11\,800 lines, comments and blank lines included, in 89 source files) with
 22 JSP views and uses Gson, jBCrypt \cite{provos1999bcrypt} and Weka \cite{hall2009weka}; it loads no script from a
-content delivery network, and database access goes only through JDBC prepared statements. Every rule involving money or
+content delivery network, and every query that carries user input is a JDBC prepared statement. Every rule involving money or
 time (reservation, refund, extension, overdue fee, escalation) is a stored procedure that locks the rows it modifies with
 \texttt{UPDLOCK, HOLDLOCK}, so a slot cannot be booked twice and an extension cannot be charged twice. Plan prices are
 scaled by slot size (S 100\%, M 130\%, L 169\%) and rounded up to 100~VND, and the late fee is 150\% of the hourly rate.
@@ -613,7 +562,8 @@ A background thread (\texttt{LockerMonitor}) refreshes an in-memory dashboard sn
 procedures every 15~s. Users reserve and open slots from the map (Fig.~\ref{fig:ui-user}), staff follow devices,
 revenue and alerts from the dashboard (Fig.~\ref{fig:ui-staff}), and all devices except LOCKER-01 are demo devices whose
 heartbeat the server simulates. Passwords are hashed with BCrypt, device keys are stored only as SHA-256 hashes, user
-data is escaped in JSP and JavaScript, and every state-modifying request requires an authenticated session.
+data is escaped in JSP and JavaScript, and every state-modifying request except sign-up and sign-in needs a
+permitted signed-in user, the PIN of the phone page or a single-use e-mail token.
 
 \begin{figure}[!htbp]
 \centering
@@ -660,9 +610,8 @@ The code counts refer to the same commit, and the simulation of Section~\ref{sec
 \subsection{Classification Results}
 
 We report weighted averages over the six classes and over the binary task, so that the deployed model and the risk
-decision can be compared on the same folds. IBk achieves the highest weighted F1, 0.977 for six classes and 0.975 for
-the binary task (Table~\ref{tab:ml}), followed by Random Forest (0.948 and 0.939), while Naive Bayes is the weakest
-model in the six-class setting (0.778).
+decision can be compared on the same folds. IBk achieves the highest weighted F1 on both tasks (Table~\ref{tab:ml} and
+Fig.~\ref{fig:eval}(a)), followed by Random Forest, while Naive Bayes is the weakest model in the six-class setting.
 
 \begin{table}[!htbp]
 \renewcommand{\arraystretch}{1.04}
@@ -688,8 +637,8 @@ IBk ($k=5$)   & 0.977 & 0.978 & 0.977 & 0.977 & 0.975 & 0.975 \\
 
 Per class, IBk classifies all FORCED\_OPEN, OVERDUE and SUSPECTED\_SPOOF sessions and 79 of 80 ITEM\_LEFT sessions
 correctly; 10 of its 11 errors fall between WRONG\_USER and NORMAL (7 and 3 sessions, F1 0.936 and 0.939;
-Fig.~\ref{fig:eval}), as for Random Forest (17 and 8). This follows from the construction of the data: a valid card of
-another person produces the telemetry of a normal visit, and the residual separation is an artefact of the row index.
+Fig.~\ref{fig:eval}), and Random Forest errs the same way (17 and 8). This follows from the construction of the data: a valid card of
+another person produces the telemetry of a normal visit, and the residual separation is an artifact of the row index.
 Without the 80 WRONG\_USER rows (400 sessions), IBk misclassifies only 1 of 400 sessions (99.75\% accuracy).
 
 \begin{figure}[!htbp]
@@ -774,7 +723,7 @@ errors fall between NORMAL and WRONG\_USER (right).}
 
 The design does not rest on these scores: wrong-user access is answered exactly by rule~5, and ML alerts are marked
 for caution \cite{sommer2010outside}. On synthetic data the scores show only that the pipeline works and where telemetry
-runs out; the risk score should be trusted only after retraining on labelled real sessions (Section~\ref{sec:limits}).
+runs out; the risk score should be trusted only after retraining on labeled real sessions (Section~\ref{sec:limits}).
 
 \subsection{Functional Testing}
 \label{sec:functional}
@@ -805,7 +754,7 @@ connection, and one user reserved 20 slots at once. Exactly one call won each ra
 19 by the one-open-booking unique index, which reaches the caller as a raw SQL error, and only the two winners were
 charged.
 
-\textit{Detection scenarios.} A device simulator sends heartbeats, credentials and session uploads signed with the key
+\textit{Detection scenarios.} A device simulator sends heartbeats, credentials and session uploads with the API key
 of the real box LOCKER-01, and the database is inspected after each scenario (Table~\ref{tab:scen}). All six scenarios
 produced the expected label after two adjustments: the rule now accepts a session stamped up to 60~s before its
 command, and the \emph{checkin} case sends the PIN to \texttt{/api/device/auth}, as the real box does.
@@ -966,9 +915,9 @@ knew the B1-P thresholds, and three parameters lie within $\pm$20\% of one: the 
 against 0.45~g), the shock clip (16.0~g, both the sensor range and the shock threshold) and the timeout
 delay range (2\,000 to 15\,000~ms, containing 5\,000~ms); the influence of knowing the thresholds has not been ruled
 out (data snooping, P3). Cells the parameter table left open (stay time, ultrasonic distance, fault magnitudes, normal
-distributions for unnamed classes, giving hammer, tilt and spoof tampering normal vibration) were chosen by the
-implementing AI agent before the freeze and ratified by the authors after the run, so they are not preregistered and may lower tamper recall. B0 has partial parity, the production rules see no matching booking state, and a learned tree outperforms B1-P (inappropriate baseline, P6). Earlier labels
-derived with B1's own thresholds gave B1 0.990. Mitigation: latent-action labels, a frozen
+distributions for unnamed classes, giving hammer, tilt and spoof tampering normal vibration) were set during
+implementation before the freeze and approved by the authors only after the run, so they are not preregistered and may lower tamper recall. B0 has partial parity, the production rules see no matching booking state, and a learned tree outperforms B1-P (inappropriate baseline, P6). Earlier labels
+derived with B1-P's own thresholds gave B1-P 0.990. Mitigation: latent-action labels, a frozen
 generator, learned baselines, an ablation, a sensitivity analysis, five seeds and the scripts.
 
 \textit{External validity.} All results come from one laptop and one box with a single servo-locked slot (other
@@ -995,7 +944,7 @@ Lost or misused card & blocked list; rules 3, 5; e-mail check & lostcard scenari
 Double booking or charge & row locks; unique indexes & concurrency test & index refusal is a raw SQL error \\
 Audit tampering & hash chain checked every 60~s & tamper campaign & tail append; unanchored rewrite \\
 Web attacks & escaping; role check; SameSite=Lax & source review & no CSRF token; plain HTTP to Tomcat \\
-Physical tampering & B1-P on simulated sensors & Study B & no sensor fitted; tamper recall 0.25 \\
+Physical tampering & B1-P on simulated sensors & Section~\ref{sec:sim_eval} & no sensor fitted; tamper recall 0.25 \\
 \hline
 \end{tabular}
 \end{table}
@@ -1005,25 +954,23 @@ Physical tampering & B1-P on simulated sensors & Study B & no sensor fitted; tam
 \section{Conclusion}
 
 SmartLocker leaves every access decision of its ESP32 box to a server-side, priority-ordered rule tier with a
-tamper-evident audit log; every replayed scenario gave the expected label and median server processing was 8 to
-16~ms per endpoint. Telemetry alone could not separate wrong-user from normal access, so identity is checked by rule.
+tamper-evident audit log; every replayed scenario gave the expected label and median server processing was 7.6 to
+16.0~ms per endpoint. Telemetry alone could not separate wrong-user from normal access, so identity is checked by rule.
 In a simulation through the live device API, a multi-sensor rule prototype beat a partial-parity comparator (macro-F1
 0.780 against 0.658) but found 5 of 20 tamper sessions and stayed below a learned tree (0.980). Future work: sensors,
 campus sessions, an integrated anchor, CSRF tokens and TLS validation.
 
 \section*{Acknowledgment}
 
-The authors thank FPT University and the instructors. The authors used the AI assistant Claude (Anthropic) to edit
-the English text, check the \LaTeX{} source and draw Fig.~\ref{fig:arch} to Fig.~\ref{fig:eval}, and AI coding
-agents including Claude Code (Anthropic) to write and run parts of the simulation, evaluation and audit scripts under
-the authors' supervision and to draft the parameters of the second simulator, each approved by the authors. The
-authors designed the system, reviewed every script and result, and take full responsibility for this paper; the AI
-tools are not authors.
+The authors thank FPT University and the instructors. AI tools (Claude, Anthropic) assisted with English editing,
+figures and parts of the simulation and evaluation code; the authors reviewed all such material and take full
+responsibility for this paper.
 
 \begingroup
 \def\IEEEbibitemsep{0pt}
 \def\footnotesize{\fontsize{6.4pt}{7.3pt}\selectfont}
 \setlength{\multicolsep}{2pt plus 1pt minus 1pt}
+\vspace{-3pt}
 \begin{multicols}{2}
 \begin{thebibliography}{22}
 
@@ -1046,7 +993,7 @@ Q.~Zhang and E.~Demir, ``Parcel locker solutions for last mile delivery: A syste
 M.~Cie{\'s}la, ``Perceived importance and quality attributes of automated parcel locker services in urban areas,'' \emph{Smart Cities}, vol.~6, no.~5, pp.~2661 to 2679, Oct. 2023, doi: 10.3390/smartcities6050120.
 
 \bibitem{rfidiot2023locker}
-C.~Bharatiraja, P.~K.~Chittoor, and Y.~V.~Bhargava, ``An IoT based centralized smart locker using RFID technology,'' in \emph{AIP Conference Proceedings}, vol.~2605, 2023, p.~020098, doi: 10.1063/5.0101139.
+C.~Bharatiraja, P.~K.~Chittoor, and Y.~V.~Bhargava, ``An IoT based centralized smart locker using RFID technology,'' in \emph{AIP Conference Proceedings}, vol.~2427, 2023, p.~020098, doi: 10.1063/5.0101139.
 
 \bibitem{mitrokotsa2010rfid}
 A.~Mitrokotsa, M.~R.~Rieback, and A.~S.~Tanenbaum, ``Classifying RFID attacks and defenses,'' \emph{Information Systems Frontiers}, vol.~12, no.~5, pp.~491 to 505, 2010, doi: 10.1007/s10796-009-9210-z.
